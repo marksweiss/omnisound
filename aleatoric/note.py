@@ -1,6 +1,5 @@
 # Copyright 2018 Mark S. Weiss
 
-# import 'util'
 from typing import Optional
 
 
