@@ -53,7 +53,7 @@ class CSoundNote(Note):
     def time(self):
         return self.start
 
-    @property.setter
+    @time.setter
     def time(self, time: float):
         self.start = time
 
@@ -61,15 +61,15 @@ class CSoundNote(Note):
     def duration(self):
         return self.dur
 
-    @property.setter
-    def time(self, duration: float):
+    @duration.setter
+    def duration(self, duration: float):
         self.dur = duration
 
     @property
     def velocity(self):
         return self.amp
 
-    @property.setter
+    @velocity.setter
     def velocity(self, velocity: float):
         self.amp = velocity
 
@@ -97,7 +97,7 @@ class MidiNote(Note):
     def velocity(self):
         return self.amp
 
-    @property.setter
+    @velocity.setter
     def velocity(self, velocity: float):
         self.amp = velocity
 
