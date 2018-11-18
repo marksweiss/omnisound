@@ -29,7 +29,7 @@ class RestNote(Note):
 
     def __init__(self, start: float = None, dur: float = None, amp: float = None, pitch: float = None,
                  name: str = None) -> object:
-        super(self, RestNote).__init__(start=start, dur=dur, amp=amp, pitch=pitch, name=name)
+        super(RestNote, self).__init__(start=start, dur=dur, amp=amp, pitch=pitch, name=name)
         self.amp = RestNote.REST_AMP
 
     @staticmethod
@@ -46,7 +46,7 @@ class CSoundNote(Note):
                  pitch: float = None, name: str = None, instrument: int = None) -> object:
         if instrument is None:
             raise ValueError(f'CSoundNote must provide value for required arg instrument: {instrument}')
-        super(self, CSoundNote).__init__(start=time, dur=duration, amp=velocity, pitch=pitch, name=name)
+        super(CSoundNote, self).__init__(start=time, dur=duration, amp=velocity, pitch=pitch, name=name)
         self.instrument = instrument
 
     @property
@@ -74,7 +74,7 @@ class CSoundNote(Note):
         self.amp = velocity
 
     def __str__(self):
-        return f'{self.instrument} {self.start:.5f} {self.duration:.5f} {self.velocity} {self.pitch:.5f}'
+        return f'i {self.instrument} {self.start:.5f} {self.duration:.5f} {self.velocity} {self.pitch:.5f}'
 
 
 class MidiNote(Note):
@@ -89,7 +89,7 @@ class MidiNote(Note):
                  channel: int = None) -> object:
         if instrument is None:
             raise ValueError(f'MidiNote must provide value for required arg instrument: {instrument}')
-        super(self, MidiNote).__init__(start=start, dur=dur, amp=velocity, pitch=pitch, name=name)
+        super(MidiNote, self).__init__(start=start, dur=dur, amp=velocity, pitch=pitch, name=name)
         self.instrument = instrument
         self.channel = channel or MidiNote.DEFAULT_CHANNEL
 
