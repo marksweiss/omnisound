@@ -22,7 +22,7 @@ class NoteAttrs(object):
     @staticmethod
     def __validate(instrument, start, dur, amp, pitch):
         if not instrument or not isinstance(start, float) or not isinstance(dur, float) or \
-                not isinstance(amp, float) or not isinstance(pitch, float):
+                not isinstance(amp, float) or not isnum(pitch, float):
             raise ValueError((f'Must provide value for required NoteAttrs args: '
                               f'instrument: {instrument} start {start} dur: {dur} amp: {amp} pitch: {pitch}'))
 
@@ -45,7 +45,6 @@ class SupercolliderNoteAttrs(NoteAttrs):
                  oct: int = None, scale: str = None):
         # start not meaningful for Supercollider
         start = 0.0
-        self.__validate(oct, scale)
         super(SupercolliderNoteAttrs, self).__init__(instrument=synth_def, start=start, dur=dur,
                                                      amp=amp, pitch=degree, name=name)
         if oct:
@@ -87,10 +86,10 @@ class PerformanceAttrs(object):
     """
     attr_type_map: Dict[str, Any]
 
-    DEFAULT_NAME = ''
+    DEFAULT_NAME = 'PERF_ATTRS'
 
-    def __init__(self, name):
-        self.name: str = name or PerformanceAttrs.DEFAULT_NAME
+    def __init__(self, name: str = None):
+        self.name = name or PerformanceAttrs.DEFAULT_NAME
         self.frozen: bool = False
         self.attr_type_map = {}
         self.config = PerformanceAttrs()
