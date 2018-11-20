@@ -1,5 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
+from time import sleep
+
 from abc import abstractmethod, ABCMeta
 from typing import List
 
@@ -22,8 +24,8 @@ class Player(metaclass=ABCMeta):
         # Only validate if the list is not empty
         if notes is not None and notes:
             # All elements are a subclass of Note. This still allows heterogeneous Notes.
-            for note in notes:
-                if not isinstance(note, Note):
+            for n in notes:
+                if not isinstance(n, Note):
                     raise ValueError(f'arg notes must be None or empty list or type List[Note]')
         self.notes = notes
 
@@ -34,11 +36,16 @@ class SupercolliderPlayer(Player):
         self.sc_player = SC_Player()
 
     def play_each(self):
+        ret = self.sc_player >> sc_sd_pluck()
+        print(ret)
+        print(sc_sd_pluck)
+        print(sc_sd_pluck())
         for n in self.notes:
             self.sc_player >> n.note_attrs.instrument([n.note_attrs.degree],
                                                       dur=n.note_attrs.dur,
                                                       amp=n.note_attrs.amp,
                                                       **n.performance_attrs.asdict())
+            sleep(n.note_attrs.dur)
 
 
 if __name__ == '__main__':

@@ -197,9 +197,6 @@ class PerformanceAttrs(object):
             raise PerformanceAttrsFrozenException((f'Attempt to set attribute: {attr_name} '
                                                    f'on frozen PerformanceConfigFactory: {self.name}'))
         self.attr_type_map[attr_name] = type
-
-        print(val)
-
         setattr(self, attr_name, val)
 
     def safe_set_attr(self, attr_name, val):
