@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 
 class NoteAttrs(object):
@@ -225,7 +225,7 @@ class PerformanceAttrs(object):
 
 
 class Note(object):
-    def __init__(self, note_attrs: NoteAttrs = None, performance_attrs: PerformanceAttrs = None):
+    def __init__(self, note_attrs: NoteAttrs, performance_attrs: PerformanceAttrs):
         # performance_attrs is optional
         if not isinstance(note_attrs, NoteAttrs) or \
                 performance_attrs and not isinstance(performance_attrs, PerformanceAttrs):
@@ -249,3 +249,20 @@ class RestNote(Note):
     @staticmethod
     def to_rest(note: Note):
         note.note_attrs.amp = RestNote.REST_AMP
+
+
+class NoteGroup(object):
+    def __init__(self, note_attrs_list: List[NoteAttrs], performance_attrs: PerformanceAttrs):
+        # performance_attrs is optional
+        if not note_attrs_list or \
+                (not isinstance(note_attrs_list, list) and not isinstance(note_attrs_list, tuple)) or \
+                (performance_attrs and not isinstance(performance_attrs, PerformanceAttrs)):
+            raise ValueError((f'Must provide valid `note_attrs_list` and `performance_attrs`: '
+                              f'note_attrs_list: {note_attrs_list} '
+                              f'performance_attrs: {performance_attrs}'))
+        for note_attrs in note_attrs_list:
+            if not isinstance(note_attrs, NoteAttrs):
+                raise ValueError((f'Each element in `note_attrs_list` must be a valid `note_attrs` '
+                                 f'note_attrs: {note_attrs}'))
+        self.note_attrs_list = note_attrs_list
+        self.performance_attrs = performance_attrs
