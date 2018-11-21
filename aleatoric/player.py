@@ -15,6 +15,7 @@ from note import Note, NoteGroup, PerformanceAttrs, SupercolliderNoteAttrs
 class PlayerNoNotesException(Exception):
     pass
 
+
 class Player(metaclass=ABCMeta):
 
     # TODO ADD play_all() and figure out "note group" with one perf_attr_config for all note_attrs
