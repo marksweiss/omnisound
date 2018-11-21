@@ -60,7 +60,7 @@ class SupercolliderPlayer(Player):
             self.sc_player >> n.note_attrs.instrument([n.note_attrs.degree],
                                                       dur=n.note_attrs.dur,
                                                       amp=n.note_attrs.amp,
-                                                      **n.performance_attrs.asdict())
+                                                      **n.performance_attrs.as_dict())
             sleep(n.note_attrs.dur)
             self.sc_player.stop()
 
@@ -71,7 +71,7 @@ class SupercolliderPlayer(Player):
             self.sc_player >> note_attrs.instrument([note_attrs.degree],
                                                     dur=note_attrs.dur,
                                                     amp=note_attrs.amp,
-                                                    **note_group.performance_attrs.asdict())
+                                                    **note_group.performance_attrs.as_dict())
             sleep(note_attrs.dur)
             self.sc_player.stop()
 

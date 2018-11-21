@@ -24,7 +24,7 @@ class NoteAttrs(object):
         if not instrument or \
                 (not isinstance(start, float) and not isinstance(start, int)) or \
                 not isinstance(dur, float) or \
-                not isinstance(amp, float) or \
+                (not isinstance(amp, float) and not isinstance(amp, int)) or \
                 (not isinstance(pitch, int) and not isinstance(pitch, float)):
             raise ValueError((f'Must provide value for required NoteAttrs args: '
                               f'instrument: {instrument} start {start} dur: {dur} amp: {amp} pitch: {pitch}'))
@@ -77,8 +77,8 @@ class SupercolliderNoteAttrs(NoteAttrs):
         self.pitch = degree
 
     def __str__(self):
-        s = (f'name: {self.name} synth_def: {self.instrument} start: {self.start} '
-             f'dur: {self.dur} amp: {self.amp} degree: {self.pitch}')
+        s = (f'name: {self.name} start: {self.start} '
+             f'dur: {self.dur} amp: {self.amp} degree: {self.degree}')
         if hasattr(self, 'oct'):
             s += f' oct: {self.oct}'
         if hasattr(self, 'scale'):
@@ -91,10 +91,10 @@ class CSoundNoteAttrs(NoteAttrs):
        and with a str() that prints CSound formatted output.
     """
     def __init__(self, instrument: Any = None, start: float = None,
-                 duration: float = None, amplitude: float = None,
+                 duration: float = None, amplitude: int = None,
                  pitch: float = None, name: str = None):
         super(CSoundNoteAttrs, self).__init__(instrument=instrument, start=start, dur=duration,
-                                                     amp=amplitude, pitch=pitch, name=name)
+                                              amp=amplitude, pitch=pitch, name=name)
 
     @property
     def duration(self):
@@ -110,9 +110,12 @@ class CSoundNoteAttrs(NoteAttrs):
         return self.amp
 
     @amplitude.setter
-    def amplitude(self, amplitude: float):
+    def amplitude(self, amplitude: int):
         # noinspection PyAttributeOutsideInit
         self.amp = amplitude
+
+    def __str__(self):
+        return f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} {self.pitch:.5f}'
 
 
 class MidiNoteAttrs(NoteAttrs):
@@ -124,11 +127,10 @@ class MidiNoteAttrs(NoteAttrs):
 
     def __init__(self, instrument: Any = None, time: float = None,
                  duration: float = None, velocity: float = None,
-                 pitch: float = None, name: str = None):
-        if not hasattr(performance_attrs, 'channel'):
-            performance_attrs.channel = MidiNote.DEFAULT_CHANNEL
+                 pitch: float = None, name: str = None, channel: int = None):
         super(MidiNoteAttrs, self).__init__(instrument=instrument, start=time, dur=duration,
                                             amp=velocity, pitch=pitch, name=name)
+        self.channel = channel or MidiNoteAttrs.DEFAULT_CHANNEL
 
     @property
     def time(self):
@@ -163,6 +165,10 @@ class MidiNoteAttrs(NoteAttrs):
         # noinspection PyAttributeOutsideInit
         self.instrument = instrument
 
+    def __str__(self):
+        return (f'name: {self.name} instrument: {self.instrument} time: {self.time} '
+                f'duration: {self.duration} velocity: {self.velocity} pitch: {self.pitch} channel: {self.channel}')
+
 
 class PerformanceAttrsFrozenException(Exception):
     pass
@@ -189,19 +195,20 @@ class PerformanceAttrs(object):
         self.name: str = name or PerformanceAttrs.DEFAULT_NAME
         self.frozen: bool = False
 
-    def add_attr(self, attr_name: str = None, val=None, attr_type=None):
+    def add_attr(self, attr_name: str = None, val: Any = None, attr_type: Any = None):
         if not isinstance(attr_name, str) or not attr_type:
             raise ValueError((f'type: {attr_type} must be a type '
                               f'and name: {name} must be a string'))
         if self.frozen:
             raise PerformanceAttrsFrozenException((f'Attempt to set attribute: {attr_name} '
                                                    f'on frozen PerformanceConfigFactory: {self.name}'))
-        self.attr_type_map[attr_name] = type
+        self.attr_type_map[attr_name] = attr_type
         setattr(self, attr_name, val)
 
     def safe_set_attr(self, attr_name, val):
         if attr_name not in self.attr_type_map:
             raise ValueError('Invalid attribute name')
+        # noinspection PyTypeHints
         if not isinstance(val, self.attr_type_map[attr_name]):
             raise ValueError(f'val: {val} must be of type: {self.attr_type_map[attr_name]}')
         setattr(self, attr_name, val)
@@ -216,16 +223,14 @@ class PerformanceAttrs(object):
         return self.frozen
 
     def __str__(self):
-        print(getattr(self, 'synth_def'))
-
         return ' '.join([f'{attr_name}: {getattr(self, attr_name)}' for attr_name in self.attr_type_map.keys()])
 
-    def asdict(self):
+    def as_dict(self):
         return {attr_name: getattr(self, attr_name) for attr_name in self.attr_type_map.keys()}
 
 
 class Note(object):
-    def __init__(self, note_attrs: NoteAttrs, performance_attrs: PerformanceAttrs):
+    def __init__(self, note_attrs: NoteAttrs, performance_attrs: PerformanceAttrs = None):
         # performance_attrs is optional
         if not isinstance(note_attrs, NoteAttrs) or \
                 performance_attrs and not isinstance(performance_attrs, PerformanceAttrs):
@@ -233,6 +238,16 @@ class Note(object):
                               f'note_attrs: {note_attrs} performance_attrs: {performance_attrs}'))
         self.note_attrs = note_attrs
         self.performance_attrs = performance_attrs
+
+    @property
+    def na(self):
+        """Alias to something shorter for client code convenience"""
+        return self.note_attrs
+
+    @property
+    def pa(self):
+        """Alias to something shorter for client code convenience"""
+        return self.performance_attrs
 
 
 class RestNote(Note):
@@ -242,8 +257,8 @@ class RestNote(Note):
 
     REST_AMP = 0.0
 
-    def __init__(self, note_attrs: NoteAttrs = None, performance_attrs: PerformanceAttrs = None):
-        super(RestNote, self).__init__(note_attrs=note_attrs, performance_attrs=performance_attrs)
+    def __init__(self, note_attrs: NoteAttrs, performance_attrs: PerformanceAttrs = None):
+        super(RestNote, self).__init__(note_attrs, performance_attrs)
         self.note_attrs.amp = RestNote.REST_AMP
 
     @staticmethod
@@ -266,3 +281,13 @@ class NoteGroup(object):
                                  f'note_attrs: {note_attrs}'))
         self.note_attrs_list = note_attrs_list
         self.performance_attrs = performance_attrs
+
+    @property
+    def nal(self):
+        """Alias to something shorter for client code convenience"""
+        return self.note_attrs_list
+
+    @property
+    def pa(self):
+        """Alias to something shorter for client code convenience"""
+        return self.performance_attrs
