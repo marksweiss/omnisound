@@ -7,7 +7,9 @@ from typing import Any, Dict, List
 
 from FoxDot import Player as SC_Player
 # noinspection PyProtectedMember
-from FoxDot.lib.SCLang._SynthDefs import pluck as sc_sd_pluck
+# from FoxDot.lib.SCLang._SynthDefs import pluck as sc_sd_pluck
+# from FoxDot.lib.SCLang._SynthDefs import glass as sc_sd_glass
+from FoxDot.lib.SCLang._SynthDefs import sinepad as sc_sd_synth
 
 from note import Note, NoteGroup, PerformanceAttrs, SupercolliderNoteAttrs
 
@@ -126,26 +128,42 @@ class SupercolliderPlayer(Player):
 
 if __name__ == '__main__':
     # This is a test
-    note_attrs = SupercolliderNoteAttrs(synth_def=sc_sd_pluck,
-                                        delay=0, dur=1.0, amp=1.0, degree=1,
+    note_attrs = SupercolliderNoteAttrs(synth_def=sc_sd_synth,
+                                        delay=0, dur=2.0, amp=1.0, degree=1,
                                         name='test_note',
-                                        oct=4, scale='chromatic')
+                                        oct=4, scale='chinese')
     performance_attrs = PerformanceAttrs()
 
-    note = Note(note_attrs, performance_attrs)
-    notes = [note]
+    notes = []
+    idur = 1.0
+    iamp = 1.0
+    delay = 0.0
+    for i in range(15):
+        amp = iamp # - ((i + 1) * 0.05)
+        dur = round(idur - ((i + 1) * 0.05), 5)
+        note_attrs = SupercolliderNoteAttrs(synth_def=sc_sd_synth,
+                                            delay=round(delay, 5), dur=dur, amp=amp, degree=i % 5,
+                                            name='test_note',
+                                            oct=2, scale='lydian')
+        note = Note(note_attrs, performance_attrs)
+        notes.append(note)
+        delay += dur
+
+    for note in notes:
+        print(note.na)
+
     # Players with notes play each note separately, with its own note_attrs and performance_attrs
     player = SupercolliderPlayer(notes=notes)
     player.play_each()
 
-    sleep(3)
-
-    note_attrs = SupercolliderNoteAttrs(synth_def=sc_sd_pluck,
-                                        delay=0, dur=1.0, amp=1.0, degree=2,
-                                        name='test_note_group',
-                                        oct=5, scale='chromatic')
-    note_group = NoteGroup([note_attrs], performance_attrs)
-    # Players with a note_group play each note in the group with its own note_attrs, applying
-    # one performance_attrs to each note
-    player.note_group = note_group
-    player.play_all()
+    # sleep(3)
+    #
+    # note_attrs = SupercolliderNoteAttrs(synth_def=sc_sd_pluck,
+    #                                     delay=0, dur=1.0, amp=1.0, degree=2,
+    #                                     name='test_note_group',
+    #                                     oct=5, scale='chromatic')
+    # note_group = NoteGroup([note_attrs], performance_attrs)
+    # # Players with a note_group play each note in the group with its own note_attrs, applying
+    # # one performance_attrs to each note
+    # player.note_group = note_group
+    # player.play_all()

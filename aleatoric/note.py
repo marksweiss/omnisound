@@ -30,8 +30,8 @@ class NoteAttrs(object):
                               f'instrument: {instrument} start {start} dur: {dur} amp: {amp} pitch: {pitch}'))
 
     def __str__(self):
-        return (f'name: {self.name} instrument: {self.instrument} start: {self.start} '
-                f'dur: {self.dur} amp: {self.amp} pitch: {self.pitch}')
+        return (f'name: {self.name} instrument: {self.instrument} start: {self.start:.5f} '
+                f'dur: {self.dur:.5f} amp: {self.amp} pitch: {self.pitch:.5f}')
 
 
 class SupercolliderNoteAttrs(NoteAttrs):
