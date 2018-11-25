@@ -12,7 +12,9 @@ from aleatoric.note import (CSoundNoteAttrs, MidiNoteAttrs, Note, NoteAttrs, Not
 
 INSTRUMENT = 1
 STARTS: List[float] = [0.0, 0.5, 1.0]
+INT_STARTS: List[int] = [0, 5, 10]
 START = STARTS[0]
+INT_START = INT_STARTS[0]
 DURS: List[float] = [0.0, 1.0, 2.5]
 DUR = DURS[0]
 AMPS: List[float] = [0.0, 0.5, 1.0]
@@ -128,7 +130,6 @@ def test_note_sequence_add_lshift_extend():
 def test_note_sequence_insert_remove():
     note_list, perf_attrs = _setup_note_sequence_args()
     note_sequence = NoteSequence(note_list, perf_attrs)
-    new_note_attrs = deepcopy(NOTE_ATTRS)
     note_front = note_sequence[0]
     assert note_front.na.amp == AMP
 
@@ -175,7 +176,7 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
 @pytest.mark.parametrize('degree', PITCHES)
 @pytest.mark.parametrize('amp', AMPS)
 @pytest.mark.parametrize('dur', DURS)
-@pytest.mark.parametrize('delay', STARTS)
+@pytest.mark.parametrize('delay', INT_STARTS)
 def test_supercollider_note_attrs(delay, dur, amp, degree):
     synth_def = sc_sd_pluck
     octave = 4
