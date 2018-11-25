@@ -5,13 +5,13 @@ from time import sleep
 from abc import abstractmethod, ABCMeta
 from typing import Any, Dict, List
 
-from FoxDot import Player as SC_Player
+from FoxDot import Player as FD_SC_Player
 # noinspection PyProtectedMember
 # from FoxDot.lib.SCLang._SynthDefs import pluck as sc_sd_pluck
 # from FoxDot.lib.SCLang._SynthDefs import glass as sc_sd_glass
-from FoxDot.lib.SCLang._SynthDefs import sinepad as sc_sd_synth
+from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from aleatoric.note import Note, NoteGroup, PerformanceAttrs, SupercolliderNoteAttrs
+from aleatoric.note import Note, NoteSequence, PerformanceAttrs, SupercolliderNoteAttrs
 
 
 class PlayerNoNotesException(Exception):
@@ -46,21 +46,11 @@ class Player(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def __init__(self, notes: List[Note] = None, note_group: NoteGroup = None):
-        # Only validate if the list is not empty
-        if notes is not None and notes:
-            # All elements are a subclass of Note. This still allows heterogeneous Notes.
-            for n in notes:
-                if not isinstance(n, Note):
-                    raise ValueError(f'arg `notes` must be None or empty list or type List[Note]')
-            self.notes = notes
-        if note_group is not None:
-            if not isinstance(note_group, NoteGroup):
-                raise ValueError(f'arg `note_group` must be type NoteGroup')
-            self.note_group = note_group
-
+    def __init__(self, note_sequence: NoteSequence):
+        if not isinstance(note_sequence, NoteSequence):
+            raise ValueError(f'arg `note_sequence` must be type `NoteSequence`, note_sequence: {note_sequence}')
+        self.note_sequence = note_sequence
         self.improvising = False
-
         self.pre_play_hooks: Dict[str, Any] = {}
         self.pre_play_hooks_list: List[Any] = []
         self.post_play_hooks: Dict[str, int] = {}
@@ -95,31 +85,31 @@ class Player(metaclass=ABCMeta):
             del hooks[name]
 
 
-class SupercolliderPlayer(Player):
-    def __init__(self, notes: List[Note] = None, note_group: NoteGroup = None):
-        super(SupercolliderPlayer, self).__init__(notes=notes, note_group=note_group)
-        self.sc_player = SC_Player()
+class FoxDotSupercolliderPlayer(Player):
+    def __init__(self, note_sequence: NoteSequence):
+        super(FoxDotSupercolliderPlayer, self).__init__(note_sequence)
+        self.sc_player = FD_SC_Player()
 
     def play_each(self):
-        if not self.notes:
+        if not self.note_sequence:
             raise PlayerNoNotesException('No notes to play')
-        for n in self.notes:
-            self.sc_player >> n.note_attrs.instrument([n.note_attrs.degree],
-                                                      dur=n.note_attrs.dur,
-                                                      amp=n.note_attrs.amp,
-                                                      **n.performance_attrs.as_dict())
-            sleep(n.note_attrs.dur)
+        for n in self.note_sequence:
+            self.sc_player >> n.na.instrument([n.na.degree],
+                                              dur=n.na.dur,
+                                              amp=n.na.amp,
+                                              **n.performance_attrs.as_dict())
+            sleep(n.na.dur)
             self.sc_player.stop()
 
     def play_all(self):
-        if not self.note_group:
+        if not self.note_sequence:
             raise PlayerNoNotesException('No note_group to play')
-        for note_attrs in self.note_group.note_attrs_list:
-            self.sc_player >> note_attrs.instrument([note_attrs.degree],
-                                                    dur=note_attrs.dur,
-                                                    amp=note_attrs.amp,
-                                                    **note_group.performance_attrs.as_dict())
-            sleep(note_attrs.dur)
+        for n in self.note_sequence:
+            self.sc_player >> n.na.instrument([n.na.degree],
+                                              dur=n.na.dur,
+                                              amp=n.na.amp,
+                                              **self.note_sequence.performance_attrs.as_dict())
+            sleep(n.na.dur)
             self.sc_player.stop()
 
     def improvise(self):
@@ -128,7 +118,7 @@ class SupercolliderPlayer(Player):
 
 if __name__ == '__main__':
     # This is a test
-    note_attrs = SupercolliderNoteAttrs(synth_def=sc_sd_synth,
+    note_attrs = SupercolliderNoteAttrs(synth_def=fd_sc_synth,
                                         delay=0, dur=2.0, amp=1.0, degree=1,
                                         name='test_note',
                                         oct=4, scale='chinese')
@@ -141,7 +131,7 @@ if __name__ == '__main__':
     for i in range(15):
         amp = iamp # - ((i + 1) * 0.05)
         dur = round(idur - ((i + 1) * 0.05), 5)
-        note_attrs = SupercolliderNoteAttrs(synth_def=sc_sd_synth,
+        note_attrs = SupercolliderNoteAttrs(synth_def=fd_sc_synth,
                                             delay=round(delay, 5), dur=dur, amp=amp, degree=i % 5,
                                             name='test_note',
                                             oct=2, scale='lydian')
@@ -153,7 +143,8 @@ if __name__ == '__main__':
         print(note.na)
 
     # Players with notes play each note separately, with its own note_attrs and performance_attrs
-    player = SupercolliderPlayer(notes=notes)
+    note_sequence = NoteSequence(notes)
+    player = FoxDotSupercolliderPlayer(note_sequence)
     player.play_each()
 
     # sleep(3)

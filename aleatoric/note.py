@@ -34,6 +34,7 @@ class NoteAttrs(object):
                 f'dur: {self.dur:.5f} amp: {self.amp} pitch: {self.pitch:.5f}')
 
 
+# TODO RENAME FOXDOT
 class SupercolliderNoteAttrs(NoteAttrs):
 
     SCALES = {'aeolian', 'chinese', 'chromatic', 'custom', 'default', 'diminished', 'dorian', 'dorian2',
@@ -229,6 +230,7 @@ class PerformanceAttrs(object):
         return {attr_name: getattr(self, attr_name) for attr_name in self.attr_type_map.keys()}
 
 
+# TODO Expose core NoteAttr attributes as direct attributes of Note, e.g. note.amp instead of note.na.amp
 class Note(object):
     def __init__(self, note_attrs: NoteAttrs, performance_attrs: PerformanceAttrs = None):
         # performance_attrs is optional
@@ -277,7 +279,7 @@ class NoteSequence(object):
     """
     def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None):
         NoteSequence._validate_note_list(note_list)
-        if not performance_attrs and not isinstance(performance_attrs, PerformanceAttrs):
+        if performance_attrs and not isinstance(performance_attrs, PerformanceAttrs):
             raise ValueError((f'Must provide valid `performance_attrs` '
                               f'performance_attrs: {performance_attrs}'))
         self.index = 0
