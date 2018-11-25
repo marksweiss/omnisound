@@ -266,28 +266,139 @@ class RestNote(Note):
         note.note_attrs.amp = RestNote.REST_AMP
 
 
-class NoteGroup(object):
-    def __init__(self, note_attrs_list: List[NoteAttrs], performance_attrs: PerformanceAttrs):
-        # performance_attrs is optional
-        if not note_attrs_list or \
-                (not isinstance(note_attrs_list, list) and not isinstance(note_attrs_list, tuple)) or \
-                (performance_attrs and not isinstance(performance_attrs, PerformanceAttrs)):
-            raise ValueError((f'Must provide valid `note_attrs_list` and `performance_attrs`: '
-                              f'note_attrs_list: {note_attrs_list} '
+class NoteSequence(object):
+    """Provides an iterator abstraction over a collection of Notes. If performance_attrs
+       are provided, they will be applied to all Notes in the sequence if the notes are
+       retrieved through the iterator. Otherwise performance_attrs that are an attribute
+       of the note will be used.
+
+       Thus, this lets clients create either type of sequence and transparently just consume
+       through the iterator Notes with correct note_attrs and perf_attrs.
+    """
+    def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None):
+        NoteSequence._validate_note_list(note_list)
+        if not performance_attrs and not isinstance(performance_attrs, PerformanceAttrs):
+            raise ValueError((f'Must provide valid `performance_attrs` '
                               f'performance_attrs: {performance_attrs}'))
-        for note_attrs in note_attrs_list:
-            if not isinstance(note_attrs, NoteAttrs):
-                raise ValueError((f'Each element in `note_attrs_list` must be a valid `note_attrs` '
-                                 f'note_attrs: {note_attrs}'))
-        self.note_attrs_list = note_attrs_list
+        self.index = 0
+        self.note_list = note_list
         self.performance_attrs = performance_attrs
 
     @property
-    def nal(self):
-        """Alias to something shorter for client code convenience"""
-        return self.note_attrs_list
+    def nl(self):
+        """Get the underlying note_list.
+           Alias to something shorter for client code convenience.
+        """
+        return self.note_list
 
     @property
     def pa(self):
-        """Alias to something shorter for client code convenience"""
+        """Get the underlying performance_attrs.
+           Alias to something shorter for client code convenience.
+        """
         return self.performance_attrs
+
+    def append(self, note: Note):
+        NoteSequence._validate_note(note)
+        self.note_list.append(note)
+
+    def extend(self, new_note_list: List[Note]):
+        NoteSequence._validate_note_list(new_note_list)
+        self.note_list.extend(new_note_list)
+
+    def __len__(self):
+        return len(self.note_list)
+
+    def __add__(self, to_add: Any):
+        """Overloads operator + to support appending either single notes or sequences
+           Tries to treat `to_add` as a Note and then as a NoteSequence. If both
+           fail then it raises the last exception handled. If either succeeds
+           then the operation is a success and the Note or NoteList are appended.
+        """
+        added = False
+        # Try to add as a single Note
+        try:
+            NoteSequence._validate_note(to_add)
+            # If validation did not throw, to add is a single note, append(note)
+            self.append(to_add)
+            added = True
+        except ValueError:
+            pass
+        # If we didn't add as a single note, try to add as a NoteList
+        if not added:
+            try:
+                NoteSequence._validate_note_list(to_add)
+                # If validation did not throw, to add is a list of notes, extend(note_list)
+                self.extend(to_add)
+                added = True
+            except ValueError:
+                pass
+        # If not added as a single Note or a NoteList, raise
+        if not added:
+            raise ValueError(f'Arg `to_add` to __add__() must be a Note or NoteList, arg: {to_add}')
+
+        # Return self supports += without any additional code
+        return self
+
+    def __lshift__(self, to_add: Any):
+        """Support `note_seq << note` syntax for appending notes to a sequence as well as `a + b`"""
+        return self.__add__(to_add)
+
+    def insert(self, index: int, note: Note):
+        NoteSequence._validate_note(note)
+        NoteSequence._validate_index(index)
+        self.note_list.insert(index, note)
+
+    def remove(self, note: Note):
+        NoteSequence._validate_note(note)
+        # Swallow exception if the item to be removed is not present in note_list
+        try:
+            self.note_list.remove(note)
+        except ValueError:
+            pass
+
+    def __getitem__(self, index):
+        NoteSequence._validate_index(index)
+        if index < 0 or index >= len(self.note_list):
+            raise ValueError(f'`index` out of range index: {index} len(note_list): {len(self.note_list)}')
+        return self.note_list[index]
+
+    def __iter__(self):
+        """Reset iter position. This behavior complements __next__ to make the
+           container support being iterated multiple times.
+        """
+        self.index = 0
+        return self
+
+    def __next__(self):
+        """Always return a Note object with note_attrs and perf_attrs populated.
+           This is the contract clients can expect, and thus this iterator hides
+           where perf_attrs came from and always returns a Note ready for use.
+           Also this deep copy prevents altering the sequence by reference so
+           it can be used and reused.
+        """
+        if self.index == len(self.note_list):
+            raise StopIteration
+        note = self.note_list[self.index]
+        # perf_attrs comes from the NoteSequence if present, otherwise from the Note
+        performance_attrs = self.performance_attrs or note.performance_attrs
+        self.index += 1
+        return Note(note_attrs=note.note_attrs, performance_attrs=performance_attrs)
+
+    @staticmethod
+    def _validate_note(note):
+        if not isinstance(note, Note):
+            raise ValueError((f'Each element in `note_list` must be a valid `Note` '
+                              f'note: {note}'))
+
+    @staticmethod
+    def _validate_note_list(note_list: List[Note]):
+        if not note_list or not isinstance(note_list, list):
+            raise ValueError(f'`note_list` must be a non-empty list note_list: {note_list}')
+        for note in note_list:
+            NoteSequence._validate_note(note)
+
+    @staticmethod
+    def _validate_index(index: int):
+        if not isinstance(index, int):
+            raise ValueError(f'`index` must be an int, index: {index}')

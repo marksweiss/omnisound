@@ -7,7 +7,7 @@ import pytest
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as sc_sd_pluck
 
-from aleatoric.note import (CSoundNoteAttrs, MidiNoteAttrs, Note, NoteAttrs, NoteGroup, PerformanceAttrs,
+from aleatoric.note import (CSoundNoteAttrs, MidiNoteAttrs, Note, NoteAttrs, NoteSequence, PerformanceAttrs,
                             RestNote, SupercolliderNoteAttrs)
 
 INSTRUMENT = 1
@@ -51,16 +51,98 @@ def test_rest():
     assert rest.note_attrs.amp == RestNote.REST_AMP
 
 
-def test_note_group():
+def _setup_note_sequence_args():
     note_attrs_2 = deepcopy(NOTE_ATTRS)
     perf_attrs = PerformanceAttrs()
     perf_attrs.add_attr(attr_name=ATTR_NAME, val=ATTR_VAL, attr_type=ATTR_TYPE)
-    note_group = NoteGroup([NOTE_ATTRS, note_attrs_2], perf_attrs)
-    assert note_group
-    # All the note_attrs in the note_group have the same performance_attr
-    assert note_group.note_attrs_list == note_group.nal == [NOTE_ATTRS, note_attrs_2]
-    assert note_group.performance_attrs == note_group.pa == perf_attrs
-    assert note_group.pa.test_attr == ATTR_VAL
+    note_1 = Note(NOTE_ATTRS)
+    note_2 = Note(note_attrs_2)
+    note_list = [note_1, note_2]
+    return note_list, perf_attrs
+
+
+def test_note_sequence():
+    note_list, perf_attrs = _setup_note_sequence_args()
+    note_sequence = NoteSequence(note_list, perf_attrs)
+    assert note_sequence
+    # Assert all the note_attrs in the note_sequence have the same performance_attr
+    assert note_sequence.note_list == note_sequence.nl == note_list
+    assert note_sequence.performance_attrs == note_sequence.pa == perf_attrs
+
+
+def test_note_sequence_iter():
+    note_list, perf_attrs = _setup_note_sequence_args()
+    note_sequence = NoteSequence(note_list, perf_attrs)
+    # Iterate once and assert attributes of elements. This tests __iter__() and __next__()
+    first_loop_count = 0
+    for note in note_sequence:
+        assert note.note_attrs.start == START
+        assert note.pa.test_attr == ATTR_VAL
+        first_loop_count += 1
+    # Iterate again. This tests that __iter__() resets the loop state
+    second_loop_count = 0
+    for note in note_sequence:
+        assert note.note_attrs.start == START
+        assert note.pa.test_attr == ATTR_VAL
+        second_loop_count += 1
+    assert first_loop_count == second_loop_count
+
+
+def test_note_sequence_len_append_getitem():
+    # Returns note_list with 2 Notes
+    note_list, perf_attrs = _setup_note_sequence_args()
+    note_sequence = NoteSequence(note_list, perf_attrs)
+    new_note_attrs = deepcopy(NOTE_ATTRS)
+    new_amp = AMP + 1
+    new_note_attrs.amp = new_amp
+    note_3 = Note(new_note_attrs, perf_attrs)
+    # Assert initial len() of note_list
+    assert len(note_sequence) == 2
+    # Append and check len again
+    note_sequence.append(note_3)
+    assert len(note_sequence) == 3
+    # Check that last element has modified attribute, using NoteSequence[idx]
+    # to access the note directly by index
+    assert note_sequence[2].na.amp == new_amp
+
+
+def test_note_sequence_add_lshift_extend():
+    note_list, perf_attrs = _setup_note_sequence_args()
+    note_sequence = NoteSequence(note_list, perf_attrs)
+    new_note_attrs = deepcopy(NOTE_ATTRS)
+    new_amp = AMP + 1
+    new_note_attrs.amp = new_amp
+    note_3 = Note(new_note_attrs, perf_attrs)
+    assert len(note_sequence) == 2
+    # Append and check len again
+    note_sequence += note_3
+    assert len(note_sequence) == 3
+    # Append with lshift syntax
+    note_sequence << note_3
+    assert len(note_sequence) == 4
+    # Extend with a sequence
+    note_sequence.extend([note_3, note_3])
+    assert len(note_sequence) == 6
+
+
+def test_note_sequence_insert_remove():
+    note_list, perf_attrs = _setup_note_sequence_args()
+    note_sequence = NoteSequence(note_list, perf_attrs)
+    new_note_attrs = deepcopy(NOTE_ATTRS)
+    note_front = note_sequence[0]
+    assert note_front.na.amp == AMP
+
+    new_amp = AMP + 1
+    new_note_attrs = deepcopy(NOTE_ATTRS)
+    new_note_attrs.amp = new_amp
+    new_note = Note(new_note_attrs, perf_attrs)
+    note_sequence.insert(0, new_note)
+    note_front = note_sequence[0]
+    assert note_front.na.amp == new_amp
+
+    note_sequence.remove(new_note)
+    note_front = note_sequence[0]
+    assert note_front.na.amp == AMP
 
 
 @pytest.mark.parametrize('pitch', PITCHES)
@@ -144,20 +226,25 @@ def test_performance_attrs_add_attr_set_attr():
     # Initial state is not frozen. User must explicitly freeze()
     perf_attrs = PerformanceAttrs()
     perf_attrs.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
+    # ATTR_NAME = 'test_attr'
+    # noinspection PyUnresolvedReferences
     assert perf_attrs.test_attr == ATTR_VAL
+    # noinspection PyUnresolvedReferences
     assert isinstance(perf_attrs.test_attr, ATTR_TYPE)
 
     new_attr_val = 200
     perf_attrs.safe_set_attr(ATTR_NAME, new_attr_val)
-    # ATTR_NAME = 'test_attr'
+    # noinspection PyUnresolvedReferences
     assert perf_attrs.test_attr == new_attr_val
 
     with pytest.raises(ValueError):
         perf_attrs.safe_set_attr('NOT_AN_ATTR_NAME', ATTR_VAL)
+    # noinspection PyUnresolvedReferences
     assert perf_attrs.test_attr == new_attr_val
 
     with pytest.raises(ValueError):
         perf_attrs.safe_set_attr(ATTR_NAME, float(ATTR_VAL))
+    # noinspection PyUnresolvedReferences
     assert perf_attrs.test_attr == new_attr_val
 
 

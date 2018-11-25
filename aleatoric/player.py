@@ -11,7 +11,7 @@ from FoxDot import Player as SC_Player
 # from FoxDot.lib.SCLang._SynthDefs import glass as sc_sd_glass
 from FoxDot.lib.SCLang._SynthDefs import sinepad as sc_sd_synth
 
-from note import Note, NoteGroup, PerformanceAttrs, SupercolliderNoteAttrs
+from aleatoric.note import Note, NoteGroup, PerformanceAttrs, SupercolliderNoteAttrs
 
 
 class PlayerNoNotesException(Exception):
