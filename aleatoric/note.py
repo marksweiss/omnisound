@@ -241,6 +241,13 @@ class Note(object):
         self.note_attrs = note_attrs
         self.performance_attrs = performance_attrs
 
+        # TODO Do this dynamically to get the attributes specific to each Note subclass
+        setattr(self, 'instrument', self.note_attrs.instrument)
+        setattr(self, 'start', self.note_attrs.start)
+        setattr(self, 'dur', self.note_attrs.dur)
+        setattr(self, 'amp', self.note_attrs.amp)
+        setattr(self, 'pitch', self.note_attrs.pitch)
+
     @property
     def na(self):
         """Alias to something shorter for client code convenience"""

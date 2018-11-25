@@ -56,6 +56,10 @@ class Player(metaclass=ABCMeta):
         self.post_play_hooks: Dict[str, int] = {}
         self.post_play_hooks_list: List[Any] = []
 
+    @property
+    def notes(self):
+        return self.note_sequence
+
     def add_pre_play_hook(self, name: str, hook: Any):
         self._add_hook(name, hook, self.pre_play_hooks, self.pre_play_hooks_list)
 
@@ -91,9 +95,9 @@ class FoxDotSupercolliderPlayer(Player):
         self.sc_player = FD_SC_Player()
 
     def play_each(self):
-        if not self.note_sequence:
+        if not self.notes:
             raise PlayerNoNotesException('No notes to play')
-        for n in self.note_sequence:
+        for n in self.notes:
             perf_attrs = {}
             if n.performance_attrs:
                 perf_attrs = n.performance_attrs.as_dict()
@@ -105,9 +109,9 @@ class FoxDotSupercolliderPlayer(Player):
             self.sc_player.stop()
 
     def play_all(self):
-        if not self.note_sequence:
+        if not self.notes:
             raise PlayerNoNotesException('No note_group to play')
-        for n in self.note_sequence:
+        for n in self.notes:
             perf_attrs = {}
             if n.performance_attrs:
                 perf_attrs = n.performance_attrs.as_dict()
@@ -156,7 +160,7 @@ if __name__ == '__main__':
         amp = iamp  # - ((i + 1) * 0.05)
         dur = round(idur - ((i + 1) * 0.05), 5)
         note_attrs = SupercolliderNoteAttrs(synth_def=fd_sc_synth,
-                                            delay=round(delay, 5), dur=dur * 2, amp=amp, degree=(i % 5) + 1,
+                                            delay=round(delay, 5), dur=dur * 0.5, amp=amp, degree=(i % 5) + 1,
                                             name='test_note',
                                             oct=5, scale='lydian')
         note = Note(note_attrs, performance_attrs)

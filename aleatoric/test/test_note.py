@@ -72,19 +72,19 @@ def test_note_sequence():
     assert note_sequence.performance_attrs == note_sequence.pa == perf_attrs
 
 
-def test_note_sequence_iter():
+def test_note_sequence_iter_note_attr_properties():
     note_list, perf_attrs = _setup_note_sequence_args()
     note_sequence = NoteSequence(note_list, perf_attrs)
     # Iterate once and assert attributes of elements. This tests __iter__() and __next__()
     first_loop_count = 0
     for note in note_sequence:
-        assert note.note_attrs.start == START
+        assert note.start == START
         assert note.pa.test_attr == ATTR_VAL
         first_loop_count += 1
     # Iterate again. This tests that __iter__() resets the loop state
     second_loop_count = 0
     for note in note_sequence:
-        assert note.note_attrs.start == START
+        assert note.start == START
         assert note.pa.test_attr == ATTR_VAL
         second_loop_count += 1
     assert first_loop_count == second_loop_count
