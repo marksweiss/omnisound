@@ -5,10 +5,10 @@ from typing import List
 
 import pytest
 # noinspection PyProtectedMember
-from FoxDot.lib.SCLang._SynthDefs import pluck as sc_sd_pluck
+from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
-from aleatoric.note import (CSoundNoteAttrs, MidiNoteAttrs, Note, NoteAttrs, NoteSequence, PerformanceAttrs,
-                            RestNote, SupercolliderNoteAttrs)
+from aleatoric.note import (CSoundNote, MidiNote, Note, NoteSequence, PerformanceAttrs,
+                            RestNote, FoxDotSupercolliderNote)
 
 INSTRUMENT = 1
 STARTS: List[float] = [0.0, 0.5, 1.0]
@@ -21,46 +21,30 @@ AMPS: List[float] = [0.0, 0.5, 1.0]
 AMP = AMPS[0]
 PITCHES: List[float] = [0.0, 0.5, 1.0]
 PITCH = PITCHES[0]
+NOTE = Note(instrument=INSTRUMENT, start=START, dur=DUR, amp=AMP, pitch=PITCH)
 
-NOTE_ATTRS = NoteAttrs(instrument=INSTRUMENT, start=START, dur=DUR, amp=AMP, pitch=PITCH)
 PERFORMANCE_ATTRS = PerformanceAttrs()
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100
 ATTR_TYPE = int
 
-
-def test_note():
-    note = Note(NOTE_ATTRS)
-    assert note.note_attrs.amp == NOTE_ATTRS.amp
-    assert note.na.amp == NOTE_ATTRS.amp
-
-    with pytest.raises(ValueError):
-        # noinspection PyTypeChecker
-        _ = Note(None, None)
-    with pytest.raises(ValueError):
-        # noinspection PyTypeChecker
-        _ = Note(object())
-    with pytest.raises(ValueError):
-        # noinspection PyTypeChecker
-        _ = Note(NOTE_ATTRS, performance_attrs=object())
-    with pytest.raises(ValueError):
-        # noinspection PyTypeChecker
-        _ = Note(object(), performance_attrs=object())
-
-
-def test_rest():
-    rest = RestNote(NOTE_ATTRS)
-    assert rest.note_attrs.amp == RestNote.REST_AMP
+SCALE = 'chromatic'
+OCTAVE = 4
 
 
 def _setup_note_sequence_args():
-    note_attrs_2 = deepcopy(NOTE_ATTRS)
+    note_1 = Note.dup(NOTE)
+    note_2 = Note.dup(NOTE)
     perf_attrs = PerformanceAttrs()
     perf_attrs.add_attr(attr_name=ATTR_NAME, val=ATTR_VAL, attr_type=ATTR_TYPE)
-    note_1 = Note(NOTE_ATTRS)
-    note_2 = Note(note_attrs_2)
+    note_1.performance_attrs = perf_attrs
+    note_2.performance_attrs = perf_attrs
     note_list = [note_1, note_2]
     return note_list, perf_attrs
+
+
+def _setup_note_sequence():
+    return NoteSequence(*_setup_note_sequence_args())
 
 
 def test_note_sequence():
@@ -72,9 +56,85 @@ def test_note_sequence():
     assert note_sequence.performance_attrs == note_sequence.pa == perf_attrs
 
 
+def test_note():
+    assert NOTE.instrument == INSTRUMENT
+    assert NOTE.start == START
+    assert NOTE.amp == AMP
+    assert NOTE.dur == DUR
+    assert NOTE.pitch == PITCH
+
+    with pytest.raises(ValueError):
+        # noinspection PyTypeChecker
+        _ = Note(None, None, None, None, None)
+    with pytest.raises(ValueError):
+        # noinspection PyTypeChecker
+        _ = Note(object(), object(), object(), object(), object())
+    with pytest.raises(ValueError):
+        # noinspection PyTypeChecker
+        _ = Note(INSTRUMENT, START, DUR, AMP, PITCH, performance_attrs=object())
+
+
+@pytest.mark.parametrize('pitch', PITCHES)
+@pytest.mark.parametrize('amplitude', AMPS)
+@pytest.mark.parametrize('duration', DURS)
+@pytest.mark.parametrize('start', STARTS)
+def test_csound_note(start, duration, amplitude, pitch):
+    note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
+                      amplitude=int(amplitude), pitch=pitch)
+    assert note.start == start
+    assert note.duration == duration
+    assert note.amplitude == int(amplitude)
+    assert note.pitch == pitch
+    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.5f}' == str(note)
+
+
+@pytest.mark.parametrize('degree', PITCHES)
+@pytest.mark.parametrize('amp', AMPS)
+@pytest.mark.parametrize('dur', DURS)
+@pytest.mark.parametrize('delay', INT_STARTS)
+def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
+    synth_def = fd_sc_synth
+    octave = OCTAVE
+    scale = SCALE
+    note = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
+                                   amp=amp, degree=degree, oct=octave, scale=scale)
+    assert note.delay == delay
+    assert note.dur == dur
+    assert note.amp == amp
+    assert note.degree == degree
+    assert note.oct == octave
+    assert note.scale == scale
+    assert f'name: Note start: {delay} dur: {dur} amp: {amp} degree: {degree} oct: {octave} scale: {scale}' \
+           == str(note)
+
+    with pytest.raises(ValueError):
+        scale = 'NOT_A_VALID_SCALE'
+        _ = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
+                                    amp=amp, degree=degree, oct=octave, scale=scale)
+
+
+@pytest.mark.parametrize('pitch', PITCHES)
+@pytest.mark.parametrize('velocity', AMPS)
+@pytest.mark.parametrize('duration', DURS)
+@pytest.mark.parametrize('time', STARTS)
+def test_midi_note_attrs(time, duration, velocity, pitch):
+    note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
+                    velocity=velocity, pitch=pitch)
+    assert note.time == time
+    assert note.duration == duration
+    assert note.velocity == velocity
+    assert note.pitch == pitch
+    assert (f'name: Note instrument: {INSTRUMENT} time: {time} duration: {duration} '
+            f'velocity: {velocity} pitch: {pitch} channel: 1') == str(note)
+
+
+def test_rest():
+    rest_note = RestNote(instrument=INSTRUMENT, start=START, dur=DUR, pitch=PITCH)
+    assert rest_note.amp == 0.0
+
+
 def test_note_sequence_iter_note_attr_properties():
-    note_list, perf_attrs = _setup_note_sequence_args()
-    note_sequence = NoteSequence(note_list, perf_attrs)
+    note_sequence = _setup_note_sequence()
     # Iterate once and assert attributes of elements. This tests __iter__() and __next__()
     first_loop_count = 0
     for note in note_sequence:
@@ -92,12 +152,10 @@ def test_note_sequence_iter_note_attr_properties():
 
 def test_note_sequence_len_append_getitem():
     # Returns note_list with 2 Notes
-    note_list, perf_attrs = _setup_note_sequence_args()
-    note_sequence = NoteSequence(note_list, perf_attrs)
-    new_note_attrs = deepcopy(NOTE_ATTRS)
-    new_amp = AMP + 1
-    new_note_attrs.amp = new_amp
-    note_3 = Note(new_note_attrs, perf_attrs)
+    note_sequence = _setup_note_sequence()
+    note_3 = Note.dup(NOTE)
+    new_amp = NOTE.amp + 1.0
+    note_3.amp = new_amp
     # Assert initial len() of note_list
     assert len(note_sequence) == 2
     # Append and check len again
@@ -105,112 +163,37 @@ def test_note_sequence_len_append_getitem():
     assert len(note_sequence) == 3
     # Check that last element has modified attribute, using NoteSequence[idx]
     # to access the note directly by index
-    assert note_sequence[2].na.amp == new_amp
+    assert note_sequence[2].amp == new_amp
 
 
 def test_note_sequence_add_lshift_extend():
-    note_list, perf_attrs = _setup_note_sequence_args()
-    note_sequence = NoteSequence(note_list, perf_attrs)
-    new_note_attrs = deepcopy(NOTE_ATTRS)
-    new_amp = AMP + 1
-    new_note_attrs.amp = new_amp
-    note_3 = Note(new_note_attrs, perf_attrs)
+    note_sequence = _setup_note_sequence()
     assert len(note_sequence) == 2
     # Append and check len again
-    note_sequence += note_3
+    note_sequence += NOTE
     assert len(note_sequence) == 3
     # Append with lshift syntax
-    note_sequence << note_3
+    note_sequence << NOTE
     assert len(note_sequence) == 4
     # Extend with a sequence
-    note_sequence.extend([note_3, note_3])
+    note_sequence.extend([NOTE, NOTE])
     assert len(note_sequence) == 6
 
 
 def test_note_sequence_insert_remove():
-    note_list, perf_attrs = _setup_note_sequence_args()
-    note_sequence = NoteSequence(note_list, perf_attrs)
+    note_sequence = _setup_note_sequence()
     note_front = note_sequence[0]
-    assert note_front.na.amp == AMP
-
+    assert note_front.amp == AMP
     new_amp = AMP + 1
-    new_note_attrs = deepcopy(NOTE_ATTRS)
-    new_note_attrs.amp = new_amp
-    new_note = Note(new_note_attrs, perf_attrs)
+    new_note = Note.dup(note_front)
+    new_note.amp = new_amp
     note_sequence.insert(0, new_note)
     note_front = note_sequence[0]
-    assert note_front.na.amp == new_amp
+    assert note_front.amp == new_amp
 
     note_sequence.remove(new_note)
     note_front = note_sequence[0]
-    assert note_front.na.amp == AMP
-
-
-@pytest.mark.parametrize('pitch', PITCHES)
-@pytest.mark.parametrize('amp', AMPS)
-@pytest.mark.parametrize('dur', DURS)
-@pytest.mark.parametrize('start', STARTS)
-def test_note_attrs(start, dur, amp, pitch):
-    note_attrs = NoteAttrs(instrument=INSTRUMENT, start=start, dur=dur, amp=amp, pitch=pitch)
-    assert note_attrs.instrument == INSTRUMENT
-    assert note_attrs.start == start
-    assert note_attrs.dur == dur
-    assert note_attrs.amp == amp
-    assert note_attrs.pitch == pitch
-
-
-@pytest.mark.parametrize('pitch', PITCHES)
-@pytest.mark.parametrize('amplitude', AMPS)
-@pytest.mark.parametrize('duration', DURS)
-@pytest.mark.parametrize('start', STARTS)
-def test_csound_note_attrs(start, duration, amplitude, pitch):
-    note_attrs = CSoundNoteAttrs(instrument=INSTRUMENT, start=start, duration=duration,
-                                 amplitude=int(amplitude), pitch=pitch)
-    assert note_attrs.start == start
-    assert note_attrs.duration == duration
-    assert note_attrs.amplitude == int(amplitude)
-    assert note_attrs.pitch == pitch
-    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.5f}' == str(note_attrs)
-
-
-@pytest.mark.parametrize('degree', PITCHES)
-@pytest.mark.parametrize('amp', AMPS)
-@pytest.mark.parametrize('dur', DURS)
-@pytest.mark.parametrize('delay', INT_STARTS)
-def test_supercollider_note_attrs(delay, dur, amp, degree):
-    synth_def = sc_sd_pluck
-    octave = 4
-    scale = 'chromatic'
-    note_attrs = SupercolliderNoteAttrs(synth_def=synth_def, delay=delay, dur=dur,
-                                        amp=amp, degree=degree, oct=octave, scale=scale)
-    assert note_attrs.delay == delay
-    assert note_attrs.dur == dur
-    assert note_attrs.amp == amp
-    assert note_attrs.degree == degree
-    assert note_attrs.oct == octave
-    assert note_attrs.scale == scale
-    assert f'name:  start: {delay} dur: {dur} amp: {amp} degree: {degree} oct: {octave} scale: {scale}' \
-           == str(note_attrs)
-
-    with pytest.raises(ValueError):
-        scale = 'NOT_A_VALID_SCALE'
-        _ = SupercolliderNoteAttrs(synth_def=synth_def, delay=delay, dur=dur,
-                                   amp=amp, degree=degree, oct=octave, scale=scale)
-
-
-@pytest.mark.parametrize('pitch', PITCHES)
-@pytest.mark.parametrize('velocity', AMPS)
-@pytest.mark.parametrize('duration', DURS)
-@pytest.mark.parametrize('time', STARTS)
-def test_midi_note_attrs(time, duration, velocity, pitch):
-    note_attrs = MidiNoteAttrs(instrument=INSTRUMENT, time=time, duration=duration,
-                               velocity=velocity, pitch=pitch)
-    assert note_attrs.time == time
-    assert note_attrs.duration == duration
-    assert note_attrs.velocity == velocity
-    assert note_attrs.pitch == pitch
-    assert (f'name:  instrument: {INSTRUMENT} time: {time} duration: {duration} '
-            f'velocity: {velocity} pitch: {pitch} channel: {note_attrs.DEFAULT_CHANNEL}') == str(note_attrs)
+    assert note_front.amp == AMP
 
 
 def test_performance_attrs_freeze_unfreeze():
