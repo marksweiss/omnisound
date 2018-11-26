@@ -82,6 +82,29 @@ class Note(object):
         self.name = name or Note.DEFAULT_NAME
         self.performance_attrs = performance_attrs or PerformanceAttrs()
 
+    class NoteConfig(object):
+        def __init__(self):
+            self.instrument = None
+            self.start = None
+            self.dur = None
+            self.amp = None
+            self.pitch = None
+            self.name = None
+
+        def as_dict(self):
+            return {
+                'instrument': self.instrument,
+                'start': self.start,
+                'dur': self.dur,
+                'amp': self.amp,
+                'pitch': self.pitch,
+                'name': self.name
+            }
+
+    @staticmethod
+    def get_config():
+        return Note.NoteConfig()
+
     @staticmethod
     def dup(source_note):
         Note.__validate(source_note.instrument,

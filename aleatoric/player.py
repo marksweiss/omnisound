@@ -7,8 +7,6 @@ from typing import Any, Dict, List
 
 from FoxDot import Player as FD_SC_Player
 # noinspection PyProtectedMember
-# from FoxDot.lib.SCLang._SynthDefs import pluck as sc_sd_pluck
-# from FoxDot.lib.SCLang._SynthDefs import glass as sc_sd_glass
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
 from aleatoric.note import Note, NoteSequence, PerformanceAttrs, FoxDotSupercolliderNote
