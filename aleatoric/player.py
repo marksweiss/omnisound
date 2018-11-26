@@ -11,7 +11,7 @@ from FoxDot import Player as FD_SC_Player
 # from FoxDot.lib.SCLang._SynthDefs import glass as sc_sd_glass
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from aleatoric.note import Note, NoteSequence, PerformanceAttrs, SupercolliderNoteAttrs
+from aleatoric.note import Note, NoteSequence, PerformanceAttrs, FoxDotSupercolliderNote
 
 
 class PlayerNoNotesException(Exception):
@@ -98,28 +98,24 @@ class FoxDotSupercolliderPlayer(Player):
         if not self.notes:
             raise PlayerNoNotesException('No notes to play')
         for n in self.notes:
-            perf_attrs = {}
-            if n.performance_attrs:
-                perf_attrs = n.performance_attrs.as_dict()
-            self.sc_player >> n.na.instrument([n.na.degree],
-                                              dur=n.na.dur,
-                                              amp=n.na.amp,
-                                              **perf_attrs)
-            sleep(n.na.dur)
+            performance_attrs = self.note_sequence.pa or n.pa.as_dict()
+            self.sc_player >> n.instrument([n.degree],
+                                           dur=n.dur,
+                                           amp=n.amp,
+                                           **performance_attrs)
+            sleep(n.dur)
             self.sc_player.stop()
 
     def play_all(self):
         if not self.notes:
             raise PlayerNoNotesException('No note_group to play')
         for n in self.notes:
-            perf_attrs = {}
-            if n.performance_attrs:
-                perf_attrs = n.performance_attrs.as_dict()
-            self.sc_player >> n.na.instrument([n.na.degree],
-                                              dur=n.na.dur,
-                                              amp=n.na.amp,
-                                              **perf_attrs)
-            sleep(n.na.dur)
+            performance_attrs = self.note_sequence.pa or n.pa.as_dict()
+            self.sc_player >> n.instrument([n.degree],
+                                           dur=n.dur,
+                                           amp=n.amp,
+                                           **performance_attrs)
+            sleep(n.dur)
             self.sc_player.stop()
 
     def improvise(self):
@@ -137,11 +133,11 @@ if __name__ == '__main__':
     for i in range(15):
         amp = iamp  # - ((i + 1) * 0.05)
         dur = round(idur - ((i + 1) * 0.05), 5)
-        note_attrs = SupercolliderNoteAttrs(synth_def=fd_sc_synth,
-                                            delay=round(delay, 5), dur=dur, amp=amp, degree=i % 5,
-                                            name='test_note',
-                                            oct=2, scale='lydian')
-        note = Note(note_attrs, performance_attrs)
+        note = FoxDotSupercolliderNote(synth_def=fd_sc_synth,
+                                       delay=round(delay, 5), dur=dur, amp=amp, degree=i % 5,
+                                       name='test_note',
+                                       oct=2, scale='lydian',
+                                       performance_attrs=performance_attrs)
         notes.append(note)
         delay += dur
 
@@ -159,11 +155,11 @@ if __name__ == '__main__':
     for i in range(15):
         amp = iamp  # - ((i + 1) * 0.05)
         dur = round(idur - ((i + 1) * 0.05), 5)
-        note_attrs = SupercolliderNoteAttrs(synth_def=fd_sc_synth,
-                                            delay=round(delay, 5), dur=dur * 0.5, amp=amp, degree=(i % 5) + 1,
-                                            name='test_note',
-                                            oct=5, scale='lydian')
-        note = Note(note_attrs, performance_attrs)
+        note = FoxDotSupercolliderNote(synth_def=fd_sc_synth,
+                                       delay=round(delay, 5), dur=dur * 0.5, amp=amp, degree=(i % 5) + 1,
+                                       name='test_note',
+                                       oct=5, scale='lydian',
+                                       performance_attrs=performance_attrs)
         notes.append(note)
         delay += dur
 
