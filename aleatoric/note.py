@@ -1,5 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
+from copy import copy
 from typing import Any, Dict, List, Optional
 
 
@@ -82,11 +83,14 @@ class Note(object):
         self.performance_attrs = performance_attrs or PerformanceAttrs()
 
     @staticmethod
-    def dup(source_note: Note):
+    def dup(source_note):
         Note.__validate(source_note.instrument,
-                        source_note.start, source_note.duration, source_note.amp, source_note)
+                        source_note.start, source_note.dur, source_note.amp, source_note.pitch,
+                        source_note.performance_attrs)
         return Note(instrument=source_note.instrument,
-                    start=source_note.start, dur=source_note.duration, amp=source_note.amp, pitch=source_note.pitch)
+                    start=source_note.start, dur=source_note.dur, amp=source_note.amp, pitch=source_note.pitch,
+                    name=source_note.name,
+                    performance_attrs=source_note.performance_attrs)
 
     @staticmethod
     def __validate(instrument, start, dur, amp, pitch, performance_attrs):
@@ -397,9 +401,9 @@ class NoteSequence(object):
             raise StopIteration
         note = self.note_list[self.index]
         # perf_attrs comes from the NoteSequence if present, otherwise from the Note
-        performance_attrs = self.performance_attrs or note.performance_attrs
         self.index += 1
-        return Note(note_attrs=note.note_attrs, performance_attrs=performance_attrs)
+        # TODO HANDLE PER-SUBCLASS COPY
+        return copy(note)
 
     @staticmethod
     def _validate_note(note):

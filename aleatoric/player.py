@@ -97,24 +97,24 @@ class FoxDotSupercolliderPlayer(Player):
     def play_each(self):
         if not self.notes:
             raise PlayerNoNotesException('No notes to play')
-        for n in self.notes:
-            performance_attrs = self.note_sequence.pa or n.pa.as_dict()
-            self.sc_player >> n.instrument([n.degree],
-                                           dur=n.dur,
-                                           amp=n.amp,
-                                           **performance_attrs)
-            sleep(n.dur)
+        for note in self.notes:
+            performance_attrs = self.notes.pa or note.pa.as_dict()
+            self.sc_player >> note.instrument([note.degree],
+                                              dur=note.dur,
+                                              amp=note.amp,
+                                              **performance_attrs)
+            sleep(note.dur)
             self.sc_player.stop()
 
     def play_all(self):
         if not self.notes:
             raise PlayerNoNotesException('No note_group to play')
-        for n in self.notes:
-            performance_attrs = self.note_sequence.pa or n.pa.as_dict()
-            self.sc_player >> n.instrument([n.degree],
-                                           dur=n.dur,
-                                           amp=n.amp,
-                                           **performance_attrs)
+        for note in self.notes:
+            performance_attrs = self.notes.pa or note.pa.as_dict()
+            self.sc_player >> note.instrument([note.degree],
+                                              dur=note.dur,
+                                              amp=note.amp,
+                                              **performance_attrs)
             sleep(n.dur)
             self.sc_player.stop()
 
