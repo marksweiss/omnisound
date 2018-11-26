@@ -113,7 +113,7 @@ class FoxDotSupercolliderPlayer(Player):
                                               dur=note.dur,
                                               amp=note.amp,
                                               **performance_attrs)
-            sleep(n.dur)
+            sleep(note.dur)
             self.sc_player.stop()
 
     def improvise(self):
