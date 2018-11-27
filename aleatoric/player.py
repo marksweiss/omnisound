@@ -1,15 +1,12 @@
 # Copyright 2018 Mark S. Weiss
 
-from time import sleep
-
 from abc import abstractmethod, ABCMeta
+from time import sleep
 from typing import Any, Dict, List
 
 from FoxDot import Player as FD_SC_Player
-# noinspection PyProtectedMember
-from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from aleatoric.note import Note, NoteSequence, PerformanceAttrs, FoxDotSupercolliderNote
+from aleatoric.note import NoteSequence
 
 
 class PlayerNoNotesException(Exception):
@@ -118,51 +115,3 @@ class FoxDotSupercolliderPlayer(Player):
 
     def improvise(self):
         raise NotImplementedError('SupercolliderPlayer does not support improvising')
-
-
-if __name__ == '__main__':
-    # This is a test
-    performance_attrs = PerformanceAttrs()
-
-    notes = []
-    note_config = FoxDotSupercolliderNote.get_config()
-    note_config.name = 'test_note'
-    note_config.synth_def = fd_sc_synth
-    note_config.amp = 1.0
-    note_config.oct = 2
-    note_config.scale = 'lydian'
-    idur = 1.0
-    delay = 0.0
-    for i in range(15):
-        note_config.delay = round(delay, 5)
-        note_config.dur = round(idur - ((i + 1) * 0.05), 5)
-        note_config.degree = i % 5
-        note = FoxDotSupercolliderNote(**note_config.as_dict(), performance_attrs=performance_attrs)
-        notes.append(note)
-        delay += note_config.dur
-
-    note_sequence = NoteSequence(notes)
-    player = FoxDotSupercolliderPlayer(note_sequence)
-    player.play_each()
-
-    sleep(3)
-
-    notes = []
-    note_config.name = 'test_note'
-    note_config.synth_def = fd_sc_synth
-    note_config.amp = 1.0
-    note_config.oct = 5
-    note_config.scale = 'chromatic'
-    idur = 1.0
-    delay = 0.0
-    for i in range(15):
-        note_config.delay = round(delay, 5)
-        note_config.dur = round(idur - ((i + 1) * 0.05), 5) * 0.5
-        note_config.degree = i % 5
-        note = FoxDotSupercolliderNote(**note_config.as_dict(), performance_attrs=performance_attrs)
-        notes.append(note)
-        delay += note_config.dur
-
-    note_sequence = NoteSequence(notes)
-    player = FoxDotSupercolliderPlayer(note_sequence)
-    player.play_all()

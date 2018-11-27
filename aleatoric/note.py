@@ -218,6 +218,15 @@ class FoxDotSupercolliderNote(Note):
         return FoxDotSupercolliderNote.NoteConfig()
 
     @property
+    def synth_def(self):
+        return self.instrument
+
+    @synth_def.setter
+    def synth_def(self, synth_def: Any):
+        # noinspection PyAttributeOutsideInit
+        self.instrument = synth_def
+
+    @property
     def delay(self):
         return self.start
 
