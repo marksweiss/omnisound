@@ -96,7 +96,7 @@ class FoxDotSupercolliderPlayer(Player):
         if not self.notes:
             raise PlayerNoNotesException('No notes to play')
         for note in self.notes:
-            performance_attrs = self.notes.pa or note.pa.as_dict()
+            performance_attrs = note.pa.as_dict()
             self.sc_player >> note.instrument([note.degree],
                                               dur=note.dur,
                                               amp=note.amp,
@@ -126,9 +126,9 @@ if __name__ == '__main__':
 
     notes = []
     note_config = FoxDotSupercolliderNote.get_config()
+    note_config.name = 'test_note'
     note_config.synth_def = fd_sc_synth
     note_config.amp = 1.0
-    note_config.name = 'test_note'
     note_config.oct = 2
     note_config.scale = 'lydian'
     idur = 1.0
@@ -141,7 +141,6 @@ if __name__ == '__main__':
         notes.append(note)
         delay += note_config.dur
 
-    # Players with notes play each note separately, with its own note_attrs and performance_attrs
     note_sequence = NoteSequence(notes)
     player = FoxDotSupercolliderPlayer(note_sequence)
     player.play_each()
@@ -149,21 +148,21 @@ if __name__ == '__main__':
     sleep(3)
 
     notes = []
+    note_config.name = 'test_note'
+    note_config.synth_def = fd_sc_synth
+    note_config.amp = 1.0
+    note_config.oct = 5
+    note_config.scale = 'chromatic'
     idur = 1.0
-    iamp = 1.0
     delay = 0.0
     for i in range(15):
-        amp = iamp  # - ((i + 1) * 0.05)
-        dur = round(idur - ((i + 1) * 0.05), 5)
-        note = FoxDotSupercolliderNote(synth_def=fd_sc_synth,
-                                       delay=round(delay, 5), dur=dur * 0.5, amp=amp, degree=(i % 5) + 1,
-                                       name='test_note',
-                                       oct=5, scale='lydian',
-                                       performance_attrs=performance_attrs)
+        note_config.delay = round(delay, 5)
+        note_config.dur = round(idur - ((i + 1) * 0.05), 5) * 0.5
+        note_config.degree = i % 5
+        note = FoxDotSupercolliderNote(**note_config.as_dict(), performance_attrs=performance_attrs)
         notes.append(note)
-        delay += dur
+        delay += note_config.dur
 
-    # Players with notes play each note separately, with its own note_attrs and performance_attrs
     note_sequence = NoteSequence(notes)
     player = FoxDotSupercolliderPlayer(note_sequence)
     player.play_all()
