@@ -1,7 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from copy import deepcopy
-from typing import List
+from typing import Any, List
 
 import pytest
 # noinspection PyProtectedMember
@@ -45,6 +44,39 @@ def _setup_note_sequence_args():
 
 def _setup_note_sequence():
     return NoteSequence(*_setup_note_sequence_args())
+
+
+def _setup_note_config(note_type: Any):
+    note_config = None
+    if note_type == Note:
+        note_config = Note.get_config()
+        note_config.instrument = INSTRUMENT
+        note_config.start = START
+        note_config.dur = DUR
+        note_config.amp = AMP
+        note_config.pitch = PITCH
+    if note_type == CSoundNote:
+        note_config = CSoundNote.get_config()
+        note_config.instrument = INSTRUMENT
+        note_config.start = START
+        note_config.duration = DUR
+        note_config.amplitude = AMP
+        note_config.pitch = PITCH
+    if note_type == MidiNote:
+        note_config = MidiNote.get_config()
+        note_config.instrument = INSTRUMENT
+        note_config.time = START
+        note_config.duration = DUR
+        note_config.velocity = AMP
+        note_config.pitch = PITCH
+    if note_type == FoxDotSupercolliderNote:
+        note_config = FoxDotSupercolliderNote.get_config()
+        note_config.synth_def = fd_sc_synth
+        note_config.delay = START
+        note_config.dur = DUR
+        note_config.amp = AMP
+        note_config.degree = PITCH
+    return note_config
 
 
 def test_note_sequence():
@@ -104,7 +136,7 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
     assert note.degree == degree
     assert note.oct == octave
     assert note.scale == scale
-    assert f'name: Note start: {delay} dur: {dur} amp: {amp} degree: {degree} oct: {octave} scale: {scale}' \
+    assert f'name: Note delay: {delay} dur: {dur} amp: {amp} degree: {degree} oct: {octave} scale: {scale}' \
            == str(note)
 
     with pytest.raises(ValueError):
@@ -127,6 +159,17 @@ def test_midi_note_attrs(time, duration, velocity, pitch):
     assert (f'name: Note instrument: {INSTRUMENT} time: {time} duration: {duration} '
             f'velocity: {velocity} pitch: {pitch} channel: 1') == str(note)
 
+
+def test_note_config():
+    note_config = _setup_note_config(Note)
+    note = Note(**note_config.as_dict())
+    assert note.instrument == INSTRUMENT
+    assert note.start == START
+    assert note.amp == AMP
+    assert note.dur == DUR
+    assert note.pitch == PITCH
+
+    # TODO OTHER NOTES
 
 def test_rest():
     rest_note = RestNote(instrument=INSTRUMENT, start=START, dur=DUR, pitch=PITCH)

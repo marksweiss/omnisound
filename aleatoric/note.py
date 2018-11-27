@@ -103,7 +103,7 @@ class Note(object):
 
     @staticmethod
     def get_config():
-        return MidiNote.NoteConfig()
+        return Note.NoteConfig()
 
     @staticmethod
     def dup(source_note):
@@ -129,7 +129,7 @@ class Note(object):
                               f'performance_attrs: {performance_attrs}'))
 
     def __str__(self):
-        return (f'name: {self.name} instrument: {self.instrument} start: {self.start:.5f} '
+        return (f'name: {self.name} instrument: {self.instrument} delay: {self.start:.5f} '
                 f'dur: {self.dur:.5f} amp: {self.amp} pitch: {self.pitch:.5f}')
 
     @property
