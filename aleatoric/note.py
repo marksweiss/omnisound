@@ -103,7 +103,7 @@ class Note(object):
 
     @staticmethod
     def get_config():
-        return Note.NoteConfig()
+        return MidiNote.NoteConfig()
 
     @staticmethod
     def dup(source_note):
@@ -190,6 +190,33 @@ class FoxDotSupercolliderNote(Note):
                                   f'allowed scales {FoxDotSupercolliderNote.SCALES}'))
             self.scale = scale
 
+    class NoteConfig(object):
+        def __init__(self):
+            self.synth_def = None
+            self.delay = None
+            self.dur = None
+            self.amp = None
+            self.degree = None
+            self.oct = None
+            self.scale = None
+            self.name = None
+
+        def as_dict(self):
+            return {
+                'synth_def': self.synth_def,
+                'delay': self.delay,
+                'dur': self.dur,
+                'amp': self.amp,
+                'degree': self.degree,
+                'scale': self.scale,
+                'oct': self.oct,
+                'name': self.name
+            }
+
+    @staticmethod
+    def get_config():
+        return FoxDotSupercolliderNote.NoteConfig()
+
     @property
     def delay(self):
         return self.start
@@ -208,8 +235,17 @@ class FoxDotSupercolliderNote(Note):
         # noinspection PyAttributeOutsideInit
         self.pitch = degree
 
+    @staticmethod
+    def dup(source_note):
+        return FoxDotSupercolliderNote(synth_def=source_note.synth_def,
+                                       delay=source_note.delay, dur=source_note.dur,
+                                       amp=source_note.amp, degree=source_note.degree,
+                                       name=source_note.name,
+                                       oct=source_note.oct, scale=source_note.scale,
+                                       performance_attrs=source_note.performance_attrs)
+
     def __str__(self):
-        s = (f'name: {self.name} start: {self.start} '
+        s = (f'name: {self.name} delay: {self.delay} '
              f'dur: {self.dur} amp: {self.amp} degree: {self.degree}')
         if hasattr(self, 'oct'):
             s += f' oct: {self.oct}'
@@ -231,6 +267,29 @@ class CSoundNote(Note):
                                          name=name,
                                          performance_attrs=performance_attrs)
 
+    class NoteConfig(object):
+        def __init__(self):
+            self.instrument = None
+            self.start = None
+            self.duration = None
+            self.amplitude = None
+            self.pitch = None
+            self.name = None
+
+        def as_dict(self):
+            return {
+                'instrument': self.instrument,
+                'start': self.start,
+                'duration': self.duration,
+                'amplitude': self.amplitude,
+                'pitch': self.pitch,
+                'name': self.name
+            }
+
+    @staticmethod
+    def get_config():
+        return CSoundNote.NoteConfig()
+
     @property
     def duration(self):
         return self.dur
@@ -248,6 +307,14 @@ class CSoundNote(Note):
     def amplitude(self, amplitude: int):
         # noinspection PyAttributeOutsideInit
         self.amp = amplitude
+
+    @staticmethod
+    def dup(source_note):
+        return CSoundNote(instrument=source_note.instrument,
+                          start=source_note.start, duration=source_note.dur,
+                          amplitude=source_note.amp, pitch=source_note.pitch,
+                          name=source_note.name,
+                          performance_attrs=source_note.performance_attrs)
 
     def __str__(self):
         return f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} {self.pitch:.5f}'
@@ -270,6 +337,31 @@ class MidiNote(Note):
                                        name=name,
                                        performance_attrs=performance_attrs)
         self.channel = channel or MidiNote.DEFAULT_CHANNEL
+
+    class NoteConfig(object):
+        def __init__(self):
+            self.instrument = None
+            self.time = None
+            self.duration = None
+            self.velocity = None
+            self.pitch = None
+            self.name = None
+            self.channel = None
+
+        def as_dict(self):
+            return {
+                'instrument': self.instrument,
+                'time': self.time,
+                'duration': self.duration,
+                'velocity': self.velocity,
+                'pitch': self.pitch,
+                'name': self.name,
+                'channel': self.channel
+            }
+
+    @staticmethod
+    def get_config():
+        return MidiNote.NoteConfig()
 
     @property
     def time(self):
@@ -303,6 +395,15 @@ class MidiNote(Note):
             raise ValueError(f'MidiNote must provide value for required arg instrument: {instrument}')
         # noinspection PyAttributeOutsideInit
         self.instrument = instrument
+
+    @staticmethod
+    def dup(source_note):
+        return MidiNote(instrument=source_note.instrument,
+                        time=source_note.time, duration=source_note.duration,
+                        velocity=source_note.velocity, pitch=source_note.pitch,
+                        name=source_note.name,
+                        channel=source_note.channel,
+                        performance_attrs=source_note.performance_attrs)
 
     def __str__(self):
         return (f'name: {self.name} instrument: {self.instrument} time: {self.time} '
@@ -425,8 +526,16 @@ class NoteSequence(object):
         note = self.note_list[self.index]
         # perf_attrs comes from the NoteSequence if present, otherwise from the Note
         self.index += 1
-        # TODO HANDLE PER-SUBCLASS COPY
-        return copy(note)
+        return note.__class__.dup(note)
+
+    @staticmethod
+    def dup(source_note_sequence):
+        # Call the dup() for the subclass of this note type
+        new_note_list = [(note.__class__.dup(note)) for note in source_note_sequence.note_list]
+        new_note_sequence = NoteSequence(new_note_list,
+                                         source_note_sequence.performance_attrs)
+        new_note_sequence.index = source_note_sequence.index
+        return new_note_sequence
 
     @staticmethod
     def _validate_note(note):

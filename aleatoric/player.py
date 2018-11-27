@@ -125,19 +125,21 @@ if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     notes = []
+    note_config = FoxDotSupercolliderNote.get_config()
+    note_config.synth_def = fd_sc_synth
+    note_config.amp = 1.0
+    note_config.name = 'test_note'
+    note_config.oct = 2
+    note_config.scale = 'lydian'
     idur = 1.0
-    iamp = 1.0
     delay = 0.0
     for i in range(15):
-        amp = iamp  # - ((i + 1) * 0.05)
-        dur = round(idur - ((i + 1) * 0.05), 5)
-        note = FoxDotSupercolliderNote(synth_def=fd_sc_synth,
-                                       delay=round(delay, 5), dur=dur, amp=amp, degree=i % 5,
-                                       name='test_note',
-                                       oct=2, scale='lydian',
-                                       performance_attrs=performance_attrs)
+        note_config.delay = round(delay, 5)
+        note_config.dur = round(idur - ((i + 1) * 0.05), 5)
+        note_config.degree = i % 5
+        note = FoxDotSupercolliderNote(**note_config.as_dict(), performance_attrs=performance_attrs)
         notes.append(note)
-        delay += dur
+        delay += note_config.dur
 
     # Players with notes play each note separately, with its own note_attrs and performance_attrs
     note_sequence = NoteSequence(notes)
