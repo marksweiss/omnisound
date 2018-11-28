@@ -10,6 +10,7 @@ from aleatoric.note import (CSoundNote, MidiNote, Note, NoteSequence, Performanc
                             RestNote, FoxDotSupercolliderNote)
 
 INSTRUMENT = 1
+FOX_DOT_INSTRUMENT = fd_sc_synth
 STARTS: List[float] = [0.0, 0.5, 1.0]
 INT_STARTS: List[int] = [0, 5, 10]
 START = STARTS[0]
@@ -71,7 +72,7 @@ def _setup_note_config(note_type: Any):
         note_config.pitch = PITCH
     if note_type == FoxDotSupercolliderNote:
         note_config = FoxDotSupercolliderNote.get_config()
-        note_config.synth_def = fd_sc_synth
+        note_config.synth_def = FOX_DOT_INSTRUMENT
         note_config.delay = START
         note_config.dur = DUR
         note_config.amp = AMP
@@ -169,7 +170,30 @@ def test_note_config():
     assert note.dur == DUR
     assert note.pitch == PITCH
 
-    # TODO OTHER NOTES
+    note_config = _setup_note_config(CSoundNote)
+    note = CSoundNote(**note_config.as_dict())
+    assert note.instrument == INSTRUMENT
+    assert note.start == START
+    assert note.amplitude == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
+
+    note_config = _setup_note_config(MidiNote)
+    note = MidiNote(**note_config.as_dict())
+    assert note.instrument == INSTRUMENT
+    assert note.time == START
+    assert note.velocity == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
+
+    note_config = _setup_note_config(FoxDotSupercolliderNote)
+    note = FoxDotSupercolliderNote(**note_config.as_dict())
+    assert note.synth_def == FOX_DOT_INSTRUMENT
+    assert note.degree == START
+    assert note.amp == AMP
+    assert note.delay == DUR
+    assert note.pitch == PITCH
+
 
 def test_rest():
     rest_note = RestNote(instrument=INSTRUMENT, start=START, dur=DUR, pitch=PITCH)
