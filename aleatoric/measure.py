@@ -60,12 +60,11 @@ class Meter(object):
                 note_adj_factor = self.measure_dur / notes_dur
                 # new_note.duration *= note_adj_factor
                 # new_note.start = note.start + (new_note.duration - note.duration)
-                new_note_sequence = NoteSequence.dup(note_sequence)
-                for note in new_note_sequence.note_list:
-                    new_duration = note.duration * note_adj_factor
+                for note in note_sequence.note_list:
+                    new_dur = note.dur * note_adj_factor
                     if note.start > 0.0:
-                        note.start = note.start + (new_duration - note.duration)
-                    note.duration = new_duration
+                        note.start = note.start + (new_dur - note.dur)
+                    note.dur = new_dur
 
     @staticmethod
     def _validate(beats_per_measure, beat_dur):

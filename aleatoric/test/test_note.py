@@ -108,6 +108,19 @@ def test_note():
         _ = Note(INSTRUMENT, START, DUR, AMP, PITCH, performance_attrs=object())
 
 
+def test_note_eq_copy():
+    note_2 = Note.copy(NOTE)
+    assert NOTE == note_2
+
+    synth_def = fd_sc_synth
+    octave = OCTAVE
+    scale = SCALE
+    fox_dot_note = FoxDotSupercolliderNote(synth_def=FOX_DOT_INSTRUMENT, delay=int(START), dur=DUR,
+                                           amp=AMP, degree=PITCH, oct=octave, scale=scale)
+    fox_dot_note_2 = FoxDotSupercolliderNote.copy(fox_dot_note)
+    assert fox_dot_note == fox_dot_note_2
+
+
 @pytest.mark.parametrize('pitch', PITCHES)
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)

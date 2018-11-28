@@ -105,7 +105,6 @@ class Note(object):
     def get_config():
         return Note.NoteConfig()
 
-    # TODO RENAME dup() to copy()
     @staticmethod
     def copy(source_note):
         Note.__validate(source_note.instrument,
@@ -264,6 +263,12 @@ class FoxDotSupercolliderNote(Note):
                                        name=source_note.name,
                                        oct=source_note.oct, scale=source_note.scale,
                                        performance_attrs=source_note.performance_attrs)
+
+    def __eq__(self, other):
+        if not super(FoxDotSupercolliderNote).__eq__(other):
+            return False
+        return ((self.oct is None and other.oct is None or self.oct == other.oct) and \
+                (self.scale is None and other.scale is None or self.scale == other.scale))
 
     def __str__(self):
         s = (f'name: {self.name} delay: {self.delay} '
@@ -726,6 +731,11 @@ class NoteSequence(object):
         # perf_attrs comes from the NoteSequence if present, otherwise from the Note
         self.index += 1
         return note.__class__.copy(note)
+
+    def __eq__(self, other):
+        if not other or len(self) != len(other):
+            return False
+        return all([self.note_list[i] == other.note_list[i] for i in range(len(self.note_list))])
 
     @staticmethod
     def dup(source_note_sequence):
