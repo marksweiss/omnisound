@@ -34,8 +34,8 @@ OCTAVE = 4
 
 
 def _setup_note_sequence_args():
-    note_1 = Note.dup(NOTE)
-    note_2 = Note.dup(NOTE)
+    note_1 = Note.copy(NOTE)
+    note_2 = Note.copy(NOTE)
     perf_attrs = PerformanceAttrs()
     perf_attrs.add_attr(attr_name=ATTR_NAME, val=ATTR_VAL, attr_type=ATTR_TYPE)
     note_1.performance_attrs = perf_attrs
@@ -221,7 +221,7 @@ def test_note_sequence_iter_note_attr_properties():
 def test_note_sequence_len_append_getitem():
     # Returns note_list with 2 Notes
     note_sequence = _setup_note_sequence()
-    note_3 = Note.dup(NOTE)
+    note_3 = Note.copy(NOTE)
     new_amp = NOTE.amp + 1.0
     note_3.amp = new_amp
     # Assert initial len() of note_list
@@ -253,7 +253,7 @@ def test_note_sequence_insert_remove():
     note_front = note_sequence[0]
     assert note_front.amp == AMP
     new_amp = AMP + 1
-    new_note = Note.dup(note_front)
+    new_note = Note.copy(note_front)
     new_note.amp = new_amp
     note_sequence.insert(0, new_note)
     note_front = note_sequence[0]

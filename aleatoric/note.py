@@ -105,8 +105,9 @@ class Note(object):
     def get_config():
         return Note.NoteConfig()
 
+    # TODO RENAME dup() to copy()
     @staticmethod
-    def dup(source_note):
+    def copy(source_note):
         Note.__validate(source_note.instrument,
                         source_note.start, source_note.dur, source_note.amp, source_note.pitch,
                         source_note.performance_attrs)
@@ -114,6 +115,17 @@ class Note(object):
                     start=source_note.start, dur=source_note.dur, amp=source_note.amp, pitch=source_note.pitch,
                     name=source_note.name,
                     performance_attrs=source_note.performance_attrs)
+
+    def __eq__(self, other):
+        """NOTE: equality of Notes is defined for note attributes only, not for performance attributes."""
+        Note.__validate(other.instrument,
+                        other.start, other.dur, other.amp, other.pitch,
+                        None)
+        return self.instrument == other.instrument and \
+            self.start == other.start and \
+            self.dur == other.dur and \
+            self.amp == other.amp and \
+            self.pitch == other.pitch
 
     @staticmethod
     def __validate(instrument, start, dur, amp, pitch, performance_attrs):
@@ -245,7 +257,7 @@ class FoxDotSupercolliderNote(Note):
         self.pitch = degree
 
     @staticmethod
-    def dup(source_note):
+    def copy(source_note):
         return FoxDotSupercolliderNote(synth_def=source_note.synth_def,
                                        delay=source_note.delay, dur=source_note.dur,
                                        amp=source_note.amp, degree=source_note.degree,
@@ -318,7 +330,7 @@ class CSoundNote(Note):
         self.amp = amplitude
 
     @staticmethod
-    def dup(source_note):
+    def copy(source_note):
         return CSoundNote(instrument=source_note.instrument,
                           start=source_note.start, duration=source_note.dur,
                           amplitude=source_note.amp, pitch=source_note.pitch,
@@ -584,7 +596,7 @@ class MidiNote(Note):
         self.instrument = instrument
 
     @staticmethod
-    def dup(source_note):
+    def copy(source_note):
         return MidiNote(instrument=source_note.instrument,
                         time=source_note.time, duration=source_note.duration,
                         velocity=source_note.velocity, pitch=source_note.pitch,
@@ -713,12 +725,12 @@ class NoteSequence(object):
         note = self.note_list[self.index]
         # perf_attrs comes from the NoteSequence if present, otherwise from the Note
         self.index += 1
-        return note.__class__.dup(note)
+        return note.__class__.copy(note)
 
     @staticmethod
     def dup(source_note_sequence):
         # Call the dup() for the subclass of this note type
-        new_note_list = [(note.__class__.dup(note)) for note in source_note_sequence.note_list]
+        new_note_list = [(note.__class__.copy(note)) for note in source_note_sequence.note_list]
         new_note_sequence = NoteSequence(new_note_list,
                                          source_note_sequence.performance_attrs)
         new_note_sequence.index = source_note_sequence.index

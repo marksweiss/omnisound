@@ -32,10 +32,11 @@ class Meter(object):
 
     DEFAULT_QUANTIZING = True
 
-    def __init__(self, beats_per_measure: int = None, beat_length: NoteDur = None, quantizing: bool = None):
-        Meter._validate(beats_per_measure, beat_length)
+    def __init__(self, beats_per_measure: int = None, beat_dur: NoteDur = None, quantizing: bool = None):
+        Meter._validate(beats_per_measure, beat_dur)
         self.beats_per_measure = beats_per_measure
-        self.beat_length = beat_length
+        self.beat_dur = beat_dur.value
+        self.measure_dur = float(self.beats_per_measure) * self.beat_dur
         if quantizing is None:
             quantizing = Meter.DEFAULT_QUANTIZING
         self.quantizing = quantizing
@@ -49,14 +50,14 @@ class Meter(object):
     def quantizing_off(self):
         self.quantizing = False
 
-    def quantize(self, note_sequence: NoteSequence, measure_duration: float):
+    def quantize(self, note_sequence: NoteSequence):
         if self.quantizing:
-            notes_duration = sum([note.dur for note in note_sequence.note_list])
+            notes_dur = sum([note.dur for note in note_sequence.note_list])
             # If notes_duration == measure_duration then exit
-            if notes_duration == measure_duration:
+            if notes_dur == self.measure_dur:
                 return
             else:
-                note_adj_factor = measure_duration / notes_duration
+                note_adj_factor = self.measure_dur / notes_dur
                 # new_note.duration *= note_adj_factor
                 # new_note.start = note.start + (new_note.duration - note.duration)
                 new_note_sequence = NoteSequence.dup(note_sequence)
@@ -67,10 +68,10 @@ class Meter(object):
                     note.duration = new_duration
 
     @staticmethod
-    def _validate(beats_per_measure, beat_length):
-        if not isinstance(beats_per_measure, int) or not isinstance(beat_length, NoteDur):
-            raise ValueError(('`beats_per_measure` arg must be type `int` and `beat_length type `NoteDur` '
-                              f'beats_per_measure: {beats_per_measure} beat_length: {beat_length}'))
+    def _validate(beats_per_measure, beat_dur):
+        if not isinstance(beats_per_measure, int) or not isinstance(beat_dur, NoteDur):
+            raise ValueError(('`beats_per_measure` arg must be type `int` and `beat_dur type `NoteDur` '
+                              f'beats_per_measure: {beats_per_measure} beat_length: {beat_dur}'))
 
 
 # TODO Scale class with root, notes in scale, transpose()
@@ -87,3 +88,6 @@ class Measure(object):
     def __init__(self, note_sequence: NoteSequence = None, meter: Meter = None):
         self.note_sequence = note_sequence
         self.meter = meter
+
+    def quantize(self):
+        self.meter.quantize(self.note_sequence)
