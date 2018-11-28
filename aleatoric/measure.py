@@ -73,14 +73,17 @@ class Meter(object):
                               f'beats_per_measure: {beats_per_measure} beat_length: {beat_length}'))
 
 
+# TODO Scale class with root, notes in scale, transpose()
+# TODO Chord class
+# TODO ChordSequence
+# This is compact and looks like what I need: https://github.com/gciruelos/musthe
+# Good base for scales, chords and generating the notes from them
+# Make this the basis of the Scale system and map to pitch values for each backend
 class Measure(object):
     """Represents a musical measure in a musical `Score`. As such it includes a `NoteSequence`
        and attributes that affect the performance of all `Note`s in that `NoteSequence`.
        Additional attributes are `Meter`, `BPM`, `Scale` and `Key`.
     """
-    DEFAULT_SCALE = 'major'
-
-    def __init__(self, note_sequence: NoteSequence = None, scale: str = None, meter: Meter = None):
+    def __init__(self, note_sequence: NoteSequence = None, meter: Meter = None):
         self.note_sequence = note_sequence
-        self.scale = scale or Measure.DEFAULT_SCALE
         self.meter = meter

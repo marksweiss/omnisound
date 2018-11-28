@@ -11,6 +11,7 @@ from aleatoric.note import (CSoundNote, MidiNote, Note, NoteSequence, Performanc
 
 INSTRUMENT = 1
 FOX_DOT_INSTRUMENT = fd_sc_synth
+MIDI_INSTRUMENT = MidiNote.MidiInstrument.Accordion
 STARTS: List[float] = [0.0, 0.5, 1.0]
 INT_STARTS: List[int] = [0, 5, 10]
 START = STARTS[0]
@@ -65,7 +66,7 @@ def _setup_note_config(note_type: Any):
         note_config.pitch = PITCH
     if note_type == MidiNote:
         note_config = MidiNote.get_config()
-        note_config.instrument = INSTRUMENT
+        note_config.instrument = MIDI_INSTRUMENT
         note_config.time = START
         note_config.duration = DUR
         note_config.velocity = AMP
@@ -180,7 +181,7 @@ def test_note_config():
 
     note_config = _setup_note_config(MidiNote)
     note = MidiNote(**note_config.as_dict())
-    assert note.instrument == INSTRUMENT
+    assert note.instrument == MIDI_INSTRUMENT
     assert note.time == START
     assert note.velocity == AMP
     assert note.duration == DUR
