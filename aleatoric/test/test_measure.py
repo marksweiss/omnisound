@@ -55,8 +55,12 @@ def test_quantize(note_list):
     # Now assert that after quantization the durations in both note lists are identical
     assert [note.dur for note in note_sequence_with_longer_durations.note_list] == \
            [note.dur for note in note_sequence.note_list]
-    # TODO Add check for expected note start times after quantization
-
+    # Assert that the quantized note start times have been adjusted as exepected
+    for i, note in enumerate(note_sequence.note_list):
+        start_before_quantization = note.start
+        start_after_quantization = note_sequence_with_longer_durations.note_list[i].start
+        assert start_after_quantization == 0.0 and start_before_quantization == 0.0 or \
+            start_after_quantization == start_before_quantization - 0.25
 
 if __name__ == '__main__':
     pytest.main(['-xrf'])
