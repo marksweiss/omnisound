@@ -3,14 +3,7 @@
 from enum import Enum
 
 from aleatoric.note import NoteSequence
-from aleatoric.utils import sign
-
-
-# TODO move this and all other per type validation into that type
-def validate_note_sequence(note_sequence: NoteSequence):
-    if not isinstance(note_sequence, NoteSequence):
-        raise ValueError(('`note_sequence` arg must be type `NoteSequence` '
-                          f'note_sequence: {note_sequence}'))
+from aleatoric.utils import sign, validate_optional_types, validate_type
 
 
 class NoteDur(Enum):
@@ -50,6 +43,9 @@ class Swing(object):
     DEFAULT_SWING_DIRECTION = SwingDirection.Both
 
     def __init__(self, swing_on: bool = None, swing_factor: float = None, swing_direction: SwingDirection = None):
+        validate_optional_types(('swing_on', swing_on, bool), ('swing_factor', swing_factor, float),
+                                ('swing_direction', swing_direction, Swing.SwingDirection))
+
         if swing_on is None:
             swing_on = Swing.DEFAULT_SWING_ON
         self.swing_on = swing_on
@@ -68,7 +64,7 @@ class Swing(object):
         self.swing_on = False
 
     def apply_swing(self, note_sequence: NoteSequence):
-        validate_note_sequence(note_sequence)
+        validate_type('note_sequence', note_sequence, NoteSequence)
 
         if not self.swing_on:
             return
@@ -88,7 +84,8 @@ class Meter(object):
     DEFAULT_QUANTIZING = False
 
     def __init__(self, beats_per_measure: int = None, beat_dur: NoteDur = None, quantizing: bool = None):
-        Meter._validate(beats_per_measure, beat_dur)
+        validate_optional_types(('beats_per_measure', beats_per_measure, int), ('beat_dur', beat_dur, NoteDur),
+                                ('quantizing', quantizing, bool))
 
         self.beats_per_measure = beats_per_measure
         self.beat_dur = beat_dur.value
@@ -107,7 +104,7 @@ class Meter(object):
         self.quantizing = False
 
     def quantize(self, note_sequence: NoteSequence):
-        validate_note_sequence(note_sequence)
+        validate_type('note_sequence', note_sequence, NoteSequence)
 
         if self.quantizing:
             notes_dur = sum([note.dur for note in note_sequence.note_list])
@@ -124,12 +121,6 @@ class Meter(object):
                         note.start = note.start + (new_dur - note.dur)
                     note.dur = new_dur
 
-    @staticmethod
-    def _validate(beats_per_measure, beat_dur):
-        if not isinstance(beats_per_measure, int) or not isinstance(beat_dur, NoteDur):
-            raise ValueError(('`beats_per_measure` arg must be type `int`, `beat_dur type `NoteDur` '
-                              f'beats_per_measure: {beats_per_measure} beat_length: {beat_dur}'))
-
 
 # TODO Scale class with root, notes in scale, transpose()
 # TODO Chord class
@@ -143,7 +134,9 @@ class Measure(object):
        Additional attributes are `Meter`, `BPM`, `Scale` and `Key`.
     """
     def __init__(self, note_sequence: NoteSequence = None, meter: Meter = None, swing: Swing = None):
-        Measure._validate(note_sequence, meter, swing)
+        validate_optional_types(('note_sequence', note_sequence, NoteSequence), ('meter', meter, Meter),
+                                ('swing', swing, Swing))
+
         self.note_sequence = note_sequence
         self.meter = meter
         self.swing = swing
@@ -153,12 +146,3 @@ class Measure(object):
 
     def apply_swing(self):
         self.swing.apply_swing(self.note_sequence)
-
-    @staticmethod
-    def _validate(note_sequence, meter, swing):
-        if note_sequence and not isinstance(note_sequence, NoteSequence) or \
-                meter and not isinstance(meter, Meter) or \
-                swing and not isinstance(swing, Swing):
-            raise ValueError(('`note_sequence` arg must be type `NoteSequence`, `meter` arg must be type `Meter`, '
-                              '`swing` arg must by type `Swing` '
-                              f'note_sequence: {note_sequence} meter: {meter} swing: {swing}'))

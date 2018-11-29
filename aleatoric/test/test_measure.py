@@ -6,8 +6,8 @@ from aleatoric.measure import Measure, Meter, NoteDur, Swing
 from aleatoric.note import Note, NoteSequence
 
 INSTRUMENT = 1
-START = 0
-DUR = NoteDur.QUARTER.value
+START = 0.0
+DUR = float(NoteDur.QUARTER.value)
 AMP = 1.0
 PITCH = 10.1
 NOTE = Note(instrument=INSTRUMENT, start=START, dur=DUR, amp=AMP, pitch=PITCH)

@@ -3,6 +3,9 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from aleatoric.utils import (validate_list_of_types, validate_optional_type, validate_optional_types,
+                             validate_not_none, validate_type, validate_types)
+
 
 class PerformanceAttrsFrozenException(Exception):
     pass
@@ -30,9 +33,8 @@ class PerformanceAttrs(object):
         self.frozen: bool = False
 
     def add_attr(self, attr_name: str = None, val: Any = None, attr_type: Any = None):
-        if not isinstance(attr_name, str) or not attr_type:
-            raise ValueError((f'type: {attr_type} must be a type '
-                              f'and name: {name} must be a string'))
+        validate_type('attr_name', attr_name, str)
+        validate_not_none('attr_type', attr_type)
         if self.frozen:
             raise PerformanceAttrsFrozenException((f'Attempt to set attribute: {attr_name} '
                                                    f'on frozen PerformanceConfigFactory: {self.name}'))
@@ -72,8 +74,13 @@ class Note(object):
     def __init__(self, instrument: Any = None,
                  start: float = None, dur: float = None, amp: float = None, pitch: float = None,
                  name: str = None,
-                 performance_attrs: PerformanceAttrs = None):
-        self.__validate(instrument, start, dur, amp, pitch, performance_attrs)
+                 performance_attrs: PerformanceAttrs = None,
+                 validate=True):
+        if validate:
+            validate_types(('start', start, float), ('dur', dur, float), ('amp', amp, float),
+                           ('pitch', pitch, float))
+            validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs))
+
         self.instrument = instrument
         self.start = start
         self.dur = dur
@@ -107,9 +114,11 @@ class Note(object):
 
     @staticmethod
     def copy(source_note):
-        Note.__validate(source_note.instrument,
-                        source_note.start, source_note.dur, source_note.amp, source_note.pitch,
-                        source_note.performance_attrs)
+        validate_types(('start', source_note.start, float), ('dur', source_note.dur, float),
+                       ('amp', source_note.amp, float), ('pitch', source_note.pitch, float))
+        validate_optional_types(('name', source_note.name, str),
+                                ('performance_attrs', source_note.performance_attrs, PerformanceAttrs))
+
         return Note(instrument=source_note.instrument,
                     start=source_note.start, dur=source_note.dur, amp=source_note.amp, pitch=source_note.pitch,
                     name=source_note.name,
@@ -117,27 +126,13 @@ class Note(object):
 
     def __eq__(self, other):
         """NOTE: equality of Notes is defined for note attributes only, not for performance attributes."""
-        Note.__validate(other.instrument,
-                        other.start, other.dur, other.amp, other.pitch,
-                        None)
+        validate_types(('start', other.start, float), ('dur', other.dur, float),
+                       ('amp', other.amp, float), ('pitch', other.pitch, float))
         return self.instrument == other.instrument and \
             self.start == other.start and \
             self.dur == other.dur and \
             self.amp == other.amp and \
             self.pitch == other.pitch
-
-    @staticmethod
-    def __validate(instrument, start, dur, amp, pitch, performance_attrs):
-        if not instrument or \
-                (not isinstance(start, float) and not isinstance(start, int)) or \
-                not isinstance(dur, float) or \
-                (not isinstance(amp, float) and not isinstance(amp, int)) or \
-                (not isinstance(pitch, int) and not isinstance(pitch, float)):
-            raise ValueError((f'Must provide value for required NoteAttrs args: '
-                              f'instrument: {instrument} start {start} dur: {dur} amp: {amp} pitch: {pitch}'))
-        if performance_attrs and not isinstance(performance_attrs, PerformanceAttrs):
-            raise ValueError((f'`performance_attrs` must be None or of type `PerformanceAttrs` '
-                              f'performance_attrs: {performance_attrs}'))
 
     def __str__(self):
         return (f'name: {self.name} instrument: {self.instrument} delay: {self.start:.5f} '
@@ -187,18 +182,20 @@ class FoxDotSupercolliderNote(Note):
                  oct: int = None, scale: str = None,
                  performance_attrs: PerformanceAttrs = None):
         # start not meaningful for Supercollider
+        validate_types(('delay', delay, int), ('dur', dur, float), ('amp', amp, float),
+                       ('degree', degree, float))
+        validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs),
+                                ('oct', oct, int), ('scale', scale, str))
+        if scale and scale not in FoxDotSupercolliderNote.SCALES:
+            raise ValueError(f'arg `scale` must be None or a string in FoxDotSuperColliderNote.SCALES, scale: {scale}')
         super(FoxDotSupercolliderNote, self).__init__(instrument=synth_def,
                                                       start=delay, dur=dur, amp=amp, pitch=degree,
                                                       name=name,
-                                                      performance_attrs=performance_attrs)
+                                                      performance_attrs=performance_attrs,
+                                                      validate=False)
         if oct:
-            if not isinstance(oct, int):
-                raise ValueError(f'oct: {oct} must must be type int')
             self.oct = oct
         if scale:
-            if scale not in FoxDotSupercolliderNote.SCALES:
-                raise ValueError((f'scale: {scale} must must be in '
-                                  f'allowed scales {FoxDotSupercolliderNote.SCALES}'))
             self.scale = scale
 
     class NoteConfig(object):
@@ -267,7 +264,7 @@ class FoxDotSupercolliderNote(Note):
     def __eq__(self, other):
         if not super(FoxDotSupercolliderNote).__eq__(other):
             return False
-        return ((self.oct is None and other.oct is None or self.oct == other.oct) and \
+        return ((self.oct is None and other.oct is None or self.oct == other.oct) and
                 (self.scale is None and other.scale is None or self.scale == other.scale))
 
     def __str__(self):
@@ -288,10 +285,14 @@ class CSoundNote(Note):
                  start: float = None, duration: float = None, amplitude: int = None, pitch: float = None,
                  name: str = None,
                  performance_attrs: PerformanceAttrs = None):
+        validate_types(('start', start, float), ('duration', duration, float), ('amplitude', amplitude, int),
+                       ('pitch', pitch, float))
+        validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs))
         super(CSoundNote, self).__init__(instrument=instrument,
                                          start=start, dur=duration, amp=amplitude, pitch=pitch,
                                          name=name,
-                                         performance_attrs=performance_attrs)
+                                         performance_attrs=performance_attrs,
+                                         validate=False)
 
     class NoteConfig(object):
         def __init__(self):
@@ -532,14 +533,19 @@ class MidiNote(Note):
         Open_Triangle = 81
 
     def __init__(self, instrument: Any = None,
-                 time: float = None, duration: float = None, velocity: float = None, pitch: float = None,
+                 time: float = None, duration: float = None, velocity: int = None, pitch: float = None,
                  name: str = None,
                  channel: int = None,
                  performance_attrs: PerformanceAttrs = None):
+        validate_types(('start', time, float), ('duration', duration, float), ('velocity', velocity, int),
+                       ('pitch', pitch, float))
+        validate_optional_types(('channel', channel, int), ('name', name, str),
+                                ('performance_attrs', performance_attrs, PerformanceAttrs))
         super(MidiNote, self).__init__(instrument=instrument,
                                        start=time, dur=duration, amp=velocity, pitch=pitch,
                                        name=name,
-                                       performance_attrs=performance_attrs)
+                                       performance_attrs=performance_attrs,
+                                       validate=False)
         self.channel = channel or MidiNote.DEFAULT_CHANNEL
 
     class NoteConfig(object):
@@ -595,8 +601,7 @@ class MidiNote(Note):
         self.amp = velocity
 
     def program_change(self, instrument: int):
-        if instrument is None:
-            raise ValueError(f'MidiNote must provide value for required arg instrument: {instrument}')
+        validate_type('instrument', instrument, int)
         # noinspection PyAttributeOutsideInit
         self.instrument = instrument
 
@@ -624,10 +629,9 @@ class NoteSequence(object):
        through the iterator Notes with correct note_attrs and perf_attrs.
     """
     def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None):
-        NoteSequence._validate_note_list(note_list)
-        if performance_attrs and not isinstance(performance_attrs, PerformanceAttrs):
-            raise ValueError((f'Must provide valid `performance_attrs` '
-                              f'performance_attrs: {performance_attrs}'))
+        validate_list_of_types('note_list', note_list, Note)
+        validate_optional_type('performance_attrs', performance_attrs, PerformanceAttrs)
+
         self.index = 0
         self.note_list = note_list
         self.performance_attrs = performance_attrs
@@ -647,11 +651,11 @@ class NoteSequence(object):
         return self.performance_attrs
 
     def append(self, note: Note):
-        NoteSequence._validate_note(note)
+        validate_type('note', note, Note)
         self.note_list.append(note)
 
     def extend(self, new_note_list: List[Note]):
-        NoteSequence._validate_note_list(new_note_list)
+        validate_list_of_types('new_note_list', new_note_list, Note)
         self.note_list.extend(new_note_list)
 
     def __len__(self):
@@ -666,7 +670,7 @@ class NoteSequence(object):
         added = False
         # Try to add as a single Note
         try:
-            NoteSequence._validate_note(to_add)
+            validate_type('to_add', to_add, Note)
             # If validation did not throw, to add is a single note, append(note)
             self.append(to_add)
             added = True
@@ -675,7 +679,7 @@ class NoteSequence(object):
         # If we didn't add as a single note, try to add as a NoteList
         if not added:
             try:
-                NoteSequence._validate_note_list(to_add)
+                validate_list_of_types('to_add', to_add, Note)
                 # If validation did not throw, to add is a list of notes, extend(note_list)
                 self.extend(to_add)
                 added = True
@@ -693,12 +697,11 @@ class NoteSequence(object):
         return self.__add__(to_add)
 
     def insert(self, index: int, note: Note):
-        NoteSequence._validate_note(note)
-        NoteSequence._validate_index(index)
+        validate_types(('index', index, int), ('note', note, Note))
         self.note_list.insert(index, note)
 
     def remove(self, note: Note):
-        NoteSequence._validate_note(note)
+        validate_type('note', note, Note)
         # Swallow exception if the item to be removed is not present in note_list
         try:
             self.note_list.remove(note)
@@ -706,7 +709,7 @@ class NoteSequence(object):
             pass
 
     def __getitem__(self, index):
-        NoteSequence._validate_index(index)
+        validate_type('index', index, int)
         if index < 0 or index >= len(self.note_list):
             raise ValueError(f'`index` out of range index: {index} len(note_list): {len(self.note_list)}')
         return self.note_list[index]
@@ -745,21 +748,3 @@ class NoteSequence(object):
                                          source_note_sequence.performance_attrs)
         new_note_sequence.index = source_note_sequence.index
         return new_note_sequence
-
-    @staticmethod
-    def _validate_note(note):
-        if not isinstance(note, Note):
-            raise ValueError((f'Each element in `note_list` must be a valid `Note` '
-                              f'note: {note}'))
-
-    @staticmethod
-    def _validate_note_list(note_list: List[Note]):
-        if not note_list or not isinstance(note_list, list):
-            raise ValueError(f'`note_list` must be a non-empty list note_list: {note_list}')
-        for note in note_list:
-            NoteSequence._validate_note(note)
-
-    @staticmethod
-    def _validate_index(index: int):
-        if not isinstance(index, int):
-            raise ValueError(f'`index` must be an int, index: {index}')
