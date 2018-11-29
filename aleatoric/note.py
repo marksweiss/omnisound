@@ -182,8 +182,9 @@ class FoxDotSupercolliderNote(Note):
                  oct: int = None, scale: str = None,
                  performance_attrs: PerformanceAttrs = None):
         # start not meaningful for Supercollider
+        # Note: cast float(degree). Ints will work with FoxDot for degree so handle this.
         validate_types(('delay', delay, int), ('dur', dur, float), ('amp', amp, float),
-                       ('degree', degree, float))
+                       ('degree', float(degree), float))
         validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs),
                                 ('oct', oct, int), ('scale', scale, str))
         if scale and scale not in FoxDotSupercolliderNote.SCALES:

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     idur = 1.0
     delay = 0.0
     for i in range(15):
-        note_config.delay = round(delay, 5)
+        note_config.delay = int(round(delay, 5))
         note_config.dur = round(idur - ((i + 1) * 0.05), 5)
         note_config.degree = i % 5
         note = FoxDotSupercolliderNote(**note_config.as_dict(), performance_attrs=performance_attrs)

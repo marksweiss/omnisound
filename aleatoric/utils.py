@@ -44,6 +44,7 @@ def validate_optional_list_of_types(arg_name, list_val, val_type):
     else:
         validate_list_of_types(arg_name, list_val, val_type)
 
+
 def sign():
     return copysign(1.0, random() - 0.5)
 
