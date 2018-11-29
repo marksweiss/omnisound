@@ -1,7 +1,16 @@
 # Copyright 2018 Mark S. Weiss
 
-from aleatoric.note import NoteSequence
 from enum import Enum
+
+from aleatoric.note import NoteSequence
+from aleatoric.utils import sign
+
+
+# TODO move this and all other per type validation into that type
+def validate_note_sequence(note_sequence: NoteSequence):
+    if not isinstance(note_sequence, NoteSequence):
+        raise ValueError(('`note_sequence` arg must be type `NoteSequence` '
+                          f'note_sequence: {note_sequence}'))
 
 
 class NoteDur(Enum):
@@ -28,12 +37,59 @@ class NoteDur(Enum):
     SIXTYFOURTH = _0_000015625
 
 
+class Swing(object):
+
+    DEFAULT_SWING_ON = False
+    DEFAULT_SWING_FACTOR = 0.01
+
+    class SwingDirection(Enum):
+        Forward = 'Forward'
+        Reverse = 'Reverse'
+        Both = 'Both'
+
+    DEFAULT_SWING_DIRECTION = SwingDirection.Both
+
+    def __init__(self, swing_on: bool = None, swing_factor: float = None, swing_direction: SwingDirection = None):
+        if swing_on is None:
+            swing_on = Swing.DEFAULT_SWING_ON
+        self.swing_on = swing_on
+        if swing_factor is None:
+            swing_factor = Swing.DEFAULT_SWING_FACTOR
+        self.swing_factor = swing_factor
+        self.swing_direction = swing_direction or Swing.DEFAULT_SWING_DIRECTION
+
+    def is_swing_on(self):
+        return self.swing_on
+
+    def swing_on(self):
+        self.swing_on = True
+
+    def swing_off(self):
+        self.swing_on = False
+
+    def apply_swing(self, note_sequence: NoteSequence):
+        validate_note_sequence(note_sequence)
+
+        if not self.swing_on:
+            return
+        else:
+            for note in note_sequence.note_list:
+                swing_adj = note.start * self.swing_factor
+                if self.swing_direction == Swing.SwingDirection.Forward:
+                    note.start += swing_adj
+                elif self.swing_direction == Swing.SwingDirection.Reverse:
+                    note.start -= swing_adj
+                else:
+                    note.start += sign() * swing_adj
+
+
 class Meter(object):
 
-    DEFAULT_QUANTIZING = True
+    DEFAULT_QUANTIZING = False
 
     def __init__(self, beats_per_measure: int = None, beat_dur: NoteDur = None, quantizing: bool = None):
         Meter._validate(beats_per_measure, beat_dur)
+
         self.beats_per_measure = beats_per_measure
         self.beat_dur = beat_dur.value
         self.measure_dur = float(self.beats_per_measure) * self.beat_dur
@@ -51,6 +107,8 @@ class Meter(object):
         self.quantizing = False
 
     def quantize(self, note_sequence: NoteSequence):
+        validate_note_sequence(note_sequence)
+
         if self.quantizing:
             notes_dur = sum([note.dur for note in note_sequence.note_list])
             # If notes_duration == measure_duration then exit
@@ -69,7 +127,7 @@ class Meter(object):
     @staticmethod
     def _validate(beats_per_measure, beat_dur):
         if not isinstance(beats_per_measure, int) or not isinstance(beat_dur, NoteDur):
-            raise ValueError(('`beats_per_measure` arg must be type `int` and `beat_dur type `NoteDur` '
+            raise ValueError(('`beats_per_measure` arg must be type `int`, `beat_dur type `NoteDur` '
                               f'beats_per_measure: {beats_per_measure} beat_length: {beat_dur}'))
 
 
@@ -84,9 +142,23 @@ class Measure(object):
        and attributes that affect the performance of all `Note`s in that `NoteSequence`.
        Additional attributes are `Meter`, `BPM`, `Scale` and `Key`.
     """
-    def __init__(self, note_sequence: NoteSequence = None, meter: Meter = None):
+    def __init__(self, note_sequence: NoteSequence = None, meter: Meter = None, swing: Swing = None):
+        Measure._validate(note_sequence, meter, swing)
         self.note_sequence = note_sequence
         self.meter = meter
+        self.swing = swing
 
     def quantize(self):
         self.meter.quantize(self.note_sequence)
+
+    def apply_swing(self):
+        self.swing.apply_swing(self.note_sequence)
+
+    @staticmethod
+    def _validate(note_sequence, meter, swing):
+        if note_sequence and not isinstance(note_sequence, NoteSequence) or \
+                meter and not isinstance(meter, Meter) or \
+                swing and not isinstance(swing, Swing):
+            raise ValueError(('`note_sequence` arg must be type `NoteSequence`, `meter` arg must be type `Meter`, '
+                              '`swing` arg must by type `Swing` '
+                              f'note_sequence: {note_sequence} meter: {meter} swing: {swing}'))
