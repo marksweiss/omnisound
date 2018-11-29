@@ -183,6 +183,7 @@ class FoxDotSupercolliderNote(Note):
                  performance_attrs: PerformanceAttrs = None):
         # start not meaningful for Supercollider
         # Note: cast float(degree). Ints will work with FoxDot for degree so handle this.
+        # TODO Change validation for types that support either int or float to be validate_types('x', x, (int, float))
         validate_types(('delay', delay, int), ('dur', dur, float), ('amp', amp, float),
                        ('degree', float(degree), float))
         validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs),

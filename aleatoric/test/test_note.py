@@ -8,6 +8,9 @@ from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
 from aleatoric.note import (CSoundNote, MidiNote, Note, NoteSequence, PerformanceAttrs,
                             RestNote, FoxDotSupercolliderNote)
+import ext.musthe.musthe as musthe
+print(musthe)
+
 
 INSTRUMENT = 1
 FOX_DOT_INSTRUMENT = fd_sc_synth
