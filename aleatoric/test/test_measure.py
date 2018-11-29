@@ -62,6 +62,7 @@ def test_quantize(note_list):
         assert start_after_quantization == 0.0 and start_before_quantization == 0.0 or \
             start_after_quantization == start_before_quantization - 0.25
 
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])
 
