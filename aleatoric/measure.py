@@ -72,7 +72,7 @@ class Swing(object):
     def swing_off(self):
         self.swing_on = False
 
-    def apply_swing(self, note_sequence: NoteSequence):
+    def apply_swing(self, note_sequence: NoteSequence, swing_direction: SwingDirection = None):
         """Applies swing to all notes in note_sequence, using current object settings, unless swing_direction
            is provided. In that case the swing_direction arg overrides self.swing_direction and is applied.
         """
@@ -82,8 +82,9 @@ class Swing(object):
         if not self.swing_on:
             return
         else:
+            swing_direction = swing_direction or self.swing_direction
             for note in note_sequence.note_list:
-                note.start += self.calculate_swing_adj(note, self.swing_direction)
+                note.start += self.calculate_swing_adj(note, swing_direction)
 
     def calculate_swing_adj(self, note: Note = None,  swing_direction: SwingDirection = None):
         validate_types(('note', note, Note), ('swing_direction', swing_direction, Swing.SwingDirection))
@@ -104,9 +105,6 @@ class Meter(object):
        duration of the Measure, or to fit notes to the closest beat in the Measure. str displays information about
        the configuration of the object, but repr displays the meter in traditional notation.
     """
-
-    DEFAULT_QUANTIZING = False
-
     def __init__(self, beats_per_measure: int = None, beat_dur: NoteDur = None, quantizing: bool = None):
         validate_optional_types(('beats_per_measure', beats_per_measure, int), ('beat_dur', beat_dur, NoteDur),
                                 ('quantizing', quantizing, bool))
@@ -187,7 +185,7 @@ class Meter(object):
 
     def __str__(self):
         return (f'beats_per_measure: {self.beats_per_measure} beat_dur: {self.beat_dur} '
-                f'beats_per_note: {self.beats_per_note}')
+                f'beats_per_note: {self.beats_per_note} quantizing: {self.quantizing}')
 
     def __repr__(self):
         return f'{self.beats_per_measure} / {self.beat_dur}'
@@ -220,18 +218,22 @@ class Measure(object):
        current beat position, and can add notes on beat or at a specified time. Also manages the
        notes in the underlying note_sequence in order sorted by start_time.
     """
+
+    DEFAULT_QUANTIZING = False
+
     def __init__(self, note_sequence: NoteSequence = None, beats_per_measure: int = None,
-                 beat_duration: float = None, swing: Swing = None):
+                 beat_duration: NoteDur = None, quantizing: bool = DEFAULT_QUANTIZING,
+                 swing: Swing = None):
         validate_types(('note_sequence', note_sequence, NoteSequence),
                        ('beats_per_measure', beats_per_measure, int),
                        ('beat_duration', beat_duration, NoteDur))
-        validate_optional_type('swing', swing, Swing)
+        validate_optional_types(('swing', swing, Swing), ('quantizing', quantizing, bool))
 
         self.note_sequence = note_sequence
         # Sort notes by start time to manage adding on beat
         # NOTE: This modifies the note_sequence in place
         self.note_sequence.note_list.sort(key=lambda x: x.start)
-        self.meter = Meter(beat_dur=beat_duration, beats_per_measure=beats_per_measure)
+        self.meter = Meter(beat_dur=beat_duration, beats_per_measure=beats_per_measure, quantizing=quantizing)
         self.swing = swing
         # Support adding notes based on Meter
         self.beat = 0

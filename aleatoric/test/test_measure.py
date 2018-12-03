@@ -2,7 +2,7 @@
 
 import pytest
 
-from aleatoric.measure import Measure, Meter, NoteDur, Swing
+from aleatoric.measure import Measure, NoteDur, Swing
 from aleatoric.note import Note, NoteSequence
 
 INSTRUMENT = 1
@@ -33,7 +33,9 @@ def note_list():
 def _setup_test_swing(note_list, swing_direction):
     note_sequence = NoteSequence(note_list)
     swing = Swing(swing_on=True, swing_factor=SWING_FACTOR, swing_direction=swing_direction)
-    measure = Measure(note_sequence=note_sequence, swing=swing)
+    measure = Measure(note_sequence=note_sequence,
+                      beats_per_measure=BEATS_PER_MEASURE, beat_duration=BEAT_DUR,
+                      quantizing=True, swing=swing)
     measure.apply_swing()
     actual_note_starts = [note.start for note in measure.note_sequence.note_list]
     return actual_note_starts
@@ -43,8 +45,9 @@ def test_quantize(note_list):
     # Simplest test case: Note durations sum to measure duration and no quantizing required
     note_sequence_before_quantization = NoteSequence(note_list)
     note_sequence = NoteSequence(note_list)
-    meter = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_dur=BEAT_DUR, quantizing=True)
-    measure = Measure(note_sequence=note_sequence, meter=meter)
+    measure = Measure(note_sequence=note_sequence,
+                      beats_per_measure=BEATS_PER_MEASURE, beat_duration=BEAT_DUR,
+                      quantizing=True)
     measure.quantize()
     # Relies on Note.__eq__
     assert note_sequence_before_quantization.note_list == note_sequence.note_list
@@ -61,7 +64,9 @@ def test_quantize(note_list):
     assert [note.dur for note in note_sequence_with_longer_durations.note_list] != \
            [note.dur for note in note_sequence.note_list]
     # Now quantize the copied the note list
-    measure = Measure(note_sequence=note_sequence_with_longer_durations, meter=meter)
+    measure = Measure(note_sequence=note_sequence_with_longer_durations,
+                      beats_per_measure=BEATS_PER_MEASURE, beat_duration=BEAT_DUR,
+                      quantizing=True)
     measure.quantize()
     # Now assert that after quantization the durations in both note lists are identical
     assert [note.dur for note in note_sequence_with_longer_durations.note_list] == \
