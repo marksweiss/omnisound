@@ -57,20 +57,20 @@ class Swing(object):
 
         if swing_on is None:
             swing_on = Swing.DEFAULT_SWING_ON
-        self.swing_on = swing_on
+        self.swinging = swing_on
         if swing_factor is None:
             swing_factor = Swing.DEFAULT_SWING_FACTOR
         self.swing_factor = swing_factor
         self.swing_direction = swing_direction or Swing.DEFAULT_SWING_DIRECTION
 
     def is_swing_on(self):
-        return self.swing_on
+        return self.swinging
 
     def swing_on(self):
-        self.swing_on = True
+        self.swinging = True
 
     def swing_off(self):
-        self.swing_on = False
+        self.swinging = False
 
     def apply_swing(self, note_sequence: NoteSequence, swing_direction: SwingDirection = None):
         """Applies swing to all notes in note_sequence, using current object settings, unless swing_direction
@@ -79,7 +79,7 @@ class Swing(object):
         validate_type('note_sequence', note_sequence, NoteSequence)
         validate_optional_type('swing_direction', swing_direction, Swing.SwingDirection)
 
-        if not self.swing_on:
+        if not self.swinging:
             return
         else:
             swing_direction = swing_direction or self.swing_direction
@@ -293,7 +293,7 @@ class Measure(object):
         if self.swing:
             self.swing.apply_swing(self.note_sequence)
         else:
-            raise MeasureSwingNotEnabledException('Measure.apply_swing() called but swing is None')
+            raise MeasureSwingNotEnabledException('Measure.apply_swing() called but swing is None in Measure')
 
     def apply_phrasing(self):
         """Moves the first note in Measure forward and the last back by self.swing.swing.swing_factor.
