@@ -1,0 +1,3 @@
+[submodule "ext/python-mingus"]
+	path = ext/python-mingus
+	url = https://github.com/marksweiss/python-mingus
