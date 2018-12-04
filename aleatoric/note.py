@@ -681,7 +681,7 @@ class NoteSequence(object):
         # If we didn't add as a single note, try to add as a NoteList
         if not added:
             try:
-                validate_list_of_types('to_add', to_add, Note)
+                validate_sequence_of_types('to_add', to_add, Note)
                 # If validation did not throw, to add is a list of notes, extend(note_list)
                 self.extend(to_add)
                 added = True
@@ -743,8 +743,8 @@ class NoteSequence(object):
         return all([self.note_list[i] == other.note_list[i] for i in range(len(self.note_list))])
 
     @staticmethod
-    def dup(source_note_sequence):
-        # Call the dup() for the subclass of this note type
+    def copy(source_note_sequence):
+        # Call the copy() for the subclass of this note type
         new_note_list = [(note.__class__.copy(note)) for note in source_note_sequence.note_list]
         new_note_sequence = NoteSequence(new_note_list,
                                          source_note_sequence.performance_attrs)

@@ -1,9 +1,11 @@
 # Copyright 2018 Mark S. Weiss
 
 from bisect import bisect_left
+from copy import copy
 from enum import Enum
+from typing import Any, List
 
-from aleatoric.note import Note, NoteSequence
+from aleatoric.note import Note, NoteSequence, PerformanceAttrs
 from aleatoric.utils import sign, validate_optional_type, validate_optional_types, validate_type, validate_types
 
 
@@ -115,8 +117,6 @@ class Meter(object):
         # Use arg value of beats_per_measure because we want to use range(int)
         self.beat_start_times = [0.0 + (self.beat_dur * i) for i in range(self.beats_per_measure)]
         self.measure_dur = self.beats_per_measure * self.beat_dur
-        if quantizing is None:
-            quantizing = Meter.DEFAULT_QUANTIZING
         self.quantizing = quantizing
 
     def is_quantizing(self):
@@ -211,7 +211,7 @@ class MeasureBeatInvalidPositionException(Exception):
 # This is compact and looks like what I need: https://github.com/gciruelos/musthe
 # Good base for scales, chords and generating the notes from them
 # Make this the basis of the Scale system and map to pitch values for each backend
-class Measure(object):
+class Measure(NoteSequence):
     """Represents a musical measure in a musical Score. As such it includes a NoteSequence
        and attributes that affect the performance of all Notes in that NoteSequence.
        Additional attributes are Meter, BPM, Scale and Key.
@@ -221,21 +221,17 @@ class Measure(object):
        notes in the underlying note_sequence in order sorted by start_time.
     """
 
-    DEFAULT_QUANTIZING = False
+    DEFAULT_METER = Meter(beats_per_measure=4, beat_dur=NoteDur.QUARTER, quantizing=True)
 
-    def __init__(self, note_sequence: NoteSequence = None, beats_per_measure: int = None,
-                 beat_duration: NoteDur = None, quantizing: bool = DEFAULT_QUANTIZING,
-                 swing: Swing = None):
-        validate_types(('note_sequence', note_sequence, NoteSequence),
-                       ('beats_per_measure', beats_per_measure, int),
-                       ('beat_duration', beat_duration, NoteDur))
-        validate_optional_types(('swing', swing, Swing), ('quantizing', quantizing, bool))
+    def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None,
+                 meter: Meter = None, swing: Swing = None):
+        validate_optional_types(('swing', swing, Swing), ('meter', meter, Meter))
+        super(Measure, self).__init__(note_list=note_list, performance_attrs=performance_attrs)
 
-        self.note_sequence = note_sequence
         # Sort notes by start time to manage adding on beat
         # NOTE: This modifies the note_sequence in place
-        self.note_sequence.note_list.sort(key=lambda x: x.start)
-        self.meter = Meter(beat_dur=beat_duration, beats_per_measure=beats_per_measure, quantizing=quantizing)
+        self.note_list.sort(key=lambda x: x.start)
+        self.meter = meter or copy(Measure.DEFAULT_METER)
         self.swing = swing
         # Support adding notes based on Meter
         self.beat = 0
@@ -249,14 +245,6 @@ class Measure(object):
     def decrement_beat(self):
         self.beat = max(0, self.beat - 1)
 
-    def add_note(self, note: Note):
-        validate_type('note', note, Note)
-        self.note_sequence += note
-        self.note_sequence.note_list.sort(key=lambda x: x.start)
-
-    def __add__(self, note: Note):
-        self.add_note(note)
-
     def add_note_on_current_beat(self, note: Note, increment_beat=False):
         """Modifies the note_sequence in place by setting its start_time to the value of measure.beat.
         If increment_beat == True the measure_beat is also incremented, after the insertion. So this method
@@ -265,8 +253,8 @@ class Measure(object):
         validate_types(('note', note, Note), ('increment_beat', increment_beat, bool))
 
         note.start = self.meter.beat_start_times[self.beat]
-        self.note_sequence += note
-        self.note_sequence.note_list.sort(key=lambda x: x.start)
+        self.note_list += note
+        self.note_list.sort(key=lambda x: x.start)
         # Increment beat position if flag set and beat is not on last beat of the measure already
         if increment_beat:
             self.increment_beat()
@@ -280,20 +268,20 @@ class Measure(object):
         for start in self.meter.beat_start_times:
             new_note = note.copy(note)
             new_note.start = start
-            self.note_sequence += new_note
-        self.note_sequence.note_list.sort(key=lambda x: x.start)
+            self.note_list.append(new_note)
+        self.note_list.sort(key=lambda x: x.start)
 
     def quantize(self):
-        self.meter.quantize(self.note_sequence)
+        self.meter.quantize(self)
 
     def quantize_to_beat(self):
-        self.meter.quantize_to_beat(self.note_sequence)
+        self.meter.quantize_to_beat(self)
 
     def apply_swing(self):
         """Moves all notes in Measure according to how self.swing is configured.
         """
         if self.swing:
-            self.swing.apply_swing(self.note_sequence)
+            self.swing.apply_swing(self)
         else:
             raise MeasureSwingNotEnabledException('Measure.apply_swing() called but swing is None in Measure')
 
@@ -302,8 +290,46 @@ class Measure(object):
            The idea is to slightly accentuate the metric phrasing of each measure. Handles boundary condition
            of having 0 or 1 notes. If there is only 1 note no adjustment is made.
         """
-        if len(self.note_sequence) > 1:
-            self.note_sequence[0].start += \
-                self.swing.calculate_swing_adj(self.note_sequence[0], Swing.SwingDirection.Forward)
-            self.note_sequence[-1].start += \
-                self.swing.calculate_swing_adj(self.note_sequence[-1], Swing.SwingDirection.Reverse)
+        if len(self.note_list) > 1:
+            self.note_list[0].start += \
+                self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
+            self.note_list[-1].start += \
+                self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+
+    # Wrap all parant methods that mutate note_list, because this
+    # class maintains the invariant that note_list is sorted by
+    # note.start_time ascending
+    def append(self, note: Note):
+        super(Measure, self).append(note)
+        self.note_list.sort(key=lambda x: x.start)
+
+    def extend(self, new_note_list: List[Note]):
+        super(Measure, self).extend(new_note_list)
+        self.note_list.sort(key=lambda x: x.start)
+
+    def __add__(self, to_add: Any):
+        super(Measure, self).__add__(to_add)
+        self.note_list.sort(key=lambda x: x.start)
+        return self
+
+    def __lshift__(self, to_add: Any):
+        return self.__add__(to_add)
+
+    def insert(self, index: int, note: Note):
+        super(Measure, self).insert(index, note)
+        self.note_list.sort(key=lambda x: x.start)
+
+    def remove(self, note: Note):
+        super(Measure, self).remove(note)
+        self.note_list.sort(key=lambda x: x.start)
+
+    @staticmethod
+    def copy(source_measure):
+        # Call the dup() for the subclass of this note type
+        new_note_list = [(note.copy(note))
+                         for note in source_measure.note_sequence.note_list]
+        new_measure = Measure(note_list=new_note_list,
+                              performance_attrs=source_measure.note_sequence.performance_attrs,
+                              meter=source_measure.meter, swing=source_measure.swing)
+        new_measure.beat = source_measure.beat
+        return new_measure
