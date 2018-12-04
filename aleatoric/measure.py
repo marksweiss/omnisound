@@ -163,15 +163,17 @@ class Meter(object):
             #  -     in this case test distance of each beat_start_time to note.start and pick the closest one
 
             # Append measure end time to beat_start_times as a sentinel value for bisect()
-            beat_start_times = self.beat_start_times + [self.beat_dur]
+            beat_start_times = self.beat_start_times + [self.measure_dur]
             for note in note_sequence.note_list:
                 i = bisect_left(beat_start_times, note.start)
                 # Note maps to 0th beat
                 if i == 0:
                     note.start = 0.0
+                    continue
                 # Note starts after last beat, so maps to last beat
                 elif i == len(beat_start_times):
                     note.start = self.beat_start_times[-1]
+                    continue
                 # Else note.start is between two beats in the range 1..len(beat_start_times) - 1
                 # The note is either closests to beat_start_times[i - 1] or beat_start_times[i]
                 prev_start = beat_start_times[i - 1]
@@ -276,9 +278,9 @@ class Measure(object):
         validate_type('note', note, Note)
 
         for start in self.meter.beat_start_times:
-            new_note = note.__class__.copy(note)
+            new_note = note.copy(note)
             new_note.start = start
-            self.note_sequence += note
+            self.note_sequence += new_note
         self.note_sequence.note_list.sort(key=lambda x: x.start)
 
     def quantize(self):
@@ -301,5 +303,7 @@ class Measure(object):
            of having 0 or 1 notes. If there is only 1 note no adjustment is made.
         """
         if len(self.note_sequence) > 1:
-            self.swing.calculate_swing_adj(self.note_sequence[0], Swing.SwingDirection.Forward)
-            self.swing.calculate_swing_adj(self.note_sequence[-1], Swing.SwingDirection.Reverse)
+            self.note_sequence[0].start += \
+                self.swing.calculate_swing_adj(self.note_sequence[0], Swing.SwingDirection.Forward)
+            self.note_sequence[-1].start += \
+                self.swing.calculate_swing_adj(self.note_sequence[-1], Swing.SwingDirection.Reverse)

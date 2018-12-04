@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from aleatoric.utils import (validate_list_of_types, validate_optional_type, validate_optional_types,
+from aleatoric.utils import (validate_sequence_of_types, validate_optional_type, validate_optional_types,
                              validate_not_none, validate_type, validate_types)
 
 
@@ -631,7 +631,7 @@ class NoteSequence(object):
        through the iterator Notes with correct note_attrs and perf_attrs.
     """
     def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None):
-        validate_list_of_types('note_list', note_list, Note)
+        validate_sequence_of_types('note_list', note_list, Note)
         validate_optional_type('performance_attrs', performance_attrs, PerformanceAttrs)
 
         self.index = 0
@@ -657,7 +657,7 @@ class NoteSequence(object):
         self.note_list.append(note)
 
     def extend(self, new_note_list: List[Note]):
-        validate_list_of_types('new_note_list', new_note_list, Note)
+        validate_sequence_of_types('new_note_list', new_note_list, Note)
         self.note_list.extend(new_note_list)
 
     def __len__(self):
@@ -712,7 +712,7 @@ class NoteSequence(object):
 
     def __getitem__(self, index):
         validate_type('index', index, int)
-        if index < 0 or index >= len(self.note_list):
+        if abs(index) >= len(self.note_list):
             raise ValueError(f'`index` out of range index: {index} len(note_list): {len(self.note_list)}')
         return self.note_list[index]
 
