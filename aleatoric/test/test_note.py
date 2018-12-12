@@ -248,23 +248,43 @@ def test_note_sequence_len_append_getitem():
 
 
 def test_note_sequence_add_lshift_extend():
+    expected_len = 2
     note_sequence = _setup_note_sequence()
-    assert len(note_sequence) == 2
-    # Append and check len again
+    assert len(note_sequence) == expected_len
+    # Append/Add and check len again
     note_sequence += NOTE
-    assert len(note_sequence) == 3
-    # Append with lshift syntax
+    expected_len += 1
+    assert len(note_sequence) == expected_len
+    # Append/Add with lshift syntax
     note_sequence << NOTE
-    assert len(note_sequence) == 4
-    # Extend with a sequence
+    expected_len += 1
+    assert len(note_sequence) == expected_len
+    # Append/Add with a List[Note]
+    note_sequence += [NOTE, NOTE]
+    expected_len += 2
+    assert len(note_sequence) == expected_len
+    # Append/Add with a NoteSequence
+    new_note_sequence = NoteSequence([NOTE, NOTE])
+    note_sequence += new_note_sequence
+    expected_len += 2
+    assert len(note_sequence) == expected_len
+    # Extend with a List[Note]
     note_sequence.extend([NOTE, NOTE])
-    assert len(note_sequence) == 6
+    expected_len += 2
+    assert len(note_sequence) == expected_len
+    # Extend with a NoteSequence
+    new_note_sequence = NoteSequence([NOTE, NOTE])
+    note_sequence.extend(new_note_sequence)
+    expected_len += 2
+    assert len(note_sequence) == expected_len
 
 
 def test_note_sequence_insert_remove():
     note_sequence = _setup_note_sequence()
     note_front = note_sequence[0]
     assert note_front.amp == AMP
+
+    # Insert a single note at the front of the list
     new_amp = AMP + 1
     new_note = Note.copy(note_front)
     new_note.amp = new_amp
@@ -272,9 +292,49 @@ def test_note_sequence_insert_remove():
     note_front = note_sequence[0]
     assert note_front.amp == new_amp
 
-    note_sequence.remove(new_note)
+    # Insert a list of 2 notes at the front of the list
+    new_amp_1 = AMP + 2
+    new_note_1 = Note.copy(note_front)
+    new_note_1.amp = new_amp_1
+    new_amp_2 = AMP + 3
+    new_note_2 = Note.copy(note_front)
+    new_note_2.amp = new_amp_2
+    new_note_list = [new_note_1, new_note_2]
+    note_sequence.insert(0, new_note_list)
     note_front = note_sequence[0]
-    assert note_front.amp == AMP
+    assert note_front.amp == new_amp_1
+    note_front = note_sequence[1]
+    assert note_front.amp == new_amp_2
+
+    # Insert a NoteSequence with 2 notes at the front of the list
+    new_amp_1 = AMP + 4
+    new_note_1 = Note.copy(note_front)
+    new_note_1.amp = new_amp_1
+    new_amp_2 = AMP + 5
+    new_note_2 = Note.copy(note_front)
+    new_note_2.amp = new_amp_2
+    new_note_list = [new_note_1, new_note_2]
+    new_note_sequence = NoteSequence(new_note_list)
+    note_sequence.insert(0, new_note_sequence)
+    note_front = note_sequence[0]
+    assert note_front.amp == new_amp_1
+    note_front = note_sequence[1]
+    assert note_front.amp == new_amp_2
+
+    # Remove notes added as NoteSequence, List[Note] and Note
+    # After removing a note, the new front note is the one added second to most recently
+    expected_amp = note_sequence[1].amp
+    note_to_remove = note_sequence[0]
+    note_sequence.remove(note_to_remove)
+    note_front = note_sequence[0]
+    assert note_front.amp == expected_amp
+    expected_amp = note_sequence[1].amp
+    for i in range(4):
+        note_to_remove = note_sequence[0]
+        note_sequence.remove(note_to_remove)
+        note_front = note_sequence[0]
+        assert note_front.amp == expected_amp
+        expected_amp = note_sequence[1].amp
 
 
 def test_performance_attrs_freeze_unfreeze():

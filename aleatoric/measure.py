@@ -208,9 +208,6 @@ class MeasureBeatInvalidPositionException(Exception):
 #  time but each measure just starts again at 0
 # This class makes that assumption
 
-# This is compact and looks like what I need: https://github.com/gciruelos/musthe
-# Good base for scales, chords and generating the notes from them
-# Make this the basis of the Scale system and map to pitch values for each backend
 class Measure(NoteSequence):
     """Represents a musical measure in a musical Score. As such it includes a NoteSequence
        and attributes that affect the performance of all Notes in that NoteSequence.
