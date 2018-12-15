@@ -1,10 +1,12 @@
 # Copyright 2018 Mark S. Weiss
 
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from aleatoric.utils import (validate_sequence_of_types, validate_optional_type, validate_optional_types,
                              validate_not_none, validate_type, validate_type_choice, validate_types)
+from aleatoric.scale import (MajorKey, MinorKey, STEPS_IN_OCTAVE)
 
 
 class PerformanceAttrsFrozenException(Exception):
@@ -55,7 +57,7 @@ class PerformanceAttrs(object):
     def unfreeze(self):
         self.frozen = False
 
-    def is_frozen(self):
+    def is_frozen(self) -> bool:
         return self.frozen
 
     def __str__(self):
@@ -65,10 +67,15 @@ class PerformanceAttrs(object):
         return {attr_name: getattr(self, attr_name) for attr_name in self.attr_type_map.keys()}
 
 
-class Note(object):
+class Note(ABC):
     """Models the core attributes of a musical note common to multiple back ends"""
 
     name: Optional[str]
+    DEFAULT_INSTRUMENT = '1'
+    DEFAULT_START = 0.0
+    DEFAULT_DUR = 0.0
+    DEFAULT_AMP = 0.0
+    DEFAULT_PITCH = 0.0
     DEFAULT_NAME = 'Note'
 
     def __init__(self, instrument: Any = None,
@@ -77,15 +84,15 @@ class Note(object):
                  performance_attrs: PerformanceAttrs = None,
                  validate=True):
         if validate:
-            validate_types(('start', start, float), ('dur', dur, float), ('amp', amp, float),
-                           ('pitch', pitch, float))
-            validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs))
+            validate_optional_types(('start', start, float), ('dur', dur, float), ('amp', amp, float),
+                                    ('pitch', pitch, float), ('name', name, str),
+                                    ('performance_attrs', performance_attrs, PerformanceAttrs))
 
-        self.instrument = instrument
-        self.start = start
-        self.dur = dur
-        self.amp = amp
-        self.pitch = pitch
+        self.instrument = instrument or Note.DEFAULT_INSTRUMENT
+        self.start = start or Note.DEFAULT_START
+        self.dur = dur or Note.DEFAULT_DUR
+        self.amp = amp or Note.DEFAULT_AMP
+        self.pitch = pitch or Note.DEFAULT_PITCH
         self.name = name or Note.DEFAULT_NAME
         self.performance_attrs = performance_attrs or PerformanceAttrs()
 
@@ -109,7 +116,7 @@ class Note(object):
             }
 
     @staticmethod
-    def get_config():
+    def get_config() -> NoteConfig:
         return Note.NoteConfig()
 
     @staticmethod
@@ -145,6 +152,10 @@ class Note(object):
         """
         return self.performance_attrs
 
+    @abstractmethod
+    def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int):
+        raise NotImplemented('Note subtypes must implement get_pitch() and return valid pitch values for their type')
+
 
 class RestNote(Note):
     """Models the core attributes of a musical note common to multiple back ends
@@ -165,6 +176,9 @@ class RestNote(Note):
     @staticmethod
     def to_rest(note: Note):
         note.amp = RestNote.REST_AMP
+
+    def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int):
+        raise NotImplemented('RestNote cannot meaningfully implement get_pitch()')
 
 
 class FoxDotSupercolliderNote(Note):
@@ -224,7 +238,7 @@ class FoxDotSupercolliderNote(Note):
             }
 
     @staticmethod
-    def get_config():
+    def get_config() -> NoteConfig:
         return FoxDotSupercolliderNote.NoteConfig()
 
     @property
@@ -283,6 +297,44 @@ class CSoundNote(Note):
     """Models a note with attributes aliased to and specific to CSound
        and with a str() that prints CSound formatted output.
     """
+
+    PITCH_MAP = {
+        MajorKey.C: 1.01,
+        MajorKey.C_s: 1.02,
+        MajorKey.D_f: 1.02,
+        MajorKey.D: 1.03,
+        MajorKey.E_f: 1.04,
+        MajorKey.E: 1.05,
+        MajorKey.F: 1.06,
+        MajorKey.F_s: 1.07,
+        MajorKey.G_f: 1.07,
+        MajorKey.G: 1.08,
+        MajorKey.A_f: 1.09,
+        MajorKey.A: 1.10,
+        MajorKey.B_f: 1.10,
+        MajorKey.B: 1.11,
+        MajorKey.C_f: 1.11,
+
+        MinorKey.c: 1.01,
+        MinorKey.c_s: 1.02,
+        MinorKey.d_f: 1.02,
+        MinorKey.d: 1.03,
+        MinorKey.e_f: 1.04,
+        MinorKey.e: 1.05,
+        MinorKey.f: 1.06,
+        MinorKey.f_s: 1.07,
+        MinorKey.g_f: 1.07,
+        MinorKey.g: 1.08,
+        MinorKey.a_f: 1.09,
+        MinorKey.a: 1.10,
+        MinorKey.b_f: 1.10,
+        MinorKey.b: 1.11,
+        MinorKey.c_f: 1.11,
+    }
+
+    MIN_OCTAVE = 1.0
+    MAX_OCTAVE = 12.0
+
     def __init__(self, instrument: Any = None,
                  start: float = None, duration: float = None, amplitude: int = None, pitch: float = None,
                  name: str = None,
@@ -316,7 +368,7 @@ class CSoundNote(Note):
             }
 
     @staticmethod
-    def get_config():
+    def get_config() -> NoteConfig:
         return CSoundNote.NoteConfig()
 
     @property
@@ -337,6 +389,14 @@ class CSoundNote(Note):
         # noinspection PyAttributeOutsideInit
         self.amp = amplitude
 
+    def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int):
+        validate_type_choice('key', key, (MajorKey, MinorKey))
+        validate_type('octave', octave, int)
+        if CSoundNote.MIN_OCTAVE < octave < CSoundNote.MAX_OCTAVE:
+            raise ValueError((f'Arg `octave` must be in range '
+                             f'{CSoundNote.MIN_OCTAVE} <= octave <= {CSoundNote.MAX_OCTAVE}'))
+        return CSoundNote.PITCH_MAP[key] + (float(octave) - 1.0)
+
     @staticmethod
     def copy(source_note):
         return CSoundNote(instrument=source_note.instrument,
@@ -346,6 +406,7 @@ class CSoundNote(Note):
                           performance_attrs=source_note.performance_attrs)
 
     def __str__(self):
+        # TODO HANDLE FLOAT ROUNDING ON PITCH BY CHANGING PRECISION TO .2, FIX TESTS
         return f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} {self.pitch:.5f}'
 
 
@@ -534,6 +595,44 @@ class MidiNote(Note):
         Mute_Triangle = 80
         Open_Triangle = 81
 
+    PITCH_MAP = {
+        MajorKey.C: 24,
+        MajorKey.C_s: 25,
+        MajorKey.D_f: 25,
+        MajorKey.D: 26,
+        MajorKey.E_f: 27,
+        MajorKey.E: 28,
+        MajorKey.F: 29,
+        MajorKey.F_s: 30,
+        MajorKey.G_f: 30,
+        MajorKey.G: 31,
+        MajorKey.A_f: 32,
+        MajorKey.A: 33,
+        MajorKey.B_f: 34,
+        MajorKey.B: 35,
+        MajorKey.C_f: 35,
+
+        MinorKey.c: 24,
+        MinorKey.c_s: 25,
+        MinorKey.d_f: 25,
+        MinorKey.d: 26,
+        MinorKey.e_f: 27,
+        MinorKey.e: 28,
+        MinorKey.f: 29,
+        MinorKey.f_s: 30,
+        MinorKey.g_f: 30,
+        MinorKey.g: 31,
+        MinorKey.a_f: 32,
+        MinorKey.a: 33,
+        MinorKey.b_f: 34,
+        MinorKey.c_f: 35,
+    }
+
+    MIN_OCTAVE = 0
+    MAX_OCTAVE = 7
+    KEYS_IN_OCTAVE_MIN_MIDI_OCTAVE = {MajorKey.A, MajorKey.B_f, MajorKey.B,
+                                      MinorKey.a, MinorKey.b_f, MinorKey.b}
+
     def __init__(self, instrument: Any = None,
                  time: float = None, duration: float = None, velocity: int = None, pitch: float = None,
                  name: str = None,
@@ -572,7 +671,7 @@ class MidiNote(Note):
             }
 
     @staticmethod
-    def get_config():
+    def get_config() -> NoteConfig:
         return MidiNote.NoteConfig()
 
     @property
@@ -606,6 +705,26 @@ class MidiNote(Note):
         validate_type('instrument', instrument, int)
         # noinspection PyAttributeOutsideInit
         self.instrument = instrument
+
+    def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int):
+        """MIDI pitches sequence from 21 A0 to 127, the 3 highest notes below C1 to the last note of C7.
+           The algorithm is that we store the values for C1-12 as ints in the PITCH_MAP
+           and thus increment by + 12 for every octave > 1, handle the special case for the 3 notes < C1 and
+           validate that the (key, octave) combination is a valid MIDI pitch.
+        """
+        validate_type_choice('key', key, (MajorKey, MinorKey))
+        validate_type('octave', octave, int)
+        if MidiNote.MIN_OCTAVE < octave < MidiNote.MAX_OCTAVE:
+            raise ValueError(f'Arg `octave` must be in range {MidiNote.MIN_OCTAVE} <= octave <= {MidiNote.MAX_OCTAVE}')
+
+        if octave == MidiNote.MIN_OCTAVE:
+            # Handle edge case of only 3 notes being valid when `octave` == 0
+            if key not in MidiNote.KEYS_IN_OCTAVE_MIN_MIDI_OCTAVE:
+                raise ValueError(('If arg `octave` == 0 then `key` must be in '
+                                  f'{MidiNote.KEYS_IN_OCTAVE_MIN_MIDI_OCTAVE}'))
+            return self.PITCH_MAP[key].value - STEPS_IN_OCTAVE
+        else:
+            return self.PITCH_MAP[key].value + ((octave - 1) * STEPS_IN_OCTAVE)
 
     @staticmethod
     def copy(source_note):
@@ -652,12 +771,14 @@ class NoteSequence(object):
         """
         return self.performance_attrs
 
-    def append(self, note: Note):
+    # noinspection PyUnresolvedReferences
+    def append(self, note: Note) -> NoteSequence:
         validate_type('note', note, Note)
         self.note_list.append(note)
         return self
 
-    def extend(self, to_add: Any):
+    # noinspection PyUnresolvedReferences
+    def extend(self, to_add: Union[Note, NoteSequence, List[Note]]) -> NoteSequence:
         new_note_list = None
         # Support either NoteSequence or a List[Note]
         try:
@@ -675,7 +796,8 @@ class NoteSequence(object):
     def __len__(self):
         return len(self.note_list)
 
-    def __add__(self, to_add: Any):
+    # noinspection PyUnresolvedReferences
+    def __add__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> NoteSequence:
         """Overloads operator + to support appending either single notes or sequences
            Tries to treat `to_add` as a Note and then as a NoteSequence. If both
            fail then it raises the last exception handled. If either succeeds
@@ -711,11 +833,13 @@ class NoteSequence(object):
 
         raise ValueError(f'Arg `to_add` to __add__() must be a Note, NoteSequence or List[Note], arg: {to_add}')
 
-    def __lshift__(self, to_add: Any):
+    # noinspection PyUnresolvedReferences
+    def __lshift__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> NoteSequence:
         """Support `note_seq << note` syntax for appending notes to a sequence as well as `a + b`"""
         return self.__add__(to_add)
 
-    def insert(self, index: int, to_add: Any):
+    # noinspection PyUnresolvedReferences
+    def insert(self, index: int, to_add: Union[Note, NoteSequence, List[Note]]) -> NoteSequence:
         """Inserts a single note, all notes in a List[Note] or all notes in a NoteSequence.
            in stack order, i.e. reverse order of the input
         """
@@ -746,7 +870,8 @@ class NoteSequence(object):
 
         raise ValueError(f'Arg `to_add` to insert() must be a Note, NoteSequence or List[Note], arg: {to_add}')
 
-    def remove(self, to_remove: Any):
+    # noinspection PyUnresolvedReferences
+    def remove(self, to_remove: Union[Note, NoteSequence, List[Note]]):
         """Removes a single note, all notes in a List[Note] or all notes in a NoteSequence
         """
 
@@ -778,20 +903,21 @@ class NoteSequence(object):
 
         raise ValueError(f'Arg `to_add` to remove() must be a Note, NoteSequence or List[Note], arg: {to_remove}')
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Note:
         validate_type('index', index, int)
         if abs(index) >= len(self.note_list):
             raise ValueError(f'`index` out of range index: {index} len(note_list): {len(self.note_list)}')
         return self.note_list[index]
 
-    def __iter__(self):
+    # noinspection PyUnresolvedReferences
+    def __iter__(self) -> NoteSequence:
         """Reset iter position. This behavior complements __next__ to make the
            container support being iterated multiple times.
         """
         self.index = 0
         return self
 
-    def __next__(self):
+    def __next__(self) -> Note:
         """Always return a Note object with note_attrs and perf_attrs populated.
            This is the contract clients can expect, and thus this iterator hides
            where perf_attrs came from and always returns a Note ready for use.
@@ -810,8 +936,9 @@ class NoteSequence(object):
             return False
         return all([self.note_list[i] == other.note_list[i] for i in range(len(self.note_list))])
 
+    # noinspection PyUnresolvedReferences
     @staticmethod
-    def copy(source_note_sequence):
+    def copy(source_note_sequence: NoteSequence) -> NoteSequence:
         # Call the copy() for the subclass of this note type
         new_note_list = [(note.__class__.copy(note)) for note in source_note_sequence.note_list]
         new_note_sequence = NoteSequence(new_note_list,
