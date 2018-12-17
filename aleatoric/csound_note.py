@@ -2,9 +2,29 @@
 
 from typing import Any, Union
 
-from aleatoric.note import (Note, PerformanceAttrs)
+from aleatoric.note import (Note, NoteConfig, PerformanceAttrs)
 from aleatoric.scale_globals import (MajorKey, MinorKey)
 from aleatoric.utils import (validate_optional_types, validate_type_choice, validate_type, validate_types)
+
+
+class CSoundNoteConfig(NoteConfig):
+    def __init__(self):
+        self.instrument = None
+        self.start = None
+        self.duration = None
+        self.amplitude = None
+        self.pitch = None
+        self.name = None
+
+    def as_dict(self):
+        return {
+            'instrument': self.instrument,
+            'start': self.start,
+            'duration': self.duration,
+            'amplitude': self.amplitude,
+            'pitch': self.pitch,
+            'name': self.name
+        }
 
 
 class CSoundNote(Note):
@@ -56,52 +76,81 @@ class CSoundNote(Note):
         validate_types(('start', start, float), ('duration', duration, float), ('amplitude', amplitude, int),
                        ('pitch', pitch, float))
         validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs))
-        super(CSoundNote, self).__init__(instrument=instrument,
-                                         start=start, dur=duration, amp=amplitude, pitch=pitch,
-                                         name=name,
-                                         performance_attrs=performance_attrs,
-                                         validate=False)
-
-    class NoteConfig(object):
-        def __init__(self):
-            self.instrument = None
-            self.start = None
-            self.duration = None
-            self.amplitude = None
-            self.pitch = None
-            self.name = None
-
-        def as_dict(self):
-            return {
-                'instrument': self.instrument,
-                'start': self.start,
-                'duration': self.duration,
-                'amplitude': self.amplitude,
-                'pitch': self.pitch,
-                'name': self.name
-            }
+        super(CSoundNote, self).__init__(name=name)
+        self._instrument = instrument
+        self._start = start
+        self._duration = duration
+        self._amplitude = amplitude
+        self._pitch = pitch
+        self._performance_attrs = performance_attrs
 
     @staticmethod
-    def get_config() -> NoteConfig:
-        return CSoundNote.NoteConfig()
+    def get_config() -> CSoundNoteConfig:
+        return CSoundNoteConfig()
+
+    @property
+    def start(self):
+        return self._start
+
+    @start.setter
+    def start(self, start: float):
+        self._start = start
+
+    @property
+    def dur(self):
+        return self._duration
+
+    @dur.setter
+    def dur(self, duration: float):
+        self._duration = duration
 
     @property
     def duration(self):
-        return self.dur
+        return self._duration
 
     @duration.setter
     def duration(self, duration: float):
-        # noinspection PyAttributeOutsideInit
-        self.dur = duration
+        self._duration = duration
+
+    @property
+    def amp(self):
+        return self._amplitude
+
+    @amp.setter
+    def amp(self, amplitude: int):
+        self._amplitude = amplitude
 
     @property
     def amplitude(self):
-        return self.amp
+        return self._amplitude
 
     @amplitude.setter
     def amplitude(self, amplitude: int):
-        # noinspection PyAttributeOutsideInit
-        self.amp = amplitude
+        self._amplitude = amplitude
+
+    @property
+    def pitch(self):
+        return self._pitch
+
+    @pitch.setter
+    def pitch(self, pitch: float):
+        self._pitch = pitch
+
+    @property
+    def performance_attrs(self) -> PerformanceAttrs:
+        return self._performance_attrs
+
+    @performance_attrs.setter
+    def performance_attrs(self, performance_attrs: PerformanceAttrs):
+        self._performance_attrs = performance_attrs
+
+    @property
+    def pa(self) -> PerformanceAttrs:
+        return self._performance_attrs
+
+    @pa.setter
+    def pa(self, performance_attrs: PerformanceAttrs):
+        self._performance_attrs = performance_attrs
 
     def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int):
         validate_type_choice('key', key, (MajorKey, MinorKey))
@@ -119,6 +168,14 @@ class CSoundNote(Note):
                           name=source_note.name,
                           performance_attrs=source_note.performance_attrs)
 
+    def __eq__(self, other: 'CSoundNote') -> bool:
+        """NOTE: Equality ignores Note.name and Note.peformance_attrs. Two CSountNotes are considered equal
+           if they have the same note attributes.
+        """
+        return self._instrument == other._instrument and self._start == other._start and \
+            self._duration == other.duration and self._amplitude == other._amplitude and \
+            self._pitch == other._pitch
+
+    # TODO HANDLE FLOAT ROUNDING ON PITCH BY CHANGING PRECISION TO .2, FIX TESTS
     def __str__(self):
-        # TODO HANDLE FLOAT ROUNDING ON PITCH BY CHANGING PRECISION TO .2, FIX TESTS
         return f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} {self.pitch:.5f}'

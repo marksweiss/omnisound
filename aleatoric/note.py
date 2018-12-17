@@ -1,10 +1,11 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, List, Optional, Union
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Union
 
-# from aleatoric.scale import MajorKey, MinorKey
-from aleatoric.utils import (validate_sequence_of_types, validate_optional_type, validate_optional_types,
-                             validate_not_none, validate_type, validate_type_choice, validate_types)
+from aleatoric.scale_globals import (MajorKey, MinorKey)
+from aleatoric.utils import (validate_sequence_of_types, validate_optional_type,
+                             validate_not_none, validate_type, validate_type_choice)
 
 
 class PerformanceAttrsFrozenException(Exception):
@@ -65,95 +66,121 @@ class PerformanceAttrs(object):
         return {attr_name: getattr(self, attr_name) for attr_name in self.attr_type_map.keys()}
 
 
-class Note(object):
+class NoteConfig(ABC):
+    @abstractmethod
+    def as_dict(self) -> Dict:
+        raise NotImplemented('Derived type must implement NoteConfig.as_dict() -> Dict')
+
+
+class Note(ABC):
     """Models the core attributes of a musical note common to multiple back ends"""
 
-    name: Optional[str]
-    DEFAULT_INSTRUMENT = '1'
-    DEFAULT_START = 0.0
-    DEFAULT_DUR = 0.0
-    DEFAULT_AMP = 0.0
-    DEFAULT_PITCH = 0.0
     DEFAULT_NAME = 'Note'
 
-    def __init__(self, instrument: Any = None,
-                 start: float = None, dur: float = None, amp: float = None, pitch: float = None,
-                 name: str = None,
-                 performance_attrs: PerformanceAttrs = None,
-                 validate=True):
-        if validate:
-            validate_optional_types(('start', start, float), ('dur', dur, float), ('amp', amp, float),
-                                    ('pitch', pitch, float), ('name', name, str),
-                                    ('performance_attrs', performance_attrs, PerformanceAttrs))
-
-        self.instrument = instrument or Note.DEFAULT_INSTRUMENT
-        self.start = start or Note.DEFAULT_START
-        self.dur = dur or Note.DEFAULT_DUR
-        self.amp = amp or Note.DEFAULT_AMP
-        self.pitch = pitch or Note.DEFAULT_PITCH
-        self.name = name or Note.DEFAULT_NAME
-        self.performance_attrs = performance_attrs or PerformanceAttrs()
-
-    class NoteConfig(object):
-        def __init__(self):
-            self.instrument = None
-            self.start = None
-            self.dur = None
-            self.amp = None
-            self.pitch = None
-            self.name = None
-
-        def as_dict(self):
-            return {
-                'instrument': self.instrument,
-                'start': self.start,
-                'dur': self.dur,
-                'amp': self.amp,
-                'pitch': self.pitch,
-                'name': self.name
-            }
-
-    @staticmethod
-    def get_config() -> NoteConfig:
-        return Note.NoteConfig()
-
-    @staticmethod
-    def copy(source_note):
-        validate_types(('start', source_note.start, float), ('dur', source_note.dur, float),
-                       ('amp', source_note.amp, float), ('pitch', source_note.pitch, float))
-        validate_optional_types(('name', source_note.name, str),
-                                ('performance_attrs', source_note.performance_attrs, PerformanceAttrs))
-
-        return Note(instrument=source_note.instrument,
-                    start=source_note.start, dur=source_note.dur, amp=source_note.amp, pitch=source_note.pitch,
-                    name=source_note.name,
-                    performance_attrs=source_note.performance_attrs)
-
-    def __eq__(self, other):
-        """NOTE: equality of Notes is defined for note attributes only, not for performance attributes."""
-        validate_types(('start', other.start, float), ('dur', other.dur, float),
-                       ('amp', other.amp, float), ('pitch', other.pitch, float))
-        return self.instrument == other.instrument and \
-            self.start == other.start and \
-            self.dur == other.dur and \
-            self.amp == other.amp and \
-            self.pitch == other.pitch
-
-    def __str__(self):
-        return (f'name: {self.name} instrument: {self.instrument} delay: {self.start:.5f} '
-                f'dur: {self.dur:.5f} amp: {self.amp} pitch: {self.pitch:.5f}')
+    def __init__(self, name: str = None):
+        self._name = name or Note.DEFAULT_NAME
 
     @property
-    def pa(self):
-        """Get the underlying performance_attrs.
-           Alias to something shorter for client code convenience.
-        """
-        return self.performance_attrs
+    def name(self):
+        return self._name
 
-    # TODO Signature should be get_pitch(self, key: Union[MajorKey, MinorKey], octave: int)
-    #  But we elide the type information on the first argument to avoid a circular reference
-    def get_pitch(self, key: Any, octave: int):
-        raise NotImplemented('Note subtypes must implement get_pitch() and return valid pitch values for their type')
+    @name.setter
+    def name(self, name: str):
+        self._name = name
+
+    @property
+    @abstractmethod
+    def instrument(self):
+        raise NotImplemented('Derived type must implement Note.instrument')
+
+    @instrument.setter
+    @abstractmethod
+    def instrument(self, instrument):
+        raise NotImplemented('Derived type must implement Note.instrument')
+
+    @property
+    @abstractmethod
+    def start(self):
+        raise NotImplemented('Derived type must implement Note.start')
+
+    @start.setter
+    @abstractmethod
+    def start(self, start):
+        raise NotImplemented('Derived type must implement Note.start')
+
+    @property
+    @abstractmethod
+    def dur(self):
+        raise NotImplemented('Derived type must implement Note.dur')
+
+    @dur.setter
+    @abstractmethod
+    def dur(self, dur):
+        raise NotImplemented('Derived type must implement Note.dur')
+
+    @property
+    @abstractmethod
+    def amp(self):
+        raise NotImplemented('Derived type must implement Note.amp')
+
+    @amp.setter
+    @abstractmethod
+    def amp(self, amp):
+        raise NotImplemented('Derived type must implement Note.amp')
+
+    @property
+    @abstractmethod
+    def pitch(self):
+        raise NotImplemented('Derived type must implement Note.pitch')
+
+    @pitch.setter
+    @abstractmethod
+    def pitch(self, pitch):
+        raise NotImplemented('Derived type must implement Note.pitch')
+
+    @property
+    @abstractmethod
+    def performance_attrs(self) -> PerformanceAttrs:
+        raise NotImplemented('Derived type must implement Note.performance_attrs -> PerformanceAttrs')
+
+    @performance_attrs.setter
+    @abstractmethod
+    def performance_attrs(self, performance_attrs: PerformanceAttrs):
+        raise NotImplemented('Derived type must implement Note.performance_attrs')
+
+    @property
+    @abstractmethod
+    def pa(self) -> PerformanceAttrs:
+        """Alias to something shorter for client code convenience."""
+        raise NotImplemented('Derived type must implement Note.pa -> PerformanceAttrs')
+
+    @pa.setter
+    @abstractmethod
+    def pa(self, performance_attrs: PerformanceAttrs):
+        """Alias to something shorter for client code convenience."""
+        raise NotImplemented('Derived type must implement Note.pa')
+
+    @staticmethod
+    @abstractmethod
+    def get_config() -> NoteConfig:
+        raise NotImplemented('Derived type must implement Note.get_config() -> NoteConfig')
+
+    @abstractmethod
+    def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int) -> Any:
+        raise NotImplemented('Note subtypes must implement get_pitch() and return a valid pitch value for their type')
+
+    @staticmethod
+    @abstractmethod
+    def copy(source_note: 'Note') -> 'Note':
+        raise NotImplemented('Derived type must implement Note.copy() -> Note')
+
+    @abstractmethod
+    def __eq__(self, other: 'Note') -> bool:
+        raise NotImplemented('Derived type must implement Note.__eq__() -> bool')
+
+    @abstractmethod
+    def __str__(self):
+        raise NotImplemented('Derived type must implement Note.__str__()')
 
 
 class NoteSequence(object):
