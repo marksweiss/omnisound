@@ -3,7 +3,7 @@
 from bisect import bisect_left
 from copy import copy
 from enum import Enum
-from typing import Any, List, Union
+from typing import List, Union
 
 from aleatoric.note import Note, NoteSequence, PerformanceAttrs
 from aleatoric.utils import sign, validate_optional_type, validate_optional_types, validate_type, validate_types
@@ -297,25 +297,25 @@ class Measure(NoteSequence):
     # class maintains the invariant that note_list is sorted by
     # note.start_time ascending
     # noinspection PyUnresolvedReferences
-    def append(self, note: Note) -> Measure:
+    def append(self, note: Note) -> 'Measure':
         super(Measure, self).append(note)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
-    def extend(self, new_note_list: List[Note]) -> Measure:
+    def extend(self, new_note_list: List[Note]) -> 'Measure':
         super(Measure, self).extend(new_note_list)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
-    def __add__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> Measure:
+    def __add__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         super(Measure, self).__add__(to_add)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
-    def __lshift__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> Measure:
+    def __lshift__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         return self.__add__(to_add)
 
     def insert(self, index: int, note: Note):
@@ -328,7 +328,7 @@ class Measure(NoteSequence):
 
     # noinspection PyUnresolvedReferences
     @staticmethod
-    def copy(source_measure: Measure) -> Measure:
+    def copy(source_measure: 'Measure') -> 'Measure':
         # Call the dup() for the subclass of this note type
         new_note_list = [(note.copy(note))
                          for note in source_measure.note_sequence.note_list]

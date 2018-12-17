@@ -6,8 +6,12 @@ import pytest
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
-from aleatoric.note import (CSoundNote, MidiNote, Note, NoteSequence, PerformanceAttrs,
-                            RestNote, FoxDotSupercolliderNote)
+from aleatoric.note import (Note, NoteSequence, PerformanceAttrs)
+from aleatoric.csound_note import CSoundNote
+from aleatoric.midi_note import MidiNote
+from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
+from aleatoric.rest_note import RestNote
+
 
 INSTRUMENT = 1
 FOX_DOT_INSTRUMENT = fd_sc_synth
@@ -112,7 +116,6 @@ def test_note_eq_copy():
     note_2 = Note.copy(NOTE)
     assert NOTE == note_2
 
-    synth_def = fd_sc_synth
     octave = OCTAVE
     scale = SCALE
     fox_dot_note = FoxDotSupercolliderNote(synth_def=FOX_DOT_INSTRUMENT, delay=int(START), dur=DUR,
@@ -166,13 +169,19 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
 @pytest.mark.parametrize('time', STARTS)
 def test_midi_note_attrs(time, duration, velocity, pitch):
     note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
-                    velocity=int(velocity), pitch=pitch)
+                    velocity=int(velocity), pitch=int(pitch))
     assert note.time == time
     assert note.duration == duration
     assert note.velocity == int(velocity)
-    assert note.pitch == pitch
-    assert (f'name: Note instrument: {INSTRUMENT} time: {time} duration: {duration} '
-            f'velocity: {int(velocity)} pitch: {pitch} channel: 1') == str(note)
+    assert note.pitch == int(pitch)
+    expected_str_note = (f'name: Note instrument: {INSTRUMENT} time: {time} duration: {duration} '
+                         f'velocity: {int(velocity)} pitch: {int(pitch)} channel: 1')
+
+    # TODO HAVE TO MAKE NOTE ABC BECAUSE TYPES DON'T MATCH FOR ALL DERIVED TYPES. MAKE IT ABC WITHOUT TYPES
+    # TEMP DEBUG
+    import pdb; pdb.set_trace()
+
+    assert expected_str_note == str(note)
 
 
 def test_note_config():
