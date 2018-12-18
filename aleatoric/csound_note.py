@@ -69,13 +69,18 @@ class CSoundNote(Note):
     MIN_OCTAVE = 1.0
     MAX_OCTAVE = 12.0
 
-    def __init__(self, instrument: Any = None,
+    DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
+
+    def __init__(self, instrument: int = None,
                  start: float = None, duration: float = None, amplitude: int = None, pitch: float = None,
                  name: str = None,
+                 pitch_precision: int = None,
                  performance_attrs: PerformanceAttrs = None):
-        validate_types(('start', start, float), ('duration', duration, float), ('amplitude', amplitude, int),
-                       ('pitch', pitch, float))
-        validate_optional_types(('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs))
+        validate_types(('instrument', instrument, int), ('start', start, float),
+                       ('duration', duration, float), ('amplitude', amplitude, int),
+                       ('pitch', pitch, int))
+        validate_optional_types(('name', name, str), (pitch_precision, 'pitch_precision', float),
+                                ('performance_attrs', performance_attrs, PerformanceAttrs))
         super(CSoundNote, self).__init__(name=name)
         self._instrument = instrument
         self._start = start
@@ -83,13 +88,41 @@ class CSoundNote(Note):
         self._amplitude = amplitude
         self._pitch = pitch
         self._performance_attrs = performance_attrs
+        # Handle case that pitch is a float and will have rounding but that sometimes we want
+        # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
+        # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
+        # and for the latter case we default to .5f precision but allow any precision.
+        self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
 
+    # Custom Interface
+    # TODO NEED TESTS FOR THESE THREE METHODS
+    @property
+    def pitch_precision(self) -> int:
+        return self._pitch_precision
+
+    @pitch_precision.setter
+    def pitch_precision(self, pitch_precision: int):
+        validate_type(pitch_precision, 'pitch_precision', int)
+        self._pitch_precision = pitch_precision
+
+    def set_scale_pitch_precision(self):
+        self._pitch_precision = CSoundNote.SCALE_PITCH_PRECISION
+
+    # Base Note Interface
     @staticmethod
     def get_config() -> CSoundNoteConfig:
         return CSoundNoteConfig()
 
     @property
-    def start(self):
+    def instrument(self) -> int:
+        return self._instrument
+
+    @instrument.setter
+    def instrument(self, instrument: int):
+        self._instrument = instrument
+
+    @property
+    def start(self) -> float:
         return self._start
 
     @start.setter
@@ -97,7 +130,7 @@ class CSoundNote(Note):
         self._start = start
 
     @property
-    def dur(self):
+    def dur(self) -> float:
         return self._duration
 
     @dur.setter
@@ -105,7 +138,7 @@ class CSoundNote(Note):
         self._duration = duration
 
     @property
-    def duration(self):
+    def duration(self) -> float:
         return self._duration
 
     @duration.setter
@@ -113,7 +146,7 @@ class CSoundNote(Note):
         self._duration = duration
 
     @property
-    def amp(self):
+    def amp(self) -> int:
         return self._amplitude
 
     @amp.setter
@@ -121,7 +154,7 @@ class CSoundNote(Note):
         self._amplitude = amplitude
 
     @property
-    def amplitude(self):
+    def amplitude(self) -> int:
         return self._amplitude
 
     @amplitude.setter
@@ -129,7 +162,7 @@ class CSoundNote(Note):
         self._amplitude = amplitude
 
     @property
-    def pitch(self):
+    def pitch(self) -> float:
         return self._pitch
 
     @pitch.setter
@@ -152,7 +185,7 @@ class CSoundNote(Note):
     def pa(self, performance_attrs: PerformanceAttrs):
         self._performance_attrs = performance_attrs
 
-    def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int):
+    def get_pitch_for_key(self, key: Union[MajorKey, MinorKey], octave: int) -> float:
         validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type('octave', octave, int)
         if CSoundNote.MIN_OCTAVE < octave < CSoundNote.MAX_OCTAVE:
@@ -161,7 +194,7 @@ class CSoundNote(Note):
         return CSoundNote.PITCH_MAP[key] + (float(octave) - 1.0)
 
     @staticmethod
-    def copy(source_note):
+    def copy(source_note) -> 'CSoundNote':
         return CSoundNote(instrument=source_note.instrument,
                           start=source_note.start, duration=source_note.dur,
                           amplitude=source_note.amp, pitch=source_note.pitch,
@@ -176,6 +209,6 @@ class CSoundNote(Note):
             self._duration == other.duration and self._amplitude == other._amplitude and \
             self._pitch == other._pitch
 
-    # TODO HANDLE FLOAT ROUNDING ON PITCH BY CHANGING PRECISION TO .2, FIX TESTS
     def __str__(self):
-        return f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} {self.pitch:.5f}'
+        return (f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} '
+                f'{self.pitch}:.{self._pitch_precision}f')

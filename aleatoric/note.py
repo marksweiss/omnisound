@@ -80,6 +80,11 @@ class Note(ABC):
     def __init__(self, name: str = None):
         self._name = name or Note.DEFAULT_NAME
 
+    @staticmethod
+    @abstractmethod
+    def get_config() -> NoteConfig:
+        raise NotImplemented('Derived type must implement Note.get_config() -> NoteConfig')
+
     @property
     def name(self):
         return self._name
@@ -160,13 +165,8 @@ class Note(ABC):
         """Alias to something shorter for client code convenience."""
         raise NotImplemented('Derived type must implement Note.pa')
 
-    @staticmethod
     @abstractmethod
-    def get_config() -> NoteConfig:
-        raise NotImplemented('Derived type must implement Note.get_config() -> NoteConfig')
-
-    @abstractmethod
-    def get_pitch(self, key: Union[MajorKey, MinorKey], octave: int) -> Any:
+    def get_pitch_for_key(self, key: Union[MajorKey, MinorKey], octave: int) -> Any:
         raise NotImplemented('Note subtypes must implement get_pitch() and return a valid pitch value for their type')
 
     @staticmethod
