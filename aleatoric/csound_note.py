@@ -78,8 +78,8 @@ class CSoundNote(Note):
                  performance_attrs: PerformanceAttrs = None):
         validate_types(('instrument', instrument, int), ('start', start, float),
                        ('duration', duration, float), ('amplitude', amplitude, int),
-                       ('pitch', pitch, int))
-        validate_optional_types(('name', name, str), (pitch_precision, 'pitch_precision', float),
+                       ('pitch', pitch, float))
+        validate_optional_types(('name', name, str), ('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
         super(CSoundNote, self).__init__(name=name)
         self._instrument = instrument

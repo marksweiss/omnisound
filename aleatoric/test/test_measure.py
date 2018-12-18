@@ -5,16 +5,16 @@ from typing import List, Tuple
 import pytest
 
 from aleatoric.measure import Measure, Meter, NoteDur, Swing
-from aleatoric.note import Note
+from aleatoric.csound_note import CSoundNote
 from aleatoric.note_sequence import NoteSequence
 
 
 INSTRUMENT = 1
 START = 0.0
 DUR = float(NoteDur.QUARTER.value)
-AMP = 1.0
+AMP = 1
 PITCH = 10.1
-NOTE = Note(instrument=INSTRUMENT, start=START, dur=DUR, amp=AMP, pitch=PITCH)
+NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
@@ -24,12 +24,12 @@ SWING_FACTOR = 0.5
 
 @pytest.fixture
 def note_list():
-    note_1 = Note.copy(NOTE)
-    note_2 = Note.copy(NOTE)
+    note_1 = CSoundNote.copy(NOTE)
+    note_2 = CSoundNote.copy(NOTE)
     note_2.start += DUR
-    note_3 = Note.copy(NOTE)
+    note_3 = CSoundNote.copy(NOTE)
     note_3.start += (DUR * 2)
-    note_4 = Note.copy(NOTE)
+    note_4 = CSoundNote.copy(NOTE)
     note_4.start += (DUR * 3)
     return [note_1, note_2, note_3, note_4]
 
@@ -75,12 +75,12 @@ def test_quantize(note_list, measure):
     measure.meter.quantizing_on()
     measure.quantize()
     for i, note in enumerate(note_list):
-        # Relies on Note.__eq__
+        # Relies on CSoundNote.__eq__
         assert note == measure.note_list[i]
 
     # Test: Note durations do not sum to measure duration and no quantizing required
     # Copy the list of notes
-    note_list_with_longer_durations = [Note.copy(note) for note in note_list]
+    note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
     # Modify the note durations in the copy to be longer and require quantization
     for note in note_list_with_longer_durations:
         note.dur = note.dur * 2
@@ -106,11 +106,11 @@ def test_quantize_to_beat(note_list, measure):
     measure.meter.quantizing_on()
     measure.quantize_to_beat()
     for i, note in enumerate(note_list):
-        # Relies on Note.__eq__
+        # Relies on CSoundNote.__eq__
         assert note == measure.note_list[i]
 
     # Test: Note durations not on the beat, quantization required
-    note_list_with_offset_start_times = [Note.copy(note) for note in note_list]
+    note_list_with_offset_start_times = [CSoundNote.copy(note) for note in note_list]
     # Modify the note start_times in the copy to be offset from the beats
     for i, note in enumerate(note_list_with_offset_start_times):
         note.start = note.start + 0.05
@@ -125,7 +125,7 @@ def test_quantize_to_beat(note_list, measure):
 
 def test_quantize_on_off(note_list, meter):
     # Test: Should quantize with quantize set on
-    note_list_with_longer_durations = [Note.copy(note) for note in note_list]
+    note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
     for note in note_list_with_longer_durations:
         note.dur = note.dur * 2
 
@@ -143,7 +143,7 @@ def test_quantize_on_off(note_list, meter):
             start_after_quantization == start_before_quantization - 0.25
 
     # Test: Should not quantize with quantize set off
-    note_list_with_longer_durations = [Note.copy(note) for note in note_list]
+    note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
     for note in note_list_with_longer_durations:
         note.dur = note.dur * 2
 
