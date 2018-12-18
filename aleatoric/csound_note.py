@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Union
+from typing import Union
 
 from aleatoric.note import (Note, NoteConfig, PerformanceAttrs)
 from aleatoric.scale_globals import (MajorKey, MinorKey)

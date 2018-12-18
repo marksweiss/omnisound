@@ -5,7 +5,8 @@ from copy import copy
 from enum import Enum
 from typing import List, Union
 
-from aleatoric.note import Note, NoteSequence, PerformanceAttrs
+from aleatoric.note import Note, PerformanceAttrs
+from aleatoric.note_sequence import NoteSequence
 from aleatoric.utils import sign, validate_optional_type, validate_optional_types, validate_type, validate_types
 
 

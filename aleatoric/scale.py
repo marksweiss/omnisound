@@ -11,7 +11,8 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
 
 from typing import Union
 
-from aleatoric.note import (Note, NoteSequence, PerformanceAttrs)
+from aleatoric.note import (Note, PerformanceAttrs)
+from aleatoric.note_sequence import NoteSequence
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
