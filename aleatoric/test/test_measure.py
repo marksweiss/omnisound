@@ -5,7 +5,9 @@ from typing import List, Tuple
 import pytest
 
 from aleatoric.measure import Measure, Meter, NoteDur, Swing
-from aleatoric.note import Note, NoteSequence
+from aleatoric.note import Note
+from aleatoric.note_sequence import NoteSequence
+
 
 INSTRUMENT = 1
 START = 0.0

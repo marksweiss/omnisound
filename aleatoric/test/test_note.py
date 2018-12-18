@@ -6,10 +6,12 @@ import pytest
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
-from aleatoric.note import (Note, NoteSequence, PerformanceAttrs)
 from aleatoric.csound_note import CSoundNote
-from aleatoric.midi_note import MidiNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
+from aleatoric.midi_note import MidiNote
+from aleatoric.note import Note
+from aleatoric.note_sequence import NoteSequence
+from aleatoric.performance_attrs import PerformanceAttrs
 from aleatoric.rest_note import RestNote
 
 
