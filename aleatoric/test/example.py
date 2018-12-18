@@ -3,6 +3,7 @@
 from time import sleep
 
 from FoxDot import Player as FD_SC_Player
+# noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
