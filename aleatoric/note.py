@@ -73,7 +73,27 @@ class NoteConfig(ABC):
 
 
 class Note(ABC):
-    """Models the core attributes of a musical note common to multiple back ends"""
+    """Models the core attributes of a musical note common to multiple back ends.
+
+       Core properties are defined here that are the property interface for Notes in derived classes, which are
+       notes that define the attributes for a specific back end, e.g. `CSoundNote`, `MidiNote`, etc. The core
+       properties are `instrument`, `start`, `duration`, `amplitude` and `pitch`. The interface here is abstract so
+       types aren't specified, but derived classes are expected to define types and enforce them with validation in
+       `__init__()` and all setters. Derived notes may also create aliased properties for these core properties that
+       match the conventions of their backend, and of course they may define additional properties specific to that
+       backend.
+
+       In addition, each derived type is expected to define equality, a `copy()` constructor, and `str`. Note that
+       `str` may be meaningful output, as in the case of `CSoundNote`, which produces a string that can be inserted
+       into a CSound score file which CSound uses to render audio. Or it may be merely a string representation of
+       the information in the note.
+
+       Finally, each note is responsible for being able to translate a musical key (pitch on a scale) to a valid
+       pitch value for that Note's backend, in the `get_pitch_for_key()` method.
+
+       It is is strongly preferred that all getter properties return self in derived classes
+       to support fluid interfaces and defining notes most easily in the least number of lines.
+    """
 
     DEFAULT_NAME = 'Note'
 
@@ -83,6 +103,9 @@ class Note(ABC):
     @staticmethod
     @abstractmethod
     def get_config() -> NoteConfig:
+        """Return a dict config object to be used for convenient note construction. Allows client to construct
+           and pass in this object as one arg with `**config` syntax rather than type out all five kw args.
+        """
         raise NotImplemented('Derived type must implement Note.get_config() -> NoteConfig')
 
     @property
