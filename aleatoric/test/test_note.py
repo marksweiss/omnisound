@@ -3,16 +3,14 @@
 from typing import Any, List
 
 import pytest
-# noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
-from aleatoric.midi_note import MidiNote, MidiInstrument
+from aleatoric.midi_note import MidiInstrument, MidiNote
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.performance_attrs import PerformanceAttrs
 from aleatoric.rest_note import RestNote
-
 
 INSTRUMENT = 1
 FOX_DOT_INSTRUMENT = fd_sc_synth

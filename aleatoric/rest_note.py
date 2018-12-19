@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from aleatoric.note import (Note, NoteConfig, PerformanceAttrs)
+from aleatoric.note import Note, NoteConfig, PerformanceAttrs
 
 
 class RestNoteConfig(NoteConfig):

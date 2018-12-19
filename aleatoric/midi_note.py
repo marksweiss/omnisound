@@ -3,9 +3,10 @@
 from enum import Enum
 from typing import Union
 
-from aleatoric.note import (Note, NoteConfig, PerformanceAttrs)
-from aleatoric.scale_globals import (MajorKey, MinorKey, NUM_INTERVALS_IN_OCTAVE)
-from aleatoric.utils import (validate_optional_types, validate_type_choice, validate_type, validate_types)
+from aleatoric.note import Note, NoteConfig, PerformanceAttrs
+from aleatoric.scale_globals import NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey
+from aleatoric.utils import (validate_optional_types, validate_type,
+                             validate_type_choice, validate_types)
 
 
 class MidiNoteConfig(NoteConfig):

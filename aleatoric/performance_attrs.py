@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from aleatoric.utils import (validate_not_none, validate_type)
+from aleatoric.utils import validate_not_none, validate_type
 
 
 class PerformanceAttrsFrozenException(Exception):

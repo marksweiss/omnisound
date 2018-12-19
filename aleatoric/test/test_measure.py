@@ -4,10 +4,9 @@ from typing import List, Tuple
 
 import pytest
 
-from aleatoric.measure import Measure, Meter, NoteDur, Swing
 from aleatoric.csound_note import CSoundNote
+from aleatoric.measure import Measure, Meter, NoteDur, Swing
 from aleatoric.note_sequence import NoteSequence
-
 
 INSTRUMENT = 1
 START = 0.0

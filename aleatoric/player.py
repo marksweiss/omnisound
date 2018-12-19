@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from abc import abstractmethod, ABCMeta
+from abc import ABCMeta, abstractmethod
 from time import sleep
 from typing import Any, Dict, List
 

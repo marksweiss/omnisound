@@ -1,10 +1,12 @@
 # Copyright 2018 Mark S. Weiss
 
 from typing import List, Union
+
 from aleatoric.note import Note
-from aleatoric.utils import (validate_sequence_of_types, validate_optional_type,
-                             validate_type, validate_type_choice)
 from aleatoric.performance_attrs import PerformanceAttrs
+from aleatoric.utils import (validate_optional_type,
+                             validate_sequence_of_types, validate_type,
+                             validate_type_choice)
 
 
 class NoteSequence(object):

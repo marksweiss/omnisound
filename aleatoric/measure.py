@@ -7,8 +7,9 @@ from typing import List, Union
 
 from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
-from aleatoric.utils import sign, validate_optional_type, validate_optional_types, validate_type, validate_types
-
+from aleatoric.utils import (sign, validate_optional_type,
+                             validate_optional_types, validate_type,
+                             validate_types)
 
 # TODO transpose, augment, diminish, to_major and to_minor and placing notes on beat
 #  See implementation in mingus https://bspaans.github.io/python-mingus/doc/wiki/tutorialBarModule.html

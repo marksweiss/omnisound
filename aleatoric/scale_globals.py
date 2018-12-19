@@ -2,9 +2,8 @@
 
 from enum import Enum
 
-from mingus.core.keys import (major_keys, minor_keys)
 import mingus.core.scales as m_scales
-
+from mingus.core.keys import major_keys, minor_keys
 
 NUM_INTERVALS_IN_OCTAVE = 12
 

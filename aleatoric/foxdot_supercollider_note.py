@@ -2,9 +2,10 @@
 
 from typing import Any, Union
 
-from aleatoric.note import (Note, NoteConfig, PerformanceAttrs)
-from aleatoric.scale_globals import (MajorKey, MinorKey)
-from aleatoric.utils import (validate_optional_types, validate_type_choice, validate_types)
+from aleatoric.note import Note, NoteConfig, PerformanceAttrs
+from aleatoric.scale_globals import MajorKey, MinorKey
+from aleatoric.utils import (validate_optional_types, validate_type_choice,
+                             validate_types)
 
 
 class FoxDotSupercolliderNoteConfig(NoteConfig):

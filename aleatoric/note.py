@@ -1,16 +1,21 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from typing import Any, Dict, Union
 
 from aleatoric.performance_attrs import PerformanceAttrs
-from aleatoric.scale_globals import (MajorKey, MinorKey)
+from aleatoric.scale_globals import MajorKey, MinorKey
 
 
 class NoteConfig(ABC):
     @abstractmethod
     def as_dict(self) -> Dict:
         raise NotImplemented('Derived type must implement NoteConfig.as_dict() -> Dict')
+
+    # @abstractmethod
+    # def as_named_tuple(self) -> namedtuple:
+    #     raise NotImplemented('Derived type must implement NoteConfig.as_named_tuple() -> namedtuple')
 
 
 class Note(ABC):
@@ -106,6 +111,41 @@ class Note(ABC):
     @abstractmethod
     def pitch(self, pitch):
         raise NotImplemented('Derived type must implement Note.pitch')
+
+    # @abstractmethod
+    # def i(self, instrument=None):
+    #     """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
+    #        a setter or returns self._instrument as a getter.
+    #     """
+    #     raise NotImplemented('Derived type must implement Note.i')
+    #
+    # @abstractmethod
+    # def s(self, start=None):
+    #     """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
+    #        a setter or returns self._start as a getter.
+    #     """
+    #     raise NotImplemented('Derived type must implement Note.s')
+    #
+    # @abstractmethod
+    # def d(self, dur=None):
+    #     """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
+    #        a setter or returns self._dur as a getter.
+    #     """
+    #     raise NotImplemented('Derived type must implement Note.d')
+    #
+    # @abstractmethod
+    # def a(self, amp=None):
+    #     """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
+    #        a setter or returns self._amp as a getter.
+    #     """
+    #     raise NotImplemented('Derived type must implement Note.a')
+    #
+    # @abstractmethod
+    # def p(self, pitch=None):
+    #     """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
+    #        a setter or returns self._pitch as a getter.
+    #     """
+    #     raise NotImplemented('Derived type must implement Note.p')
 
     @property
     @abstractmethod

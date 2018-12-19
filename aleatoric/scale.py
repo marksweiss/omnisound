@@ -11,13 +11,14 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
 
 from typing import Union
 
-from aleatoric.note import (Note, PerformanceAttrs)
-from aleatoric.note_sequence import NoteSequence
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
-from scale_globals import (MajorKey, MinorKey, ScaleCls)
-from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_type_choice, validate_types)
+from aleatoric.note import Note, PerformanceAttrs
+from aleatoric.note_sequence import NoteSequence
+from aleatoric.utils import (enum_to_dict_reverse_mapping,
+                             validate_type_choice, validate_types)
+from scale_globals import MajorKey, MinorKey, ScaleCls
 
 
 class Scale(NoteSequence):

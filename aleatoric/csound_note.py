@@ -2,9 +2,10 @@
 
 from typing import Union
 
-from aleatoric.note import (Note, NoteConfig, PerformanceAttrs)
-from aleatoric.scale_globals import (MajorKey, MinorKey)
-from aleatoric.utils import (validate_optional_types, validate_type_choice, validate_type, validate_types)
+from aleatoric.note import Note, NoteConfig, PerformanceAttrs
+from aleatoric.scale_globals import MajorKey, MinorKey
+from aleatoric.utils import (validate_optional_types, validate_type,
+                             validate_type_choice, validate_types)
 
 
 class CSoundNoteConfig(NoteConfig):
