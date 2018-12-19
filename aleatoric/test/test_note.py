@@ -68,13 +68,13 @@ def _setup_note_config(note_type: Any):
         note_config.time = START
         note_config.duration = DUR
         note_config.velocity = int(AMP)
-        note_config.pitch = PITCH
+        note_config.pitch = int(PITCH)
     if note_type == FoxDotSupercolliderNote:
         note_config = FoxDotSupercolliderNote.get_config()
         note_config.synth_def = FOX_DOT_INSTRUMENT
         note_config.delay = INT_START
         note_config.dur = DUR
-        note_config.amp = AMP
+        note_config.amp = float(AMP)
         note_config.degree = PITCH
     return note_config
 
@@ -113,7 +113,7 @@ def test_note_eq_copy():
     octave = OCTAVE
     scale = SCALE
     fox_dot_note = FoxDotSupercolliderNote(synth_def=FOX_DOT_INSTRUMENT, delay=int(START), dur=DUR,
-                                           amp=AMP, degree=PITCH, octave=octave, scale=scale)
+                                           amp=float(AMP), degree=PITCH, octave=octave, scale=scale)
     fox_dot_note_2 = FoxDotSupercolliderNote.copy(fox_dot_note)
     assert fox_dot_note == fox_dot_note_2
 
@@ -129,7 +129,7 @@ def test_csound_note(start, duration, amplitude, pitch):
     assert note.duration == duration
     assert note.amplitude == int(amplitude)
     assert note.pitch == pitch
-    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.5f}' == str(note)
+    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.2f}' == str(note)
 
 
 @pytest.mark.parametrize('degree', PITCHES)
@@ -141,14 +141,14 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
     octave = OCTAVE
     scale = SCALE
     note = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
-                                   amp=amp, degree=degree, octave=octave, scale=scale)
+                                   amp=float(amp), degree=degree, octave=octave, scale=scale)
     assert note.delay == delay
     assert note.dur == dur
-    assert note.amp == amp
+    assert note.amp == float(amp)
     assert note.degree == degree
     assert note.octave == octave
     assert note.scale == scale
-    assert f'name: Note delay: {delay} dur: {dur} amp: {amp} degree: {degree} oct: {octave} scale: {scale}' \
+    assert f'name: Note delay: {delay} dur: {dur} amp: {float(amp)} degree: {degree} octave: {octave} scale: {scale}' \
            == str(note)
 
     with pytest.raises(ValueError):

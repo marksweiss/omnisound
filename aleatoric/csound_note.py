@@ -210,5 +210,9 @@ class CSoundNote(Note):
             self._pitch == other._pitch
 
     def __str__(self):
+        """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
+           formatting for pitch to enforce two places for scale pitch syntax, e.g. Middle C == 4.01, and to also
+           allow arbitrary precision for floating point values in Hz.
+        """
         return (f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} '
-                f'{self.pitch}:.{self._pitch_precision}f')
+                f'{self._pitch:.{self._pitch_precision}f}')

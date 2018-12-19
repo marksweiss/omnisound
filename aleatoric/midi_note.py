@@ -309,30 +309,30 @@ class MidiNote(Note):
 
     @property
     def time(self) -> float:
-        return self.start
+        return self._time
 
     @time.setter
     def time(self, time: float):
         # noinspection PyAttributeOutsideInit
-        self.start = time
+        self._time = time
 
     @property
     def dur(self) -> float:
-        return self.dur
+        return self._duration
 
     @dur.setter
     def dur(self, duration: float):
         # noinspection PyAttributeOutsideInit
-        self.dur = duration
+        self._duration = duration
 
     @property
     def duration(self) -> float:
-        return self.dur
+        return self._duration
 
     @duration.setter
     def duration(self, duration: float):
         # noinspection PyAttributeOutsideInit
-        self.dur = duration
+        self._duration = duration
 
     @property
     def amp(self) -> int:

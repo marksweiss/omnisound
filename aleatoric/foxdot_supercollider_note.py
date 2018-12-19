@@ -14,7 +14,7 @@ class FoxDotSupercolliderNoteConfig(NoteConfig):
         self.dur = None
         self.amp = None
         self.degree = None
-        self.oct = None
+        self.octave = None
         self.scale = None
         self.name = None
 
@@ -26,7 +26,7 @@ class FoxDotSupercolliderNoteConfig(NoteConfig):
             'amp': self.amp,
             'degree': self.degree,
             'scale': self.scale,
-            'oct': self.oct,
+            'octave': self.octave,
             'name': self.name
         }
 
@@ -80,7 +80,7 @@ class FoxDotSupercolliderNote(Note):
                  performance_attrs: PerformanceAttrs = None):
         validate_types(('delay', delay, int), ('dur', dur, float), ('amp', amp, float))
         validate_type_choice('degree', degree, (float, int))
-        validate_optional_types(('name', name, str), ('oct', oct, int), ('scale', scale, str),
+        validate_optional_types(('name', name, str), ('octave', octave, int), ('scale', scale, str),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
         super(FoxDotSupercolliderNote, self).__init__(name=name)
         if scale and scale not in FoxDotSupercolliderNote.SCALES:
@@ -215,10 +215,10 @@ class FoxDotSupercolliderNote(Note):
             self._amp == other._amp and self._degree == other._degree
 
     def __str__(self):
-        s = (f'name: {self.name} delay: {self.delay} '
-             f'dur: {self.dur} amp: {self.amp} degree: {self.degree}')
-        if hasattr(self, 'oct'):
-            s += f' oct: {self.oct}'
+        s = (f'name: {self._name} delay: {self._delay} '
+             f'dur: {self._dur} amp: {self._amp} degree: {self._degree}')
+        if hasattr(self, 'octave'):
+            s += f' octave: {self._octave}'
         if hasattr(self, 'scale'):
-            s += f' scale: {self.scale}'
+            s += f' scale: {self._scale}'
         return s
