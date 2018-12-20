@@ -83,3 +83,6 @@ def enum_to_dict_reverse_mapping(enum_class_name: str, enum) -> Dict:
     validate_type('enum_class_name', enum_class_name, str)
     return {eval(f'{enum_class_name}.{enum_member}.value'): enum_member
             for enum_member in enum.__members__}
+
+# TODO HELPER TO GET FIELDS AS TUPLE OR DICT FROM namedtuple
+#  OR HAVE NOTE __INIT__() HANDL THIS

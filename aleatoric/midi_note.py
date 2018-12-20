@@ -3,32 +3,13 @@
 from enum import Enum
 from typing import Union
 
-from aleatoric.note import Note, NoteConfig, PerformanceAttrs
+from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.scale_globals import NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey
 from aleatoric.utils import (validate_optional_types, validate_type,
                              validate_type_choice, validate_types)
 
 
-class MidiNoteConfig(NoteConfig):
-    def __init__(self):
-        self.instrument = None
-        self.time = None
-        self.duration = None
-        self.velocity = None
-        self.pitch = None
-        self.name = None
-        self.channel = None
-
-    def as_dict(self):
-        return {
-            'instrument': self.instrument,
-            'time': self.time,
-            'duration': self.duration,
-            'velocity': self.velocity,
-            'pitch': self.pitch,
-            'name': self.name,
-            'channel': self.channel
-        }
+FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
 
 
 class MidiInstrument(Enum):
@@ -288,17 +269,22 @@ class MidiNote(Note):
         self._channel = channel
 
     # Base Note Interface
-    @staticmethod
-    def get_config() -> MidiNoteConfig:
-        return MidiNoteConfig()
-
     @property
     def instrument(self) -> int:
         return self._instrument
 
     @instrument.setter
     def instrument(self, instrument: int):
+        validate_type('instrument', instrument, int)
         self._instrument = instrument
+
+    def i(self, instrument: int = None) -> Union['MidiNote', int]:
+        if instrument is not None:
+            validate_type('instrument', instrument, int)
+            self._instrument = instrument
+            return self
+        else:
+            return self._instrument
 
     @property
     def start(self) -> float:
@@ -306,7 +292,16 @@ class MidiNote(Note):
 
     @start.setter
     def start(self, start: float):
+        validate_type('start', start, float)
         self._time = start
+
+    def s(self, start: float = None) -> Union['MidiNote', float]:
+        if start is not None:
+            validate_type('start', start, float)
+            self._time = start
+            return self
+        else:
+            return self._time
 
     @property
     def time(self) -> float:
@@ -314,7 +309,7 @@ class MidiNote(Note):
 
     @time.setter
     def time(self, time: float):
-        # noinspection PyAttributeOutsideInit
+        validate_type('time', time, float)
         self._time = time
 
     @property
@@ -322,9 +317,17 @@ class MidiNote(Note):
         return self._duration
 
     @dur.setter
-    def dur(self, duration: float):
-        # noinspection PyAttributeOutsideInit
-        self._duration = duration
+    def dur(self, dur: float):
+        validate_type('dur', dur, float)
+        self._duration = dur
+
+    def d(self, dur: float = None) -> Union['MidiNote', float]:
+        if dur is not None:
+            validate_type('dur', dur, float)
+            self._duration = dur
+            return self
+        else:
+            return self._duration
 
     @property
     def duration(self) -> float:
@@ -332,7 +335,7 @@ class MidiNote(Note):
 
     @duration.setter
     def duration(self, duration: float):
-        # noinspection PyAttributeOutsideInit
+        validate_type('duration', duration, float)
         self._duration = duration
 
     @property
@@ -341,7 +344,16 @@ class MidiNote(Note):
 
     @amp.setter
     def amp(self, amp: int):
+        validate_type('amp', amp, int)
         self._velocity = amp
+
+    def a(self, amp: int = None) -> Union['MidiNote', int]:
+        if amp is not None:
+            validate_type('amp', amp, int)
+            self._velocity = amp
+            return self
+        else:
+            return self._velocity
 
     @property
     def velocity(self) -> int:
@@ -349,6 +361,7 @@ class MidiNote(Note):
 
     @velocity.setter
     def velocity(self, velocity: int):
+        validate_type('velocity', velocity, int)
         self._velocity = velocity
 
     @property
@@ -357,7 +370,16 @@ class MidiNote(Note):
 
     @pitch.setter
     def pitch(self, pitch: int):
+        validate_type('pitch', pitch, int)
         self._pitch = pitch
+
+    def p(self, pitch: int = None) -> Union['MidiNote', int]:
+        if pitch is not None:
+            validate_type('pitch', pitch, int)
+            self._pitch = pitch
+            return self
+        else:
+            return self._pitch
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
@@ -365,6 +387,7 @@ class MidiNote(Note):
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
+        validate_type('performance_attrs', performance_attrs, int)
         self._performance_attrs = performance_attrs
 
     @property
@@ -373,6 +396,7 @@ class MidiNote(Note):
 
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
+        validate_type('performance_attrs', performance_attrs, int)
         self._performance_attrs = performance_attrs
 
     def get_pitch_for_key(self, key: Union[MajorKey, MinorKey], octave: int) -> int:

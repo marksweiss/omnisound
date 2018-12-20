@@ -2,34 +2,13 @@
 
 from typing import Any, Union
 
-from aleatoric.note import Note, NoteConfig, PerformanceAttrs
+from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.scale_globals import MajorKey, MinorKey
-from aleatoric.utils import (validate_optional_types, validate_type_choice,
+from aleatoric.utils import (validate_optional_types, validate_type, validate_type_choice,
                              validate_types)
 
 
-class FoxDotSupercolliderNoteConfig(NoteConfig):
-    def __init__(self):
-        self.synth_def = None
-        self.delay = None
-        self.dur = None
-        self.amp = None
-        self.degree = None
-        self.octave = None
-        self.scale = None
-        self.name = None
-
-    def as_dict(self):
-        return {
-            'synth_def': self.synth_def,
-            'delay': self.delay,
-            'dur': self.dur,
-            'amp': self.amp,
-            'degree': self.degree,
-            'scale': self.scale,
-            'octave': self.octave,
-            'name': self.name
-        }
+FIELDS = ('synth_def', 'delay', 'dur', 'amp', 'degree', 'octave', 'scale')
 
 
 class FoxDotSupercolliderNote(Note):
@@ -102,6 +81,7 @@ class FoxDotSupercolliderNote(Note):
 
     @octave.setter
     def octave(self, octave: int):
+        validate_type('octave', octave, int)
         self._octave = octave
 
     @property
@@ -110,13 +90,10 @@ class FoxDotSupercolliderNote(Note):
 
     @scale.setter
     def scale(self, scale: str):
+        validate_type('scale', scale, str)
         self._scale = scale
 
     # Base Note Interface
-    @staticmethod
-    def get_config() -> FoxDotSupercolliderNoteConfig:
-        return FoxDotSupercolliderNoteConfig()
-
     @property
     def instrument(self) -> Any:
         return self._synth_def
@@ -124,6 +101,13 @@ class FoxDotSupercolliderNote(Note):
     @instrument.setter
     def instrument(self, instrument: Any):
         self._synth_def = instrument
+
+    def i(self, instrument: Any = None) -> Union['FoxDotSupercolliderNote', Any]:
+        if instrument is not None:
+            self._synth_def = instrument
+            return self
+        else:
+            return self._synth_def
 
     @property
     def synth_def(self) -> Any:
@@ -139,7 +123,16 @@ class FoxDotSupercolliderNote(Note):
 
     @start.setter
     def start(self, start: int):
+        validate_type('start', start, int)
         self._delay = start
+
+    def s(self, start: int = None) -> Union['FoxDotSupercolliderNote', int]:
+        if start is not None:
+            validate_type('start', start, int)
+            self._delay = start
+            return self
+        else:
+            return self._delay
 
     @property
     def delay(self) -> int:
@@ -147,6 +140,7 @@ class FoxDotSupercolliderNote(Note):
 
     @delay.setter
     def delay(self, delay: int):
+        validate_type('delay', delay, int)
         self._delay = delay
 
     @property
@@ -155,7 +149,16 @@ class FoxDotSupercolliderNote(Note):
 
     @dur.setter
     def dur(self, dur: float):
+        validate_type('dur', dur, float)
         self._dur = dur
+
+    def d(self, duration: float = None) -> Union['FoxDotSupercolliderNote', float]:
+        if duration is not None:
+            validate_type('duration', duration, float)
+            self._dur = duration
+            return self
+        else:
+            return self._dur
 
     @property
     def amp(self) -> float:
@@ -165,13 +168,30 @@ class FoxDotSupercolliderNote(Note):
     def amp(self, amp: float):
         self._amp = amp
 
+    def a(self, amp: float = None) -> Union['FoxDotSupercolliderNote', float]:
+        if amp is not None:
+            validate_type('amp', amp, float)
+            self._amp = amp
+            return self
+        else:
+            return self._amp
+
     @property
     def pitch(self) -> Union[float, int]:
         return self._degree
 
     @pitch.setter
     def pitch(self, pitch: Union[float, int]):
+        validate_type_choice('pitch', pitch, (float, int))
         self._degree = pitch
+
+    def p(self, pitch: Union[float, int] = None) -> Union['FoxDotSupercolliderNote', float, int]:
+        if pitch is not None:
+            validate_type_choice('pitch', pitch, (float, int))
+            self._degree = pitch
+            return self
+        else:
+            return self._degree
 
     @property
     def degree(self) -> Union[float, int]:
@@ -179,6 +199,7 @@ class FoxDotSupercolliderNote(Note):
 
     @degree.setter
     def degree(self, degree: Union[float, int]):
+        validate_type_choice('pitch', pitch, (float, int))
         self._degree = degree
 
     @property

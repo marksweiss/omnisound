@@ -2,30 +2,13 @@
 
 from typing import Union
 
-from aleatoric.note import Note, NoteConfig, PerformanceAttrs
+from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.scale_globals import MajorKey, MinorKey
 from aleatoric.utils import (validate_optional_types, validate_type,
                              validate_type_choice, validate_types)
 
 
-class CSoundNoteConfig(NoteConfig):
-    def __init__(self):
-        self.instrument = None
-        self.start = None
-        self.duration = None
-        self.amplitude = None
-        self.pitch = None
-        self.name = None
-
-    def as_dict(self):
-        return {
-            'instrument': self.instrument,
-            'start': self.start,
-            'duration': self.duration,
-            'amplitude': self.amplitude,
-            'pitch': self.pitch,
-            'name': self.name
-        }
+FIELDS = ('instrument', 'start', 'duration', 'amplitude', 'pitch', 'name')
 
 
 class CSoundNote(Note):
@@ -110,17 +93,22 @@ class CSoundNote(Note):
         self._pitch_precision = CSoundNote.SCALE_PITCH_PRECISION
 
     # Base Note Interface
-    @staticmethod
-    def get_config() -> CSoundNoteConfig:
-        return CSoundNoteConfig()
-
     @property
     def instrument(self) -> int:
         return self._instrument
 
     @instrument.setter
     def instrument(self, instrument: int):
+        validate_type('instrumnt', instrument, int)
         self._instrument = instrument
+
+    def i(self, instrument: int = None) -> Union['CSoundNote', int]:
+        if instrument is not None:
+            validate_type('instrument', instrument, int)
+            self._instrument = instrument
+            return self
+        else:
+            return self._instrument
 
     @property
     def start(self) -> float:
@@ -128,7 +116,16 @@ class CSoundNote(Note):
 
     @start.setter
     def start(self, start: float):
+        validate_type('start', start, float)
         self._start = start
+
+    def s(self, start: float = None) -> Union['CSoundNote', float]:
+        if start is not None:
+            validate_type('start', start, float)
+            self._start = start
+            return self
+        else:
+            return self._start
 
     @property
     def dur(self) -> float:
@@ -136,7 +133,16 @@ class CSoundNote(Note):
 
     @dur.setter
     def dur(self, duration: float):
+        validate_type('duration', duration, float)
         self._duration = duration
+
+    def d(self, duration: float = None) -> Union['CSoundNote', float]:
+        if duration is not None:
+            validate_type('duration', duration, float)
+            self._duration = duration
+            return self
+        else:
+            return self._duration
 
     @property
     def duration(self) -> float:
@@ -144,6 +150,7 @@ class CSoundNote(Note):
 
     @duration.setter
     def duration(self, duration: float):
+        validate_type('duration', duration, float)
         self._duration = duration
 
     @property
@@ -152,7 +159,16 @@ class CSoundNote(Note):
 
     @amp.setter
     def amp(self, amplitude: int):
+        validate_type('amplitude', amplitude, int)
         self._amplitude = amplitude
+
+    def a(self, amplitude: int = None) -> Union['CSoundNote', int]:
+        if amplitude is not None:
+            validate_type('amplitude', amplitude, int)
+            self._amplitude = amplitude
+            return self
+        else:
+            return self._amplitude
 
     @property
     def amplitude(self) -> int:
@@ -160,6 +176,7 @@ class CSoundNote(Note):
 
     @amplitude.setter
     def amplitude(self, amplitude: int):
+        validate_type('amplitude', amplitude, int)
         self._amplitude = amplitude
 
     @property
@@ -168,7 +185,16 @@ class CSoundNote(Note):
 
     @pitch.setter
     def pitch(self, pitch: float):
+        validate_type('pitch', pitch, float)
         self._pitch = pitch
+
+    def p(self, pitch: float = None) -> Union['CSoundNote', float]:
+        if pitch is not None:
+            validate_type('pitch', pitch, float)
+            self._pitch = pitch
+            return self
+        else:
+            return self._pitch
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
