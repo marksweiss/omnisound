@@ -2,27 +2,7 @@
 
 from typing import Any
 
-from aleatoric.note import Note, NoteConfig, PerformanceAttrs
-
-
-class RestNoteConfig(NoteConfig):
-    def __init__(self):
-        self.instrument = None
-        self.start = None
-        self.dur = None
-        self.amp = None
-        self.pitch = None
-        self.name = None
-
-    def as_dict(self):
-        return {
-            'instrument': self.instrument,
-            'start': self.start,
-            'dur': self.dur,
-            'amp': self.amp,
-            'pitch': self.pitch,
-            'name': self.name
-        }
+from aleatoric.note import Note, PerformanceAttrs
 
 
 class RestNote(Note):
@@ -52,10 +32,6 @@ class RestNote(Note):
         note.amp = RestNote.REST_AMP
 
     # Base Note Interface
-    @staticmethod
-    def get_config() -> RestNoteConfig:
-        return RestNoteConfig()
-
     @property
     def instrument(self):
         return self._instrument
@@ -63,6 +39,13 @@ class RestNote(Note):
     @instrument.setter
     def instrument(self, instrument):
         self._instrument = instrument
+
+    def i(self, instrument=None):
+        if instrument is not None:
+            self._instrument = instrument
+            return self
+        else:
+            return self._instrument
 
     @property
     def start(self):
@@ -72,6 +55,13 @@ class RestNote(Note):
     def start(self, start):
         self._start = start
 
+    def s(self, start=None):
+        if start is not None:
+            self._start = start
+            return self
+        else:
+            return self._start
+
     @property
     def dur(self) -> float:
         return self._dur
@@ -79,6 +69,13 @@ class RestNote(Note):
     @dur.setter
     def dur(self, dur):
         self._dur = dur
+
+    def d(self, dur=None):
+        if dur is not None:
+            self._dur = dur
+            return self
+        else:
+            return self._dur
 
     @property
     def amp(self):
@@ -88,6 +85,13 @@ class RestNote(Note):
     def amp(self, amp):
         self._amp = amp
 
+    def a(self, amp=None):
+        if amp is not None:
+            self._amp = amp
+            return self
+        else:
+            return self._amp
+
     @property
     def pitch(self):
         return self._pitch
@@ -95,6 +99,13 @@ class RestNote(Note):
     @pitch.setter
     def pitch(self, pitch):
         self._pitch = pitch
+
+    def p(self, pitch=None):
+        if pitch is not None:
+            self._pitch = pitch
+            return self
+        else:
+            return self._pitch
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:

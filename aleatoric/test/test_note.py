@@ -5,9 +5,10 @@ from typing import Any, List
 import pytest
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
-from aleatoric.csound_note import CSoundNote
-from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
-from aleatoric.midi_note import MidiInstrument, MidiNote
+from aleatoric.csound_note import CSoundNote, FIELDS as csound_fields
+from aleatoric.foxdot_supercollider_note import FIELDS as foxdot_fields, FoxDotSupercolliderNote
+from aleatoric.midi_note import FIELDS as midi_fields,  MidiInstrument, MidiNote
+from aleatoric.note import NoteConfig
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.performance_attrs import PerformanceAttrs
 from aleatoric.rest_note import RestNote
@@ -54,21 +55,21 @@ def _setup_note_sequence():
 def _setup_note_config(note_type: Any):
     note_config = None
     if note_type == CSoundNote:
-        note_config = CSoundNote.get_config()
+        note_config = NoteConfig(csound_fields)
         note_config.instrument = INSTRUMENT
         note_config.start = START
         note_config.duration = DUR
         note_config.amplitude = int(AMP)
         note_config.pitch = PITCH
     if note_type == MidiNote:
-        note_config = MidiNote.get_config()
+        note_config = NoteConfig(midi_fields)
         note_config.instrument = MIDI_INSTRUMENT
         note_config.time = START
         note_config.duration = DUR
         note_config.velocity = int(AMP)
         note_config.pitch = int(PITCH)
     if note_type == FoxDotSupercolliderNote:
-        note_config = FoxDotSupercolliderNote.get_config()
+        note_config = NoteConfig(foxdot_fields)
         note_config.synth_def = FOX_DOT_INSTRUMENT
         note_config.delay = INT_START
         note_config.dur = DUR
@@ -225,7 +226,7 @@ def test_note_sequence_len_append_getitem():
     # Returns note_list with 2 Notes
     note_sequence = _setup_note_sequence()
     note_3 = CSoundNote.copy(NOTE)
-    new_amp = NOTE.amp + 1.0
+    new_amp = NOTE.amp + 1
     note_3.amp = new_amp
     # Assert initial len() of note_list
     assert len(note_sequence) == 2
