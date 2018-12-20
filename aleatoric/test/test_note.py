@@ -181,6 +181,14 @@ def test_note_config():
     assert note.duration == DUR
     assert note.pitch == PITCH
 
+    note_config = _setup_note_config(CSoundNote)
+    note = CSoundNote(*note_config.as_list())
+    assert note.instrument == INSTRUMENT
+    assert note.start == START
+    assert note.amplitude == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
+
     note_config = _setup_note_config(MidiNote)
     note = MidiNote(**note_config.as_dict())
     assert note.instrument == MIDI_INSTRUMENT
@@ -189,8 +197,24 @@ def test_note_config():
     assert note.duration == DUR
     assert note.pitch == PITCH
 
+    note_config = _setup_note_config(MidiNote)
+    note = MidiNote(*note_config.as_list())
+    assert note.instrument == MIDI_INSTRUMENT
+    assert note.time == START
+    assert note.velocity == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
+
     note_config = _setup_note_config(FoxDotSupercolliderNote)
     note = FoxDotSupercolliderNote(**note_config.as_dict())
+    assert note.synth_def == FOX_DOT_INSTRUMENT
+    assert note.degree == START
+    assert note.amp == AMP
+    assert note.delay == DUR
+    assert note.pitch == PITCH
+
+    note_config = _setup_note_config(FoxDotSupercolliderNote)
+    note = FoxDotSupercolliderNote(*note_config.as_list())
     assert note.synth_def == FOX_DOT_INSTRUMENT
     assert note.degree == START
     assert note.amp == AMP
@@ -326,61 +350,6 @@ def test_note_sequence_insert_remove():
         note_front = note_sequence[0]
         assert note_front.amp == expected_amp
         expected_amp = note_sequence[1].amp
-
-
-def test_performance_attrs_freeze_unfreeze():
-    # Initial state is not frozen. User must explicitly freeze()
-    perf_attrs = PerformanceAttrs()
-    assert not perf_attrs.is_frozen()
-    perf_attrs.freeze()
-    assert perf_attrs.is_frozen()
-    perf_attrs.unfreeze()
-    assert not perf_attrs.is_frozen()
-
-
-def test_performance_attrs_add_attr_set_attr():
-    # Initial state is not frozen. User must explicitly freeze()
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
-    # ATTR_NAME = 'test_attr'
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == ATTR_VAL
-    # noinspection PyUnresolvedReferences
-    assert isinstance(perf_attrs.test_attr, ATTR_TYPE)
-
-    new_attr_val = 200
-    perf_attrs.safe_set_attr(ATTR_NAME, new_attr_val)
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == new_attr_val
-
-    with pytest.raises(ValueError):
-        perf_attrs.safe_set_attr('NOT_AN_ATTR_NAME', ATTR_VAL)
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == new_attr_val
-
-    with pytest.raises(ValueError):
-        perf_attrs.safe_set_attr(ATTR_NAME, float(ATTR_VAL))
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == new_attr_val
-
-
-def test_performance_attrs_str():
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
-    assert f'{ATTR_NAME}: {ATTR_VAL}' == str(perf_attrs)
-    perf_attrs.add_attr(ATTR_NAME + '_2', ATTR_VAL + 100, ATTR_TYPE)
-    assert f'{ATTR_NAME}: {ATTR_VAL} {ATTR_NAME}_2: {ATTR_VAL + 100}' == str(perf_attrs)
-
-
-def test_performance_attrs_dict():
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
-    assert {ATTR_NAME: ATTR_VAL} == perf_attrs.as_dict()
-
-    new_attr_name = ATTR_NAME + '_2'
-    new_attr_val = ATTR_VAL + 100
-    perf_attrs.add_attr(new_attr_name, new_attr_val, ATTR_TYPE)
-    assert {ATTR_NAME: ATTR_VAL, new_attr_name: new_attr_val} == perf_attrs.as_dict()
 
 
 if __name__ == '__main__':
