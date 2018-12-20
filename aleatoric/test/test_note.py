@@ -122,7 +122,7 @@ def test_note_eq_copy():
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
-def test_csound_note(start, duration, amplitude, pitch):
+def test_csound_note_attrs(start, duration, amplitude, pitch):
     note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
                       amplitude=int(amplitude), pitch=pitch)
     assert note.start == note.s() == start
@@ -130,6 +130,14 @@ def test_csound_note(start, duration, amplitude, pitch):
     assert note.amplitude == note.amp == note.a() == int(amplitude)
     assert note.pitch == note.p() == pitch
     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.2f}' == str(note)
+
+    note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
+                      amplitude=int(amplitude), pitch=pitch)
+    note.s(start + 1).d(duration + 1).a(amplitude + 1).p(pitch + 1)
+    assert note.s() == start + 1
+    assert note.d() == duration + 1
+    assert note.a() == amplitude + 1
+    assert note.p() == pitch + 1
 
 
 @pytest.mark.parametrize('degree', PITCHES)
@@ -156,6 +164,15 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
         _ = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
                                     amp=amp, degree=degree, octave=octave, scale=scale)
 
+    scale = SCALE
+    note = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
+                                   amp=float(amp), degree=degree, octave=octave, scale=scale)
+    note.s(delay + 1).d(dur + 1).a(float(amp + 1)).p(degree + 1)
+    assert note.s() == delay + 1
+    assert note.d() == dur + 1
+    assert note.a() == amp + 1
+    assert note.p() == degree + 1
+
 
 @pytest.mark.parametrize('pitch', PITCHES)
 @pytest.mark.parametrize('velocity', AMPS)
@@ -171,6 +188,15 @@ def test_midi_note_attrs(time, duration, velocity, pitch):
     expected_str_note = (f'name: Note instrument: {INSTRUMENT} time: {time} duration: {duration} '
                          f'velocity: {int(velocity)} pitch: {int(pitch)} channel: 1')
     assert expected_str_note == str(note)
+
+    note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
+                    velocity=int(velocity), pitch=int(pitch))
+    new_pitch = int(pitch + 1.0)
+    note.s(time + 1).d(duration + 1).a(velocity + 1).p(new_pitch)
+    assert note.s() == time + 1
+    assert note.d() == duration + 1
+    assert note.a() == velocity + 1
+    assert note.p() == new_pitch
 
 
 def test_note_config():
