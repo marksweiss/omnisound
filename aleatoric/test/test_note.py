@@ -37,6 +37,7 @@ SCALE = 'chromatic'
 OCTAVE = 4
 
 
+# TODO SEPARATE TESTS FOR NOTE SEQUENCE. BETTER COVERAGE
 def _setup_note_sequence_args():
     note_1 = CSoundNote.copy(NOTE)
     note_2 = CSoundNote.copy(NOTE)
@@ -124,10 +125,10 @@ def test_note_eq_copy():
 def test_csound_note(start, duration, amplitude, pitch):
     note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
                       amplitude=int(amplitude), pitch=pitch)
-    assert note.start == start
-    assert note.duration == duration
-    assert note.amplitude == int(amplitude)
-    assert note.pitch == pitch
+    assert note.start == note.s() == start
+    assert note.duration == note.dur == note.d() == duration
+    assert note.amplitude == note.amp == note.a() == int(amplitude)
+    assert note.pitch == note.p() == pitch
     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.2f}' == str(note)
 
 
@@ -141,10 +142,10 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
     scale = SCALE
     note = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
                                    amp=float(amp), degree=degree, octave=octave, scale=scale)
-    assert note.delay == delay
-    assert note.dur == dur
-    assert note.amp == float(amp)
-    assert note.degree == degree
+    assert note.delay == note.start == note.s() == delay
+    assert note.dur == note.d() == dur
+    assert note.amp == note.a() == float(amp)
+    assert note.degree == note.pitch == note.p() == degree
     assert note.octave == octave
     assert note.scale == scale
     assert f'name: Note delay: {delay} dur: {dur} amp: {float(amp)} degree: {degree} octave: {octave} scale: {scale}' \
@@ -163,10 +164,10 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
 def test_midi_note_attrs(time, duration, velocity, pitch):
     note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
                     velocity=int(velocity), pitch=int(pitch))
-    assert note.time == time
-    assert note.duration == duration
-    assert note.velocity == int(velocity)
-    assert note.pitch == int(pitch)
+    assert note.time == note.start == note.s() == time
+    assert note.duration == note.dur == note.d() == duration
+    assert note.velocity == note.amp == note.a() == int(velocity)
+    assert note.pitch == note.p() == int(pitch)
     expected_str_note = (f'name: Note instrument: {INSTRUMENT} time: {time} duration: {duration} '
                          f'velocity: {int(velocity)} pitch: {int(pitch)} channel: 1')
     assert expected_str_note == str(note)
