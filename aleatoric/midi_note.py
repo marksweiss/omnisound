@@ -399,7 +399,8 @@ class MidiNote(Note):
         validate_type('performance_attrs', performance_attrs, int)
         self._performance_attrs = performance_attrs
 
-    def get_pitch_for_key(self, key: Union[MajorKey, MinorKey], octave: int) -> int:
+    @classmethod
+    def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
         """MIDI pitches sequence from 21 A0 to 127, the 3 highest notes below C1 to the last note of C7.
            The algorithm is that we store the values for C1-12 as ints in the PITCH_MAP
            and thus increment by + 12 for every octave > 1, handle the special case for the 3 notes < C1 and
@@ -407,18 +408,18 @@ class MidiNote(Note):
         """
         validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type('octave', octave, int)
-        if MidiNote.MIN_OCTAVE < octave < MidiNote.MAX_OCTAVE:
-            raise ValueError(f'Arg `octave` must be in range {MidiNote.MIN_OCTAVE} <= octave <= {MidiNote.MAX_OCTAVE}')
+        if cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE:
+            raise ValueError(f'Arg `octave` must be in range {cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}')
 
-        if octave == MidiNote.MIN_OCTAVE:
+        if octave == cls.MIN_OCTAVE:
             # Handle edge case of only 3 notes being valid when `octave` == 0
-            if key not in MidiNote.KEYS_IN_MIN_OCTAVE:
+            if key not in cls.KEYS_IN_MIN_OCTAVE:
                 raise ValueError(('If arg `octave` == 0 then `key` must be in '
-                                  f'{MidiNote.KEYS_IN_MIN_OCTAVE}'))
-            return self.PITCH_MAP[key].value - NUM_INTERVALS_IN_OCTAVE
+                                  f'{cls.KEYS_IN_MIN_OCTAVE}'))
+            return cls.PITCH_MAP[key].value - NUM_INTERVALS_IN_OCTAVE
         else:
             interval_offset = (octave - 1) * NUM_INTERVALS_IN_OCTAVE
-            return self.PITCH_MAP[key].value + interval_offset
+            return cls.PITCH_MAP[key].value + interval_offset
 
     @staticmethod
     def copy(source_note: 'MidiNote') -> 'MidiNote':

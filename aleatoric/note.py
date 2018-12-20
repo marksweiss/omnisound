@@ -163,8 +163,9 @@ class Note(ABC):
         """Alias to something shorter for client code convenience."""
         raise NotImplemented('Derived type must implement Note.pa')
 
+    @classmethod
     @abstractmethod
-    def get_pitch_for_key(self, key: Union[MajorKey, MinorKey], octave: int) -> Any:
+    def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> Any:
         raise NotImplemented('Note subtypes must implement get_pitch() and return a valid pitch value for their type')
 
     @staticmethod

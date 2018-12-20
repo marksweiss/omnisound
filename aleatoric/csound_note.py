@@ -50,8 +50,8 @@ class CSoundNote(Note):
         MinorKey.b: 1.12,
     }
 
-    MIN_OCTAVE = 1.0
-    MAX_OCTAVE = 12.0
+    MIN_OCTAVE = 1
+    MAX_OCTAVE = 12
 
     DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
@@ -79,6 +79,7 @@ class CSoundNote(Note):
         self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
 
     # Custom Interface
+    # TODO THIS IS STILL A BUG, DOES NOT SUPPORT 1.1 and 10.1, i.e. we need precision of either 2 or 3
     @property
     def pitch_precision(self) -> int:
         return self._pitch_precision
@@ -211,13 +212,14 @@ class CSoundNote(Note):
     def pa(self, performance_attrs: PerformanceAttrs):
         self._performance_attrs = performance_attrs
 
-    def get_pitch_for_key(self, key: Union[MajorKey, MinorKey], octave: int) -> float:
+    @classmethod
+    def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> float:
         validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type('octave', octave, int)
-        if CSoundNote.MIN_OCTAVE < octave < CSoundNote.MAX_OCTAVE:
+        if not (cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE):
             raise ValueError((f'Arg `octave` must be in range '
-                              f'{CSoundNote.MIN_OCTAVE} <= octave <= {CSoundNote.MAX_OCTAVE}'))
-        return CSoundNote.PITCH_MAP[key] + (float(octave) - 1.0)
+                              f'{cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}'))
+        return cls.PITCH_MAP[key] + (float(octave) - 1.0)
 
     @staticmethod
     def copy(source_note) -> 'CSoundNote':

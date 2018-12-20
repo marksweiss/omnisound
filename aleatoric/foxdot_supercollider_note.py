@@ -218,8 +218,9 @@ class FoxDotSupercolliderNote(Note):
     def pa(self, performance_attrs: PerformanceAttrs):
         self._performance_attrs = performance_attrs
 
-    def get_pitch_for_key(self, key: Union[MajorKey, MinorKey], octave: int) -> int:
-        return FoxDotSupercolliderNote.PITCH_MAP[key]
+    @classmethod
+    def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
+        return cls.PITCH_MAP[key]
 
     @staticmethod
     def copy(source_note: 'FoxDotSupercolliderNote') -> 'FoxDotSupercolliderNote':
