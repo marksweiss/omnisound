@@ -79,14 +79,13 @@ class CSoundNote(Note):
         self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
 
     # Custom Interface
-    # TODO NEED TESTS FOR THESE THREE METHODS
     @property
     def pitch_precision(self) -> int:
         return self._pitch_precision
 
     @pitch_precision.setter
     def pitch_precision(self, pitch_precision: int):
-        validate_type(pitch_precision, 'pitch_precision', int)
+        validate_type('pitch_precision', pitch_precision, int)
         self._pitch_precision = pitch_precision
 
     def set_scale_pitch_precision(self):
