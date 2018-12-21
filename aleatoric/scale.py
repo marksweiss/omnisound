@@ -9,14 +9,16 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
   of Key => Pitch for each tuple (Key, Octave)
 """
 
-from typing import Union
+from typing import Any
 
-from aleatoric.note import (Note, NoteSequence, PerformanceAttrs)
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
-from scale_globals import (MajorKey, MinorKey, ScaleCls)
-from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_type_choice, validate_types)
+from aleatoric.note import Note, PerformanceAttrs
+from aleatoric.note_sequence import NoteSequence
+from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_types, validate_type_choice,\
+                             validate_type_reference_choice)
+from aleatoric.scale_globals import MajorKey, MinorKey, ScaleCls
 
 
 class Scale(NoteSequence):
@@ -26,39 +28,45 @@ class Scale(NoteSequence):
     """
     MAJOR_KEY_REVERSE_MAP = enum_to_dict_reverse_mapping('MajorKey', MajorKey)
     MINOR_KEY_REVERSE_MAP = enum_to_dict_reverse_mapping('MinorKey', MinorKey)
-    KEY_MAPS = {MajorKey: MAJOR_KEY_REVERSE_MAP, MinorKey: MINOR_KEY_REVERSE_MAP}
+    KEY_MAPS = {'MajorKey': MAJOR_KEY_REVERSE_MAP, 'MinorKey': MINOR_KEY_REVERSE_MAP}
 
     def __init__(self,
-                 key: Union[MajorKey, MinorKey] = None,
+                 key: Any = None,
                  octave: int = None,
                  scale_cls: ScaleCls = None,
-                 note_cls: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote, Note] = None,
+                 note_cls: Any = None,
+                 note_prototype: Any = None,
                  performance_attrs: PerformanceAttrs = None):
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
         _, matched_key_type = validate_type_choice('key', key, (MajorKey, MinorKey))
-        # Validate args and set members
+        self.is_major_key = matched_key_type is MajorKey
+        self.is_minor_key = matched_key_type is MinorKey
+
         validate_types(('octave', octave, int), ('scale_type', scale_cls, ScaleCls))
-        validate_type_choice('note_type', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote, Note))
+        validate_type_choice('note_prototype', note_prototype,
+                             (CSoundNote, FoxDotSupercolliderNote, MidiNote, Note))
+        validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote, Note))
         self.key = key
         self.octave = octave
         self.scale_type = scale_cls
         self.note_type = note_cls
-        self.is_major_key = matched_key_type == MajorKey
-        self.is_minor_key = matched_key_type == MinorKey
+        self.note_prototype = note_prototype
 
-        # Get the minus keys (pitches) for the musical scale (`scale_type`) with its root at `key` and
-        # octave at `octave`. This returns a list of string values which match the `name`s of entries
-        # in MajorKey and MinorKey enums.
-        m_keys = scale_cls.value(key.name, octave=octave).ascending()
-
+        note_list = []
+        # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
+        mingus_keys = scale_cls.value(key.name).ascending()
         # Construct a list of Notes from the mingus notes, setting their pitch to the pitch in the scale
-        # converted to the value for the type of Note. Other attributes are set to Note defaults.
-        # pitch logic is: convert string note from mingus string to pitch enum. The enum
-        # and `octave` are args passed to `note_type.get_pitch()` for the note_type, which maps (key_enum, octave)
-        # to pitch values for that note type.
+        # converted to the value for the type of Note. Other attributes are set to the values in `note_prototype`.
+        # The enum and `octave` are args passed to `note_type.get_pitch()` for the note_type,
+        # which maps (key_enum, octave) to valid pitch values (typically float or int) for that note type.
         # e.g. CSoundNote.get_pitch(key=MajorKey.C, octave=4) -> 4.01: float
-        key_mapping = Scale.KEY_MAPS[matched_key_type]
-        note_list = [note_cls.get_pitch(key_mapping[m_key], self.octave) for m_key in m_keys]
-        # Set this List[Note] in the base class for this NoteSequence
+        mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
+        for mingus_key in mingus_keys:
+            # We map mingus note strings to their upper case in scale_globals, match that here
+            key = mingus_key_to_key_enum_mapping[mingus_key.upper()]
+            new_note = self.note_type.copy(note_prototype)
+            new_note.pitch = self.note_type.get_pitch_for_key(key, octave=self.octave)
+            note_list.append(new_note)
+
         super(Scale, self).__init__(note_list, performance_attrs=performance_attrs)

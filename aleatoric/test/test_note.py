@@ -3,30 +3,30 @@
 from typing import Any, List
 
 import pytest
-# noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
-from aleatoric.note import (Note, NoteSequence, PerformanceAttrs)
-from aleatoric.csound_note import CSoundNote
-from aleatoric.midi_note import MidiNote
-from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
+from aleatoric.csound_note import CSoundNote, FIELDS as csound_fields
+from aleatoric.foxdot_supercollider_note import FIELDS as foxdot_fields, FoxDotSupercolliderNote
+from aleatoric.midi_note import FIELDS as midi_fields,  MidiInstrument, MidiNote
+from aleatoric.note import NoteConfig
+from aleatoric.note_sequence import NoteSequence
+from aleatoric.performance_attrs import PerformanceAttrs
 from aleatoric.rest_note import RestNote
-
 
 INSTRUMENT = 1
 FOX_DOT_INSTRUMENT = fd_sc_synth
-MIDI_INSTRUMENT = MidiNote.MidiInstrument.Accordion
+MIDI_INSTRUMENT = MidiInstrument.Accordion
 STARTS: List[float] = [0.0, 0.5, 1.0]
 INT_STARTS: List[int] = [0, 5, 10]
 START = STARTS[0]
 INT_START = INT_STARTS[0]
 DURS: List[float] = [0.0, 1.0, 2.5]
 DUR = DURS[0]
-AMPS: List[float] = [0.0, 0.5, 1.0]
+AMPS: List[int] = [0, 1, 2]
 AMP = AMPS[0]
 PITCHES: List[float] = [0.0, 0.5, 1.0]
 PITCH = PITCHES[0]
-NOTE = Note(instrument=INSTRUMENT, start=START, dur=DUR, amp=AMP, pitch=PITCH)
+NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
 PERFORMANCE_ATTRS = PerformanceAttrs()
 ATTR_NAME = 'test_attr'
@@ -37,9 +37,10 @@ SCALE = 'chromatic'
 OCTAVE = 4
 
 
+# TODO SEPARATE TESTS FOR NOTE SEQUENCE. BETTER COVERAGE
 def _setup_note_sequence_args():
-    note_1 = Note.copy(NOTE)
-    note_2 = Note.copy(NOTE)
+    note_1 = CSoundNote.copy(NOTE)
+    note_2 = CSoundNote.copy(NOTE)
     perf_attrs = PerformanceAttrs()
     perf_attrs.add_attr(attr_name=ATTR_NAME, val=ATTR_VAL, attr_type=ATTR_TYPE)
     note_1.performance_attrs = perf_attrs
@@ -54,33 +55,26 @@ def _setup_note_sequence():
 
 def _setup_note_config(note_type: Any):
     note_config = None
-    if note_type == Note:
-        note_config = Note.get_config()
-        note_config.instrument = INSTRUMENT
-        note_config.start = START
-        note_config.dur = DUR
-        note_config.amp = AMP
-        note_config.pitch = PITCH
     if note_type == CSoundNote:
-        note_config = CSoundNote.get_config()
+        note_config = NoteConfig(csound_fields)
         note_config.instrument = INSTRUMENT
         note_config.start = START
         note_config.duration = DUR
         note_config.amplitude = int(AMP)
         note_config.pitch = PITCH
     if note_type == MidiNote:
-        note_config = MidiNote.get_config()
+        note_config = NoteConfig(midi_fields)
         note_config.instrument = MIDI_INSTRUMENT
         note_config.time = START
         note_config.duration = DUR
         note_config.velocity = int(AMP)
-        note_config.pitch = PITCH
+        note_config.pitch = int(PITCH)
     if note_type == FoxDotSupercolliderNote:
-        note_config = FoxDotSupercolliderNote.get_config()
+        note_config = NoteConfig(foxdot_fields)
         note_config.synth_def = FOX_DOT_INSTRUMENT
         note_config.delay = INT_START
         note_config.dur = DUR
-        note_config.amp = AMP
+        note_config.amp = float(AMP)
         note_config.degree = PITCH
     return note_config
 
@@ -103,23 +97,23 @@ def test_note():
 
     with pytest.raises(ValueError):
         # noinspection PyTypeChecker
-        _ = Note(None, None, None, None, None)
+        _ = CSoundNote(None, None, None, None, None)
     with pytest.raises(ValueError):
         # noinspection PyTypeChecker
-        _ = Note(object(), object(), object(), object(), object())
+        _ = CSoundNote(object(), object(), object(), object(), object())
     with pytest.raises(ValueError):
         # noinspection PyTypeChecker
-        _ = Note(INSTRUMENT, START, DUR, AMP, PITCH, performance_attrs=object())
+        _ = CSoundNote(INSTRUMENT, START, DUR, AMP, PITCH, performance_attrs=object())
 
 
 def test_note_eq_copy():
-    note_2 = Note.copy(NOTE)
+    note_2 = CSoundNote.copy(NOTE)
     assert NOTE == note_2
 
     octave = OCTAVE
     scale = SCALE
     fox_dot_note = FoxDotSupercolliderNote(synth_def=FOX_DOT_INSTRUMENT, delay=int(START), dur=DUR,
-                                           amp=AMP, degree=PITCH, oct=octave, scale=scale)
+                                           amp=float(AMP), degree=PITCH, octave=octave, scale=scale)
     fox_dot_note_2 = FoxDotSupercolliderNote.copy(fox_dot_note)
     assert fox_dot_note == fox_dot_note_2
 
@@ -128,14 +122,33 @@ def test_note_eq_copy():
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
-def test_csound_note(start, duration, amplitude, pitch):
+def test_csound_note_attrs(start, duration, amplitude, pitch):
     note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
                       amplitude=int(amplitude), pitch=pitch)
-    assert note.start == start
-    assert note.duration == duration
-    assert note.amplitude == int(amplitude)
-    assert note.pitch == pitch
-    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.5f}' == str(note)
+    assert note.start == note.s() == start
+    assert note.duration == note.dur == note.d() == duration
+    assert note.amplitude == note.amp == note.a() == int(amplitude)
+    assert note.pitch == note.p() == pitch
+    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.2f}' == str(note)
+
+    note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
+                      amplitude=int(amplitude), pitch=pitch)
+    note.s(start + 1).d(duration + 1).a(amplitude + 1).p(pitch + 1)
+    assert note.s() == start + 1
+    assert note.d() == duration + 1
+    assert note.a() == amplitude + 1
+    assert note.p() == pitch + 1
+
+
+def test_csound_note_pitch_precision():
+    note = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR,
+                      amplitude=int(AMP), pitch=PITCH)
+    assert note.pitch_precision == CSoundNote.SCALE_PITCH_PRECISION
+    assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {int(AMP)} {PITCH:.2f}' == str(note)
+
+    note.pitch_precision = 5
+    assert note.pitch_precision == 5
+    assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {int(AMP)} {PITCH:.5f}' == str(note)
 
 
 @pytest.mark.parametrize('degree', PITCHES)
@@ -147,20 +160,29 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
     octave = OCTAVE
     scale = SCALE
     note = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
-                                   amp=amp, degree=degree, oct=octave, scale=scale)
-    assert note.delay == delay
-    assert note.dur == dur
-    assert note.amp == amp
-    assert note.degree == degree
-    assert note.oct == octave
+                                   amp=float(amp), degree=degree, octave=octave, scale=scale)
+    assert note.delay == note.start == note.s() == delay
+    assert note.dur == note.d() == dur
+    assert note.amp == note.a() == float(amp)
+    assert note.degree == note.pitch == note.p() == degree
+    assert note.octave == octave
     assert note.scale == scale
-    assert f'name: Note delay: {delay} dur: {dur} amp: {amp} degree: {degree} oct: {octave} scale: {scale}' \
+    assert f'name: Note delay: {delay} dur: {dur} amp: {float(amp)} degree: {degree} octave: {octave} scale: {scale}' \
            == str(note)
 
     with pytest.raises(ValueError):
         scale = 'NOT_A_VALID_SCALE'
         _ = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
-                                    amp=amp, degree=degree, oct=octave, scale=scale)
+                                    amp=amp, degree=degree, octave=octave, scale=scale)
+
+    scale = SCALE
+    note = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
+                                   amp=float(amp), degree=degree, octave=octave, scale=scale)
+    note.s(delay + 1).d(dur + 1).a(float(amp + 1)).p(degree + 1)
+    assert note.s() == delay + 1
+    assert note.d() == dur + 1
+    assert note.a() == amp + 1
+    assert note.p() == degree + 1
 
 
 @pytest.mark.parametrize('pitch', PITCHES)
@@ -170,31 +192,35 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
 def test_midi_note_attrs(time, duration, velocity, pitch):
     note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
                     velocity=int(velocity), pitch=int(pitch))
-    assert note.time == time
-    assert note.duration == duration
-    assert note.velocity == int(velocity)
-    assert note.pitch == int(pitch)
+    assert note.time == note.start == note.s() == time
+    assert note.duration == note.dur == note.d() == duration
+    assert note.velocity == note.amp == note.a() == int(velocity)
+    assert note.pitch == note.p() == int(pitch)
     expected_str_note = (f'name: Note instrument: {INSTRUMENT} time: {time} duration: {duration} '
                          f'velocity: {int(velocity)} pitch: {int(pitch)} channel: 1')
-
-    # TODO HAVE TO MAKE NOTE ABC BECAUSE TYPES DON'T MATCH FOR ALL DERIVED TYPES. MAKE IT ABC WITHOUT TYPES
-    # TEMP DEBUG
-    import pdb; pdb.set_trace()
-
     assert expected_str_note == str(note)
+
+    note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
+                    velocity=int(velocity), pitch=int(pitch))
+    new_pitch = int(pitch + 1.0)
+    note.s(time + 1).d(duration + 1).a(velocity + 1).p(new_pitch)
+    assert note.s() == time + 1
+    assert note.d() == duration + 1
+    assert note.a() == velocity + 1
+    assert note.p() == new_pitch
 
 
 def test_note_config():
-    note_config = _setup_note_config(Note)
-    note = Note(**note_config.as_dict())
+    note_config = _setup_note_config(CSoundNote)
+    note = CSoundNote(**note_config.as_dict())
     assert note.instrument == INSTRUMENT
     assert note.start == START
-    assert note.amp == AMP
-    assert note.dur == DUR
+    assert note.amplitude == AMP
+    assert note.duration == DUR
     assert note.pitch == PITCH
 
     note_config = _setup_note_config(CSoundNote)
-    note = CSoundNote(**note_config.as_dict())
+    note = CSoundNote(*note_config.as_list())
     assert note.instrument == INSTRUMENT
     assert note.start == START
     assert note.amplitude == AMP
@@ -209,8 +235,24 @@ def test_note_config():
     assert note.duration == DUR
     assert note.pitch == PITCH
 
+    note_config = _setup_note_config(MidiNote)
+    note = MidiNote(*note_config.as_list())
+    assert note.instrument == MIDI_INSTRUMENT
+    assert note.time == START
+    assert note.velocity == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
+
     note_config = _setup_note_config(FoxDotSupercolliderNote)
     note = FoxDotSupercolliderNote(**note_config.as_dict())
+    assert note.synth_def == FOX_DOT_INSTRUMENT
+    assert note.degree == START
+    assert note.amp == AMP
+    assert note.delay == DUR
+    assert note.pitch == PITCH
+
+    note_config = _setup_note_config(FoxDotSupercolliderNote)
+    note = FoxDotSupercolliderNote(*note_config.as_list())
     assert note.synth_def == FOX_DOT_INSTRUMENT
     assert note.degree == START
     assert note.amp == AMP
@@ -229,12 +271,14 @@ def test_note_sequence_iter_note_attr_properties():
     first_loop_count = 0
     for note in note_sequence:
         assert note.start == START
+        # noinspection PyUnresolvedReferences
         assert note.pa.test_attr == ATTR_VAL
         first_loop_count += 1
     # Iterate again. This tests that __iter__() resets the loop state
     second_loop_count = 0
     for note in note_sequence:
         assert note.start == START
+        # noinspection PyUnresolvedReferences
         assert note.pa.test_attr == ATTR_VAL
         second_loop_count += 1
     assert first_loop_count == second_loop_count
@@ -243,8 +287,8 @@ def test_note_sequence_iter_note_attr_properties():
 def test_note_sequence_len_append_getitem():
     # Returns note_list with 2 Notes
     note_sequence = _setup_note_sequence()
-    note_3 = Note.copy(NOTE)
-    new_amp = NOTE.amp + 1.0
+    note_3 = CSoundNote.copy(NOTE)
+    new_amp = NOTE.amp + 1
     note_3.amp = new_amp
     # Assert initial len() of note_list
     assert len(note_sequence) == 2
@@ -295,7 +339,7 @@ def test_note_sequence_insert_remove():
 
     # Insert a single note at the front of the list
     new_amp = AMP + 1
-    new_note = Note.copy(note_front)
+    new_note = CSoundNote.copy(note_front)
     new_note.amp = new_amp
     note_sequence.insert(0, new_note)
     note_front = note_sequence[0]
@@ -303,10 +347,10 @@ def test_note_sequence_insert_remove():
 
     # Insert a list of 2 notes at the front of the list
     new_amp_1 = AMP + 2
-    new_note_1 = Note.copy(note_front)
+    new_note_1 = CSoundNote.copy(note_front)
     new_note_1.amp = new_amp_1
     new_amp_2 = AMP + 3
-    new_note_2 = Note.copy(note_front)
+    new_note_2 = CSoundNote.copy(note_front)
     new_note_2.amp = new_amp_2
     new_note_list = [new_note_1, new_note_2]
     note_sequence.insert(0, new_note_list)
@@ -317,10 +361,10 @@ def test_note_sequence_insert_remove():
 
     # Insert a NoteSequence with 2 notes at the front of the list
     new_amp_1 = AMP + 4
-    new_note_1 = Note.copy(note_front)
+    new_note_1 = CSoundNote.copy(note_front)
     new_note_1.amp = new_amp_1
     new_amp_2 = AMP + 5
-    new_note_2 = Note.copy(note_front)
+    new_note_2 = CSoundNote.copy(note_front)
     new_note_2.amp = new_amp_2
     new_note_list = [new_note_1, new_note_2]
     new_note_sequence = NoteSequence(new_note_list)
@@ -344,61 +388,6 @@ def test_note_sequence_insert_remove():
         note_front = note_sequence[0]
         assert note_front.amp == expected_amp
         expected_amp = note_sequence[1].amp
-
-
-def test_performance_attrs_freeze_unfreeze():
-    # Initial state is not frozen. User must explicitly freeze()
-    perf_attrs = PerformanceAttrs()
-    assert not perf_attrs.is_frozen()
-    perf_attrs.freeze()
-    assert perf_attrs.is_frozen()
-    perf_attrs.unfreeze()
-    assert not perf_attrs.is_frozen()
-
-
-def test_performance_attrs_add_attr_set_attr():
-    # Initial state is not frozen. User must explicitly freeze()
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
-    # ATTR_NAME = 'test_attr'
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == ATTR_VAL
-    # noinspection PyUnresolvedReferences
-    assert isinstance(perf_attrs.test_attr, ATTR_TYPE)
-
-    new_attr_val = 200
-    perf_attrs.safe_set_attr(ATTR_NAME, new_attr_val)
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == new_attr_val
-
-    with pytest.raises(ValueError):
-        perf_attrs.safe_set_attr('NOT_AN_ATTR_NAME', ATTR_VAL)
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == new_attr_val
-
-    with pytest.raises(ValueError):
-        perf_attrs.safe_set_attr(ATTR_NAME, float(ATTR_VAL))
-    # noinspection PyUnresolvedReferences
-    assert perf_attrs.test_attr == new_attr_val
-
-
-def test_performance_attrs_str():
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
-    assert f'{ATTR_NAME}: {ATTR_VAL}' == str(perf_attrs)
-    perf_attrs.add_attr(ATTR_NAME + '_2', ATTR_VAL + 100, ATTR_TYPE)
-    assert f'{ATTR_NAME}: {ATTR_VAL} {ATTR_NAME}_2: {ATTR_VAL + 100}' == str(perf_attrs)
-
-
-def test_performance_attrs_dict():
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
-    assert {ATTR_NAME: ATTR_VAL} == perf_attrs.as_dict()
-
-    new_attr_name = ATTR_NAME + '_2'
-    new_attr_val = ATTR_VAL + 100
-    perf_attrs.add_attr(new_attr_name, new_attr_val, ATTR_TYPE)
-    assert {ATTR_NAME: ATTR_VAL, new_attr_name: new_attr_val} == perf_attrs.as_dict()
 
 
 if __name__ == '__main__':
