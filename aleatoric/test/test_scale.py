@@ -14,28 +14,37 @@ START = 0.0
 DUR = 1.0
 AMP = 100
 PITCH = 10.1
-NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
 KEY = MajorKey.C
 OCTAVE = 4
 SCALE_CLS = ScaleCls.Major
 NOTE_CLS = CSoundNote
-SCALE = Scale(key=KEY, octave=OCTAVE, scale_cls=SCALE_CLS, note_cls=NOTE_CLS, note_prototype=NOTE)
 
 
-def test_is_major_key_is_minor_key():
-    assert SCALE.is_major_key
-    assert not SCALE.is_minor_key
+@pytest.fixture('module')
+def note():
+    return CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
-    # TODO MINOR KEYS ARE BROKEN
+
+@pytest.fixture(scope='module')
+def scale(note):
+    return Scale(key=KEY, octave=OCTAVE, scale_cls=SCALE_CLS, note_cls=NOTE_CLS, note_prototype=note)
+
+
+def test_is_major_key_is_minor_key(note, scale):
+    # Default note is C Major
+    assert scale.is_major_key
+    assert not scale.is_minor_key
+
+    # MinorKey case
     scale_minor = Scale(key=MinorKey.C, octave=OCTAVE, scale_cls=ScaleCls.HarmonicMinor, note_cls=NOTE_CLS,
-                        note_prototype=NOTE)
+                        note_prototype=note)
     assert not scale_minor.is_major_key
     assert scale_minor.is_minor_key
 
 
 # TODO TEST GET EXPECTED NOTES
-def test_get_pitch_for_key():
+def test_get_pitch_for_key(scale):
     pass
 
 
