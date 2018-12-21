@@ -68,7 +68,6 @@ def test_get_pitch_for_key(note, scale):
         assert pytest.approx(expected_pitch, pitches[i])
 
 
-
 if __name__ == '__main__':
     pytest.main(['-xrf'])
 
