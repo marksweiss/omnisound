@@ -9,39 +9,39 @@ NUM_INTERVALS_IN_OCTAVE = 12
 
 
 class MajorKey(Enum):
-    C = major_keys[7]
-    C_s = major_keys[14]
-    D_f = major_keys[2]
-    D = major_keys[9]
-    E_f = major_keys[4]
-    E = major_keys[11]
-    F = major_keys[6]
-    F_s = major_keys[13]
-    G_f = major_keys[1]
-    G = major_keys[8]
-    A_f = major_keys[3]
-    A = major_keys[10]
-    B_f = major_keys[5]
-    B = major_keys[12]
-    C_f = major_keys[0]
+    C = major_keys[7].upper()
+    C_s = major_keys[14].upper()
+    D_f = major_keys[2].upper()
+    D = major_keys[9].upper()
+    E_f = major_keys[4].upper()
+    E = major_keys[11].upper()
+    F = major_keys[6].upper()
+    F_s = major_keys[13].upper()
+    G_f = major_keys[1].upper()
+    G = major_keys[8].upper()
+    A_f = major_keys[3].upper()
+    A = major_keys[10].upper()
+    B_f = major_keys[5].upper()
+    B = major_keys[12].upper()
+    C_f = major_keys[0].upper()
 
 
 class MinorKey(Enum):
-    c = minor_keys[4]
-    c_s = minor_keys[11]
-    d = minor_keys[6]
-    d_s = minor_keys[12]
-    e_f = minor_keys[1]
-    e = minor_keys[8]
-    e_s = minor_keys[13]
-    f = minor_keys[3]
-    f_s = minor_keys[10]
-    g = minor_keys[5]
-    a_f = minor_keys[0]
-    a = minor_keys[7]
-    a_s = minor_keys[14]
-    b_f = minor_keys[2]
-    b = minor_keys[9]
+    C = minor_keys[4].upper()
+    C_S = minor_keys[11].upper()
+    D = minor_keys[6].upper()
+    D_S = minor_keys[12].upper()
+    E_F = minor_keys[1].upper()
+    E = minor_keys[8].upper()
+    E_S = minor_keys[13].upper()
+    F = minor_keys[3].upper()
+    F_S = minor_keys[10].upper()
+    G = minor_keys[5].upper()
+    A_F = minor_keys[0].upper()
+    A = minor_keys[7].upper()
+    A_S = minor_keys[14].upper()
+    B_F = minor_keys[2].upper()
+    B = minor_keys[9].upper()
 
 
 class DiatonicWrapper(m_scales.Diatonic):

@@ -28,10 +28,10 @@ def test_is_major_key_is_minor_key():
     assert not SCALE.is_minor_key
 
     # TODO MINOR KEYS ARE BROKEN
-    # scale_minor = Scale(key=MinorKey.c, octave=OCTAVE, scale_cls=ScaleCls.HarmonicMinor, note_cls=NOTE_CLS,
-    #                     note_prototype=NOTE)
-    # assert not scale_minor.is_major_key
-    # assert scale_minor.is_minor_key
+    scale_minor = Scale(key=MinorKey.C, octave=OCTAVE, scale_cls=ScaleCls.HarmonicMinor, note_cls=NOTE_CLS,
+                        note_prototype=NOTE)
+    assert not scale_minor.is_major_key
+    assert scale_minor.is_minor_key
 
 
 # TODO TEST GET EXPECTED NOTES

@@ -213,27 +213,27 @@ class MidiNote(Note):
         MajorKey.B: 35,
         MajorKey.C_f: 35,
 
-        MinorKey.c: 24,
-        MinorKey.c_s: 25,
-        MinorKey.d: 26,
-        MinorKey.d_s: 27,
-        MinorKey.e_f: 27,
-        MinorKey.e: 28,
-        MinorKey.e_s: 29,
-        MinorKey.f: 29,
-        MinorKey.f_s: 30,
-        MinorKey.g: 31,
-        MinorKey.a_f: 32,
-        MinorKey.a: 33,
-        MinorKey.a_s: 34,
-        MinorKey.b_f: 34,
-        MinorKey.b: 35
+        MinorKey.C: 24,
+        MinorKey.C_S: 25,
+        MinorKey.D: 26,
+        MinorKey.D_S: 27,
+        MinorKey.E_F: 27,
+        MinorKey.E: 28,
+        MinorKey.E_S: 29,
+        MinorKey.F: 29,
+        MinorKey.F_S: 30,
+        MinorKey.G: 31,
+        MinorKey.A_F: 32,
+        MinorKey.A: 33,
+        MinorKey.A_S: 34,
+        MinorKey.B_F: 34,
+        MinorKey.B: 35
     }
 
     MIN_OCTAVE = 0
     MAX_OCTAVE = 7
     KEYS_IN_MIN_OCTAVE = frozenset([MajorKey.A, MajorKey.B_f, MajorKey.B,
-                                    MinorKey.a, MinorKey.b_f, MinorKey.b])
+                                    MinorKey.A, MinorKey.B_F, MinorKey.B])
     DEFAULT_CHANNEL = 1
 
     def __init__(self, instrument: int = None,

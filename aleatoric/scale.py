@@ -20,17 +20,15 @@ from aleatoric.utils import validate_type_choice, validate_types
 from aleatoric.scale_globals import MajorKey, MinorKey, ScaleCls
 
 
-MAJOR_KEY_REVERSE_MAP = {eval(f'MajorKey.{enum_member}.value'): getattr(MajorKey, enum_member)
-                         for enum_member in MajorKey.__members__}
-MINOR_KEY_REVERSE_MAP = {eval(f'MinorKey.{enum_member}.value'): getattr(MinorKey, enum_member)
-                         for enum_member in MinorKey.__members__}
-
-
 class Scale(NoteSequence):
     """Encapsualtes a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
        and a root key. Uses mingus.scale to then retrieve the notes in the scale and provide methods to manage
        and generate Notes. Derives from NoteSequence so acts as a standard Note container.
     """
+    MAJOR_KEY_REVERSE_MAP = {eval(f'MajorKey.{enum_member}.value'): getattr(MajorKey, enum_member)
+                             for enum_member in MajorKey.__members__}
+    MINOR_KEY_REVERSE_MAP = {eval(f'MinorKey.{enum_member}.value'): getattr(MinorKey, enum_member)
+                             for enum_member in MinorKey.__members__}
     KEY_MAPS = {'MajorKey': MAJOR_KEY_REVERSE_MAP, 'MinorKey': MINOR_KEY_REVERSE_MAP}
 
     def __init__(self,
@@ -67,8 +65,9 @@ class Scale(NoteSequence):
         # TODO MINOR KEYS ARE BROKEN
         #  NEED TO UNDERSTAND ACTUAL THEORY BETTER
         #  NEED TO UNDERSTAND MINGUS BETTER
+        # TODO REMOVE OCTAVE AS ARG, WE ACTUALLY ALWAYS WANT TO PASS 1
         # NOTE: mingus expects key names in upper case (or it raises) but it returns them in lower for minor keys
-        m_keys = scale_cls.value(key.name.upper(), octaves=octave).ascending()
+        m_keys = scale_cls.value(key.name.upper(), octaves=1).ascending()
 
         # Construct a list of Notes from the mingus notes, setting their pitch to the pitch in the scale
         # converted to the value for the type of Note. Other attributes are set to Note defaults.
@@ -80,6 +79,9 @@ class Scale(NoteSequence):
         note_list = []
         for m_key in m_keys:
             new_note = self.note_type.copy(note_prototype)
+            # We map mingus note strings to their upper case in scale_globals MajorKey and MinorKey enums
+            # They are returned from mingus as `Eb` for E flat, for example, so map to `EB`
+            m_key = m_key.upper()
             new_note.pitch = self.note_type.get_pitch_for_key(self.key_mapping[m_key], octave=self.octave)
             note_list.append(new_note)
         # Set this List[Note] in the base class for this NoteSequence
