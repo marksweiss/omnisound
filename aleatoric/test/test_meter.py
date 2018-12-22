@@ -36,6 +36,19 @@ def meter():
     return Meter(beat_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=DEFAULT_IS_QUANTIZING)
 
 
+def test_quantizing_on_off(meter):
+    # Default is quantizing on
+    assert meter.is_quantizing()
+    # Can override default
+    meter_2 = Meter(beat_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
+    assert not meter_2.is_quantizing()
+    # Can toggle with methods
+    meter_2.quantizing_on()
+    assert meter_2.is_quantizing()
+    meter_2.quantizing_off()
+    assert not meter_2.is_quantizing()
+
+
 def test_quantize(note_sequence, meter):
     # Simplest test case: Note durations sum to measure duration and no quantizing required
     # Also note_list is already sorted by start ascending, so the order after quantiazation will be unchanged

@@ -86,6 +86,9 @@ def test_measure_swing_on_off(swing, measure):
 
 
 def test_measure_beat(measure):
+    """Beat management logic is in Measure class, but it relies on Meter attribute helper class for state
+       of what is beats per measure for the Measure. This test tests the interactio between the classes.
+    """
     assert measure.beat == 0
     measure.increment_beat()
     assert measure.beat == 1
@@ -103,8 +106,9 @@ def test_measure_beat(measure):
 
 
 def test_measure_apply_phrasing(note_list, measure):
-    # If there are at least 2 notes, first and last will be adjusted as though first as swing forward
-    # and last has swing reverse
+    """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
+       and last has swing reverse. This class tests use of Swing class by Measure class.
+    """
     expected_phrasing_note_starts = [0.0, 0.375]
     measure.swing.swing_on()
     measure.apply_phrasing()
