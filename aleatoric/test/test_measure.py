@@ -159,46 +159,10 @@ def test_quantize_on_off(note_list, meter):
         assert start_after_quantization == start_before_quantization
 
 
-def test_swing_forward(measure):
-    expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
-    measure.swing.swing_on()
-    measure.swing.swing_direction = Swing.SwingDirection.Forward
-    actual_note_starts = _apply_swing_and_get_note_starts(measure)
-    assert expected_swing_note_starts == actual_note_starts
-
-
-def test_swing_reverse(measure):
-    expected_swing_note_starts = [0.0, .125, 0.25, 0.375]
-    measure.swing.swing_on()
-    measure.swing.swing_direction = Swing.SwingDirection.Reverse
-    actual_note_starts = _apply_swing_and_get_note_starts(measure)
-    assert expected_swing_note_starts == actual_note_starts
-
-
-def test_swing_both(measure):
-    expected_swing_note_starts = [(0.0, 0.0), (0.125, 0.375), (0.25, 0.75), (0.375, 1.125)]
-    measure.swing.swing_on()
-    measure.swing.swing_direction = Swing.SwingDirection.Both
-    actual_note_starts = _apply_swing_and_get_note_starts(measure)
-    # For this test case, swing applied to each note to change its start time may be forward or reverse
-    # so test each note for being one of the two possible values, either start += (swing_factor * start) or
-    # start -= (swing_factor * start)
-    for i, actual_note_start in enumerate(actual_note_starts):
-        assert actual_note_start in expected_swing_note_starts[i]
-
-
-def test_swing_on_off(swing, measure):
-    # Default is swing off
-    assert not swing.is_swing_on()
-    # Can override default
-    swing_2 = Swing(swing_on=True, swing_factor=SWING_FACTOR, swing_direction=Swing.SwingDirection.Forward)
-    assert swing_2.is_swing_on()
-    # Can toggle with methods
-    swing_2.swing_off()
-    assert not swing_2.is_swing_on()
-    swing_2.swing_on()
-    assert swing_2.is_swing_on()
-
+def test_measure_swing_on_off(swing, measure):
+    """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
+       Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
+    """
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
     # Does not adjust notes if swing is off
     swing.swing_off()
