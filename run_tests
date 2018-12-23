@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-pytest aleatoric/test/ -W ignore::DeprecationWarning
+pytest aleatoric/test/ -W ignore::UserWarning -W ignore::DeprecationWarning

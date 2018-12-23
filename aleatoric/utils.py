@@ -9,6 +9,9 @@ from typing import Any, Dict, Optional, Tuple
 # if fails if these types are not in module scope
 # noinspection PyUnresolvedReferences
 from aleatoric.scale_globals import MajorKey, MinorKey
+# Imported so test_utils test of enum_to_dict() will run
+# noinspection PyUnresolvedReferences
+from aleatoric.test.test_globals import TestEnum
 
 
 def validate_type(arg_name, val, val_type) -> bool:
