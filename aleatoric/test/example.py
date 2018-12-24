@@ -3,10 +3,11 @@
 from time import sleep
 
 from FoxDot import Player as FD_SC_Player
+# noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
-from aleatoric.note import PerformanceAttrs
+from aleatoric.foxdot_supercollider_note import FIELDS, FoxDotSupercolliderNote
+from aleatoric.note import NoteConfig, PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.player import Player, PlayerNoNotesException
 
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     notes = []
-    note_config = FoxDotSupercolliderNote.get_config()
+    note_config = NoteConfig(FIELDS)
     note_config.name = 'test_note'
     note_config.synth_def = fd_sc_synth
     note_config.amp = 1.0

@@ -54,11 +54,12 @@ class FoxDotSupercolliderNote(Note):
     }
 
     def __init__(self, synth_def: Any = None,
-                 delay: int = None, dur: float = None, amp: float = None, degree: Union[float, int] = None,
+                 delay: Union[float, int] = None, dur: float = None, amp: float = None, degree: Union[float, int] = None,
                  name: str = None,
                  octave: int = None, scale: str = None,
                  performance_attrs: PerformanceAttrs = None):
-        validate_types(('delay', delay, int), ('dur', dur, float), ('amp', amp, float))
+        validate_types(('dur', dur, float), ('amp', amp, float))
+        validate_type_choice('delay', delay, (float, int))
         validate_type_choice('degree', degree, (float, int))
         validate_optional_types(('name', name, str), ('octave', octave, int), ('scale', scale, str),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
