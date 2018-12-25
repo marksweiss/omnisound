@@ -22,7 +22,7 @@ from aleatoric.scale_globals import MajorKey, MinorKey, ScaleCls
 
 
 class Scale(NoteSequence):
-    """Encapsualtes a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
+    """Encapsulates a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
        and a root key. Uses mingus.scale to then retrieve the notes in the scale and provide methods to manage
        and generate Notes. Derives from NoteSequence so acts as a standard Note container.
     """
