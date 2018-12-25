@@ -9,12 +9,12 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
   of Key => Pitch for each tuple (Key, Octave)
 """
 
-from typing import Any
+from typing import Any, Union
 
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
-from aleatoric.note import Note, PerformanceAttrs
+from aleatoric.note import PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_types, validate_type_choice,\
                              validate_type_reference_choice)
@@ -35,7 +35,7 @@ class Scale(NoteSequence):
                  octave: int = None,
                  scale_cls: ScaleCls = None,
                  note_cls: Any = None,
-                 note_prototype: Any = None,
+                 note_prototype: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote] = None,
                  performance_attrs: PerformanceAttrs = None):
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
@@ -45,8 +45,8 @@ class Scale(NoteSequence):
 
         validate_types(('octave', octave, int), ('scale_type', scale_cls, ScaleCls))
         validate_type_choice('note_prototype', note_prototype,
-                             (CSoundNote, FoxDotSupercolliderNote, MidiNote, Note))
-        validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote, Note))
+                             (CSoundNote, FoxDotSupercolliderNote, MidiNote))
+        validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote))
         self.key = key
         self.octave = octave
         self.scale_type = scale_cls
@@ -56,6 +56,8 @@ class Scale(NoteSequence):
         note_list = []
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
         mingus_keys = scale_cls.value(key.name).ascending()
+
+        # TODO THIS IS REPEATED IN SCALE AND CHORD AND WILL BE REPEATED FOR OTHER GENERATORS, MAKE BASE CLASS HELPER
         # Construct a list of Notes from the mingus notes, setting their pitch to the pitch in the scale
         # converted to the value for the type of Note. Other attributes are set to the values in `note_prototype`.
         # The enum and `octave` are args passed to `note_type.get_pitch()` for the note_type,

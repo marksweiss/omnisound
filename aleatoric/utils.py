@@ -33,6 +33,12 @@ def validate_type_choice(arg_name, val, val_types) -> Tuple[bool, Optional[Any]]
     return matched, matched_type
 
 
+def validate_optional_type_choice(arg_name, val, val_types) -> Tuple[bool, Optional[Any]]:
+    if val is None:
+        return True, type(None)
+    return validate_type_choice(arg_name, val, val_types)
+
+
 def validate_types(*val_type_tuples) -> bool:
     for arg_name, val, val_type in val_type_tuples:
         validate_type(arg_name, val, val_type)
