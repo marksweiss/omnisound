@@ -14,6 +14,7 @@ from typing import Any, Union
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
+from aleatoric.mingus_utils import get_notes_for_mingus_keys
 from aleatoric.note import PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_types, validate_type_choice,\
@@ -63,12 +64,16 @@ class Scale(NoteSequence):
         # The enum and `octave` are args passed to `note_type.get_pitch()` for the note_type,
         # which maps (key_enum, octave) to valid pitch values (typically float or int) for that note type.
         # e.g. CSoundNote.get_pitch(key=MajorKey.C, octave=4) -> 4.01: float
-        mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
+        m_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
         for mingus_key in mingus_keys:
             # We map mingus note strings to their upper case in scale_globals, match that here
-            key = mingus_key_to_key_enum_mapping[mingus_key.upper()]
+            key = m_key_to_key_enum_mapping[mingus_key.upper()]
             new_note = self.note_type.copy(note_prototype)
             new_note.pitch = self.note_type.get_pitch_for_key(key, octave=self.octave)
             note_list.append(new_note)
+
+        note_list = get_notes_for_mingus_keys(matched_key_type, mingus_keys,
+                                              self.note_prototype, self.note_type, self.octave,
+                                              validate=False)
 
         super(Scale, self).__init__(note_list, performance_attrs=performance_attrs)

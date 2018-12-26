@@ -234,6 +234,8 @@ class MidiNote(Note):
     MAX_OCTAVE = 7
     KEYS_IN_MIN_OCTAVE = frozenset([MajorKey.A, MajorKey.B_f, MajorKey.B,
                                     MinorKey.A, MinorKey.B_F, MinorKey.B])
+    MIN_PITCH = 21
+    MAX_PITCH = 108
     DEFAULT_CHANNEL = 1
 
     def __init__(self, instrument: int = None,
@@ -372,6 +374,15 @@ class MidiNote(Note):
     def pitch(self, pitch: int):
         validate_type('pitch', pitch, int)
         self._pitch = pitch
+
+    def transpose(self, interval: int):
+        """Midi pitches are ints in the range MIN
+        """
+        validate_type('interval', interval, int)
+        new_pitch = self.pitch + interval
+        if new_pitch < MidiNote.MIN_PITCH or new_pitch > MidiNote.MAX_PITCH:
+            raise ValueError(f'Arg `interval` creates invalid pitch value: {new_pitch}')
+        self._pitch = new_pitch
 
     def p(self, pitch: int = None) -> Union['MidiNote', int]:
         if pitch is not None:

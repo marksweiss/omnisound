@@ -141,6 +141,10 @@ class Note(ABC):
         """
         raise NotImplemented('Derived type must implement Note.p')
 
+    @abstractmethod
+    def transpose (self, interval: int):
+        raise NotImplemented('Derived type must implement Note.transpose -> Note')
+
     @property
     @abstractmethod
     def performance_attrs(self) -> PerformanceAttrs:
