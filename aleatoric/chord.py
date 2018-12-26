@@ -116,7 +116,7 @@ class Chord(NoteSequence):
                                                    validate=False)
 
     @staticmethod
-    def copy(source_chord: 'Chord'):
+    def copy(source_chord: 'Chord') -> 'Chord':
         return Chord(chord_cls=source_chord.chord_type,
                      note_prototype=source_chord.note_prototype,
                      note_cls=source_chord.note_type,
@@ -126,7 +126,7 @@ class Chord(NoteSequence):
                      performance_attrs=source_chord.performance_attrs)
 
     @staticmethod
-    def copy_first_inversion(source_chord):
+    def copy_first_inversion(source_chord: 'Chord') -> 'Chord':
         """Copy constructor that creates a new Chord using the attributes of this Chord with a note_list
             that is generated from copies from this Chord's note_prototype, with pitches which are the
             first inversion of the keys in this Chord.
@@ -140,7 +140,7 @@ class Chord(NoteSequence):
         return chord
 
     @staticmethod
-    def copy_second_inversion(source_chord):
+    def copy_second_inversion(source_chord: 'Chord') -> 'Chord':
         """Copy constructor that creates a new Chord using the attributes of this Chord with a note_list
             that is generated from copies from this Chord's note_prototype, with pitches which are the
             second inversion of the keys in this Chord.
@@ -154,7 +154,7 @@ class Chord(NoteSequence):
         return chord
 
     @staticmethod
-    def copy_third_inversion(source_chord):
+    def copy_third_inversion(source_chord: 'Chord') -> 'Chord':
         """Copy constructor that creates a new Chord using the attributes of this Chord with a note_list
             that is generated from copies from this Chord's note_prototype, with pitches which are the
             third inversion of the keys in this Chord.
@@ -171,3 +171,25 @@ class Chord(NoteSequence):
         # Don't validate because Note.transpose() validates
         for note in self.note_list:
             note.transpose(interval)
+
+    @staticmethod
+    def copy_transpose(source_chord: 'Chord', interval: int) -> 'Chord':
+        chord = Chord.copy(source_chord)
+        chord.transpose(interval)
+        return chord
+
+    def make_ostinato(self, init_start_time: Union[float, int], start_time_interval: Union[float, int]):
+        # Don't validate because Note.start() validates
+        self.note_list[0].start = init_start_time
+        last_start = init_start_time
+        for note in self.note_list[1:]:
+            note.start = last_start + start_time_interval
+            last_start = note.start
+
+    @staticmethod
+    def copy_ostinato(source_chord: 'Chord', init_start_time: Union[float, int],
+                      start_time_interval: Union[float, int]) -> 'Chord':
+        # Don't validate because Note.start() validates
+        chord = Chord.copy(source_chord)
+        chord.make_ostinato(init_start_time, start_time_interval)
+        return chord
