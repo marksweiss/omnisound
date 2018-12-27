@@ -79,7 +79,6 @@ class Chord(NoteSequence):
                      note_cls=source_chord.note_type,
                      octave=source_chord.octave,
                      key=source_chord.key,
-                     harmonic_scale=source_chord.harmonic_scale,
                      performance_attrs=source_chord.performance_attrs)
 
     def mod_first_inversion(self):

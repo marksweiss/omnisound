@@ -44,26 +44,67 @@ def test_chord_expected_pitches(note):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
 
-def test_chord_inversion(note):
+def test_chord_mod_inversion(note):
     harmonic_chord = HarmonicChord.MajorTriad
+
     chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
     chord.mod_first_inversion()
     expected_pitches = [4.05, 4.08, 4.01]
     for i, note in enumerate(chord):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
-    harmonic_chord = HarmonicChord.MajorTriad
     chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
     chord.mod_second_inversion()
     expected_pitches = [4.08, 4.01, 4.05]
     for i, note in enumerate(chord):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
-    harmonic_chord = HarmonicChord.MajorTriad
     chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
     chord.mod_third_inversion()
     expected_pitches = [4.01, 4.05, 4.08]
     for i, note in enumerate(chord):
+        assert expected_pitches[i] == pytest.approx(note.pitch)
+
+
+def test_chord_copy_inversion(note):
+    harmonic_chord = HarmonicChord.MajorTriad
+
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    inverted_chord = Chord.copy_first_inversion(chord)
+    expected_pitches = [4.05, 4.08, 4.01]
+    for i, note in enumerate(inverted_chord):
+        assert expected_pitches[i] == pytest.approx(note.pitch)
+
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    inverted_chord = Chord.copy_second_inversion(chord)
+    expected_pitches = [4.08, 4.01, 4.05]
+    for i, note in enumerate(inverted_chord):
+        assert expected_pitches[i] == pytest.approx(note.pitch)
+
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    inverted_chord = Chord.copy_third_inversion(chord)
+    expected_pitches = [4.01, 4.05, 4.08]
+    for i, note in enumerate(inverted_chord):
+        assert expected_pitches[i] == pytest.approx(note.pitch)
+
+
+def test_mod_transpose(note):
+    harmonic_chord = HarmonicChord.MajorTriad
+
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    expected_pitches = [4.02, 4.06, 4.09]
+    chord.mod_transpose(interval=1)
+    for i, note in enumerate(chord):
+        assert expected_pitches[i] == pytest.approx(note.pitch)
+
+
+def test_copy_transpose(note):
+    harmonic_chord = HarmonicChord.MajorTriad
+
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    transposed_chord = Chord.copy_transpose(chord, interval=1)
+    expected_pitches = [4.02, 4.06, 4.09]
+    for i, note in enumerate(transposed_chord):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
 
