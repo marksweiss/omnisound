@@ -3,6 +3,7 @@
 from typing import Any, List
 
 import pytest
+# noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
 from aleatoric.csound_note import CSoundNote, FIELDS as csound_fields

@@ -56,6 +56,11 @@ class Scale(NoteSequence):
 
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
         mingus_keys = scale_cls.value(key.name).ascending()
+        # Trim the last element because mingus returns the first note in the next octave along with all the
+        # notes in the scale of the octave requested. This behavior is observed and not exhaustively tested
+        # so check and only remove if the first and last note returned are the same.
+        if mingus_keys[0] == mingus_keys[-1]:
+            mingus_keys = mingus_keys[:-1]
         mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
         note_list = get_notes_for_mingus_keys(matched_key_type, mingus_keys,
                                               mingus_key_to_key_enum_mapping,
