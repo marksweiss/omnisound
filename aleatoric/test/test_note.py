@@ -10,7 +10,6 @@ from aleatoric.csound_note import CSoundNote, FIELDS as csound_fields
 from aleatoric.foxdot_supercollider_note import FIELDS as foxdot_fields, FoxDotSupercolliderNote
 from aleatoric.midi_note import FIELDS as midi_fields,  MidiInstrument, MidiNote
 from aleatoric.note import NoteConfig
-from aleatoric.note_sequence import NoteSequence
 from aleatoric.performance_attrs import PerformanceAttrs
 from aleatoric.rest_note import RestNote
 
@@ -38,22 +37,6 @@ SCALE = 'chromatic'
 OCTAVE = 4
 
 
-# TODO SEPARATE TESTS FOR NOTE SEQUENCE. BETTER COVERAGE
-def _setup_note_sequence_args():
-    note_1 = CSoundNote.copy(NOTE)
-    note_2 = CSoundNote.copy(NOTE)
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(attr_name=ATTR_NAME, val=ATTR_VAL, attr_type=ATTR_TYPE)
-    note_1.performance_attrs = perf_attrs
-    note_2.performance_attrs = perf_attrs
-    note_list = [note_1, note_2]
-    return note_list, perf_attrs
-
-
-def _setup_note_sequence():
-    return NoteSequence(*_setup_note_sequence_args())
-
-
 def _setup_note_config(note_type: Any):
     note_config = None
     if note_type == CSoundNote:
@@ -78,15 +61,6 @@ def _setup_note_config(note_type: Any):
         note_config.amp = float(AMP)
         note_config.degree = PITCH
     return note_config
-
-
-def test_note_sequence():
-    note_list, perf_attrs = _setup_note_sequence_args()
-    note_sequence = NoteSequence(note_list, perf_attrs)
-    assert note_sequence
-    # Assert all the note_attrs in the note_sequence have the same performance_attr
-    assert note_sequence.note_list == note_sequence.nl == note_list
-    assert note_sequence.performance_attrs == note_sequence.pa == perf_attrs
 
 
 def test_note():
@@ -264,131 +238,6 @@ def test_note_config():
 def test_rest():
     rest_note = RestNote(instrument=INSTRUMENT, start=START, dur=DUR, pitch=PITCH)
     assert rest_note.amp == 0.0
-
-
-def test_note_sequence_iter_note_attr_properties():
-    note_sequence = _setup_note_sequence()
-    # Iterate once and assert attributes of elements. This tests __iter__() and __next__()
-    first_loop_count = 0
-    for note in note_sequence:
-        assert note.start == START
-        # noinspection PyUnresolvedReferences
-        assert note.pa.test_attr == ATTR_VAL
-        first_loop_count += 1
-    # Iterate again. This tests that __iter__() resets the loop state
-    second_loop_count = 0
-    for note in note_sequence:
-        assert note.start == START
-        # noinspection PyUnresolvedReferences
-        assert note.pa.test_attr == ATTR_VAL
-        second_loop_count += 1
-    assert first_loop_count == second_loop_count
-
-
-def test_note_sequence_len_append_getitem():
-    # Returns note_list with 2 Notes
-    note_sequence = _setup_note_sequence()
-    note_3 = CSoundNote.copy(NOTE)
-    new_amp = NOTE.amp + 1
-    note_3.amp = new_amp
-    # Assert initial len() of note_list
-    assert len(note_sequence) == 2
-    # Append and check len again
-    note_sequence.append(note_3)
-    assert len(note_sequence) == 3
-    # Check that last element has modified attribute, using NoteSequence[idx]
-    # to access the note directly by index
-    assert note_sequence[2].amp == new_amp
-
-
-def test_note_sequence_add_lshift_extend():
-    expected_len = 2
-    note_sequence = _setup_note_sequence()
-    assert len(note_sequence) == expected_len
-    # Append/Add and check len again
-    note_sequence += NOTE
-    expected_len += 1
-    assert len(note_sequence) == expected_len
-    # Append/Add with lshift syntax
-    note_sequence << NOTE
-    expected_len += 1
-    assert len(note_sequence) == expected_len
-    # Append/Add with a List[Note]
-    note_sequence += [NOTE, NOTE]
-    expected_len += 2
-    assert len(note_sequence) == expected_len
-    # Append/Add with a NoteSequence
-    new_note_sequence = NoteSequence([NOTE, NOTE])
-    note_sequence += new_note_sequence
-    expected_len += 2
-    assert len(note_sequence) == expected_len
-    # Extend with a List[Note]
-    note_sequence.extend([NOTE, NOTE])
-    expected_len += 2
-    assert len(note_sequence) == expected_len
-    # Extend with a NoteSequence
-    new_note_sequence = NoteSequence([NOTE, NOTE])
-    note_sequence.extend(new_note_sequence)
-    expected_len += 2
-    assert len(note_sequence) == expected_len
-
-
-def test_note_sequence_insert_remove():
-    note_sequence = _setup_note_sequence()
-    note_front = note_sequence[0]
-    assert note_front.amp == AMP
-
-    # Insert a single note at the front of the list
-    new_amp = AMP + 1
-    new_note = CSoundNote.copy(note_front)
-    new_note.amp = new_amp
-    note_sequence.insert(0, new_note)
-    note_front = note_sequence[0]
-    assert note_front.amp == new_amp
-
-    # Insert a list of 2 notes at the front of the list
-    new_amp_1 = AMP + 2
-    new_note_1 = CSoundNote.copy(note_front)
-    new_note_1.amp = new_amp_1
-    new_amp_2 = AMP + 3
-    new_note_2 = CSoundNote.copy(note_front)
-    new_note_2.amp = new_amp_2
-    new_note_list = [new_note_1, new_note_2]
-    note_sequence.insert(0, new_note_list)
-    note_front = note_sequence[0]
-    assert note_front.amp == new_amp_1
-    note_front = note_sequence[1]
-    assert note_front.amp == new_amp_2
-
-    # Insert a NoteSequence with 2 notes at the front of the list
-    new_amp_1 = AMP + 4
-    new_note_1 = CSoundNote.copy(note_front)
-    new_note_1.amp = new_amp_1
-    new_amp_2 = AMP + 5
-    new_note_2 = CSoundNote.copy(note_front)
-    new_note_2.amp = new_amp_2
-    new_note_list = [new_note_1, new_note_2]
-    new_note_sequence = NoteSequence(new_note_list)
-    note_sequence.insert(0, new_note_sequence)
-    note_front = note_sequence[0]
-    assert note_front.amp == new_amp_1
-    note_front = note_sequence[1]
-    assert note_front.amp == new_amp_2
-
-    # Remove notes added as NoteSequence, List[Note] and Note
-    # After removing a note, the new front note is the one added second to most recently
-    expected_amp = note_sequence[1].amp
-    note_to_remove = note_sequence[0]
-    note_sequence.remove(note_to_remove)
-    note_front = note_sequence[0]
-    assert note_front.amp == expected_amp
-    expected_amp = note_sequence[1].amp
-    for i in range(4):
-        note_to_remove = note_sequence[0]
-        note_sequence.remove(note_to_remove)
-        note_front = note_sequence[0]
-        assert note_front.amp == expected_amp
-        expected_amp = note_sequence[1].amp
 
 
 if __name__ == '__main__':
