@@ -87,9 +87,10 @@ class Chord(NoteSequence):
 
         # Get the list of keys in the chord as string names from mingus
         self._mingus_chord = []
-        if self.harmonic_chord is KeyChord:
+        if self.matched_harmonic_chord_type is KeyChord:
             self._mingus_chord = harmonic_chord.value(self.key.name)
-        if self.harmonic_chord is ScaleChord:
+        if self.matched_harmonic_chord_type is ScaleChord:
+            import pdb; pdb.set_trace()
             self._mingus_chord = harmonic_chord.value(self.harmonic_scale.name)
 
         # Convert to Notes for this chord's note_type with pitch assigned for the key in the chord
