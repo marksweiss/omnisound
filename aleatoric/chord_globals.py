@@ -14,16 +14,16 @@ class Caller(object):
 
        Example:
 
-       class KeyChord(Enum):
+       class HarmonicChord(Enum):
            MajorTriad = m_chords.major_triad
 
-       x = KeyChord.MajorTriad
+       x = HarmonicChord.MajorTriad
        type(x) => <function ...>
 
-       class KeyChord(Enum):
+       class HarmonicChord(Enum):
            MajorTriad = Caller(m_chords.major_triad)
 
-       x = KeyChord.MajorTriad
+       x = HarmonicChord.MajorTriad
        type(x) => <Enum ...>
        x.name => 'MajorTriad'
        x.value => <Caller ...>
@@ -36,9 +36,9 @@ class Caller(object):
         return self.f(*args)
 
 
-class KeyChord(Enum):
+class HarmonicChord(Enum):
     """Chords based on intervals from a root key (note). These chords apply to any key with the exception
-       that Major* chords are only musicall "valid" for Major scales and Minor* chords are only
+       that Major* chords are only musically "valid" for Major scales and Minor* chords are only
        musically "valid" for minor scales.
     """
     MajorTriad = Caller(m_chords.major_triad)
@@ -79,21 +79,3 @@ class KeyChord(Enum):
     LydianDominantSeventh = Caller(m_chords.lydian_dominant_seventh)
     Eleventh = Caller(m_chords.eleventh)
     HendrixChord = Caller(m_chords.hendrix_chord)
-
-
-class ScaleChord(Enum):
-    Dominant = Caller(m_chords.dominant)
-    Dominant7 = Caller(m_chords.dominant7)
-    Mediant = Caller(m_chords.mediant)
-    Mediant7 = Caller(m_chords.mediant7)
-    Sevenths = Caller(m_chords.sevenths)
-    Subdominant = Caller(m_chords.subdominant)
-    Subdominant7 = Caller(m_chords.subdominant7)
-    Submediant = Caller(m_chords.submediant)
-    Submediant7 = Caller(m_chords.submediant7)
-    Subtonic = Caller(m_chords.subtonic)
-    Subtonic7 = Caller(m_chords.subtonic7)
-    Supertonic = Caller(m_chords.supertonic)
-    Supertonic7 = Caller(m_chords.supertonic7)
-    Tonic = Caller(m_chords.tonic)
-    Triads = Caller(m_chords.triads)

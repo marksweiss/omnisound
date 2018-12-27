@@ -6,7 +6,7 @@ from mingus.core.chords import (first_inversion as m_first_inversion,
                                 second_inversion as m_second_inversion,
                                 third_inversion as m_third_inversion)
 
-from aleatoric.chord_globals import KeyChord, ScaleChord
+from aleatoric.chord_globals import HarmonicChord
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
@@ -16,7 +16,7 @@ from aleatoric.note_sequence import NoteSequence
 from aleatoric.scale import Scale
 from aleatoric.scale_globals import MajorKey, MinorKey, HarmonicScale
 from aleatoric.utils import (validate_optional_type, validate_optional_type_choice,
-                             validate_type, validate_type_choice, validate_type_reference_choice)
+                             validate_types, validate_type_choice, validate_type_reference_choice)
 
 
 class Chord(NoteSequence):
@@ -27,26 +27,18 @@ class Chord(NoteSequence):
        value for the `note_cls` for each key in the Chord. So a CMajor triad Chord for `note_cls` CSoundNote
        and `octave` = 4 will have three Notes with pitches 4.01, 4.05, and 4.08.
     """
-    CHORD_CLASS_ARG_MAPPING = {
-        KeyChord.__name__: 'key',
-        ScaleChord.__name__: 'harmonic_scale'
-    }
-
     def __init__(self,
                  harmonic_chord: Any = None,
                  note_prototype: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote] = None,
                  note_cls: Any = None,
                  octave: int = None,
                  key: Union[MajorKey, MinorKey] = None,
-                 harmonic_scale: HarmonicScale = None,
                  performance_attrs: PerformanceAttrs = None):
-        _, self.matched_harmonic_chord_type = validate_type_choice('harmonic_chord', harmonic_chord,
-                                                                   (KeyChord, ScaleChord))
+        validate_types(('harmonic_chord', harmonic_chord, HarmonicChord), ('octave', octave, int))
         validate_type_choice('note_prototype', note_prototype,
                              (CSoundNote, FoxDotSupercolliderNote, MidiNote))
+        matched, self.matched_key_type = validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote))
-        validate_type('octave', octave, int)
-        validate_optional_type('scale', harmonic_scale, HarmonicScale)
 
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
@@ -54,17 +46,11 @@ class Chord(NoteSequence):
         # If we can't get key type from key, use the name of the Chord, which may be associated with
         # MinorKey. Otherwise default to MajorKey, because the mingus functions we use to return lists of string
         # names of keys return upper-case values valid for MajorKey
-        matched, self.matched_key_type = validate_optional_type_choice('key', key, (MajorKey, MinorKey))
         if not matched:
-            if harmonic_chord is KeyChord and harmonic_chord.name.startswith('Minor'):
+            if harmonic_chord is HarmonicChord and harmonic_chord.name.startswith('Minor'):
                 self.matched_key_type = MinorKey
             else:
                 self.matched_key_type = MajorKey
-
-        # Additional validation. It is valid to have either or both a `key` or `scale_type` arg, but you must have
-        # at least one.
-        if not key and not harmonic_scale:
-            raise ValueError('At least one of args `key` and `scale` must be provided')
 
         # Assign attrs before completing validation because it's more convenient to check for required
         # attrs by using getattr(attr_name) after they have been assigned
@@ -73,25 +59,10 @@ class Chord(NoteSequence):
         self.note_type = note_cls
         self.octave = octave
         self.key = key
-        self.harmonic_scale = harmonic_scale
         self.performance_attrs = performance_attrs
 
-        # Now complete validation. `harmonic_chord` arg maps to which args are required
-        # because some chord_cls enums map to mingus function calls that require one
-        # or the other or both arguments.
-        required_attr = Chord.CHORD_CLASS_ARG_MAPPING[self.matched_harmonic_chord_type.__name__]
-        if not getattr(self, required_attr):
-            raise ValueError((f'Required arg: {required_attr} not present '
-                              f'for `harmonic_chord`: {self.harmonic_chord}. '
-                              f'Args passed in: `key`: {key} `harmonic_scale`: {harmonic_scale}'))
-
         # Get the list of keys in the chord as string names from mingus
-        self._mingus_chord = []
-        if self.matched_harmonic_chord_type is KeyChord:
-            self._mingus_chord = harmonic_chord.value(self.key.name)
-        if self.matched_harmonic_chord_type is ScaleChord:
-            import pdb; pdb.set_trace()
-            self._mingus_chord = harmonic_chord.value(self.harmonic_scale.name)
+        self._mingus_chord = harmonic_chord.value(self.key.name)
 
         # Convert to Notes for this chord's note_type with pitch assigned for the key in the chord
         self._mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[self.matched_key_type.__name__]
