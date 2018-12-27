@@ -108,5 +108,30 @@ def test_copy_transpose(note):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
 
+def test_mod_ostinato(note):
+    harmonic_chord = HarmonicChord.MajorTriad
+
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    init_start_time = 0.0
+    start_time_interval = 0.1
+    chord.mod_ostinato(init_start_time=init_start_time, start_time_interval=start_time_interval)
+    expected_start_times = [0.0, 0.1, 0.2]
+    for i, note in enumerate(chord):
+        assert expected_start_times[i] == pytest.approx(note.start)
+
+
+def test_copy_ostinato(note):
+    harmonic_chord = HarmonicChord.MajorTriad
+
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    init_start_time = 0.0
+    start_time_interval = 0.1
+    ostinato_chord = Chord.copy_ostinato(chord, init_start_time=init_start_time,
+                                         start_time_interval=start_time_interval)
+    expected_start_times = [0.0, 0.1, 0.2]
+    for i, note in enumerate(ostinato_chord):
+        assert expected_start_times[i] == pytest.approx(note.start)
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])
