@@ -97,8 +97,3 @@ class ScaleChord(Enum):
     Supertonic7 = Caller(m_chords.supertonic7)
     Tonic = Caller(m_chords.tonic)
     Triads = Caller(m_chords.triads)
-
-
-class KeyScaleChord(Enum):
-    Seventh = Caller(m_chords.seventh)
-    Triad = Caller(m_chords.triad)

@@ -6,7 +6,7 @@ from mingus.core.chords import (first_inversion as m_first_inversion,
                                 second_inversion as m_second_inversion,
                                 third_inversion as m_third_inversion)
 
-from aleatoric.chord_globals import KeyChord, KeyScaleChord, ScaleChord
+from aleatoric.chord_globals import KeyChord, ScaleChord
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
@@ -28,9 +28,8 @@ class Chord(NoteSequence):
        and `octave` = 4 will have three Notes with pitches 4.01, 4.05, and 4.08.
     """
     CHORD_CLASS_ARG_MAPPING = {
-        KeyChord.__name__: {'key'},
-        KeyScaleChord.__name__: {'key', 'harmonic_scale'},
-        ScaleChord.__name__: {'harmonic_scale'}
+        KeyChord.__name__: 'key',
+        ScaleChord.__name__: 'harmonic_scale'
     }
 
     def __init__(self,
@@ -42,7 +41,7 @@ class Chord(NoteSequence):
                  harmonic_scale: HarmonicScale = None,
                  performance_attrs: PerformanceAttrs = None):
         _, self.matched_harmonic_chord_type = validate_type_choice('harmonic_chord', harmonic_chord,
-                                                                   (KeyChord, KeyScaleChord, ScaleChord))
+                                                                   (KeyChord, ScaleChord))
         validate_type_choice('note_prototype', note_prototype,
                              (CSoundNote, FoxDotSupercolliderNote, MidiNote))
         validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote))
@@ -80,11 +79,11 @@ class Chord(NoteSequence):
         # Now complete validation. `harmonic_chord` arg maps to which args are required
         # because some chord_cls enums map to mingus function calls that require one
         # or the other or both arguments.
-        required_attrs = Chord.CHORD_CLASS_ARG_MAPPING[self.matched_harmonic_chord_type.__name__]
-        if not all([getattr(self, attr_name) for attr_name in required_attrs]):
-            raise ValueError((f'Required args: {required_attrs} not all present '
-                              f'for `chord_type`: {self.harmonic_chord}. '
-                              f'Args passed in: key: {key} scale: {harmonic_scale}'))
+        required_attr = Chord.CHORD_CLASS_ARG_MAPPING[self.matched_harmonic_chord_type.__name__]
+        if not getattr(self, required_attr):
+            raise ValueError((f'Required arg: {required_attr} not present '
+                              f'for `harmonic_chord`: {self.harmonic_chord}. '
+                              f'Args passed in: `key`: {key} `harmonic_scale`: {harmonic_scale}'))
 
         # Get the list of keys in the chord as string names from mingus
         self._mingus_chord = []
@@ -92,8 +91,6 @@ class Chord(NoteSequence):
             self._mingus_chord = harmonic_chord.value(self.key.name)
         if self.harmonic_chord is ScaleChord:
             self._mingus_chord = harmonic_chord.value(self.harmonic_scale.name)
-        if self.harmonic_chord is KeyScaleChord:
-            self._mingus_chord = harmonic_chord.value(self.key.name, self.harmonic_scale.name)
 
         # Convert to Notes for this chord's note_type with pitch assigned for the key in the chord
         self._mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[self.matched_key_type.__name__]
