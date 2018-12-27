@@ -54,25 +54,11 @@ class Scale(NoteSequence):
         self.note_type = note_cls
         self.note_prototype = note_prototype
 
-        note_list = []
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
         mingus_keys = scale_cls.value(key.name).ascending()
-
-        # TODO THIS IS REPEATED IN SCALE AND CHORD AND WILL BE REPEATED FOR OTHER GENERATORS, MAKE BASE CLASS HELPER
-        # Construct a list of Notes from the mingus notes, setting their pitch to the pitch in the scale
-        # converted to the value for the type of Note. Other attributes are set to the values in `note_prototype`.
-        # The enum and `octave` are args passed to `note_type.get_pitch()` for the note_type,
-        # which maps (key_enum, octave) to valid pitch values (typically float or int) for that note type.
-        # e.g. CSoundNote.get_pitch(key=MajorKey.C, octave=4) -> 4.01: float
-        m_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
-        for mingus_key in mingus_keys:
-            # We map mingus note strings to their upper case in scale_globals, match that here
-            key = m_key_to_key_enum_mapping[mingus_key.upper()]
-            new_note = self.note_type.copy(note_prototype)
-            new_note.pitch = self.note_type.get_pitch_for_key(key, octave=self.octave)
-            note_list.append(new_note)
-
+        mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
         note_list = get_notes_for_mingus_keys(matched_key_type, mingus_keys,
+                                              mingus_key_to_key_enum_mapping,
                                               self.note_prototype, self.note_type, self.octave,
                                               validate=False)
 

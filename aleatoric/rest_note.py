@@ -123,9 +123,6 @@ class RestNote(Note):
     def pa(self, performance_attrs: PerformanceAttrs):
         self._performance_attrs = performance_attrs
 
-    def get_pitch_for_key(self, key, octave):
-        raise NotImplemented('RestNote cannot meaningfully implement get_pitch_for_key()')
-
     @staticmethod
     def copy(source_note: 'RestNote') -> 'RestNote':
         return RestNote(instrument=source_note._instrument,
@@ -140,3 +137,9 @@ class RestNote(Note):
 
     def __str__(self):
         return f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} {self.pitch}'
+
+    def get_pitch_for_key(self, key, octave):
+        raise NotImplemented('RestNote cannot meaningfully implement get_pitch_for_key()')
+
+    def transpose(self, interval):
+        raise NotImplemented('RestNote cannot meaningfully implement transpose()')
