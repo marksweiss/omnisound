@@ -52,6 +52,20 @@ def test_chord_inversion(note):
     for i, note in enumerate(chord):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
+    harmonic_chord = HarmonicChord.MajorTriad
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    chord.mod_second_inversion()
+    expected_pitches = [4.08, 4.01, 4.05]
+    for i, note in enumerate(chord):
+        assert expected_pitches[i] == pytest.approx(note.pitch)
+
+    harmonic_chord = HarmonicChord.MajorTriad
+    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+    chord.mod_third_inversion()
+    expected_pitches = [4.01, 4.05, 4.08]
+    for i, note in enumerate(chord):
+        assert expected_pitches[i] == pytest.approx(note.pitch)
+
 
 if __name__ == '__main__':
     pytest.main(['-xrf'])
