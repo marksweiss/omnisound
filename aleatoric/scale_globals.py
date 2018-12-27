@@ -50,7 +50,7 @@ class DiatonicWrapper(m_scales.Diatonic):
         This mingus scale takes a tuple of semitone values indicating which intervals should be
         half-steps. (3, 7) is neutral and returns C-Major intervals. There isn't documentation as to why.
         This wrapper defaults to this neutral behavior and hides this additional arg so that all the types
-        mapped in the ScaleCls enum have the same signature.
+        mapped in the HarmonicScale enum have the same signature.
 
         Clients can pass semitones as an additional argument to override this default behavior, but it requires
         manual work rather than having the Scale class below hydrate the notes in a NoteSequenc automatically.
@@ -59,7 +59,7 @@ class DiatonicWrapper(m_scales.Diatonic):
         super(DiatonicWrapper, self).__init__(key, semitones, octaves=octave)
 
 
-class ScaleCls(Enum):
+class HarmonicScale(Enum):
     Aeolian = m_scales.Aeolian
     Bachian = m_scales.Bachian
     Chromatic = m_scales.Chromatic

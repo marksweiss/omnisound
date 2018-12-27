@@ -9,20 +9,21 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
   of Key => Pitch for each tuple (Key, Octave)
 """
 
-from typing import Any
+from typing import Any, Union
 
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
-from aleatoric.note import Note, PerformanceAttrs
+from aleatoric.mingus_utils import get_notes_for_mingus_keys
+from aleatoric.note import PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_types, validate_type_choice,\
                              validate_type_reference_choice)
-from aleatoric.scale_globals import MajorKey, MinorKey, ScaleCls
+from aleatoric.scale_globals import MajorKey, MinorKey, HarmonicScale
 
 
 class Scale(NoteSequence):
-    """Encapsualtes a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
+    """Encapsulates a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
        and a root key. Uses mingus.scale to then retrieve the notes in the scale and provide methods to manage
        and generate Notes. Derives from NoteSequence so acts as a standard Note container.
     """
@@ -33,9 +34,9 @@ class Scale(NoteSequence):
     def __init__(self,
                  key: Any = None,
                  octave: int = None,
-                 scale_cls: ScaleCls = None,
+                 harmonic_scale: HarmonicScale = None,
                  note_cls: Any = None,
-                 note_prototype: Any = None,
+                 note_prototype: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote] = None,
                  performance_attrs: PerformanceAttrs = None):
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
@@ -43,30 +44,27 @@ class Scale(NoteSequence):
         self.is_major_key = matched_key_type is MajorKey
         self.is_minor_key = matched_key_type is MinorKey
 
-        validate_types(('octave', octave, int), ('scale_type', scale_cls, ScaleCls))
+        validate_types(('octave', octave, int), ('scale_type', harmonic_scale, HarmonicScale))
         validate_type_choice('note_prototype', note_prototype,
-                             (CSoundNote, FoxDotSupercolliderNote, MidiNote, Note))
-        validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote, Note))
+                             (CSoundNote, FoxDotSupercolliderNote, MidiNote))
+        validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote))
         self.key = key
         self.octave = octave
-        self.scale_type = scale_cls
+        self.harmonic_scale = harmonic_scale
         self.note_type = note_cls
         self.note_prototype = note_prototype
 
-        note_list = []
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
-        mingus_keys = scale_cls.value(key.name).ascending()
-        # Construct a list of Notes from the mingus notes, setting their pitch to the pitch in the scale
-        # converted to the value for the type of Note. Other attributes are set to the values in `note_prototype`.
-        # The enum and `octave` are args passed to `note_type.get_pitch()` for the note_type,
-        # which maps (key_enum, octave) to valid pitch values (typically float or int) for that note type.
-        # e.g. CSoundNote.get_pitch(key=MajorKey.C, octave=4) -> 4.01: float
+        mingus_keys = harmonic_scale.value(key.name).ascending()
+        # Trim the last element because mingus returns the first note in the next octave along with all the
+        # notes in the scale of the octave requested. This behavior is observed and not exhaustively tested
+        # so check and only remove if the first and last note returned are the same.
+        if mingus_keys[0] == mingus_keys[-1]:
+            mingus_keys = mingus_keys[:-1]
         mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
-        for mingus_key in mingus_keys:
-            # We map mingus note strings to their upper case in scale_globals, match that here
-            key = mingus_key_to_key_enum_mapping[mingus_key.upper()]
-            new_note = self.note_type.copy(note_prototype)
-            new_note.pitch = self.note_type.get_pitch_for_key(key, octave=self.octave)
-            note_list.append(new_note)
+        note_list = get_notes_for_mingus_keys(matched_key_type, mingus_keys,
+                                              mingus_key_to_key_enum_mapping,
+                                              self.note_prototype, self.note_type, self.octave,
+                                              validate=False)
 
         super(Scale, self).__init__(note_list, performance_attrs=performance_attrs)

@@ -3,7 +3,7 @@
 from typing import Union
 
 from aleatoric.note import Note, PerformanceAttrs
-from aleatoric.scale_globals import MajorKey, MinorKey
+from aleatoric.scale_globals import MajorKey, MinorKey, NUM_INTERVALS_IN_OCTAVE
 from aleatoric.utils import (validate_optional_types, validate_type,
                              validate_type_choice, validate_types)
 
@@ -195,6 +195,19 @@ class CSoundNote(Note):
             return self
         else:
             return self._pitch
+
+    def transpose(self, interval: int):
+        validate_type('interval', interval, int)
+        # Get current pitch as an integer in the range 1..11
+        cur_pitch_str = str(self._pitch)
+        cur_octave, cur_pitch = cur_pitch_str.split('.')
+        # Calculate the new_pitch by incrementing it and modding into the number of intervals in an octave
+        # Then divide by 100 and add the octave to convert this back to CSound syntax
+        #  which is the {octave}.{pitch in range 1..12}
+        # Handle the case where the interval moves the pitch into the next octave
+        if int(cur_pitch) + interval > NUM_INTERVALS_IN_OCTAVE:
+            cur_octave = int(cur_octave) + 1
+        self._pitch = float(cur_octave) + (((int(cur_pitch) + interval) % NUM_INTERVALS_IN_OCTAVE) / 100)
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:

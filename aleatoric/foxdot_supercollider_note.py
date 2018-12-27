@@ -3,7 +3,7 @@
 from typing import Any, Union
 
 from aleatoric.note import Note, PerformanceAttrs
-from aleatoric.scale_globals import MajorKey, MinorKey
+from aleatoric.scale_globals import MajorKey, MinorKey, NUM_INTERVALS_IN_OCTAVE
 from aleatoric.utils import (validate_optional_types, validate_type, validate_type_choice,
                              validate_types)
 
@@ -200,8 +200,14 @@ class FoxDotSupercolliderNote(Note):
 
     @degree.setter
     def degree(self, degree: Union[float, int]):
-        validate_type_choice('pitch', pitch, (float, int))
+        validate_type_choice('degree', degree, (float, int))
         self._degree = degree
+
+    def transpose(self, interval: int):
+        """Foxdot pitches as ints are in range 1..12
+        """
+        validate_type('interval', interval, int)
+        self._degree = (self._degree + interval) % NUM_INTERVALS_IN_OCTAVE
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
