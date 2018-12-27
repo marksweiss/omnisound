@@ -19,7 +19,7 @@ from aleatoric.note import PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_types, validate_type_choice,\
                              validate_type_reference_choice)
-from aleatoric.scale_globals import MajorKey, MinorKey, ScaleCls
+from aleatoric.scale_globals import MajorKey, MinorKey, HarmonicScale
 
 
 class Scale(NoteSequence):
@@ -34,7 +34,7 @@ class Scale(NoteSequence):
     def __init__(self,
                  key: Any = None,
                  octave: int = None,
-                 scale_cls: ScaleCls = None,
+                 harmonic_scale: HarmonicScale = None,
                  note_cls: Any = None,
                  note_prototype: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote] = None,
                  performance_attrs: PerformanceAttrs = None):
@@ -44,18 +44,18 @@ class Scale(NoteSequence):
         self.is_major_key = matched_key_type is MajorKey
         self.is_minor_key = matched_key_type is MinorKey
 
-        validate_types(('octave', octave, int), ('scale_type', scale_cls, ScaleCls))
+        validate_types(('octave', octave, int), ('scale_type', harmonic_scale, HarmonicScale))
         validate_type_choice('note_prototype', note_prototype,
                              (CSoundNote, FoxDotSupercolliderNote, MidiNote))
         validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote))
         self.key = key
         self.octave = octave
-        self.scale_type = scale_cls
+        self.harmonic_scale = harmonic_scale
         self.note_type = note_cls
         self.note_prototype = note_prototype
 
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
-        mingus_keys = scale_cls.value(key.name).ascending()
+        mingus_keys = harmonic_scale.value(key.name).ascending()
         # Trim the last element because mingus returns the first note in the next octave along with all the
         # notes in the scale of the octave requested. This behavior is observed and not exhaustively tested
         # so check and only remove if the first and last note returned are the same.
