@@ -4,9 +4,7 @@ from typing import List, Union
 
 from aleatoric.note import Note
 from aleatoric.performance_attrs import PerformanceAttrs
-from aleatoric.utils import (validate_optional_type,
-                             validate_sequence_of_types, validate_type,
-                             validate_type_choice)
+from aleatoric.utils import validate_optional_type, validate_sequence_of_types, validate_type
 
 
 class NoteSequence(object):
@@ -46,62 +44,65 @@ class NoteSequence(object):
         return self
 
     def extend(self, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'NoteSequence':
+        """Supports adding a single Note, a NoteSequence or a List[Note]"""
+
         new_note_list = None
-        # Support either NoteSequence or a List[Note]
+        # Test adding as a NoteSequence
         try:
             validate_type('to_add', to_add, NoteSequence)
             new_note_list = to_add.note_list
+            self.note_list.extend(new_note_list)
         except ValueError:
             pass
+
+        # If NoteSequence failed test adding as a List[Note]
         if not new_note_list:
-            validate_sequence_of_types('to_add', to_add, Note)
-            new_note_list = to_add
-        self.note_list.extend(new_note_list)
+            try:
+                validate_sequence_of_types('to_add', to_add, Note)
+                new_note_list = to_add
+                self.note_list.extend(new_note_list)
+            except ValueError:
+                pass
+
+        # If both failed add as a Note
+        if not new_note_list:
+            try:
+                validate_type('to_add', to_add, Note)
+                self.note_list.append(to_add)
+            except ValueError:
+                raise ValueError((f'Arg `to_add` must be a Note, NoteSequence or List[Note], '
+                                  f'arg: {to_add} type: {type(to_add)}'))
 
         return self
 
-    def __len__(self):
-        return len(self.note_list)
-
     def __add__(self, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'NoteSequence':
-        """Overloads operator + to support appending either single notes or sequences
-           Tries to treat `to_add` as a Note and then as a NoteSequence. If both
-           fail then it raises the last exception handled. If either succeeds
-           then the operation is a success and the Note or NoteList are appended.
-        """
-        # Try to add as a single Note
-        try:
-            validate_type('to_add', to_add, Note)
-            # If validation did not throw, to add is a single note, append(note)
-            self.append(to_add)
-            # Return self supports += without any additional code
-            return self
-        except ValueError:
-            pass
-        # If we didn't add as a single note, try to add as a NoteSequence
-        # NOTE: This is crucial to the design, because any specialized sequence derived from NoteSequence, such
-        # as Measure and Chord, can add its notes to any other NoteSequence
-        try:
-            validate_type('to_add', to_add, NoteSequence)
-            # Don't need to validate NoteList because that is validated when NoteSequence constructed
-            self.extend(to_add.note_list)
-            return self
-        except ValueError:
-            pass
-        # If we didn't add as a single note or NoteSequence, try to add as a List[Note]
-        try:
-            validate_sequence_of_types('to_add', to_add, Note)
-            # If validation did not throw, to add is a list of notes, extend(note_list)
-            self.extend(to_add)
-            return self
-        except ValueError:
-            pass
-
-        raise ValueError(f'Arg `to_add` to __add__() must be a Note, NoteSequence or List[Note], arg: {to_add}')
+        """Overloads the `+` operator to support adding a single Note, a NoteSequence or a List[Note]"""
+        return self.extend(to_add)
 
     def __lshift__(self, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'NoteSequence':
+        """Overloads the `<<` operator to support adding a single Note, a NoteSequence or a List[Note]"""
         """Support `note_seq << note` syntax for appending notes to a sequence as well as `a + b`"""
-        return self.__add__(to_add)
+        return self.extend(to_add)
+
+    @staticmethod
+    def _get_note_list_from_sequence(sequence_name, sequence):
+        note_list = None
+
+        try:
+            validate_type(sequence_name, sequence, NoteSequence)
+            note_list = sequence.note_list
+        except ValueError:
+            pass
+
+        if not note_list:
+            try:
+                validate_sequence_of_types(sequence_name, sequence, Note)
+                note_list = sequence
+            except ValueError:
+                pass
+                return None
+
+        return note_list
 
     def insert(self, index: int, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'NoteSequence':
         """Inserts a single note, all notes in a List[Note] or all notes in a NoteSequence.
@@ -110,61 +111,44 @@ class NoteSequence(object):
         validate_type('index', index, int)
 
         try:
-            validate_type_choice('to_add', to_add, (Note, NoteSequence))
-            if isinstance(to_add, Note):
-                self.note_list.insert(index, to_add)
-            else:
-                for note in to_add.note_list:
-                    self.note_list.insert(index, note)
-                    # Necessary to insert in the same order as input, rather than reverse order from the input
-                    index += 1
+            validate_type('to_add', to_add, Note)
+            self.note_list.insert(index, to_add)
             return self
         except ValueError:
             pass
 
-        try:
-            validate_sequence_of_types('to_add', to_add, Note)
-            for note in to_add:
-                self.note_list.insert(index, note)
-                # Necessary to insert in the same order as input, rather than reverse order from the input
-                index += 1
-            return self
-        except ValueError:
-            pass
+        note_list = NoteSequence._get_note_list_from_sequence('to_add', to_add)
+        if not note_list:
+            raise ValueError((f'Arg `to_add` must be a Note, NoteSequence or List[Note], '
+                              f'arg: {to_add} type: {type(to_add)}'))
+        for note in note_list:
+            self.note_list.insert(index, note)
+            # Necessary to insert in the same order as input, rather than reverse order from the input
+            index += 1
 
-        raise ValueError(f'Arg `to_add` to insert() must be a Note, NoteSequence or List[Note], arg: {to_add}')
+        return self
 
     def remove(self, to_remove: Union[Note, 'NoteSequence', List[Note]]):
         """Removes a single note, all notes in a List[Note] or all notes in a NoteSequence
         """
-
-        # Swallow exception if the item to be removed is not present in note_list
-        def _remove(note):
-            try:
-                self.note_list.remove(note)
-            except ValueError:
-                pass
-
         try:
-            validate_type_choice('to_add', to_remove, (Note, NoteSequence))
-            if isinstance(to_remove, Note):
-                _remove(to_remove)
-            else:
-                for note in to_remove.note_list:
-                    _remove(note)
+            validate_type('to_remove', to_remove, Note)
+            self.note_list.remove(to_remove)
             return self
         except ValueError:
             pass
 
-        try:
-            validate_sequence_of_types('to_add', to_remove, Note)
-            for note in to_remove:
-                _remove(note)
-            return self
-        except ValueError:
-            pass
+        note_list = NoteSequence._get_note_list_from_sequence('to_remove', to_remove)
+        if not note_list:
+            raise ValueError((f'Arg `to_remove` must be a Note, NoteSequence or List[Note], '
+                              f'arg: {to_remove} type: {type(to_remove)}'))
+        for note in to_remove:
+            note_list.remove(note)
 
-        raise ValueError(f'Arg `to_add` to remove() must be a Note, NoteSequence or List[Note], arg: {to_remove}')
+        return self
+
+    def __len__(self):
+        return len(self.note_list)
 
     def __getitem__(self, index: int) -> Note:
         validate_type('index', index, int)

@@ -9,12 +9,15 @@ from aleatoric.note_sequence import NoteSequence
 from aleatoric.swing import Swing
 from aleatoric.utils import validate_optional_types, validate_type, validate_types
 
-# TODO transpose, augment, diminish, to_major and to_minor and placing notes on beat
+# TODO FEATURE augment, diminish, to_major and to_minor
 #  See implementation in mingus https://bspaans.github.io/python-mingus/doc/wiki/tutorialBarModule.html
-# TODO consistent container semantics from NoteSequence to Measure to Track to Song
+# TODO FEATURE ChordSequence, i.e. Progressions
+
+# TODO transpose
 # TODO consistent application of all Note transformation operations up the hierarchy from Note to NoteSequence
 #  to Measure to Track to Song
-# TODO Relationship of Players and Ensembles to the Song hierarchy
+# TODO Solidify the idea that we can manage notes in time sequence offset by measure so there is a song
+#  time but each measure just starts again at 0. THIS WILL BE MANAGED BY TRACK
 
 
 class MeasureSwingNotEnabledException(Exception):
@@ -24,13 +27,6 @@ class MeasureSwingNotEnabledException(Exception):
 class MeasureBeatInvalidPositionException(Exception):
     pass
 
-
-# TODO Transpose()
-# TODO Chord class
-# TODO ChordSequence, i.e. Progressions
-# TODO Solidify the idea that we can manage notes in time sequence offset by measure so there is a song
-#  time but each measure just starts again at 0
-# This class makes that assumption
 
 class Measure(NoteSequence):
     """Represents a musical measure in a musical Score. As such it includes a NoteSequence
@@ -56,6 +52,10 @@ class Measure(NoteSequence):
         self.swing = swing
         # Support adding notes based on Meter
         self.beat = 0
+        # TODO TEST
+        # Support adding notes offset from end of previous note
+        self.start = 0.0
+        self.max_duration = self.meter.beats_per_measure * self.meter.beat_dur
 
     def reset_current_beat(self):
         self.beat = 0
@@ -66,7 +66,7 @@ class Measure(NoteSequence):
     def decrement_beat(self):
         self.beat = max(0, self.beat - 1)
 
-    def add_note_on_current_beat(self, note: Note, increment_beat=False):
+    def add_note_on_current_beat(self, note: Note, increment_beat=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.beat.
         If increment_beat == True the measure_beat is also incremented, after the insertion. So this method
         is a convenience method for inserting multiple notes in sequence on the beat.
@@ -80,7 +80,12 @@ class Measure(NoteSequence):
         if increment_beat:
             self.increment_beat()
 
-    def fill_measure_with_note(self, note: Note):
+        return self
+
+    # TODO Support Note, NoteSequence or List[Note], add each on beat
+    #  If it's a Note, repeat it N times
+    # TODO TEST
+    def fill_measure_with_notes_on_beat(self, note: Note) -> 'Measure':
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
         to that beat start time.
         """
@@ -91,6 +96,28 @@ class Measure(NoteSequence):
             new_note.start = start
             self.note_list.append(new_note)
         self.note_list.sort(key=lambda x: x.start)
+
+        return self
+
+    # TODO Support Note, NoteSequence or List[Note], add each on beat
+    #  If it's a Note, repeat it N times
+    # TODO TEST
+    def add_notes_after_previous_note(self, note: Note) -> 'Measure':
+        """Appends a note into the Measure after the start + duration of the note in the Measure closest
+           to the end of the Measure. Checks for new_note.start + new_note.duration running off the end
+           of the Measure.
+        """
+        validate_type('note', note, Note)
+        duration = float(note.dur)
+        if self.start + duration > self.max_duration:
+            raise ValueError(('Adding `note` extends past the end of the Measure '
+                              f'max_duration: {self.max_duration} note end: {self.start + duration}'))
+
+        note.start = self.start
+        self.append(note)
+        self.start += duration
+
+        return self
 
     def quantize(self):
         self.meter.quantize(self)
@@ -127,28 +154,28 @@ class Measure(NoteSequence):
         return self
 
     # noinspection PyUnresolvedReferences
-    def extend(self, new_note_list: List[Note]) -> 'Measure':
-        super(Measure, self).extend(new_note_list)
+    def extend(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
+        super(Measure, self).extend(to_add)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
     def __add__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
-        super(Measure, self).__add__(to_add)
-        self.note_list.sort(key=lambda x: x.start)
-        return self
+        return self.extend(to_add)
 
     # noinspection PyUnresolvedReferences
     def __lshift__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
-        return self.__add__(to_add)
+        return self.extend(to_add)
 
-    def insert(self, index: int, note: Note):
+    def insert(self, index: int, note: Note) -> 'Measure':
         super(Measure, self).insert(index, note)
         self.note_list.sort(key=lambda x: x.start)
+        return self
 
-    def remove(self, note: Note):
+    def remove(self, note: Note) -> 'Measure':
         super(Measure, self).remove(note)
         self.note_list.sort(key=lambda x: x.start)
+        return self
 
     # noinspection PyUnresolvedReferences
     @staticmethod

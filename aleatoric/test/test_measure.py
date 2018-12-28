@@ -68,6 +68,18 @@ def _apply_swing_and_get_note_starts(measure) -> List[float]:
     return actual_note_starts
 
 
+def test_measure(meter, swing, measure):
+    # Assert post-invariant of `Measure.__init__()`, which is that notes are sorted ascending by start
+    for i in range(len(measure.note_list) - 2):
+        assert measure.note_list[i].start <= measure.note_list[i + 1].start
+    # Verify attribute assignments
+    assert measure.beat == 0
+    assert measure.start == 0.0
+    assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_dur
+    assert measure.meter == meter
+    assert measure.swing == swing
+
+
 def test_measure_swing_on_off(swing, measure):
     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
@@ -122,14 +134,14 @@ def test_measure_apply_phrasing(note_list, measure):
     assert short_measure[0].start == expected_phrasing_note_starts[0]
 
 
-def test_measure_fill_measure_with_note(note_list, meter, swing):
+def test_measure_fill_measure_with_note_on_beat(note_list, meter, swing):
     empty_note_list = []
     measure = Measure(empty_note_list, meter=meter, swing=swing)
     assert len(measure) == 0
 
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
     note = note_list[0]
-    measure.fill_measure_with_note(note)
+    measure.fill_measure_with_notes_on_beat(note)
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 

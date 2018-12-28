@@ -79,7 +79,6 @@ class CSoundNote(Note):
         self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
 
     # Custom Interface
-    # TODO THIS IS STILL A BUG, DOES NOT SUPPORT 1.1 and 10.1, i.e. we need precision of either 2 or 3
     @property
     def pitch_precision(self) -> int:
         return self._pitch_precision
