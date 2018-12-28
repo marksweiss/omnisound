@@ -342,5 +342,12 @@ def test_setattr(measure):
         assert note.dur == expected_dur
 
 
+def test_transpose(measure):
+    expected_pitch = 10.02
+    measure.transpose(interval=1)
+    for note in measure:
+        assert note.pitch == expected_pitch
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])

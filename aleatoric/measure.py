@@ -5,7 +5,7 @@
 # TODO FEATURE ChordSequence, i.e. Progressions
 
 from copy import copy
-from typing import List, Union
+from typing import Any, List, Union
 
 from aleatoric.meter import Meter, NoteDur
 from aleatoric.note import Note, PerformanceAttrs
@@ -182,10 +182,15 @@ class Measure(NoteSequence):
             self.note_list[-1].start += \
                 self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
 
-    def set_notes_attr(self, name, val):
+    def set_notes_attr(self, name: str, val: Any):
         """Apply to all notes in note_list"""
+        validate_type('name', name, str)
         for note in self.note_list:
             setattr(note, name, val)
+
+    def transpose(self, interval: int):
+        for note in self.note_list:
+            note.transpose(interval)
 
     # Wrap all parant methods that mutate note_list, because this
     # class maintains the invariant that note_list is sorted by
