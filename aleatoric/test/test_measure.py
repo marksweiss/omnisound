@@ -325,5 +325,22 @@ def test_note_sequence_insert_remove(meter, swing):
     assert len(measure) == 0
 
 
+def test_setattr(measure):
+    expected_amp = 100
+    expected_dur = NoteDur.EIGHTH.value
+
+    for note in measure:
+        assert note.amp != expected_amp
+    for note in measure:
+        assert note.dur != expected_dur
+
+    measure.set_notes_attr('amp', expected_amp)
+    measure.set_notes_attr('dur', expected_dur)
+    for note in measure:
+        assert note.amp == expected_amp
+    for note in measure:
+        assert note.dur == expected_dur
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])

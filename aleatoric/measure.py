@@ -1,5 +1,9 @@
 # Copyright 2018 Mark S. Weiss
 
+# TODO FEATURE augment, diminish, to_major and to_minor
+#  See implementation in mingus https://bspaans.github.io/python-mingus/doc/wiki/tutorialBarModule.html
+# TODO FEATURE ChordSequence, i.e. Progressions
+
 from copy import copy
 from typing import List, Union
 
@@ -8,16 +12,6 @@ from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.swing import Swing
 from aleatoric.utils import validate_optional_types, validate_type, validate_types
-
-# TODO FEATURE augment, diminish, to_major and to_minor
-#  See implementation in mingus https://bspaans.github.io/python-mingus/doc/wiki/tutorialBarModule.html
-# TODO FEATURE ChordSequence, i.e. Progressions
-
-# TODO transpose
-# TODO consistent application of all Note transformation operations up the hierarchy from Note to NoteSequence
-#  to Measure to Track to Song
-# TODO Solidify the idea that we can manage notes in time sequence offset by measure so there is a song
-#  time but each measure just starts again at 0. THIS WILL BE MANAGED BY TRACK
 
 
 class MeasureSwingNotEnabledException(Exception):
@@ -187,6 +181,11 @@ class Measure(NoteSequence):
                 self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
             self.note_list[-1].start += \
                 self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+
+    def set_notes_attr(self, name, val):
+        """Apply to all notes in note_list"""
+        for note in self.note_list:
+            setattr(note, name, val)
 
     # Wrap all parant methods that mutate note_list, because this
     # class maintains the invariant that note_list is sorted by
