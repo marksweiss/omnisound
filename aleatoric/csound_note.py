@@ -234,7 +234,7 @@ class CSoundNote(Note):
         return cls.PITCH_MAP[key] + (float(octave) - 1.0)
 
     @staticmethod
-    def copy(source_note) -> 'CSoundNote':
+    def copy(source_note: 'CSoundNote') -> 'CSoundNote':
         return CSoundNote(instrument=source_note.instrument,
                           start=source_note.start, duration=source_note.dur,
                           amplitude=source_note.amp, pitch=source_note.pitch,

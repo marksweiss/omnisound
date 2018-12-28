@@ -52,7 +52,6 @@ class Measure(NoteSequence):
         self.swing = swing
         # Support adding notes based on Meter
         self.beat = 0
-        # TODO TEST
         # Support adding notes offset from end of previous note
         self.start = 0.0
         self.max_duration = self.meter.beats_per_measure * self.meter.beat_dur
@@ -66,7 +65,7 @@ class Measure(NoteSequence):
     def decrement_beat(self):
         self.beat = max(0, self.beat - 1)
 
-    def add_note_on_current_beat(self, note: Note, increment_beat=False) -> 'Measure':
+    def add_note_on_beat(self, note: Note, increment_beat=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.beat.
         If increment_beat == True the measure_beat is also incremented, after the insertion. So this method
         is a convenience method for inserting multiple notes in sequence on the beat.
@@ -74,7 +73,7 @@ class Measure(NoteSequence):
         validate_types(('note', note, Note), ('increment_beat', increment_beat, bool))
 
         note.start = self.meter.beat_start_times[self.beat]
-        self.note_list += note
+        self.note_list.append(note)
         self.note_list.sort(key=lambda x: x.start)
         # Increment beat position if flag set and beat is not on last beat of the measure already
         if increment_beat:
@@ -82,41 +81,86 @@ class Measure(NoteSequence):
 
         return self
 
-    # TODO Support Note, NoteSequence or List[Note], add each on beat
-    #  If it's a Note, repeat it N times
-    # TODO TEST
-    def fill_measure_with_notes_on_beat(self, note: Note) -> 'Measure':
+    def add_notes_on_beat(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
-        to that beat start time.
-        """
-        validate_type('note', note, Note)
+           to that beat start time.
 
-        for start in self.meter.beat_start_times:
-            new_note = note.copy(note)
-            new_note.start = start
-            self.note_list.append(new_note)
+           NOTE: This *replaces* all notes in the Measure with this sequence of notes on the beat
+        """
+        # If `to_add` is a Note, the note_list is `to_add` copied beats_per_measure times
+        note_list = []
+        try:
+            validate_type('to_add', to_add, Note)
+            note_list = [to_add.__class__.copy(to_add) for _ in range(self.meter.beats_per_measure)]
+        except ValueError:
+            pass
+
+        # Otherwise the note_list is the NoteSequence or List[Note] passed in. Retrieve it and validate
+        # that it doesn't have more notes than there are beats per measure.
+        if not note_list:
+            # If `to_add` is a NoteSequence or note list, ensure that the number of notes in the sequence
+            # is <= the number of beats in the measure, then assign one note to each beat
+            note_list = self._get_note_list_from_sequence('to_add', to_add)
+            if not note_list:
+                raise ValueError((f'Arg `to_add` must be a Note, NoteSequence or List[Note], '
+                                  f'arg: {to_add} type: {type(to_add)}'))
+            if len(note_list) > self.meter.beats_per_measure:
+                raise ValueError(f'Sequence `to_add` must have a number of notes <= to the number of beats per measure')
+
+        # Now iterate the beats per measure and assign each note in note_list to the next start time on the beat
+        for i, start in enumerate(self.meter.beat_start_times):
+            # There might be fewer notes than beats per measure, because `to_add` is a sequence
+            if i == len(note_list):
+                break
+            note_list[i].start = start
+
+        self.note_list = note_list
+        # Maintain the invariant that notes are sorted ascending by start
         self.note_list.sort(key=lambda x: x.start)
+        return self
+
+    def add_note_on_start(self, note: Note, increment_start=False) -> 'Measure':
+        """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
+           If increment_start == True then measure.start is also incremented, after the insertion. So this method
+           is a convenience method for inserting multiple notes in sequence.
+           Validates that all the durations fit in the total duration of the measure.
+        """
+        validate_types(('note', note, Note), ('increment_start', increment_start, bool))
+        if self.start + note.dur > self.max_duration:
+            raise ValueError((f'measure.start {self.start} + note.duration {note.dur} > '
+                              f'measure.max_duration {self.max_duration}'))
+        note.start = self.start
+        self.note_list.append(note)
+        self.note_list.sort(key=lambda x: x.start)
+        if increment_start:
+            self.start += note.dur
 
         return self
 
-    # TODO Support Note, NoteSequence or List[Note], add each on beat
-    #  If it's a Note, repeat it N times
-    # TODO TEST
-    def add_notes_after_previous_note(self, note: Note) -> 'Measure':
-        """Appends a note into the Measure after the start + duration of the note in the Measure closest
-           to the end of the Measure. Checks for new_note.start + new_note.duration running off the end
-           of the Measure.
+    def add_notes_on_start(self, to_add: Union[NoteSequence, List[Note]]) -> 'Measure':
+        """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
+           to that of the previous notes start + duration.
+           Validates that all the durations fit in the total duration of the measure.
+
+           NOTE: This *replaces* all notes in the Measure with this sequence of notes on the beat
         """
-        validate_type('note', note, Note)
-        duration = float(note.dur)
-        if self.start + duration > self.max_duration:
-            raise ValueError(('Adding `note` extends past the end of the Measure '
-                              f'max_duration: {self.max_duration} note end: {self.start + duration}'))
+        note_list = self._get_note_list_from_sequence('to_add', to_add)
+        if not note_list:
+            raise ValueError((f'Arg `to_add` must be a NoteSequence or List[Note], '
+                              f'arg: {to_add} type: {type(to_add)}'))
 
-        note.start = self.start
-        self.append(note)
-        self.start += duration
+        sum_of_durations = sum([note.dur for note in note_list])
+        if self.start + sum_of_durations > self.max_duration:
+            raise ValueError((f'measure.start {self.start} + sum of note.durations {sum_of_durations} > '
+                              f'measure.max_duration {self.max_duration}'))
 
+        for note in note_list:
+            note.start = self.start
+            self.start += note.dur
+
+        self.note_list = note_list
+        # Maintain the invariant that notes are sorted ascending by start
+        self.note_list.sort(key=lambda x: x.start)
         return self
 
     def quantize(self):
@@ -167,13 +211,13 @@ class Measure(NoteSequence):
     def __lshift__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         return self.extend(to_add)
 
-    def insert(self, index: int, note: Note) -> 'Measure':
-        super(Measure, self).insert(index, note)
+    def insert(self, index: int, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'Measure':
+        super(Measure, self).insert(index, to_add)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
-    def remove(self, note: Note) -> 'Measure':
-        super(Measure, self).remove(note)
+    def remove(self, to_remove: Union[Note, 'NoteSequence', List[Note]]) -> 'Measure':
+        super(Measure, self).remove(to_remove)
         self.note_list.sort(key=lambda x: x.start)
         return self
 

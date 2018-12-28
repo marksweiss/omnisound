@@ -118,6 +118,7 @@ def test_note_sequence_insert_remove():
 
     # Insert a single note at the front of the list
     new_amp = AMP + 1
+    # noinspection PyTypeChecker
     new_note = CSoundNote.copy(note_front)
     new_note.amp = new_amp
     note_sequence.insert(0, new_note)
@@ -126,9 +127,11 @@ def test_note_sequence_insert_remove():
 
     # Insert a list of 2 notes at the front of the list
     new_amp_1 = AMP + 2
+    # noinspection PyTypeChecker
     new_note_1 = CSoundNote.copy(note_front)
     new_note_1.amp = new_amp_1
     new_amp_2 = AMP + 3
+    # noinspection PyTypeChecker
     new_note_2 = CSoundNote.copy(note_front)
     new_note_2.amp = new_amp_2
     new_note_list = [new_note_1, new_note_2]
@@ -140,9 +143,11 @@ def test_note_sequence_insert_remove():
 
     # Insert a NoteSequence with 2 notes at the front of the list
     new_amp_1 = AMP + 4
+    # noinspection PyTypeChecker
     new_note_1 = CSoundNote.copy(note_front)
     new_note_1.amp = new_amp_1
     new_amp_2 = AMP + 5
+    # noinspection PyTypeChecker
     new_note_2 = CSoundNote.copy(note_front)
     new_note_2.amp = new_amp_2
     new_note_list = [new_note_1, new_note_2]

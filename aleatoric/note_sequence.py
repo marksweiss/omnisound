@@ -138,12 +138,12 @@ class NoteSequence(object):
         except ValueError:
             pass
 
-        note_list = NoteSequence._get_note_list_from_sequence('to_remove', to_remove)
-        if not note_list:
+        if not NoteSequence._get_note_list_from_sequence('to_remove', to_remove):
             raise ValueError((f'Arg `to_remove` must be a Note, NoteSequence or List[Note], '
                               f'arg: {to_remove} type: {type(to_remove)}'))
+
         for note in to_remove:
-            note_list.remove(note)
+            self.note_list.remove(note)
 
         return self
 

@@ -15,6 +15,10 @@ AMP = 1
 PITCH = 10.1
 NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
+ATTR_NAME = 'test_attr'
+ATTR_VAL = 100
+ATTR_TYPE = int
+
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
 
@@ -80,7 +84,7 @@ def test_measure(meter, swing, measure):
     assert measure.swing == swing
 
 
-def test_measure_swing_on_off(swing, measure):
+def test_swing_on_off(swing, measure):
     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
     """
@@ -97,7 +101,7 @@ def test_measure_swing_on_off(swing, measure):
     assert expected_swing_note_starts == actual_note_starts
 
 
-def test_measure_beat(measure):
+def test_beat(measure):
     """Beat management logic is in Measure class, but it relies on Meter attribute helper class for state
        of what is beats per measure for the Measure. This test tests the interactio between the classes.
     """
@@ -117,7 +121,7 @@ def test_measure_beat(measure):
         assert measure.beat <= measure.meter.beats_per_measure
 
 
-def test_measure_apply_phrasing(note_list, measure):
+def test_apply_phrasing(note_list, measure):
     """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
        and last has swing reverse. This class tests use of Swing class by Measure class.
     """
@@ -134,16 +138,191 @@ def test_measure_apply_phrasing(note_list, measure):
     assert short_measure[0].start == expected_phrasing_note_starts[0]
 
 
-def test_measure_fill_measure_with_note_on_beat(note_list, meter, swing):
+def test_add_notes_on_beat(note_list, note_sequence, meter, swing):
+    # Test adding a Note and having it copied and placed at each beat position
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    assert len(measure) == 0
+    expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
+    note = note_list[0]
+    measure.add_notes_on_beat(note)
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
+
+    # Test adding a list of notes and having each added at the beat position
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
+    measure.add_notes_on_beat(note_list)
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
+
+    # Test adding a NoteSequence and having each added at the beat position
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
+    measure.add_notes_on_beat(NoteSequence(note_list))
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
+
+    # Test that adding more notes than there are beat positions raises
+    extra_note = CSoundNote.copy(note_list[0])
+    note_list.append(extra_note)
+    with pytest.raises(ValueError):
+        measure.add_notes_on_beat(note_list)
+
+
+def test_add_note_on_beat(meter, swing):
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+
+    # Each note is added on the beat without incrementing the beat, by default ...
+    expected_note_start_time = 0.0
+    measure.add_note_on_beat(CSoundNote.copy(NOTE))
+    assert len(measure) == 1
+    assert measure[0].start == expected_note_start_time
+
+    # ... So this note starts at the same time as the last note. But this call passes a flag
+    #  to override the default and increment the beat when adding this note ...
+    expected_note_start_time = 0.0
+    measure.add_note_on_beat(CSoundNote.copy(NOTE), increment_beat=True)
+    assert len(measure) == 2
+    assert measure[1].start == expected_note_start_time
+
+    # ... so this note starts on the second beat, after the beat at which the last note was added
+    expected_note_start_time = 0.25
+    measure.add_note_on_beat(CSoundNote.copy(NOTE))
+    assert len(measure) == 3
+    assert measure[2].start == expected_note_start_time
+
+
+def test_add_notes_on_start(note_list, note_sequence, meter, swing):
+    # Test adding a Note and having it copied and placed at each beat position
     empty_note_list = []
     measure = Measure(empty_note_list, meter=meter, swing=swing)
     assert len(measure) == 0
 
+    # Test adding a list of notes and having each added at the beat position
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
-    note = note_list[0]
-    measure.fill_measure_with_notes_on_beat(note)
+    measure.add_notes_on_start(note_list)
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
+
+    # Test adding a NoteSequence and having each added at the beat position
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
+    measure.add_notes_on_start(NoteSequence(note_list))
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
+
+    # Test that adding notes past measure.max_duration raises
+    note = CSoundNote.copy(NOTE)
+    note.dur = measure.max_duration + 1
+    note_list = [note]
+    with pytest.raises(ValueError):
+        measure.add_notes_on_start(note_list)
+
+
+def test_add_note_on_start(meter, swing):
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+
+    # Each note is added at measure.start, without incrementing the start, by default ...
+    expected_note_start_time = 0.0
+    measure.add_note_on_start(CSoundNote.copy(NOTE))
+    assert len(measure) == 1
+    assert measure[0].start == expected_note_start_time
+
+    # ... So this note starts at the same time as the last note. But this call passes a flag
+    #  to override the default and increment the start when adding this note ...
+    expected_note_start_time = 0.0
+    measure.add_note_on_start(CSoundNote.copy(NOTE), increment_start=True)
+    assert len(measure) == 2
+    assert measure[1].start == expected_note_start_time
+
+    # ... so this note starts on the second beat, after the beat at which the last note was added
+    expected_note_start_time = 0.25
+    measure.add_note_on_start(CSoundNote.copy(NOTE))
+    assert len(measure) == 3
+    assert measure[2].start == expected_note_start_time
+
+    # Test case of adding a note that would have a start + dur that would be > measure.max_duration raises
+    note = CSoundNote.copy(NOTE)
+    note.dur = measure.max_duration + 1
+    with pytest.raises(ValueError):
+        measure.add_note_on_start(note)
+
+
+def test_note_sequence_insert_remove(meter, swing):
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+
+    # Insert a single note at the front of the list
+    start = 0.1
+    note = CSoundNote.copy(NOTE)
+    note.start = start
+    measure.insert(0, note)
+    note_front = measure[0]
+    assert note_front.start == start
+
+    # Insert a list of 2 notes at the front of the list
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    note_1 = CSoundNote.copy(NOTE)
+    note_2 = CSoundNote.copy(NOTE)
+    start_1 = 0.1
+    note_1.start = start_1
+    start_2 = 0.2
+    note_2.start = start_2
+    note_list = [note_1, note_2]
+    measure.insert(0, note_list)
+    assert measure[0].start == start_1
+    assert measure[1].start == start_2
+
+    # Insert a NoteSequence of 2 notes at the front of the list
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    note_1 = CSoundNote.copy(NOTE)
+    note_2 = CSoundNote.copy(NOTE)
+    start_1 = 0.1
+    note_1.start = start_1
+    start_2 = 0.2
+    note_2.start = start_2
+    note_list = [note_1, note_2]
+    measure.insert(0, NoteSequence(note_list))
+    assert measure[0].start == start_1
+    assert measure[1].start == start_2
+
+    # After removing a note, the new front note is the one added second to most recently
+    expected_start = measure[1].start
+    note_to_remove = measure[0]
+    measure.remove(note_to_remove)
+    assert len(measure) == 1
+    assert measure[0].start == pytest.approx(expected_start)
+
+    # Remove notes added as NoteSequence and List[Note]
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    note_1 = CSoundNote.copy(NOTE)
+    note_2 = CSoundNote.copy(NOTE)
+    note_list = [note_1, note_2]
+    measure.insert(0, note_list)
+    assert len(measure) == 2
+    measure.remove(note_list)
+    assert len(measure) == 0
+
+    empty_note_list = []
+    measure = Measure(empty_note_list, meter=meter, swing=swing)
+    note_1 = CSoundNote.copy(NOTE)
+    note_2 = CSoundNote.copy(NOTE)
+    note_list = [note_1, note_2]
+    measure.insert(0, NoteSequence(note_list))
+    assert len(measure) == 2
+    measure.remove(NoteSequence(note_list))
+    assert len(measure) == 0
 
 
 if __name__ == '__main__':
