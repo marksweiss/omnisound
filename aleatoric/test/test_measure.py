@@ -338,7 +338,7 @@ def test_set_get_instrument(measure):
 
 def test_set_get_start(measure):
     assert measure.start == [0.0, 0.25, 0.5, 0.75]
-    assert measure.s ==  [0.0, 0.25, 0.5, 0.75]
+    assert measure.s == [0.0, 0.25, 0.5, 0.75]
     measure.start = 1.0
     assert measure.start == [1.0, 1.0, 1.0, 1.0]
     assert measure.s == [1.0, 1.0, 1.0, 1.0]
