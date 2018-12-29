@@ -78,7 +78,7 @@ def test_measure(meter, swing, measure):
         assert measure.note_list[i].start <= measure.note_list[i + 1].start
     # Verify attribute assignments
     assert measure.beat == 0
-    assert measure.start == 0.0
+    assert measure.next_note_start == 0.0
     assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_dur
     assert measure.meter == meter
     assert measure.swing == swing
@@ -323,6 +323,61 @@ def test_note_sequence_insert_remove(meter, swing):
     assert len(measure) == 2
     measure.remove(NoteSequence(note_list))
     assert len(measure) == 0
+
+
+def test_set_get_instrument(measure):
+    assert measure.instrument == [1, 1, 1, 1]
+    assert measure.i == [1, 1, 1, 1]
+    measure.instrument = 2
+    assert measure.instrument == [2, 2, 2, 2]
+    assert measure.i == [2, 2, 2, 2]
+    measure.i = 3
+    assert measure.instrument == [3, 3, 3, 3]
+    assert measure.i == [3, 3, 3, 3]
+
+
+def test_set_get_start(measure):
+    assert measure.start == [0.0, 0.25, 0.5, 0.75]
+    assert measure.s ==  [0.0, 0.25, 0.5, 0.75]
+    measure.start = 1.0
+    assert measure.start == [1.0, 1.0, 1.0, 1.0]
+    assert measure.s == [1.0, 1.0, 1.0, 1.0]
+    measure.s = 2.0
+    assert measure.start == [2.0, 2.0, 2.0, 2.0]
+    assert measure.s == [2.0, 2.0, 2.0, 2.0]
+
+
+def test_set_get_dur(measure):
+    assert measure.dur == [0.25, 0.25, 0.25, 0.25]
+    assert measure.d == [0.25, 0.25, 0.25, 0.25]
+    measure.dur = 1.0
+    assert measure.dur == [1.0, 1.0, 1.0, 1.0]
+    assert measure.d == [1.0, 1.0, 1.0, 1.0]
+    measure.d = 2.0
+    assert measure.dur == [2.0, 2.0, 2.0, 2.0]
+    assert measure.d == [2.0, 2.0, 2.0, 2.0]
+
+
+def test_set_get_amp(measure):
+    assert measure.amp == [1, 1, 1, 1]
+    assert measure.a == [1, 1, 1, 1]
+    measure.amp = 2
+    assert measure.amp == [2, 2, 2, 2]
+    assert measure.a == [2, 2, 2, 2]
+    measure.a = 3
+    assert measure.amp == [3, 3, 3, 3]
+    assert measure.a == [3, 3, 3, 3]
+
+
+def test_set_get_pitch(measure):
+    assert measure.pitch == [10.1, 10.1, 10.1, 10.1]
+    assert measure.p == [10.1, 10.1, 10.1, 10.1]
+    measure.pitch = 10.08
+    assert measure.pitch == [10.08, 10.08, 10.08, 10.08]
+    assert measure.p == [10.08, 10.08, 10.08, 10.08]
+    measure.p = 10.09
+    assert measure.pitch == [10.09, 10.09, 10.09, 10.09]
+    assert measure.p == [10.09, 10.09, 10.09, 10.09]
 
 
 def test_setattr(measure):

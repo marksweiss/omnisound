@@ -47,9 +47,10 @@ class Measure(NoteSequence):
         # Support adding notes based on Meter
         self.beat = 0
         # Support adding notes offset from end of previous note
-        self.start = 0.0
+        self.next_note_start = 0.0
         self.max_duration = self.meter.beats_per_measure * self.meter.beat_dur
 
+    # Beat state management
     def reset_current_beat(self):
         self.beat = 0
 
@@ -58,7 +59,9 @@ class Measure(NoteSequence):
 
     def decrement_beat(self):
         self.beat = max(0, self.beat - 1)
+    # /Beat state management
 
+    # Adding notes in sequence on the beat
     def add_note_on_beat(self, note: Note, increment_beat=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.beat.
         If increment_beat == True the measure_beat is also incremented, after the insertion. So this method
@@ -102,17 +105,19 @@ class Measure(NoteSequence):
                 raise ValueError(f'Sequence `to_add` must have a number of notes <= to the number of beats per measure')
 
         # Now iterate the beats per measure and assign each note in note_list to the next start time on the beat
-        for i, start in enumerate(self.meter.beat_start_times):
+        for i, beat_start_time in enumerate(self.meter.beat_start_times):
             # There might be fewer notes than beats per measure, because `to_add` is a sequence
             if i == len(note_list):
                 break
-            note_list[i].start = start
+            note_list[i].start = beat_start_time
 
         self.note_list = note_list
         # Maintain the invariant that notes are sorted ascending by start
         self.note_list.sort(key=lambda x: x.start)
         return self
+    # /Adding notes in sequence on the beat
 
+    # Adding notes in sequence from the current start time, one note immediately after another
     def add_note_on_start(self, note: Note, increment_start=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
            If increment_start == True then measure.start is also incremented, after the insertion. So this method
@@ -120,14 +125,14 @@ class Measure(NoteSequence):
            Validates that all the durations fit in the total duration of the measure.
         """
         validate_types(('note', note, Note), ('increment_start', increment_start, bool))
-        if self.start + note.dur > self.max_duration:
-            raise ValueError((f'measure.start {self.start} + note.duration {note.dur} > '
+        if self.next_note_start + note.dur > self.max_duration:
+            raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
-        note.start = self.start
+        note.start = self.next_note_start
         self.note_list.append(note)
         self.note_list.sort(key=lambda x: x.start)
         if increment_start:
-            self.start += note.dur
+            self.next_note_start += note.dur
 
         return self
 
@@ -144,25 +149,30 @@ class Measure(NoteSequence):
                               f'arg: {to_add} type: {type(to_add)}'))
 
         sum_of_durations = sum([note.dur for note in note_list])
-        if self.start + sum_of_durations > self.max_duration:
-            raise ValueError((f'measure.start {self.start} + sum of note.durations {sum_of_durations} > '
+        if self.next_note_start + sum_of_durations > self.max_duration:
+            raise ValueError((f'measure.next_note_start {self.next_note_start} + '
+                              f'sum of note.durations {sum_of_durations} > '
                               f'measure.max_duration {self.max_duration}'))
 
         for note in note_list:
-            note.start = self.start
-            self.start += note.dur
+            note.start = self.next_note_start
+            self.next_note_start += note.dur
 
         self.note_list = note_list
         # Maintain the invariant that notes are sorted ascending by start
         self.note_list.sort(key=lambda x: x.start)
         return self
+    # Adding notes in sequence from the current start time, one note immediately after another
 
+    # Quantize notes
     def quantize(self):
         self.meter.quantize(self)
 
     def quantize_to_beat(self):
         self.meter.quantize_to_beat(self)
+    # /Quantize notes
 
+    # Apply Swing and Phrasing to notes
     def apply_swing(self):
         """Moves all notes in Measure according to how self.swing is configured.
         """
@@ -181,21 +191,76 @@ class Measure(NoteSequence):
                 self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
             self.note_list[-1].start += \
                 self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+    # /Apply Swing and Phrasing to notes
 
+    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Getters retrieve the value for a note property from each note and return a list of values
+    # Setters apply a value for a note property to each note in the note_list
+    def get_instrument(self) -> List[int]:
+        return [note.instrument for note in self.note_list]
+
+    def set_instrument(self, instrument: int):
+        for note in self.note_list:
+            note.instrument = instrument
+
+    instrument = property(get_instrument, set_instrument)
+    i = property(get_instrument, set_instrument)
+
+    def get_start(self) -> Union[List[float], List[int]]:
+        return [note.start for note in self.note_list]
+
+    def set_start(self, start: Union[float, int]):
+        for note in self.note_list:
+            note.start = start
+
+    start = property(get_start, set_start)
+    s = property(get_start, set_start)
+
+    def get_dur(self) -> Union[List[float], List[int]]:
+        return [note.dur for note in self.note_list]
+
+    def set_dur(self, dur: Union[float, int]):
+        for note in self.note_list:
+            note.dur = dur
+
+    dur = property(get_dur, set_dur)
+    d = property(get_dur, set_dur)
+
+    def get_amp(self) -> Union[List[float], List[int]]:
+        return [note.amp for note in self.note_list]
+
+    def set_amp(self, amp: Union[float, int]):
+        for note in self.note_list:
+            note.amp = amp
+
+    amp = property(get_amp, set_amp)
+    a = property(get_amp, set_amp)
+
+    def get_pitch(self) -> Union[List[float], List[int]]:
+        return [note.pitch for note in self.note_list]
+
+    def set_pitch(self, pitch: Union[float, int]):
+        for note in self.note_list:
+            note.pitch = pitch
+
+    pitch = property(get_pitch, set_pitch)
+    p = property(get_pitch, set_pitch)
+
+    def transpose(self, interval: int):
+        for note in self.note_list:
+            note.transpose(interval)
+    # Getters and setters for all core note properties, get from all notes, apply to all notes
+
+    # Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
     def set_notes_attr(self, name: str, val: Any):
         """Apply to all notes in note_list"""
         validate_type('name', name, str)
         for note in self.note_list:
             setattr(note, name, val)
+    # /Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
 
-    def transpose(self, interval: int):
-        for note in self.note_list:
-            note.transpose(interval)
-
-    # Wrap all parant methods that mutate note_list, because this
-    # class maintains the invariant that note_list is sorted by
-    # note.start_time ascending
-    # noinspection PyUnresolvedReferences
+    # NoteSequence note_list management
+    # Wrap all parent methods to maintain invariant that note_list is sorted by note.start_time ascending
     def append(self, note: Note) -> 'Measure':
         super(Measure, self).append(note)
         self.note_list.sort(key=lambda x: x.start)
@@ -224,6 +289,7 @@ class Measure(NoteSequence):
         super(Measure, self).remove(to_remove)
         self.note_list.sort(key=lambda x: x.start)
         return self
+    # /NoteSequence note_list management
 
     # noinspection PyUnresolvedReferences
     @staticmethod
