@@ -7,6 +7,8 @@
 from copy import copy
 from typing import Any, List, Union
 
+import pytest
+
 from aleatoric.meter import Meter, NoteDur
 from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
@@ -290,6 +292,20 @@ class Measure(NoteSequence):
         self.note_list.sort(key=lambda x: x.start)
         return self
     # /NoteSequence note_list management
+
+    # Iterator support
+    def __eq__(self, other: 'Measure') -> bool:
+        if len(self.note_list) != len(other.note_list):
+            return False
+        for i, note in enumerate(self.note_list):
+            if note != other.note_list[i]:
+                return False
+        return self.meter == other.meter and \
+            self.swing == other.swing and \
+            self.beat == other.beat and \
+            self.next_note_start == pytest.approx(other.next_note_start) and \
+            self.max_duration == pytest.approx(other.max_duration)
+    # /Iterator support
 
     # noinspection PyUnresolvedReferences
     @staticmethod

@@ -122,3 +122,8 @@ class Meter(object):
 
     def __repr__(self):
         return f'{self.beats_per_measure} / {self.beat_dur}'
+
+    def __eq__(self, other: 'Meter') -> bool:
+        return self.beats_per_measure == other.beats_per_measure and \
+            self.beat_dur == other.beat_dur and \
+            self.quantizing == other.quantizing

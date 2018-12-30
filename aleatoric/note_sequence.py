@@ -4,7 +4,7 @@ from typing import List, Union
 
 from aleatoric.note import Note
 from aleatoric.performance_attrs import PerformanceAttrs
-from aleatoric.utils import validate_optional_type, validate_sequence_of_types, validate_type
+from aleatoric.utils import validate_optional_type, validate_sequence_of_type, validate_type
 
 
 class NoteSequence(object):
@@ -17,13 +17,18 @@ class NoteSequence(object):
        through the iterator Notes with correct note_attrs and perf_attrs.
     """
     def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None):
-        validate_sequence_of_types('note_list', note_list, Note)
+        validate_sequence_of_type('note_list', note_list, Note)
         validate_optional_type('performance_attrs', performance_attrs, PerformanceAttrs)
 
         self.index = 0
         self.note_list = note_list
         self.performance_attrs = performance_attrs
+        # TODO TEST
+        if self.performance_attrs:
+            for note in self.note_list:
+                note.performance_attrs = self.performance_attrs
 
+    # Manage Note properties
     @property
     def nl(self):
         """Get the underlying note_list.
@@ -32,13 +37,35 @@ class NoteSequence(object):
         return self.note_list
 
     @property
+    def performance_attrs(self):
+        return self.performance_attrs
+
+    # TODO TEST
+    @performance_attrs.setter
+    def performance_attrs(self, performance_attrs: PerformanceAttrs):
+        validate_type('performance_attrs', performance_attrs, PerformanceAttrs)
+        self.performance_attrs = performance_attrs
+        for note in self.note_list:
+            note.performance_attrs = self.performance_attrs
+
+    @property
     def pa(self):
         """Get the underlying performance_attrs.
            Alias to something shorter for client code convenience.
         """
         return self.performance_attrs
 
-    def append(self, note: Note):
+    # TODO TEST
+    @pa.setter
+    def pa(self, performance_attrs: PerformanceAttrs):
+        validate_type('performance_attrs', performance_attrs, PerformanceAttrs)
+        self.performance_attrs = performance_attrs
+        for note in self.note_list:
+            note.performance_attrs = self.performance_attrs
+    # /Manage Note properties
+
+    # Manage note list
+    def append(self, note: Note) -> 'NoteSequence':
         validate_type('note', note, Note)
         self.note_list.append(note)
         return self
@@ -58,7 +85,7 @@ class NoteSequence(object):
         # If NoteSequence failed test adding as a List[Note]
         if not new_note_list:
             try:
-                validate_sequence_of_types('to_add', to_add, Note)
+                validate_sequence_of_type('to_add', to_add, Note)
                 new_note_list = to_add
                 self.note_list.extend(new_note_list)
             except ValueError:
@@ -74,6 +101,7 @@ class NoteSequence(object):
                                   f'arg: {to_add} type: {type(to_add)}'))
 
         return self
+    # /Manage note list
 
     def __add__(self, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'NoteSequence':
         """Overloads the `+` operator to support adding a single Note, a NoteSequence or a List[Note]"""
@@ -96,7 +124,7 @@ class NoteSequence(object):
 
         if not note_list:
             try:
-                validate_sequence_of_types(sequence_name, sequence, Note)
+                validate_sequence_of_type(sequence_name, sequence, Note)
                 note_list = sequence
             except ValueError:
                 pass
@@ -147,7 +175,8 @@ class NoteSequence(object):
 
         return self
 
-    def __len__(self):
+    # Manage iter / slice
+    def __len__(self) -> int:
         return len(self.note_list)
 
     def __getitem__(self, index: int) -> Note:
@@ -177,10 +206,11 @@ class NoteSequence(object):
         self.index += 1
         return note.__class__.copy(note)
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'NoteSequence') -> bool:
         if not other or len(self) != len(other):
             return False
         return all([self.note_list[i] == other.note_list[i] for i in range(len(self.note_list))])
+    # /Manage iter / slice
 
     @staticmethod
     def copy(source_note_sequence: 'NoteSequence') -> 'NoteSequence':

@@ -66,3 +66,8 @@ class Swing(object):
             return -swing_adj
         else:
             return sign() * swing_adj
+
+    def __eq__(self, other: 'Swing') -> bool:
+        return self.swinging == other.swinging and \
+            self.swing_factor == other.swing_factor and \
+            self.swing_direction == other.swing_direction
