@@ -59,7 +59,6 @@ class Chord(NoteSequence):
         self.note_type = note_cls
         self.octave = octave
         self.key = key
-        self.performance_attrs = performance_attrs
 
         # Get the list of keys in the chord as string names from mingus
         self._mingus_chord = harmonic_chord.value(self.key.name)
@@ -71,15 +70,6 @@ class Chord(NoteSequence):
                                               self.note_prototype, self.note_type, self.octave,
                                               validate=False)
         super(Chord, self).__init__(note_list, performance_attrs=performance_attrs)
-
-    @staticmethod
-    def copy(source_chord: 'Chord') -> 'Chord':
-        return Chord(harmonic_chord=source_chord.harmonic_chord,
-                     note_prototype=source_chord.note_prototype,
-                     note_cls=source_chord.note_type,
-                     octave=source_chord.octave,
-                     key=source_chord.key,
-                     performance_attrs=source_chord.performance_attrs)
 
     def mod_first_inversion(self):
         """Modifies this Chord's note_list to its first inversion. Leaves all other attributes unchanged."""
@@ -191,3 +181,13 @@ class Chord(NoteSequence):
         chord = Chord.copy(source_chord)
         chord.mod_ostinato(init_start_time, start_time_interval)
         return chord
+
+    @staticmethod
+    def copy(source_chord: 'Chord') -> 'Chord':
+        return Chord(harmonic_chord=source_chord.harmonic_chord,
+                     note_prototype=source_chord.note_prototype,
+                     note_cls=source_chord.note_type,
+                     octave=source_chord.octave,
+                     key=source_chord.key,
+                     performance_attrs=source_chord.ns_performance_attrs)
+

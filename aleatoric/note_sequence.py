@@ -22,11 +22,11 @@ class NoteSequence(object):
 
         self.index = 0
         self.note_list = note_list
-        self.performance_attrs = performance_attrs
+        self.ns_performance_attrs = performance_attrs
         # TODO TEST
-        if self.performance_attrs:
+        if self.ns_performance_attrs:
             for note in self.note_list:
-                note.performance_attrs = self.performance_attrs
+                note.performance_attrs = self.ns_performance_attrs
 
     # Manage Note properties
     @property
@@ -38,30 +38,30 @@ class NoteSequence(object):
 
     @property
     def performance_attrs(self):
-        return self.performance_attrs
+        return self.ns_performance_attrs
 
     # TODO TEST
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
         validate_type('performance_attrs', performance_attrs, PerformanceAttrs)
-        self.performance_attrs = performance_attrs
+        self.ns_performance_attrs = performance_attrs
         for note in self.note_list:
-            note.performance_attrs = self.performance_attrs
+            note.performance_attrs = self.ns_performance_attrs
 
     @property
     def pa(self):
         """Get the underlying performance_attrs.
            Alias to something shorter for client code convenience.
         """
-        return self.performance_attrs
+        return self.ns_performance_attrs
 
     # TODO TEST
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
         validate_type('performance_attrs', performance_attrs, PerformanceAttrs)
-        self.performance_attrs = performance_attrs
+        self.ns_performance_attrs = performance_attrs
         for note in self.note_list:
-            note.performance_attrs = self.performance_attrs
+            note.performance_attrs = self.ns_performance_attrs
     # /Manage Note properties
 
     # Manage note list
@@ -217,6 +217,6 @@ class NoteSequence(object):
         # Call the copy() for the subclass of this note type
         new_note_list = [(note.__class__.copy(note)) for note in source_note_sequence.note_list]
         new_note_sequence = NoteSequence(new_note_list,
-                                         source_note_sequence.performance_attrs)
+                                         source_note_sequence.ns_performance_attrs)
         new_note_sequence.index = source_note_sequence.index
         return new_note_sequence

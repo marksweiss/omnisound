@@ -41,7 +41,7 @@ def test_note_sequence():
     assert note_sequence
     # Assert all the note_attrs in the note_sequence have the same performance_attr
     assert note_sequence.note_list == note_sequence.nl == note_list
-    assert note_sequence.performance_attrs == note_sequence.pa == perf_attrs
+    assert note_sequence.ns_performance_attrs == note_sequence.pa == perf_attrs
 
 
 def test_note_sequence_iter_note_attr_properties():
