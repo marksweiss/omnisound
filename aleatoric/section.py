@@ -5,8 +5,10 @@ from itertools import chain
 from typing import Any, List, Optional, Union
 
 from aleatoric.measure import Measure
+from aleatoric.meter import Meter
 from aleatoric.note import PerformanceAttrs
-from aleatoric.utils import (validate_optional_type, validate_optional_sequence_of_type,
+from aleatoric.swing import Swing
+from aleatoric.utils import (validate_optional_types, validate_optional_sequence_of_type,
                              validate_sequence_of_type, validate_type)
 
 
@@ -18,20 +20,35 @@ class Section(object):
        flattened into a list.
     """
     def __init__(self, measure_list: Optional[List[Measure]] = None,
+                 meter: Optional[Meter] = None,
+                 swing: Optional[Swing] = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
-        validate_optional_type('performance_attrs', performance_attrs, PerformanceAttrs)
+        validate_optional_types(('performance_attrs', performance_attrs, PerformanceAttrs),
+                                ('meter', meter, Meter), ('swing', swing, Swing))
         validate_optional_sequence_of_type('measure', measure_list, Measure)
 
         self.measure_list = measure_list or []
         self.section_performance_attrs = performance_attrs
+        self.section_meter = meter
+        self.section_swing = swing
         self.index = 0
 
-        # TODO TEST
         if self.section_performance_attrs:
             for measure in self.measure_list:
                 measure.performance_attrs = self.section_performance_attrs
 
-    # Wrappers for Measure methods, call on all measures
+    # Quantizing for all Measures in the Section
+    @property
+    def meter(self):
+        return self.section_meter
+
+    @meter.setter
+    def meter(self, meter: Meter):
+        validate_type('meter', meter, Meter)
+        self.section_meter = meter
+        for measure in self.measure_list:
+            measure.meter = meter
+
     def quantizing_on(self):
         for measure in self.measure_list:
             measure.quantizing_on()
@@ -47,6 +64,19 @@ class Section(object):
     def quantize_to_beat(self):
         for measure in self.measure_list:
             measure.quantize_to_beat()
+    # /Quantizing for all Measures in the Section
+
+    # Swing for all Measures in the Section
+    @property
+    def swing(self):
+        return self.section_swing
+
+    @swing.setter
+    def swing(self, swing: Swing):
+        validate_type('swing', swing, Swing)
+        self.section_swing = swing
+        for measure in self.measure_list:
+            measure.swing = swing
 
     def swing_on(self):
         for measure in self.measure_list:
@@ -63,7 +93,7 @@ class Section(object):
     def apply_phrasing(self):
         for measure in self.measure_list:
             measure.apply_phrasing()
-    # /Wrappers for Measure methods, call on all measures
+    # /Swing for all Measures in the Section
 
     # TODO TEST
     # Getters and setters for all core note properties, get from all notes, apply to all notes

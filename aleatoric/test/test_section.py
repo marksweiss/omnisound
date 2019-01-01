@@ -135,6 +135,20 @@ def test_swing_off_apply_swing(section):
         assert expected_swing_note_starts != pytest.approx(actual_note_starts)
 
 
+def test_assign_swing_apply_swing(section):
+    swing_factor = SWING_FACTOR * 2.0
+    expected_swing_note_starts = [0.0, 0.5, 1.0, 1.5]
+
+    # Create a new Swing object with a different SWING_FACTOR, assign it to the section
+    # and ensure that notes have the exepcted value
+    swing = Swing(swing_factor=swing_factor, swing_direction=Swing.SwingDirection.Forward)
+    section.swing = swing
+    section.swing_on()
+    for measure in section.measure_list:
+        actual_note_starts = _apply_swing_and_get_note_starts(measure)
+        assert expected_swing_note_starts == pytest.approx(actual_note_starts)
+
+
 def test_swing_on_apply_phrasing(note_list, measure, swing, section):
     """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
        and last has swing reverse. This class tests use of Swing class by Measure class.
