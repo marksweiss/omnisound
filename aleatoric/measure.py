@@ -167,6 +167,15 @@ class Measure(NoteSequence):
     # Adding notes in sequence from the current start time, one note immediately after another
 
     # Quantize notes
+    def quantizing_on(self):
+        self.meter.quantizing_on()
+
+    def quantizing_off(self):
+        self.meter.quantizing_off()
+
+    def is_quantizing(self):
+        return self.meter.is_quantizing()
+
     def quantize(self):
         self.meter.quantize(self)
 
@@ -175,6 +184,24 @@ class Measure(NoteSequence):
     # /Quantize notes
 
     # Apply Swing and Phrasing to notes
+    def swing_on(self):
+        if self.swing:
+            self.swing.swing_on()
+        else:
+            raise MeasureSwingNotEnabledException('Measure.swing_on() called but swing is None in Measure')
+
+    def swing_off(self):
+        if self.swing:
+            self.swing.swing_off()
+        else:
+            raise MeasureSwingNotEnabledException('Measure.swing_off() called but swing is None in Measure')
+
+    def is_swing_on(self):
+        if self.swing:
+            return self.swing.is_swing_on()
+        else:
+            raise MeasureSwingNotEnabledException('Measure.is_swing_on() called but swing is None in Measure')
+
     def apply_swing(self):
         """Moves all notes in Measure according to how self.swing is configured.
         """
@@ -188,11 +215,14 @@ class Measure(NoteSequence):
            The idea is to slightly accentuate the metric phrasing of each measure. Handles boundary condition
            of having 0 or 1 notes. If there is only 1 note no adjustment is made.
         """
-        if len(self.note_list) > 1:
-            self.note_list[0].start += \
-                self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
-            self.note_list[-1].start += \
-                self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+        if self.swing:
+            if len(self.note_list) > 1:
+                self.note_list[0].start += \
+                    self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
+                self.note_list[-1].start += \
+                    self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+        else:
+            raise MeasureSwingNotEnabledException('Measure.apply_phrasing() called but swing is None in Measure')
     # /Apply Swing and Phrasing to notes
 
     # Getters and setters for all core note properties, get from all notes, apply to all notes
@@ -254,6 +284,11 @@ class Measure(NoteSequence):
     # Getters and setters for all core note properties, get from all notes, apply to all notes
 
     # Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
+    def get_notes_attr(self, name: str) -> List[Any]:
+        """Return list of all values for attribute `name` from all notes in the measure, in start time order"""
+        validate_type('name', name, str)
+        return [getattr(note, name) for note in self.note_list]
+
     def set_notes_attr(self, name: str, val: Any):
         """Apply to all notes in note_list"""
         validate_type('name', name, str)

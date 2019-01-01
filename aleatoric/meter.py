@@ -38,7 +38,7 @@ class Meter(object):
        duration of the Measure, or to fit notes to the closest beat in the Measure. str displays information about
        the configuration of the object, but repr displays the meter in traditional notation.
     """
-    def __init__(self, beats_per_measure: int = None, beat_dur: NoteDur = None, quantizing: bool = None):
+    def __init__(self, beats_per_measure: int = None, beat_dur: NoteDur = None, quantizing: bool = True):
         validate_optional_types(('beats_per_measure', beats_per_measure, int), ('beat_dur', beat_dur, NoteDur),
                                 ('quantizing', quantizing, bool))
 

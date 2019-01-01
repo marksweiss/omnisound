@@ -32,6 +32,14 @@ class Section(object):
                 measure.performance_attrs = self.section_performance_attrs
 
     # Wrappers for Measure methods, call on all measures
+    def quantizing_on(self):
+        for measure in self.measure_list:
+            measure.quantizing_on()
+
+    def quantizing_off(self):
+        for measure in self.measure_list:
+            measure.quantizing_off()
+
     def quantize(self):
         for measure in self.measure_list:
             measure.quantize()
@@ -39,6 +47,14 @@ class Section(object):
     def quantize_to_beat(self):
         for measure in self.measure_list:
             measure.quantize_to_beat()
+
+    def swing_on(self):
+        for measure in self.measure_list:
+            measure.swing_on()
+
+    def swing_off(self):
+        for measure in self.measure_list:
+            measure.swing_off()
 
     def apply_swing(self):
         for measure in self.measure_list:
@@ -65,7 +81,6 @@ class Section(object):
     def performance_attrs(self):
         return self.section_performance_attrs
 
-    # TODO TEST
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
         self.section_performance_attrs = performance_attrs
@@ -126,6 +141,9 @@ class Section(object):
     def transpose(self, interval: int):
         for measure in self.measure_list:
             measure.transpose(interval)
+
+    def get_notes_attr(self, name: str) -> List[Any]:
+        return list(chain.from_iterable([measure.get_notes_attr(name) for measure in self.measure_list]))
 
     def set_notes_attr(self, name: str, val: Any):
         for measure in self.measure_list:

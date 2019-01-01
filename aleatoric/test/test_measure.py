@@ -5,7 +5,7 @@ from typing import List, Tuple
 import pytest
 
 from aleatoric.csound_note import CSoundNote
-from aleatoric.measure import Measure, Meter, NoteDur, Swing
+from aleatoric.measure import Measure, MeasureSwingNotEnabledException, Meter, NoteDur, Swing
 from aleatoric.note_sequence import NoteSequence
 
 INSTRUMENT = 1
@@ -80,21 +80,95 @@ def test_measure(meter, swing, measure):
     assert measure.swing == swing
 
 
-def test_swing_on_off(swing, measure):
+def test_swing_on_off_apply_swing(note_list, swing, measure):
     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
     """
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
-    # Does not adjust notes if swing is off
-    swing.swing_off()
+
     swing.swing_direction = Swing.SwingDirection.Forward
     measure.swing = swing
+    # Does not adjust notes if swing is off
+    measure.swing_off()
+    assert not measure.is_swing_on()
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
     assert expected_swing_note_starts != actual_note_starts
+
     # Does adjust notes if swing is on
-    swing.swing_on()
+    measure.swing_on()
+    assert measure.is_swing_on()
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
     assert expected_swing_note_starts == actual_note_starts
+
+    measure = Measure(note_list)
+    with pytest.raises(MeasureSwingNotEnabledException):
+        measure.swing_on()
+    with pytest.raises(MeasureSwingNotEnabledException):
+        measure.swing_off()
+
+
+def test_apply_phrasing(note_list, meter, measure):
+    """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
+       and last has swing reverse. This class tests use of Swing class by Measure class.
+    """
+
+    expected_phrasing_note_starts = [0.0, 0.375]
+    measure.swing_on()
+
+    # If there are two or more noes, first note adjusted down, last note adjusted up
+    measure.apply_phrasing()
+    assert measure[0].start == expected_phrasing_note_starts[0]
+    assert measure[-1].start == expected_phrasing_note_starts[-1]
+
+    # If there is only one note in the measure, phrasing is a no-op
+    expected_phrasing_note_starts = [note_list[1].start]
+    short_measure = Measure([note_list[1]], meter=measure.meter, swing=measure.swing)
+    short_measure.apply_phrasing()
+    assert short_measure[0].start == expected_phrasing_note_starts[0]
+
+    # Swing is None by default. Test that operations on swing raise if Swing object not provided to __init__()
+    measure = Measure(note_list, meter=meter)
+    with pytest.raises(MeasureSwingNotEnabledException):
+        measure.apply_phrasing()
+
+
+def test_quantizing_on_off(measure):
+    # Default is quantizing on
+    assert measure.is_quantizing()
+    # Can override default
+    meter_2 = Meter(beat_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
+    measure.meter = meter_2
+    assert not measure.is_quantizing()
+    # Can toggle with methods
+    measure.quantizing_on()
+    assert measure.is_quantizing()
+    measure.quantizing_off()
+    assert not measure.is_quantizing()
+
+
+def test_quantize(note_list, meter):
+    # Modify the note durations in the copy to be longer and require quantization
+    note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
+    for note in note_list_with_longer_durations:
+        note.dur = note.dur * 2
+
+    measure = Measure(note_list, meter=meter)
+    measure.quantize()
+    # Assert that after quantization the durations in both note lists are identical
+    for i, note in enumerate(note_list):
+        assert note.dur == pytest.approx(measure.note_list[i].dur)
+
+
+def test_quantize_to_beat(note_list, meter):
+    # Test: Note durations not on the beat, quantization required
+    note_list_with_offset_start_times = [CSoundNote.copy(note) for note in note_list]
+    for note in note_list_with_offset_start_times:
+        note.start = note.start + 0.05
+    # Quantize and assert the start times match the original start_times, which are on the beat
+    measure = Measure(note_list, meter=meter)
+    measure.quantize_to_beat()
+    for i, note in enumerate(note_list):
+        assert note.start == pytest.approx(measure.note_list[i].start)
 
 
 def test_beat(measure):
@@ -115,23 +189,6 @@ def test_beat(measure):
     assert measure.beat == 0
     for i in range(measure.meter.beats_per_measure + 10):
         assert measure.beat <= measure.meter.beats_per_measure
-
-
-def test_apply_phrasing(note_list, measure):
-    """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
-       and last has swing reverse. This class tests use of Swing class by Measure class.
-    """
-    expected_phrasing_note_starts = [0.0, 0.375]
-    measure.swing.swing_on()
-    measure.apply_phrasing()
-    assert measure[0].start == expected_phrasing_note_starts[0]
-    assert measure[-1].start == expected_phrasing_note_starts[-1]
-
-    # If there is only one note in the measure, phrasing is a no-op
-    expected_phrasing_note_starts = [note_list[1].start]
-    short_measure = Measure([note_list[1]], meter=measure.meter, swing=measure.swing)
-    short_measure.apply_phrasing()
-    assert short_measure[0].start == expected_phrasing_note_starts[0]
 
 
 def test_add_notes_on_beat(note_list, note_sequence, meter, swing):
@@ -376,7 +433,7 @@ def test_set_get_pitch(measure):
     assert measure.p == [10.09, 10.09, 10.09, 10.09]
 
 
-def test_setattr(measure):
+def test_set_notes_attr(measure):
     expected_amp = 100
     expected_dur = NoteDur.EIGHTH.value
 
@@ -391,6 +448,10 @@ def test_setattr(measure):
         assert note.amp == expected_amp
     for note in measure:
         assert note.dur == expected_dur
+
+
+def test_get_notes_attr(measure):
+    assert measure.get_notes_attr('start') == [0.0, 0.25, 0.5, 0.75]
 
 
 def test_transpose(measure):
