@@ -3,7 +3,6 @@
 from typing import List, Union
 
 from aleatoric.note import Note
-from aleatoric.performance_attrs import PerformanceAttrs
 from aleatoric.utils import validate_optional_type, validate_sequence_of_type, validate_type
 
 
@@ -16,52 +15,24 @@ class NoteSequence(object):
        Thus, this lets clients create either type of sequence and transparently just consume
        through the iterator Notes with correct note_attrs and perf_attrs.
     """
-    def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None):
-        validate_sequence_of_type('note_list', note_list, Note)
-        validate_optional_type('performance_attrs', performance_attrs, PerformanceAttrs)
+    def __init__(self, to_add: Union[List[Note], 'NoteSequence']):
+        # Support constructing with empty note_list
+        if to_add == list():
+            self.note_list = to_add
+        else:
+            self.note_list = NoteSequence._get_note_list_from_sequence('to_add', to_add)
+            if not self.note_list:
+                raise ValueError((f'Arg `to_add` must be a NoteSequence or List[Note], '
+                                  f'arg: {to_add} type: {type(to_add)}'))
 
         self.index = 0
-        self.note_list = note_list
-        self.ns_performance_attrs = performance_attrs
-        # TODO TEST
-        if self.ns_performance_attrs:
-            for note in self.note_list:
-                note.performance_attrs = self.ns_performance_attrs
 
     # Manage Note properties
     @property
     def nl(self):
-        """Get the underlying note_list.
-           Alias to something shorter for client code convenience.
+        """Get the underlying note_list. Alias to something shorter for client code convenience.
         """
         return self.note_list
-
-    @property
-    def performance_attrs(self):
-        return self.ns_performance_attrs
-
-    # TODO TEST
-    @performance_attrs.setter
-    def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        validate_type('performance_attrs', performance_attrs, PerformanceAttrs)
-        self.ns_performance_attrs = performance_attrs
-        for note in self.note_list:
-            note.performance_attrs = self.ns_performance_attrs
-
-    @property
-    def pa(self):
-        """Get the underlying performance_attrs.
-           Alias to something shorter for client code convenience.
-        """
-        return self.ns_performance_attrs
-
-    # TODO TEST
-    @pa.setter
-    def pa(self, performance_attrs: PerformanceAttrs):
-        validate_type('performance_attrs', performance_attrs, PerformanceAttrs)
-        self.ns_performance_attrs = performance_attrs
-        for note in self.note_list:
-            note.performance_attrs = self.ns_performance_attrs
     # /Manage Note properties
 
     # Manage note list
@@ -216,7 +187,6 @@ class NoteSequence(object):
     def copy(source_note_sequence: 'NoteSequence') -> 'NoteSequence':
         # Call the copy() for the subclass of this note type
         new_note_list = [(note.__class__.copy(note)) for note in source_note_sequence.note_list]
-        new_note_sequence = NoteSequence(new_note_list,
-                                         source_note_sequence.ns_performance_attrs)
+        new_note_sequence = NoteSequence(to_add=new_note_list)
         new_note_sequence.index = source_note_sequence.index
         return new_note_sequence

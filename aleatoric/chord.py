@@ -10,13 +10,11 @@ from aleatoric.chord_globals import HarmonicChord
 from aleatoric.csound_note import CSoundNote
 from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
-from aleatoric.note import PerformanceAttrs
 from aleatoric.mingus_utils import get_notes_for_mingus_keys
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.scale import Scale
-from aleatoric.scale_globals import MajorKey, MinorKey, HarmonicScale
-from aleatoric.utils import (validate_optional_type, validate_optional_type_choice,
-                             validate_types, validate_type_choice, validate_type_reference_choice)
+from aleatoric.scale_globals import MajorKey, MinorKey
+from aleatoric.utils import validate_types, validate_type_choice, validate_type_reference_choice
 
 
 class Chord(NoteSequence):
@@ -32,8 +30,7 @@ class Chord(NoteSequence):
                  note_prototype: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote] = None,
                  note_cls: Any = None,
                  octave: int = None,
-                 key: Union[MajorKey, MinorKey] = None,
-                 performance_attrs: PerformanceAttrs = None):
+                 key: Union[MajorKey, MinorKey] = None):
         validate_types(('harmonic_chord', harmonic_chord, HarmonicChord), ('octave', octave, int))
         validate_type_choice('note_prototype', note_prototype,
                              (CSoundNote, FoxDotSupercolliderNote, MidiNote))
@@ -69,7 +66,7 @@ class Chord(NoteSequence):
                                               self._mingus_key_to_key_enum_mapping,
                                               self.note_prototype, self.note_type, self.octave,
                                               validate=False)
-        super(Chord, self).__init__(note_list, performance_attrs=performance_attrs)
+        super(Chord, self).__init__(to_add=note_list)
 
     def mod_first_inversion(self):
         """Modifies this Chord's note_list to its first inversion. Leaves all other attributes unchanged."""
@@ -188,6 +185,5 @@ class Chord(NoteSequence):
                      note_prototype=source_chord.note_prototype,
                      note_cls=source_chord.note_type,
                      octave=source_chord.octave,
-                     key=source_chord.key,
-                     performance_attrs=source_chord.ns_performance_attrs)
+                     key=source_chord.key)
 

@@ -65,17 +65,17 @@ class Section(object):
             measure.apply_phrasing()
     # /Wrappers for Measure methods, call on all measures
 
+    # TODO TEST
     # Getters and setters for all core note properties, get from all notes, apply to all notes
     @property
     def pa(self):
         return self.section_performance_attrs
 
-    # TODO TEST
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
         self.section_performance_attrs = performance_attrs
         for measure in self.measure_list:
-            measure.performance_attrs = self.performance_attrs
+            measure.performance_attrs = performance_attrs
 
     @property
     def performance_attrs(self):
@@ -85,7 +85,7 @@ class Section(object):
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
         self.section_performance_attrs = performance_attrs
         for measure in self.measure_list:
-            measure.performance_attrs = self.section_performance_attrs
+            measure.performance_attrs = performance_attrs
 
     def get_instrument(self) -> List[int]:
         return list(chain.from_iterable([measure.instrument for measure in self.measure_list]))

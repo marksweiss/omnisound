@@ -64,7 +64,7 @@ def swing():
 
 @pytest.fixture
 def measure(note_list, meter, swing):
-    return Measure(note_list, meter=meter, swing=swing)
+    return Measure(to_add=note_list, meter=meter, swing=swing)
 
 
 @pytest.fixture
@@ -199,6 +199,31 @@ def test_quantize_to_beat(note_list, section):
     for measure in section.measure_list:
         for i, note in enumerate(note_list):
             assert note.start == pytest.approx(measure.note_list[i].start)
+
+
+def test_section_add_lshift_extend(measure, measure_list, section):
+    expected_len = len(measure_list)
+    assert len(section) == expected_len
+    # Append/Add and check len again
+    expected_len += 1
+    section += measure
+    assert len(section) == expected_len
+    expected_len += 2
+    section += [measure, measure]
+    assert len(section) == expected_len
+    # Append/Add with lshift syntax
+    expected_len += 1
+    section << measure
+    assert len(section) == expected_len
+    expected_len += 2
+    section += [measure, measure]
+    assert len(section) == expected_len
+    # Extendj
+    expected_len += 1
+    section.extend(measure)
+    expected_len += 2
+    section.extend([measure, measure])
+    assert len(section) == expected_len
 
 
 def test_set_get_instrument(section):

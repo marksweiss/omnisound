@@ -17,7 +17,7 @@ from aleatoric.midi_note import MidiNote
 from aleatoric.mingus_utils import get_notes_for_mingus_keys
 from aleatoric.note import PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
-from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_types, validate_type_choice,\
+from aleatoric.utils import (enum_to_dict_reverse_mapping, validate_types, validate_type_choice,
                              validate_type_reference_choice)
 from aleatoric.scale_globals import MajorKey, MinorKey, HarmonicScale
 
@@ -67,4 +67,4 @@ class Scale(NoteSequence):
                                               self.note_prototype, self.note_type, self.octave,
                                               validate=False)
 
-        super(Scale, self).__init__(note_list, performance_attrs=performance_attrs)
+        super(Scale, self).__init__(to_add=note_list)

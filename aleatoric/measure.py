@@ -13,7 +13,7 @@ from aleatoric.meter import Meter, NoteDur
 from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.swing import Swing
-from aleatoric.utils import validate_optional_types, validate_type, validate_types
+from aleatoric.utils import validate_optional_sequence_of_type, validate_optional_types, validate_type, validate_types
 
 
 class MeasureSwingNotEnabledException(Exception):
@@ -36,16 +36,21 @@ class Measure(NoteSequence):
 
     DEFAULT_METER = Meter(beats_per_measure=4, beat_dur=NoteDur.QUARTER, quantizing=True)
 
-    def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None,
-                 meter: Meter = None, swing: Swing = None):
-        validate_optional_types(('swing', swing, Swing), ('meter', meter, Meter))
-        super(Measure, self).__init__(note_list=note_list, performance_attrs=performance_attrs)
+    def __init__(self, to_add: Union[List[Note], NoteSequence],
+                 meter: Meter = None,
+                 swing: Swing = None,
+                 performance_attrs: PerformanceAttrs = None):
+        validate_optional_types(('meter', meter, Meter), ('swing', swing, Swing),
+                                ('performance_attrs', performance_attrs, PerformanceAttrs))
+        # Don't validate to_add because it's validated in NoteSequence.__init__()
+        super(Measure, self).__init__(to_add=to_add)
 
         # Sort notes by start time to manage adding on beat
         # NOTE: This modifies the note_sequence in place
         self.note_list.sort(key=lambda x: x.start)
         self.meter = meter or copy(Measure.DEFAULT_METER)
         self.swing = swing
+        self.measure_performance_attrs = performance_attrs
         # Support adding notes based on Meter
         self.beat = 0
         # Support adding notes offset from end of previous note
@@ -228,6 +233,27 @@ class Measure(NoteSequence):
     # Getters and setters for all core note properties, get from all notes, apply to all notes
     # Getters retrieve the value for a note property from each note and return a list of values
     # Setters apply a value for a note property to each note in the note_list
+    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    @property
+    def pa(self):
+        return self.measure_performance_attrs
+
+    @pa.setter
+    def pa(self, performance_attrs: PerformanceAttrs):
+        self.measure_performance_attrs = performance_attrs
+        for note in self.note_list:
+            note.performance_attrs = performance_attrs
+
+    @property
+    def performance_attrs(self):
+        return self.section_performance_attrs
+
+    @performance_attrs.setter
+    def performance_attrs(self, performance_attrs: PerformanceAttrs):
+        self.measure_performance_attrs = performance_attrs
+        for note in self.note_list:
+            note.performance_attrs = performance_attrs
+
     def get_instrument(self) -> List[int]:
         return [note.instrument for note in self.note_list]
 
@@ -348,8 +374,8 @@ class Measure(NoteSequence):
         # Call the dup() for the subclass of this note type
         new_note_list = [(note.copy(note))
                          for note in source_measure.note_list]
-        new_measure = Measure(note_list=new_note_list,
-                              performance_attrs=source_measure.ns_performance_attrs,
-                              meter=source_measure.meter, swing=source_measure.swing)
+        new_measure = Measure(to_add=new_note_list,
+                              meter=source_measure.meter, swing=source_measure.swing,
+                              performance_attrs=source_measure.measure_performance_attrs)
         new_measure.beat = source_measure.beat
         return new_measure

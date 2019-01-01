@@ -20,7 +20,8 @@ ATTR_VAL = 100
 ATTR_TYPE = int
 
 
-def _setup_note_sequence_args():
+@pytest.fixture
+def note_list():
     note_1 = CSoundNote.copy(NOTE)
     note_2 = CSoundNote.copy(NOTE)
     perf_attrs = PerformanceAttrs()
@@ -28,24 +29,20 @@ def _setup_note_sequence_args():
     note_1.performance_attrs = perf_attrs
     note_2.performance_attrs = perf_attrs
     note_list = [note_1, note_2]
-    return note_list, perf_attrs
+    return note_list
 
 
-def _setup_note_sequence():
-    return NoteSequence(*_setup_note_sequence_args())
+@pytest.fixture
+def note_sequence(note_list):
+    return NoteSequence(to_add=note_list)
 
 
-def test_note_sequence():
-    note_list, perf_attrs = _setup_note_sequence_args()
-    note_sequence = NoteSequence(note_list, perf_attrs)
+def test_note_sequence(note_list, note_sequence):
     assert note_sequence
-    # Assert all the note_attrs in the note_sequence have the same performance_attr
     assert note_sequence.note_list == note_sequence.nl == note_list
-    assert note_sequence.ns_performance_attrs == note_sequence.pa == perf_attrs
 
 
-def test_note_sequence_iter_note_attr_properties():
-    note_sequence = _setup_note_sequence()
+def test_note_sequence_iter_note_attr_properties(note_sequence):
     # Iterate once and assert attributes of elements. This tests __iter__() and __next__()
     first_loop_count = 0
     for note in note_sequence:
@@ -63,9 +60,8 @@ def test_note_sequence_iter_note_attr_properties():
     assert first_loop_count == second_loop_count
 
 
-def test_note_sequence_len_append_getitem():
+def test_note_sequence_len_append_getitem(note_sequence):
     # Returns note_list with 2 Notes
-    note_sequence = _setup_note_sequence()
     note_3 = CSoundNote.copy(NOTE)
     new_amp = NOTE.amp + 1
     note_3.amp = new_amp
@@ -79,9 +75,8 @@ def test_note_sequence_len_append_getitem():
     assert note_sequence[2].amp == new_amp
 
 
-def test_note_sequence_add_lshift_extend():
+def test_note_sequence_add_lshift_extend(note_sequence):
     expected_len = 2
-    note_sequence = _setup_note_sequence()
     assert len(note_sequence) == expected_len
     # Append/Add and check len again
     note_sequence += NOTE
@@ -111,8 +106,7 @@ def test_note_sequence_add_lshift_extend():
     assert len(note_sequence) == expected_len
 
 
-def test_note_sequence_insert_remove():
-    note_sequence = _setup_note_sequence()
+def test_note_sequence_insert_remove_getitem(note_sequence):
     note_front = note_sequence[0]
     assert note_front.amp == AMP
 
