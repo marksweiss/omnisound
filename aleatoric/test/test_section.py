@@ -143,6 +143,7 @@ def test_assign_swing_apply_swing(section):
     # and ensure that notes have the exepcted value
     swing = Swing(swing_factor=swing_factor, swing_direction=Swing.SwingDirection.Forward)
     section.swing = swing
+    assert section.swing == swing
     section.swing_on()
     for measure in section.measure_list:
         actual_note_starts = _apply_swing_and_get_note_starts(measure)
@@ -183,6 +184,12 @@ def test_quantizing_on_off(section):
     assert meter_2.is_quantizing()
     meter_2.quantizing_off()
     assert not meter_2.is_quantizing()
+
+
+def test_assign_meter(meter, section):
+    new_meter = Meter(beats_per_measure=BEATS_PER_MEASURE * 2, beat_dur=BEAT_DUR)
+    section.meter = new_meter
+    assert section.meter == new_meter
 
 
 def test_quantize(note_list, section):
