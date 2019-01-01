@@ -98,7 +98,7 @@ class CSoundNote(Note):
 
     @instrument.setter
     def instrument(self, instrument: int):
-        validate_type('instrumnt', instrument, int)
+        validate_type('instrument', instrument, int)
         self._instrument = instrument
 
     def i(self, instrument: int = None) -> Union['CSoundNote', int]:

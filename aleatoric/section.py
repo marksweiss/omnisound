@@ -11,8 +11,6 @@ from aleatoric.utils import (validate_optional_type, validate_optional_sequence_
 
 
 class Section(object):
-    DEFAULT_INSTRUMENT = 0
-
     """A Section is a container of Measures that supports adding, removing and modifying Measures.
        Sections support all of the same Note attributes as Measures as setters. If these are set
        they will be applied to all Measures in the Track, which will apply them to all Notes in the Measure.
@@ -25,13 +23,13 @@ class Section(object):
         validate_optional_sequence_of_type('measure', measure_list, Measure)
 
         self.measure_list = measure_list or []
-        self.performance_attrs = performance_attrs
+        self.section_performance_attrs = performance_attrs
         self.index = 0
 
         # TODO TEST
-        if self.performance_attrs:
+        if self.section_performance_attrs:
             for measure in self.measure_list:
-                measure.performance_attrs = self.performance_attrs
+                measure.performance_attrs = self.section_performance_attrs
 
     # Wrappers for Measure methods, call on all measures
     def quantize(self):
@@ -54,25 +52,25 @@ class Section(object):
     # Getters and setters for all core note properties, get from all notes, apply to all notes
     @property
     def pa(self):
-        return self.performance_attrs
+        return self.section_performance_attrs
 
     # TODO TEST
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
-        self.performance_attrs = performance_attrs
+        self.section_performance_attrs = performance_attrs
         for measure in self.measure_list:
             measure.performance_attrs = self.performance_attrs
 
     @property
     def performance_attrs(self):
-        return self.performance_attrs
+        return self.section_performance_attrs
 
     # TODO TEST
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self.performance_attrs = performance_attrs
+        self.section_performance_attrs = performance_attrs
         for measure in self.measure_list:
-            measure.performance_attrs = self.performance_attrs
+            measure.performance_attrs = self.section_performance_attrs
 
     def get_instrument(self) -> List[int]:
         return list(chain.from_iterable([measure.instrument for measure in self.measure_list]))

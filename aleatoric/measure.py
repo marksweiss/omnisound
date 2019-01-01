@@ -312,7 +312,7 @@ class Measure(NoteSequence):
     def copy(source_measure: 'Measure') -> 'Measure':
         # Call the dup() for the subclass of this note type
         new_note_list = [(note.copy(note))
-                         for note in source_measure.note_sequence.note_list]
+                         for note in source_measure.note_list]
         new_measure = Measure(note_list=new_note_list,
                               performance_attrs=source_measure.ns_performance_attrs,
                               meter=source_measure.meter, swing=source_measure.swing)

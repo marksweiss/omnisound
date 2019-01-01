@@ -15,10 +15,6 @@ AMP = 1
 PITCH = 10.1
 NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
-ATTR_NAME = 'test_attr'
-ATTR_VAL = 100
-ATTR_TYPE = int
-
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
 
