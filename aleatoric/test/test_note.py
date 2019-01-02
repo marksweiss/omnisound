@@ -6,12 +6,12 @@ import pytest
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
-from aleatoric.csound_note import CSoundNote, FIELDS as csound_fields
-from aleatoric.foxdot_supercollider_note import FIELDS as foxdot_fields, FoxDotSupercolliderNote
-from aleatoric.midi_note import FIELDS as midi_fields,  MidiInstrument, MidiNote
-from aleatoric.note import NoteConfig
-from aleatoric.performance_attrs import PerformanceAttrs
-from aleatoric.rest_note import RestNote
+from aleatoric.note.adapters.csound_note import CSoundNote, FIELDS as csound_fields
+from aleatoric.note.adapters.foxdot_supercollider_note import FIELDS as foxdot_fields, FoxDotSupercolliderNote
+from aleatoric.note.adapters.midi_note import FIELDS as midi_fields,  MidiInstrument, MidiNote
+from aleatoric.note.adapters.note import NoteConfig
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.adapters.rest_note import RestNote
 
 INSTRUMENT = 1
 FOX_DOT_INSTRUMENT = fd_sc_synth

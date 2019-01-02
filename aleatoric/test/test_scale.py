@@ -2,9 +2,9 @@
 
 import pytest
 
-from aleatoric.csound_note import CSoundNote
-from aleatoric.scale import Scale
-from aleatoric.scale_globals import MajorKey, MinorKey, HarmonicScale
+from aleatoric.note.adapters.csound_note import CSoundNote
+from aleatoric.note.generators.scale import Scale
+from aleatoric.note.generators.scale_globals import MajorKey, MinorKey, HarmonicScale
 
 
 INSTRUMENT = 1

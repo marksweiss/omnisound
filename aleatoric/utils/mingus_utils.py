@@ -2,12 +2,12 @@
 
 from typing import Any, Dict, List, Union
 
-from aleatoric.csound_note import CSoundNote
-from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
-from aleatoric.midi_note import MidiNote
-from aleatoric.scale_globals import MajorKey, MinorKey
-from aleatoric.utils import (validate_types, validate_type_choice,
-                             validate_type_reference_choice, validate_sequence_of_type)
+from aleatoric.note.adapters.csound_note import CSoundNote
+from aleatoric.note.adapters.foxdot_supercollider_note import FoxDotSupercolliderNote
+from aleatoric.note.adapters.midi_note import MidiNote
+from aleatoric.note.generators.scale_globals import MajorKey, MinorKey
+from aleatoric.utils.utils import (validate_types, validate_type_choice,
+                                   validate_type_reference_choice, validate_sequence_of_type)
 
 
 def get_note_for_mingus_key(matched_key_type: Any,

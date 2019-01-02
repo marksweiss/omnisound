@@ -2,10 +2,11 @@
 
 from typing import Union
 
-from aleatoric.note import Note, PerformanceAttrs
-from aleatoric.scale_globals import MajorKey, MinorKey, NUM_INTERVALS_IN_OCTAVE
-from aleatoric.utils import (validate_optional_types, validate_type,
-                             validate_type_choice, validate_types)
+from aleatoric.note.adapters.note import Note
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.generators.scale_globals import MajorKey, MinorKey, NUM_INTERVALS_IN_OCTAVE
+from aleatoric.utils.utils import (validate_optional_types, validate_type,
+                                   validate_type_choice, validate_types)
 
 
 FIELDS = ('instrument', 'start', 'duration', 'amplitude', 'pitch', 'name')

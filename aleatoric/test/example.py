@@ -6,9 +6,9 @@ from FoxDot import Player as FD_SC_Player
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from aleatoric.foxdot_supercollider_note import FIELDS, FoxDotSupercolliderNote
+from note.adapters.foxdot_supercollider_note import FIELDS, FoxDotSupercolliderNote
 from aleatoric.note import NoteConfig, PerformanceAttrs
-from aleatoric.note_sequence import NoteSequence
+from note.containers.note_sequence import NoteSequence
 from aleatoric.player import Player, PlayerNoNotesException
 
 

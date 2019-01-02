@@ -2,7 +2,8 @@
 
 import pytest
 
-from aleatoric.performance_attrs import PerformanceAttrs
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+
 
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100

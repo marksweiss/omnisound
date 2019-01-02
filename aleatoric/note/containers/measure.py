@@ -9,11 +9,12 @@ from typing import Any, List, Union
 
 import pytest
 
-from aleatoric.meter import Meter, NoteDur
-from aleatoric.note import Note, PerformanceAttrs
-from aleatoric.note_sequence import NoteSequence
-from aleatoric.swing import Swing
-from aleatoric.utils import validate_optional_types, validate_type, validate_types
+from aleatoric.note.modifiers.meter import Meter, NoteDur
+from aleatoric.note.adapters.note import Note
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.containers.note_sequence import NoteSequence
+from aleatoric.note.modifiers.swing import Swing
+from aleatoric.utils.utils import validate_optional_types, validate_type, validate_types
 
 
 class MeasureSwingNotEnabledException(Exception):

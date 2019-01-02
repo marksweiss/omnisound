@@ -1,10 +1,9 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABCMeta, abstractmethod
-from time import sleep
 from typing import Any, Dict, List
 
-from aleatoric.note_sequence import NoteSequence
+from aleatoric.note.containers.note_sequence import NoteSequence
 
 
 class PlayerNoNotesException(Exception):

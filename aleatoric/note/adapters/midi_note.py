@@ -3,10 +3,11 @@
 from enum import Enum
 from typing import Union
 
-from aleatoric.note import Note, PerformanceAttrs
-from aleatoric.scale_globals import NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey
-from aleatoric.utils import (validate_optional_types, validate_type,
-                             validate_type_choice, validate_types)
+from aleatoric.note.adapters.note import Note
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.generators.scale_globals import NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey
+from aleatoric.utils.utils import (validate_optional_types, validate_type,
+                                   validate_type_choice, validate_types)
 
 
 FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')

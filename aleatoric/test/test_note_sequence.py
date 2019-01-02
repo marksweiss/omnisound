@@ -3,9 +3,9 @@
 import pytest
 # noinspection PyProtectedMember
 
-from aleatoric.csound_note import CSoundNote
-from aleatoric.note_sequence import NoteSequence
-from aleatoric.performance_attrs import PerformanceAttrs
+from aleatoric.note.adapters.csound_note import CSoundNote
+from aleatoric.note.containers.note_sequence import NoteSequence
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 
 
 INSTRUMENT = 1
