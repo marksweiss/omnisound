@@ -2,6 +2,7 @@
 
 from time import sleep
 
+# noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
 from aleatoric.note.adapters.foxdot_supercollider_note import (FIELDS,
