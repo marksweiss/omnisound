@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Dict, List
 
 from aleatoric.note.containers.note_sequence import NoteSequence
+from aleatoric.utils.utils import validate_type
 
 
 class PlayerNoNotesException(Exception):
@@ -39,8 +40,8 @@ class Player(metaclass=ABCMeta):
         raise NotImplementedError()
 
     def __init__(self, note_sequence: NoteSequence):
-        if not isinstance(note_sequence, NoteSequence):
-            raise ValueError(f'arg `note_sequence` must be type `NoteSequence`, note_sequence: {note_sequence}')
+        validate_type('note_sequence', note_sequence, NoteSequence)
+
         self.note_sequence = note_sequence
         self.improvising = False
         self.pre_play_hooks: Dict[str, Any] = {}
