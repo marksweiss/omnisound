@@ -7,6 +7,8 @@
 from copy import copy
 from typing import Any, List, Union
 
+import pytest
+
 from aleatoric.meter import Meter, NoteDur
 from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
@@ -34,16 +36,21 @@ class Measure(NoteSequence):
 
     DEFAULT_METER = Meter(beats_per_measure=4, beat_dur=NoteDur.QUARTER, quantizing=True)
 
-    def __init__(self, note_list: List[Note], performance_attrs: PerformanceAttrs = None,
-                 meter: Meter = None, swing: Swing = None):
-        validate_optional_types(('swing', swing, Swing), ('meter', meter, Meter))
-        super(Measure, self).__init__(note_list=note_list, performance_attrs=performance_attrs)
+    def __init__(self, to_add: Union[List[Note], NoteSequence],
+                 meter: Meter = None,
+                 swing: Swing = None,
+                 performance_attrs: PerformanceAttrs = None):
+        validate_optional_types(('meter', meter, Meter), ('swing', swing, Swing),
+                                ('performance_attrs', performance_attrs, PerformanceAttrs))
+        # Don't validate to_add because it's validated in NoteSequence.__init__()
+        super(Measure, self).__init__(to_add=to_add)
 
         # Sort notes by start time to manage adding on beat
         # NOTE: This modifies the note_sequence in place
         self.note_list.sort(key=lambda x: x.start)
         self.meter = meter or copy(Measure.DEFAULT_METER)
         self.swing = swing
+        self.measure_performance_attrs = performance_attrs
         # Support adding notes based on Meter
         self.beat = 0
         # Support adding notes offset from end of previous note
@@ -165,6 +172,15 @@ class Measure(NoteSequence):
     # Adding notes in sequence from the current start time, one note immediately after another
 
     # Quantize notes
+    def quantizing_on(self):
+        self.meter.quantizing_on()
+
+    def quantizing_off(self):
+        self.meter.quantizing_off()
+
+    def is_quantizing(self):
+        return self.meter.is_quantizing()
+
     def quantize(self):
         self.meter.quantize(self)
 
@@ -173,6 +189,24 @@ class Measure(NoteSequence):
     # /Quantize notes
 
     # Apply Swing and Phrasing to notes
+    def swing_on(self):
+        if self.swing:
+            self.swing.swing_on()
+        else:
+            raise MeasureSwingNotEnabledException('Measure.swing_on() called but swing is None in Measure')
+
+    def swing_off(self):
+        if self.swing:
+            self.swing.swing_off()
+        else:
+            raise MeasureSwingNotEnabledException('Measure.swing_off() called but swing is None in Measure')
+
+    def is_swing_on(self):
+        if self.swing:
+            return self.swing.is_swing_on()
+        else:
+            raise MeasureSwingNotEnabledException('Measure.is_swing_on() called but swing is None in Measure')
+
     def apply_swing(self):
         """Moves all notes in Measure according to how self.swing is configured.
         """
@@ -186,16 +220,40 @@ class Measure(NoteSequence):
            The idea is to slightly accentuate the metric phrasing of each measure. Handles boundary condition
            of having 0 or 1 notes. If there is only 1 note no adjustment is made.
         """
-        if len(self.note_list) > 1:
-            self.note_list[0].start += \
-                self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
-            self.note_list[-1].start += \
-                self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+        if self.swing:
+            if len(self.note_list) > 1:
+                self.note_list[0].start += \
+                    self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
+                self.note_list[-1].start += \
+                    self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+        else:
+            raise MeasureSwingNotEnabledException('Measure.apply_phrasing() called but swing is None in Measure')
     # /Apply Swing and Phrasing to notes
 
     # Getters and setters for all core note properties, get from all notes, apply to all notes
     # Getters retrieve the value for a note property from each note and return a list of values
     # Setters apply a value for a note property to each note in the note_list
+    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    @property
+    def pa(self):
+        return self.measure_performance_attrs
+
+    @pa.setter
+    def pa(self, performance_attrs: PerformanceAttrs):
+        self.measure_performance_attrs = performance_attrs
+        for note in self.note_list:
+            note.performance_attrs = performance_attrs
+
+    @property
+    def performance_attrs(self):
+        return self.measure_performance_attrs
+
+    @performance_attrs.setter
+    def performance_attrs(self, performance_attrs: PerformanceAttrs):
+        self.measure_performance_attrs = performance_attrs
+        for note in self.note_list:
+            note.performance_attrs = performance_attrs
+
     def get_instrument(self) -> List[int]:
         return [note.instrument for note in self.note_list]
 
@@ -252,6 +310,11 @@ class Measure(NoteSequence):
     # Getters and setters for all core note properties, get from all notes, apply to all notes
 
     # Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
+    def get_notes_attr(self, name: str) -> List[Any]:
+        """Return list of all values for attribute `name` from all notes in the measure, in start time order"""
+        validate_type('name', name, str)
+        return [getattr(note, name) for note in self.note_list]
+
     def set_notes_attr(self, name: str, val: Any):
         """Apply to all notes in note_list"""
         validate_type('name', name, str)
@@ -291,14 +354,28 @@ class Measure(NoteSequence):
         return self
     # /NoteSequence note_list management
 
+    # Iterator support
+    def __eq__(self, other: 'Measure') -> bool:
+        if len(self.note_list) != len(other.note_list):
+            return False
+        for i, note in enumerate(self.note_list):
+            if note != other.note_list[i]:
+                return False
+        return self.meter == other.meter and \
+            self.swing == other.swing and \
+            self.beat == other.beat and \
+            self.next_note_start == pytest.approx(other.next_note_start) and \
+            self.max_duration == pytest.approx(other.max_duration)
+    # /Iterator support
+
     # noinspection PyUnresolvedReferences
     @staticmethod
     def copy(source_measure: 'Measure') -> 'Measure':
         # Call the dup() for the subclass of this note type
         new_note_list = [(note.copy(note))
-                         for note in source_measure.note_sequence.note_list]
-        new_measure = Measure(note_list=new_note_list,
-                              performance_attrs=source_measure.note_sequence.performance_attrs,
-                              meter=source_measure.meter, swing=source_measure.swing)
+                         for note in source_measure.note_list]
+        new_measure = Measure(to_add=new_note_list,
+                              meter=source_measure.meter, swing=source_measure.swing,
+                              performance_attrs=source_measure.measure_performance_attrs)
         new_measure.beat = source_measure.beat
         return new_measure

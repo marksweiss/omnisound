@@ -41,24 +41,24 @@ def test_validate_optional_sequence_of_types():
 
     # Case: None seq_val returns True because validator is *_optional_*()
     seq_val = None
-    assert validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+    assert validate_optional_sequence_of_type(arg_name, seq_val, val_type)
 
     # Case: empty sequence returns True because validator is *_optional_*()
     seq_val = []
-    assert validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+    assert validate_optional_sequence_of_type(arg_name, seq_val, val_type)
     seq_val = ()
-    assert validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+    assert validate_optional_sequence_of_type(arg_name, seq_val, val_type)
     seq_val = set()
-    assert validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+    assert validate_optional_sequence_of_type(arg_name, seq_val, val_type)
 
     # Case: non-empty sequence in which all elements are of type val_type returns True
     seq_val = [1, 2, 3]
-    assert validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+    assert validate_optional_sequence_of_type(arg_name, seq_val, val_type)
 
     # Case: non-empty sequence in which not all elements are of type val_type raises
     seq_val = [1, 2, 3.0]
     with pytest.raises(ValueError):
-        validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+        validate_optional_sequence_of_type(arg_name, seq_val, val_type)
 
 
 def test_validate_sequence_of_types():
@@ -67,12 +67,12 @@ def test_validate_sequence_of_types():
 
     # Case: non-empty sequence in which all elements are of type val_type returns True
     seq_val = [1, 2, 3]
-    assert validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+    assert validate_optional_sequence_of_type(arg_name, seq_val, val_type)
 
     # Case: non-empty sequence in which not all elements are of type val_type raises
     seq_val = [1, 2, 3.0]
     with pytest.raises(ValueError):
-        validate_optional_sequence_of_types(arg_name, seq_val, val_type)
+        validate_optional_sequence_of_type(arg_name, seq_val, val_type)
 
 
 def test_validate_optional_type():

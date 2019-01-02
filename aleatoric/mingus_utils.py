@@ -7,7 +7,7 @@ from aleatoric.foxdot_supercollider_note import FoxDotSupercolliderNote
 from aleatoric.midi_note import MidiNote
 from aleatoric.scale_globals import MajorKey, MinorKey
 from aleatoric.utils import (validate_types, validate_type_choice,
-                             validate_type_reference_choice, validate_sequence_of_types)
+                             validate_type_reference_choice, validate_sequence_of_type)
 
 
 def get_note_for_mingus_key(matched_key_type: Any,
@@ -42,7 +42,7 @@ def get_notes_for_mingus_keys(matched_key_type: Any,
                               validate=True):
     if validate:
         validate_type_reference_choice('matched_key_type', matched_key_type, (MajorKey, MinorKey))
-        validate_sequence_of_types('mingus_key_list', mingus_key_list, str)
+        validate_sequence_of_type('mingus_key_list', mingus_key_list, str)
         validate_types(('mingus_key_to_key_enum_mapping', mingus_key_to_key_enum_mapping, Dict),
                        ('octave', octave, int))
         validate_type_choice('note_prototype', note_prototype,
