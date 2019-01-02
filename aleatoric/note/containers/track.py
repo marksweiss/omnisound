@@ -1,15 +1,16 @@
 # Copyright 2018 Mark S. Weiss
 
 from itertools import chain
-
 from typing import List, Optional, Union
 
-from aleatoric.note.containers.measure import Measure
-from aleatoric.note.modifiers.meter import Meter
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.containers.measure import Measure
 from aleatoric.note.containers.section import Section
+from aleatoric.note.modifiers.meter import Meter
 from aleatoric.note.modifiers.swing import Swing
-from aleatoric.utils.utils import (validate_optional_type, validate_optional_types, validate_optional_sequence_of_type,
+from aleatoric.utils.utils import (validate_optional_sequence_of_type,
+                                   validate_optional_type,
+                                   validate_optional_types,
                                    validate_sequence_of_type, validate_type)
 
 

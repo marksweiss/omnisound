@@ -4,8 +4,8 @@ import pytest
 
 from aleatoric.note.adapters.csound_note import CSoundNote
 from aleatoric.note.generators.scale import Scale
-from aleatoric.note.generators.scale_globals import MajorKey, MinorKey, HarmonicScale
-
+from aleatoric.note.generators.scale_globals import (HarmonicScale, MajorKey,
+                                                     MinorKey)
 
 INSTRUMENT = 1
 START = 0.0
@@ -68,4 +68,3 @@ def test_get_pitch_for_key(note, scale):
 
 if __name__ == '__main__':
     pytest.main(['-xrf'])
-

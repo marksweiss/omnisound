@@ -3,6 +3,7 @@
 from time import sleep
 
 from FoxDot import Player as FD_SC_Player
+
 # noinspection PyProtectedMember
 from aleatoric.note.containers.note_sequence import NoteSequence
 from aleatoric.player.player import Player, PlayerNoNotesException

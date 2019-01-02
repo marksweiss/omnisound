@@ -2,9 +2,8 @@
 
 import pytest
 
-from aleatoric.utils.utils import *
 from aleatoric.test.test_globals import ENUM_VAL, TestEnum
-
+from aleatoric.utils.utils import *
 
 ARG_NAME = 'arg'
 

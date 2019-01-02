@@ -5,8 +5,10 @@ from typing import List, Tuple
 import pytest
 
 from aleatoric.note.adapters.csound_note import CSoundNote
-from aleatoric.note.containers.measure import Measure, MeasureSwingNotEnabledException, Meter, NoteDur, Swing
-from aleatoric.note.containers.measure import NoteSequence
+from aleatoric.note.containers.measure import (Measure,
+                                               MeasureSwingNotEnabledException,
+                                               Meter, NoteDur, NoteSequence,
+                                               Swing)
 
 INSTRUMENT = 1
 START = 0.0

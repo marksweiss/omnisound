@@ -14,5 +14,3 @@ ENUM_VAL = 1
 
 class TestEnum(Enum):
     ENUM_NAME = ENUM_VAL
-
-

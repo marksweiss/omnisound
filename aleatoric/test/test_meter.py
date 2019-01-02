@@ -6,7 +6,6 @@ from aleatoric.note.adapters.csound_note import CSoundNote
 from aleatoric.note.containers.measure import Meter, NoteDur
 from aleatoric.note.containers.note_sequence import NoteSequence
 
-
 INSTRUMENT = 1
 START = 0.0
 DUR = float(NoteDur.QUARTER.value)

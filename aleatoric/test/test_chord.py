@@ -2,12 +2,10 @@
 
 import pytest
 
+from aleatoric.note.adapters.csound_note import CSoundNote
 from aleatoric.note.generators.chord import Chord
 from aleatoric.note.generators.chord_globals import HarmonicChord
-from aleatoric.note.adapters.csound_note import CSoundNote
-from aleatoric.note.generators.scale_globals import HarmonicScale
-from aleatoric.note.generators.scale_globals import MajorKey
-
+from aleatoric.note.generators.scale_globals import HarmonicScale, MajorKey
 
 INSTRUMENT = 1
 START = 0.0

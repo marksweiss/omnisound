@@ -4,7 +4,9 @@ from enum import Enum
 
 from aleatoric.note.adapters.note import Note
 from aleatoric.note.containers.note_sequence import NoteSequence
-from aleatoric.utils.utils import sign, validate_optional_type, validate_optional_types, validate_type, validate_types
+from aleatoric.utils.utils import (sign, validate_optional_type,
+                                   validate_optional_types, validate_type,
+                                   validate_types)
 
 
 class Swing(object):

@@ -2,15 +2,15 @@
 
 from time import sleep
 
-# noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from aleatoric.note.adapters.foxdot_supercollider_note import FIELDS, FoxDotSupercolliderNote
+from aleatoric.note.adapters.foxdot_supercollider_note import (FIELDS,
+                                                               FoxDotSupercolliderNote)
 from aleatoric.note.adapters.note import NoteConfig
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 from aleatoric.note.containers.note_sequence import NoteSequence
-from aleatoric.player.foxdot_supercollider_player import FoxDotSupercolliderPlayer
-
+from aleatoric.player.foxdot_supercollider_player import \
+    FoxDotSupercolliderPlayer
 
 if __name__ == '__main__':
     # This is a test

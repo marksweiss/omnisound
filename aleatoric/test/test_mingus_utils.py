@@ -1,12 +1,12 @@
 # Copyright 2018 Mark S. Weiss
 
-from aleatoric.note.adapters.csound_note import CSoundNote
-from aleatoric.utils.mingus_utils import get_note_for_mingus_key, get_notes_for_mingus_keys
-from aleatoric.note.generators.scale import Scale
-from aleatoric.note.generators.scale_globals import MajorKey
-
 import pytest
 
+from aleatoric.note.adapters.csound_note import CSoundNote
+from aleatoric.note.generators.scale import Scale
+from aleatoric.note.generators.scale_globals import MajorKey
+from aleatoric.utils.mingus_utils import (get_note_for_mingus_key,
+                                          get_notes_for_mingus_keys)
 
 MATCHED_KEY_TYPE = MajorKey
 MINGUS_KEY = 'C'

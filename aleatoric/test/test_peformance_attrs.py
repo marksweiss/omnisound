@@ -4,7 +4,6 @@ import pytest
 
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 
-
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100
 ATTR_TYPE = int

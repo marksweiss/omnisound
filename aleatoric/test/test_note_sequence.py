@@ -1,11 +1,13 @@
 # Copyright 2018 Mark S. Weiss
 
 import pytest
-# noinspection PyProtectedMember
 
 from aleatoric.note.adapters.csound_note import CSoundNote
-from aleatoric.note.containers.note_sequence import NoteSequence
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.containers.note_sequence import NoteSequence
+
+# noinspection PyProtectedMember
+
 
 
 INSTRUMENT = 1
