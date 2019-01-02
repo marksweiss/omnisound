@@ -114,6 +114,14 @@ def test_performance_attrs(performance_attrs, measure_list):
     assert pa_dict[ATTR_NAME] == new_attr_val
     assert isinstance(pa_dict[ATTR_NAME], ATTR_TYPE)
 
+    new_attr_val = ATTR_VAL - 1
+    new_performance_attrs = PerformanceAttrs()
+    new_performance_attrs.add_attr(ATTR_NAME, new_attr_val, ATTR_TYPE)
+    section.pa = new_performance_attrs
+    pa_dict = section.pa.as_dict()
+    assert pa_dict[ATTR_NAME] == new_attr_val
+    assert isinstance(pa_dict[ATTR_NAME], ATTR_TYPE)
+
 
 def test_swing_on_apply_swing(section):
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
@@ -234,17 +242,50 @@ def test_section_add_lshift_extend(measure, measure_list, section):
     assert len(section) == expected_len
     # Append/Add with lshift syntax
     expected_len += 1
+    # noinspection PyStatementEffect
     section << measure
     assert len(section) == expected_len
     expected_len += 2
-    section += [measure, measure]
+    # noinspection PyStatementEffect
+    section << [measure, measure]
     assert len(section) == expected_len
-    # Extendj
+    # Extend
     expected_len += 1
     section.extend(measure)
     expected_len += 2
     section.extend([measure, measure])
     assert len(section) == expected_len
+
+
+def test_section_insert_remove_getitem(measure, measure_list, section):
+    empty_measure_list = []
+    section = Section(measure_list=empty_measure_list)
+    assert len(section) == 0
+
+    # Insert a single measure at the front of the list
+    section.insert(0, measure)
+    measure_front = section[0]
+    assert measure_front == measure
+
+    # Insert a list of 2 measures at the front of the section
+    empty_measure_list = []
+    section = Section(measure_list=empty_measure_list)
+    measure_1 = Measure.copy(measure)
+    measure_1.instrument = INSTRUMENT
+    measure_2 = Measure.copy(measure)
+    new_instrument = INSTRUMENT + 1
+    measure_2.instrument = new_instrument
+    measure_list = [measure_1, measure_2]
+    section.insert(0, measure_list)
+    assert section[0].instrument == [INSTRUMENT, INSTRUMENT, INSTRUMENT, INSTRUMENT]
+    assert section[1].instrument == [new_instrument, new_instrument, new_instrument, new_instrument]
+
+    # After removing a measure, the new front note is the one added second to most recently
+    expected_instrument = section[1].instrument
+    measure_to_remove = section[0]
+    section.remove(measure_to_remove)
+    assert len(section) == 1
+    assert section[0].instrument == expected_instrument
 
 
 def test_set_get_instrument(section):

@@ -25,9 +25,10 @@ class Section(object):
                  performance_attrs: Optional[PerformanceAttrs] = None):
         validate_optional_types(('performance_attrs', performance_attrs, PerformanceAttrs),
                                 ('meter', meter, Meter), ('swing', swing, Swing))
-        validate_optional_sequence_of_type('measure', measure_list, Measure)
 
+        validate_optional_sequence_of_type('measure_list', measure_list, Measure)
         self.measure_list = measure_list or []
+
         self.section_performance_attrs = performance_attrs
         self.section_meter = meter
         self.section_swing = swing
@@ -95,7 +96,6 @@ class Section(object):
             measure.apply_phrasing()
     # /Swing for all Measures in the Section
 
-    # TODO TEST
     # Getters and setters for all core note properties, get from all notes, apply to all notes
     @property
     def pa(self):
@@ -240,6 +240,12 @@ class Section(object):
     # Iter / slice support
     def __len__(self) -> int:
         return len(self.measure_list)
+
+    def __getitem__(self, index: int) -> Measure:
+        validate_type('index', index, int)
+        if abs(index) >= len(self.measure_list):
+            raise ValueError(f'`index` out of range index: {index} len(measure_list): {len(self.measure_list)}')
+        return self.measure_list[index]
 
     def __iter__(self) -> 'Section':
         self.index = 0

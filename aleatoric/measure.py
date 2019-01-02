@@ -13,7 +13,7 @@ from aleatoric.meter import Meter, NoteDur
 from aleatoric.note import Note, PerformanceAttrs
 from aleatoric.note_sequence import NoteSequence
 from aleatoric.swing import Swing
-from aleatoric.utils import validate_optional_sequence_of_type, validate_optional_types, validate_type, validate_types
+from aleatoric.utils import validate_optional_types, validate_type, validate_types
 
 
 class MeasureSwingNotEnabledException(Exception):
@@ -246,7 +246,7 @@ class Measure(NoteSequence):
 
     @property
     def performance_attrs(self):
-        return self.section_performance_attrs
+        return self.measure_performance_attrs
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):

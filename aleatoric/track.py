@@ -5,8 +5,10 @@ from itertools import chain
 from typing import List, Optional, Union
 
 from aleatoric.measure import Measure
+from aleatoric.meter import Meter
 from aleatoric.note import PerformanceAttrs
 from aleatoric.section import Section
+from aleatoric.swing import Swing
 from aleatoric.utils import (validate_optional_type, validate_optional_types, validate_optional_sequence_of_type,
                              validate_sequence_of_type, validate_type)
 
@@ -27,30 +29,50 @@ class Track(Section):
     DEFAULT_INSTRUMENT = 0
 
     def __init__(self, to_add: Optional[Union[List[Measure], Section]] = None,
+                 meter: Optional[Meter] = None,
+                 swing: Optional[Swing] = None,
                  instrument: Optional[int] = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
-        validate_optional_types(('instrument', instrument, int),
+        validate_optional_types(('meter', meter, Meter),
+                                ('swing', swing, Swing),
+                                ('instrument', instrument, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
 
-        measure_list = None
-        try:
-            validate_optional_sequence_of_type('to_add', to_add, Measure)
-            measure_list = to_add
-        except ValueError:
-            pass
-        if not measure_list:
-            validate_optional_type('to_add', to_add, Section)
-            measure_list = to_add.measure_list
+        # Track any Sections added to the Track separately from the underlying measure_list, so client
+        # can access Measures directly or through their Section. Modifying measures in the Section will
+        # modify them in the Track by reference.
+        # NOTE: This is NOT maintained in order after insert/remove operations
+        self._section_list = []
 
-        self.track_instrument = instrument or Track.DEFAULT_INSTRUMENT
+        # Get the measure_list from either List[Measure] or Section
+        measure_list = []
+        if to_add == list():
+            measure_list = to_add
+        else:
+            try:
+                validate_optional_sequence_of_type('to_add', to_add, Measure)
+                measure_list = to_add
+            except ValueError:
+                pass
+            if not measure_list:
+                validate_optional_type('to_add', to_add, Section)
+                measure_list = to_add.measure_list
+                self._section_list.append(to_add)
+
         self.index = 0
 
-        # TODO TEST
-        if self.track_instrument:
+        # Set the instrument stored at the Track level. Also if an `instrument` was passed in,
+        # modify all Measures, which will in turn modify all of their Notes
+        if instrument:
             for measure in measure_list:
-                measure.instrument = self.track_instrument
+                measure.instrument = instrument
+            self.track_instrument = instrument
+        else:
+            self.track_instrument = Track.DEFAULT_INSTRUMENT
 
         super(Track, self).__init__(measure_list=measure_list,
+                                    meter=meter,
+                                    swing=swing,
                                     performance_attrs=performance_attrs)
 
     # Getters and setters for all core note properties, get from all notes, apply to all notes
@@ -58,7 +80,6 @@ class Track(Section):
         return list(chain.from_iterable([measure.instrument for measure in self.measure_list]))
 
     def set_instrument(self, instrument: int):
-        # TODO TEST
         validate_type('instrument', instrument, int)
         self.track_instrument = instrument
         for measure in self.measure_list:
@@ -67,6 +88,14 @@ class Track(Section):
     instrument = property(get_instrument, set_instrument)
     i = property(get_instrument, set_instrument)
     # Getters and setters for all core note properties, get from all notes, apply to all notes
+
+    # Section accessor. Read only
+    def get_section_list(self) -> List[Section]:
+        return self._section_list
+
+    section_list = property(get_section_list, None)
+
+    # /Section accessor. Read only
 
     # Measure list management
     def append(self, measure: Measure) -> 'Track':
@@ -85,6 +114,7 @@ class Track(Section):
         try:
             validate_type('to_add', to_add, Section)
             self.measure_list.extend(to_add.measure_list)
+            self._section_list.append(to_add)
             return self
         except ValueError:
             pass
@@ -115,6 +145,9 @@ class Track(Section):
             for measure in to_add.measure_list:
                 self.measure_list.insert(index, measure)
                 index += 1
+            # NOTE: This does NOT preserve Section order in the Track. It just maintains a list of Sections
+            # which can thus be accessed by reference
+            self._section_list.append(to_add)
             return self
         except ValueError:
             pass
@@ -138,6 +171,9 @@ class Track(Section):
             validate_type('to_remove', to_remove, Section)
             for measure in to_remove.measure_list:
                 self.measure_list.remove(measure)
+            # NOTE: This does NOT preserve Section order in the Track. It just maintains a list of Sections
+            # which can thus be accessed by reference
+            self._section_list.remove(to_remove)
             return self
         except ValueError:
             pass
@@ -176,17 +212,25 @@ class Track(Section):
         if source_track.measure_list:
             measure_list = [Measure.copy(measure) for measure in source_track.measure_list]
 
-        new_track = Track(to_add=measure_list, instrument=source_track.track_instrument,
+        new_track = Track(to_add=measure_list,
+                          instrument=source_track.track_instrument,
+                          meter=source_track.meter,
+                          swing=source_track.swing,
                           performance_attrs=source_track.performance_attrs)
         return new_track
 
 
 class MidiTrack(Track):
-    def __init__(self, to_add: Optional[List[Measure]] = None,
-                 channel: int = None,
+    def __init__(self, to_add: Optional[Union[List[Measure], Section]] = None,
+                 meter: Optional[Meter] = None,
+                 swing: Optional[Swing] = None,
                  instrument: Optional[int] = None,
+                 channel: int = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
         validate_type('channel', channel, int)
-        super(MidiTrack, self).__init__(to_add=to_add, instrument=instrument,
-                                        performance_attrs=performance_attrs)
         self.channel = channel
+        super(MidiTrack, self).__init__(to_add=to_add,
+                                        meter=meter,
+                                        swing=swing,
+                                        instrument=instrument,
+                                        performance_attrs=performance_attrs)
