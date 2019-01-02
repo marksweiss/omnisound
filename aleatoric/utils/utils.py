@@ -8,7 +8,7 @@ from typing import Any, Dict, Optional, Tuple
 # enum_to_dict() methods call eval() and are used with these enum types, and when eval() is called
 # if fails if these types are not in module scope
 # noinspection PyUnresolvedReferences
-from aleatoric.scale_globals import MajorKey, MinorKey
+from aleatoric.note.generators.scale_globals import MajorKey, MinorKey
 # Imported so test_utils test of enum_to_dict() will run
 # noinspection PyUnresolvedReferences
 from aleatoric.test.test_globals import TestEnum

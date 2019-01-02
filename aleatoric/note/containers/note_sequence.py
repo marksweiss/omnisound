@@ -2,8 +2,8 @@
 
 from typing import List, Union
 
-from aleatoric.note import Note
-from aleatoric.utils import validate_optional_type, validate_sequence_of_type, validate_type
+from aleatoric.note.adapters.note import Note
+from aleatoric.utils.utils import validate_sequence_of_type, validate_type
 
 
 class NoteSequence(object):

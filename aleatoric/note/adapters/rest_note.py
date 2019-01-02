@@ -2,7 +2,8 @@
 
 from typing import Any
 
-from aleatoric.note import Note, PerformanceAttrs
+from aleatoric.note.adapters.note import Note
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 
 
 class RestNote(Note):

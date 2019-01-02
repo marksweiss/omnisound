@@ -3,8 +3,8 @@
 from bisect import bisect_left
 from enum import Enum
 
-from aleatoric.note_sequence import NoteSequence
-from aleatoric.utils import validate_optional_types, validate_type
+from aleatoric.note.containers.note_sequence import NoteSequence
+from aleatoric.utils.utils import validate_optional_types, validate_type
 
 
 class NoteDur(Enum):

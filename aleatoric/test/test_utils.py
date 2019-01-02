@@ -2,7 +2,7 @@
 
 import pytest
 
-from aleatoric.utils import *
+from aleatoric.utils.utils import *
 from aleatoric.test.test_globals import ENUM_VAL, TestEnum
 
 
@@ -159,6 +159,7 @@ def test_validate_types():
         val_1 = 1
         val_2 = 1
         assert validate_optional_types((arg_name_1, val_1, val_type_1), (arg_name_2, val_2, val_type_2))
+
 
 def test_validate_type_choice():
     arg_name = 'arg'

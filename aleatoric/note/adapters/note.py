@@ -3,8 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Union
 
-from aleatoric.performance_attrs import PerformanceAttrs
-from aleatoric.scale_globals import MajorKey, MinorKey
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.generators.scale_globals import MajorKey, MinorKey
 
 
 class NoteConfig(object):
@@ -142,7 +142,7 @@ class Note(ABC):
         raise NotImplemented('Derived type must implement Note.p')
 
     @abstractmethod
-    def transpose (self, interval: int):
+    def transpose(self, interval: int):
         raise NotImplemented('Derived type must implement Note.transpose -> Note')
 
     @property

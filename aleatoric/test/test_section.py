@@ -4,11 +4,11 @@ from typing import List
 
 import pytest
 
-from aleatoric.csound_note import CSoundNote
-from aleatoric.measure import Measure, Meter, NoteDur, Swing
-from aleatoric.note import PerformanceAttrs
-from aleatoric.note_sequence import NoteSequence
-from aleatoric.section import Section
+from aleatoric.note.adapters.csound_note import CSoundNote
+from aleatoric.note.containers.measure import Measure, Meter, NoteDur, Swing
+from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
+from aleatoric.note.containers.note_sequence import NoteSequence
+from aleatoric.note.containers.section import Section
 
 
 INSTRUMENT = 1
