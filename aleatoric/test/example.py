@@ -10,20 +10,33 @@ from aleatoric.note.adapters.foxdot_supercollider_note import (FIELDS,
 from aleatoric.note.adapters.note import NoteConfig
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 from aleatoric.note.containers.note_sequence import NoteSequence
+from aleatoric.note.generators.chord import Chord, HarmonicChord
+from aleatoric.note.generators.scale import HarmonicScale, Scale
+from aleatoric.note.generators.scale_globals import HarmonicScale, MajorKey
 from aleatoric.player.foxdot_supercollider_player import \
     FoxDotSupercolliderPlayer
 
+KEY = MajorKey.C
+OCTAVE = 4
+HARMONIC_SCALE = HarmonicScale.Major
+NOTE_CLS = FoxDotSupercolliderNote
+
+
 if __name__ == '__main__':
-    # This is a test
     performance_attrs = PerformanceAttrs()
 
-    notes = []
     note_config = NoteConfig(FIELDS)
     note_config.name = 'test_note'
     note_config.synth_def = fd_sc_synth
     note_config.amp = 1.0
     note_config.oct = 2
     note_config.scale = 'lydian'
+    note = FoxDotSupercolliderNote(**note_config.as_dict(), performance_attrs=performance_attrs)
+
+    scale = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, note_cls=NOTE_CLS, note_prototype=note)
+    notes_in_scale = scale.note_list
+
+    notes = []
     idur = 1.0
     delay = 0.0
     for i in range(15):
