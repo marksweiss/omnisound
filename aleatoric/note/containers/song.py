@@ -19,6 +19,11 @@ class Song(object):
        on Supercollider server, etc. The main element of the Song API is that it maintains an ordered list
        of Tracks in the song, which can also be named and accessed by name.
 
+       Tracks can be added with their own optional `track.name` attribute, which if present will be used to map
+       the track by name. If the optional standalone `name` arg is passed to methods that take it,
+       such as `append()` or `extend()`, then this name will override the name, if any, in `track.name`
+       and the track will be mapped to the standalone `name` arg.
+
        Support meter and swing attributes at the Song level and applies them to all Tracks, all Measures in those
        Tracks, to all Notes in those Measures. These attributes make sense to apply globally at the Song level. Also
        supports Song-level PerformanceAttributes, to, for example, apply some effect etc. to all Notes in all
@@ -49,6 +54,9 @@ class Song(object):
                 validate_optional_type('to_add', to_add, Track)
                 track_list = [to_add]
         self.track_list = track_list
+        for track in track_list:
+            if track.name:
+                self.track_map[track.name] = track
 
         self.meter = meter
         if meter:
@@ -68,8 +76,11 @@ class Song(object):
         validate_type('track', track, Track)
         validate_optional_type('name', name, str)
         self.track_list.append(track)
-        if name:
-            self.track_map[name] = track
+
+        # Use `name` arg if present, then `track.name` if present
+        track_name = name or track.name
+        if track_name:
+            self.track_map[track_name] = track
         return self
 
     # TODO MAKE string name for track optional in ALL METHODS
