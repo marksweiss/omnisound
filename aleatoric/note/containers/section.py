@@ -31,7 +31,15 @@ class Section(object):
 
         self.section_performance_attrs = performance_attrs
         self.section_meter = meter
+        # TODO
+        if meter:
+            for measure in self.measure_list:
+                measure.swing = meter
         self.section_swing = swing
+        # TODO
+        if swing:
+            for measure in self.measure_list:
+                measure.swing = swing
         self.index = 0
 
         if self.section_performance_attrs:
