@@ -31,13 +31,14 @@ class Song(object):
     """
 
     def __init__(self, to_add: Optional[Union[List[Track], Track]] = None,
+                 name: str = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
         validate_optional_types(('meter', meter, Meter),
                                 ('swing', swing, Swing),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-
+        self.name = name
         self.track_map = {}
         self.index = 0
 
@@ -83,26 +84,50 @@ class Song(object):
             self.track_map[track_name] = track
         return self
 
-    # TODO MAKE string name for track optional in ALL METHODS
-    # TODO DIFFERENT METHODS?
-    def extend(self, to_add: Tuple[str, Union[List[Track], Track]]) -> 'Song':
+    def extend(self, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
+        """`to_add` arg can be either:
+            - a single Track
+            - a List[Track]
+            - a List[Tuple[str, Track]]
+
+            - If a Track is passed in, the Track will be added to `track_list` and, if the Track has a name,
+            to `track_map` also.
+            - If a List[Track] is passed in, Tracks will be added to `track_list` and, if the Track has a name,
+            to a `track_map` also.
+            - If a List[Tuple[str, Track]] is passed in, Tracks will be added to `track_list` and, added to
+            to `track_map` using the `name` associated with each Track in each Tuple
+        """
+        try:
+            validate_type('to_add', to_add, Track)
+            self.append('to_add', to_add)
+            return self
+        except ValueError:
+            pass
+
+        try:
+            validate_sequence_of_type('to_add', to_add, Track)
+            self.track_list.extend(to_add)
+            for track in to_add:
+                if track.name:
+                    self.track_map[track.name] = track
+            return self
+        except ValueError:
+            pass
+
         validate_type('to_add', to_add, tuple)
-        for elem in to_add:
-            assert len(elem) == 2
         for name, track in to_add:
-            validate_type('name', name, str)
-            validate_type('track', track, Track)
+            validate_types(('name', name, str), ('track', track, Track))
             self.track_list.append(track)
             self.track_map[name] = track
         return self
 
-    def __add__(self, to_add: Tuple[str, Union[List[Track], Track]]) -> 'Song':
+    def __add__(self, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
         return self.extend(to_add)
 
-    def __lshift__(self, to_add: Tuple[str, Union[List[Track], Track]]) -> 'Song':
+    def __lshift__(self, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
         return self.extend(to_add)
 
-    def insert(self, index: int, to_add: Tuple[str, Union[List[Track], Track]]) -> 'Song':
+    def insert(self, index: int, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
         validate_type('index', index, int)
 
         try:
@@ -112,25 +137,44 @@ class Song(object):
         except ValueError:
             pass
 
-        validate_sequence_of_type('to_add', to_add, Track)
-        for track in to_add:
+        try:
+            validate_sequence_of_type('to_add', to_add, Track)
+            for track in to_add:
+                self.track_list.insert(index, track)
+                index += 1
+            return self
+        except ValueError:
+            pass
+
+        validate_type('to_add', to_add, tuple)
+        for name, track in to_add:
+            validate_types(('name', name, str), ('track', track, Track))
             self.track_list.insert(index, track)
             index += 1
-
+            self.track_map[name] = track
         return self
 
     def remove(self, to_remove: Tuple[str, Union[List[Track], Track]]) -> 'Song':
         try:
             validate_type('to_remove', to_remove, Track)
-            self.track_list.remove(to_remove)
+            self.track_list.insert(index, to_remove)
             return self
         except ValueError:
             pass
 
-        validate_sequence_of_type('to_remove', to_remove, Track)
-        for track in to_remove:
-            self.track_list.remove(track)
+        try:
+            validate_sequence_of_type('to_remove', to_remove, Track)
+            for track in to_remove:
+                self.track_list.remove(track)
+            return self
+        except ValueError:
+            pass
 
+        validate_type('to_remove', to_remove, tuple)
+        for name, track in to_remove:
+            validate_types(('name', name, str), ('track', track, Track))
+            self.track_list.remove(track)
+            del self.track_map[name]
         return self
     # /Measure list management
 
@@ -162,6 +206,7 @@ class Song(object):
             track_list = [Track.copy(track) for track in source_song.track_list]
 
         new_song = Song(to_add=track_list,
+                        name=name,
                         meter=source_song.meter,
                         swing=source_song.swing,
                         performance_attrs=source_song.performance_attrs)
