@@ -65,6 +65,13 @@ def validate_not_none(arg_name, val) -> bool:
     return True
 
 
+# TODO TEST
+def validate_not_falsey(arg_name, val) -> bool:
+    if not val:
+        raise ValueError(f'`{arg_name}` must not be falsey')
+    return True
+
+
 def validate_sequence_of_type(arg_name, seq_val, val_type) -> bool:
     """Must be a valid collection type. Can be empty. If there are values they must match val_type."""
     validate_type_choice(arg_name, seq_val, (list, tuple, set))
