@@ -125,6 +125,23 @@ def test_track(performance_attrs, measure_list, meter, swing, section):
     assert track.performance_attrs == performance_attrs
 
 
+def test_track_section_map(section):
+    # Case: falsey track.name, not added to map
+    section_name = ''
+    section.name = section_name
+    track = Track(to_add=section)
+    assert not track.section_map
+    # Case: has track.name, added to map
+    section_name = 'section'
+    section.name = section_name
+    track = Track(to_add=section)
+    assert track.section_map
+    assert track.section_map[section_name] == section
+    # Case: removed from map
+    track.remove(section)
+    assert not track.section_map
+
+
 def test_init_set_get_instrument(measure_list, section):
     track = Track(to_add=measure_list, instrument=INSTRUMENT)
     for measure in track.measure_list:
@@ -229,8 +246,6 @@ def test_section_insert_remove_getitem(measure, measure_list, section, track):
     track.insert(0, section)
     assert track[0].instrument == [INSTRUMENT, INSTRUMENT, INSTRUMENT, INSTRUMENT]
     assert track[1].instrument == [new_instrument, new_instrument, new_instrument, new_instrument]
-    # Also assert the track section_list property is updated
-    assert track.section_list == [section]
 
     # After removing a measure, the new front note is the one added second to most recently
     expected_instrument = track[1].instrument
