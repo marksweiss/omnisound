@@ -22,16 +22,27 @@ class Section(object):
     def __init__(self, measure_list: Optional[List[Measure]] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 name: str = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
         validate_optional_types(('performance_attrs', performance_attrs, PerformanceAttrs),
-                                ('meter', meter, Meter), ('swing', swing, Swing))
+                                ('meter', meter, Meter), ('swing', swing, Swing),
+                                ('name', name, str))
 
         validate_optional_sequence_of_type('measure_list', measure_list, Measure)
         self.measure_list = measure_list or []
+        self.name = name
 
         self.section_performance_attrs = performance_attrs
         self.section_meter = meter
+        # TODO
+        if meter:
+            for measure in self.measure_list:
+                measure.swing = meter
         self.section_swing = swing
+        # TODO
+        if swing:
+            for measure in self.measure_list:
+                measure.swing = swing
         self.index = 0
 
         if self.section_performance_attrs:

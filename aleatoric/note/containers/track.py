@@ -32,6 +32,7 @@ class Track(Section):
     def __init__(self, to_add: Optional[Union[List[Measure], Section]] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 name: str = None,
                  instrument: Optional[int] = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
         validate_optional_types(('meter', meter, Meter),
@@ -74,6 +75,7 @@ class Track(Section):
         super(Track, self).__init__(measure_list=measure_list,
                                     meter=meter,
                                     swing=swing,
+                                    name=name,
                                     performance_attrs=performance_attrs)
 
     # Getters and setters for all core note properties, get from all notes, apply to all notes
