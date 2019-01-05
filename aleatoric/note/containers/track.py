@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from itertools import chain
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 from aleatoric.note.containers.measure import Measure
@@ -18,14 +18,19 @@ class Track(Section):
     """A Track is a container of Measures that supports adding, removing and modifying Measures.
        A track is one sequence of notes in a Song. For example, in a MIDI Song, it maps
        directly to all the notes in one MIDI Channel. For other backends it is an abstraction holding one
-       sequence of notes rendered by one Player in the final Performance. Tracks can be constructed empty,
-       or with a list of Measures, and optional PerformanceAttributes. PerformanceAttributes
-       and all other Note attributes when set will be applied to all Measures in the Track, and therefore to all
-       Notes in each Measure in the Track. An instrument can be provided which will likewise be applied to all
-       Measures. Further, Tracks support all of the same Note attributes as Measures as setters. If these are set
-       they will be applied to all Measures in the Track, which will apply them to all Notes in the Measure.
-       Getters also behave like Measures, retrieving all values for an attribute for all Notes in all Measures
-       flattened into a list.
+       sequence of notes rendered by one Player in the final Performance.
+
+       Tracks can be constructed empty, or with a list of Measures, and optional PerformanceAttributes.
+       PerformanceAttributes and all other Note attributes when set will be applied to all Measures in the Track,
+       and therefore to all Notes in each Measure in the Track. An instrument can be provided which will
+       likewise be applied to all Measures. Further, Tracks support all of the same Note attributes as Measures
+       as setters. If these are set they will be applied to all Measures in the Track, which will apply them to all
+       Notes in the Measure. Getters also behave like Measures, retrieving all values for an attribute for all
+       Notes in all Measures flattened into a list.
+
+       Sections with names are also added to a map keyed by their name and can be accessed by name and therefore
+       modified by reference. So tracks can be managed with sections, e.g. 'intro', 'verse', 'chorus', 'bridge',
+       'coda', etc.
     """
     DEFAULT_INSTRUMENT = 0
 
@@ -41,11 +46,7 @@ class Track(Section):
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
 
         self.name = name
-        # Track any Sections added to the Track separately from the underlying measure_list, so client
-        # can access Measures directly or through their Section. Modifying measures in the Section will
-        # modify them in the Track by reference.
-        # NOTE: This is NOT maintained in order after insert/remove operations
-        self._section_list = []
+        self._section_map = {}
 
         # Get the measure_list from either List[Measure] or Section
         measure_list = []
@@ -58,7 +59,8 @@ class Track(Section):
             if not measure_list:
                 validate_optional_type('to_add', to_add, Section)
                 measure_list = to_add.measure_list
-                self._section_list.append(to_add)
+                if to_add.name:
+                    self._section_map[to_add.name] = to_add
 
         self.index = 0
 
@@ -92,11 +94,10 @@ class Track(Section):
     # Getters and setters for all core note properties, get from all notes, apply to all notes
 
     # Section accessor. Read only
-    def get_section_list(self) -> List[Section]:
-        return self._section_list
+    def get_section_map(self) -> Dict[str, Section]:
+        return self._section_map
 
-    section_list = property(get_section_list, None)
-
+    section_map = property(get_section_map, None)
     # /Section accessor. Read only
 
     # Measure list management
@@ -116,7 +117,8 @@ class Track(Section):
         try:
             validate_type('to_add', to_add, Section)
             self.measure_list.extend(to_add.measure_list)
-            self._section_list.append(to_add)
+            if to_add.name:
+                self._section_map[to_add.name] = to_add
             return self
         except ValueError:
             pass
@@ -147,9 +149,7 @@ class Track(Section):
             for measure in to_add.measure_list:
                 self.measure_list.insert(index, measure)
                 index += 1
-            # NOTE: This does NOT preserve Section order in the Track. It just maintains a list of Sections
-            # which can thus be accessed by reference
-            self._section_list.append(to_add)
+            self._section_map[to_add.name] = to_add
             return self
         except ValueError:
             pass
@@ -173,9 +173,8 @@ class Track(Section):
             validate_type('to_remove', to_remove, Section)
             for measure in to_remove.measure_list:
                 self.measure_list.remove(measure)
-            # NOTE: This does NOT preserve Section order in the Track. It just maintains a list of Sections
-            # which can thus be accessed by reference
-            self._section_list.remove(to_remove)
+            if to_remove.name:
+                del self._section_map[to_remove.name]
             return self
         except ValueError:
             pass
