@@ -26,6 +26,8 @@ BEAT_DUR = NoteDur.QRTR
 
 SWING_FACTOR = 0.5
 
+SECTION_NAME = 'section'
+
 
 @pytest.fixture
 def note_list():
@@ -75,7 +77,7 @@ def measure_list(measure):
 
 @pytest.fixture
 def section(measure_list):
-    return Section(measure_list)
+    return Section(measure_list, name=SECTION_NAME)
 
 
 def _apply_swing_and_get_note_starts(measure) -> List[float]:
@@ -87,8 +89,9 @@ def _apply_swing_and_get_note_starts(measure) -> List[float]:
 def test_section(performance_attrs, measure_list):
     # Test: List[Measure] and no instrument or performance_attrs
     # Expect a Section with measures, no track_instrument, no pa and Notes not having reassigned instrument or pa
-    section = Section(measure_list=measure_list)
+    section = Section(measure_list=measure_list, name=SECTION_NAME)
     assert section.measure_list == measure_list
+    assert section.name == SECTION_NAME
     assert section.performance_attrs is None
 
     # Test: List[Measure] with instrument and performance_attrs

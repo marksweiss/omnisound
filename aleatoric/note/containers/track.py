@@ -40,6 +40,7 @@ class Track(Section):
                                 ('instrument', instrument, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
 
+        self.name = name
         # Track any Sections added to the Track separately from the underlying measure_list, so client
         # can access Measures directly or through their Section. Modifying measures in the Section will
         # modify them in the Track by reference.
@@ -48,9 +49,7 @@ class Track(Section):
 
         # Get the measure_list from either List[Measure] or Section
         measure_list = []
-        if to_add == list():
-            measure_list = to_add
-        else:
+        if to_add:
             try:
                 validate_optional_sequence_of_type('to_add', to_add, Measure)
                 measure_list = to_add
@@ -189,13 +188,22 @@ class Track(Section):
     # /Measure list management
 
     # Iter / slice support
+    # TODO INHERIT FROM SECTION
     def __len__(self) -> int:
         return len(self.measure_list)
+
+    # TODO INHERIT FROM SECTION
+    def __getitem__(self, index: int) -> Measure:
+        validate_type('index', index, int)
+        if abs(index) >= len(self.measure_list):
+            raise ValueError(f'`index` out of range index: {index} len(measure_list): {len(self.measure_list)}')
+        return self.measure_list[index]
 
     def __iter__(self) -> 'Track':
         self.index = 0
         return self
 
+    # TODO INHERIT FROM SECTION
     def __next__(self) -> Measure:
         if self.index == len(self.measure_list):
             raise StopIteration
@@ -216,6 +224,7 @@ class Track(Section):
             measure_list = [Measure.copy(measure) for measure in source_track.measure_list]
 
         new_track = Track(to_add=measure_list,
+                          name=source_track.name,
                           instrument=source_track.track_instrument,
                           meter=source_track.meter,
                           swing=source_track.swing,

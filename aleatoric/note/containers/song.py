@@ -6,7 +6,7 @@ from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 from aleatoric.note.containers.track import Track
 from aleatoric.note.modifiers.meter import Meter
 from aleatoric.note.modifiers.swing import Swing
-from aleatoric.utils.utils import (validate_optional_sequence_of_type,
+from aleatoric.utils.utils import (validate_not_falsey, validate_optional_sequence_of_type,
                                    validate_optional_type,
                                    validate_optional_types,
                                    validate_sequence_of_type, validate_type, validate_types)
@@ -18,11 +18,6 @@ class Song(object):
        from the Song and rendering it into a final performance, such as a MIDI file, *.wav file, live performance
        on Supercollider server, etc. The main element of the Song API is that it maintains an ordered list
        of Tracks in the song, which can also be named and accessed by name.
-
-       Tracks can be added with their own optional `track.name` attribute, which if present will be used to map
-       the track by name. If the optional standalone `name` arg is passed to methods that take it,
-       such as `append()` or `extend()`, then this name will override the name, if any, in `track.name`
-       and the track will be mapped to the standalone `name` arg.
 
        Support meter and swing attributes at the Song level and applies them to all Tracks, all Measures in those
        Tracks, to all Notes in those Measures. These attributes make sense to apply globally at the Song level. Also
@@ -43,9 +38,7 @@ class Song(object):
         self.index = 0
 
         track_list = []
-        if to_add == list():
-            track_list = to_add
-        else:
+        if to_add:
             try:
                 validate_optional_sequence_of_type('to_add', to_add, Track)
                 track_list = to_add
@@ -55,7 +48,7 @@ class Song(object):
                 validate_optional_type('to_add', to_add, Track)
                 track_list = [to_add]
         self.track_list = track_list
-        for track in track_list:
+        for track in self.track_list:
             if track.name:
                 self.track_map[track.name] = track
 
@@ -73,34 +66,26 @@ class Song(object):
                 track.performance_attrs = performance_attrs
 
     # Track list management
-    def append(self, name: str, track: Track) -> 'Song':
+    def append(self, track: Track) -> 'Song':
         validate_type('track', track, Track)
-        validate_optional_type('name', name, str)
         self.track_list.append(track)
-
-        # Use `name` arg if present, then `track.name` if present
-        track_name = name or track.name
-        if track_name:
-            self.track_map[track_name] = track
+        if track.name:
+            self.track_map[track.name] = track
         return self
 
-    def extend(self, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
+    def extend(self, to_add: Union[List[Track], Track]) -> 'Song':
         """`to_add` arg can be either:
             - a single Track
             - a List[Track]
-            - a List[Tuple[str, Track]]
 
             - If a Track is passed in, the Track will be added to `track_list` and, if the Track has a name,
             to `track_map` also.
             - If a List[Track] is passed in, Tracks will be added to `track_list` and, if the Track has a name,
             to a `track_map` also.
-            - If a List[Tuple[str, Track]] is passed in, Tracks will be added to `track_list` and, added to
-            to `track_map` using the `name` associated with each Track in each Tuple
         """
         try:
             validate_type('to_add', to_add, Track)
-            self.append('to_add', to_add)
-            return self
+            return self.append(to_add)
         except ValueError:
             pass
 
@@ -114,25 +99,20 @@ class Song(object):
         except ValueError:
             pass
 
-        validate_type('to_add', to_add, tuple)
-        for name, track in to_add:
-            validate_types(('name', name, str), ('track', track, Track))
-            self.track_list.append(track)
-            self.track_map[name] = track
-        return self
-
-    def __add__(self, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
+    def __add__(self, to_add: Union[List[Track], Track]) -> 'Song':
         return self.extend(to_add)
 
-    def __lshift__(self, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
+    def __lshift__(self, to_add: Union[List[Track], Track]) -> 'Song':
         return self.extend(to_add)
 
-    def insert(self, index: int, to_add: Union[Tuple[str, List[Track]], List[Track], Track]) -> 'Song':
+    def insert(self, index: int, to_add: Union[List[Track], Track]) -> 'Song':
         validate_type('index', index, int)
 
         try:
             validate_type('to_add', to_add, Track)
             self.track_list.insert(index, to_add)
+            if to_add.name:
+                self.track_map[to_add.name] = to_add
             return self
         except ValueError:
             pass
@@ -141,23 +121,21 @@ class Song(object):
             validate_sequence_of_type('to_add', to_add, Track)
             for track in to_add:
                 self.track_list.insert(index, track)
+                # noinspection PyUnresolvedReferences
+                if track.name:
+                    # noinspection PyUnresolvedReferences
+                    self.track_map[track.name] = track
                 index += 1
             return self
         except ValueError:
             pass
 
-        validate_type('to_add', to_add, tuple)
-        for name, track in to_add:
-            validate_types(('name', name, str), ('track', track, Track))
-            self.track_list.insert(index, track)
-            index += 1
-            self.track_map[name] = track
-        return self
-
-    def remove(self, to_remove: Tuple[str, Union[List[Track], Track]]) -> 'Song':
+    def remove(self, to_remove: Union[List[Track], Track]) -> 'Song':
         try:
             validate_type('to_remove', to_remove, Track)
-            self.track_list.insert(index, to_remove)
+            self.track_list.remove(to_remove)
+            if to_remove.name:
+                del self.track_map[to_remove.name]
             return self
         except ValueError:
             pass
@@ -166,21 +144,24 @@ class Song(object):
             validate_sequence_of_type('to_remove', to_remove, Track)
             for track in to_remove:
                 self.track_list.remove(track)
+                # noinspection PyUnresolvedReferences
+                if track.name:
+                    # noinspection PyUnresolvedReferences
+                    del self.track_map[track.name]
             return self
         except ValueError:
             pass
-
-        validate_type('to_remove', to_remove, tuple)
-        for name, track in to_remove:
-            validate_types(('name', name, str), ('track', track, Track))
-            self.track_list.remove(track)
-            del self.track_map[name]
-        return self
     # /Measure list management
 
     # Iter / slice support
     def __len__(self) -> int:
         return len(self.track_list)
+
+    def __getitem__(self, index: int) -> Track:
+        validate_type('index', index, int)
+        if abs(index) >= len(self.track_list):
+            raise ValueError(f'`index` out of range index: {index} len(measure_list): {len(self.track_list)}')
+        return self.track_list[index]
 
     def __iter__(self) -> 'Song':
         self.index = 0
@@ -206,9 +187,8 @@ class Song(object):
             track_list = [Track.copy(track) for track in source_song.track_list]
 
         new_song = Song(to_add=track_list,
-                        name=name,
+                        name=source_song.name,
                         meter=source_song.meter,
                         swing=source_song.swing,
                         performance_attrs=source_song.performance_attrs)
         return new_song
-

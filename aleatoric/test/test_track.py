@@ -25,6 +25,8 @@ BEAT_DUR = NoteDur.QRTR
 
 SWING_FACTOR = 0.5
 
+TRACK_NAME = 'track'
+
 
 @pytest.fixture
 def note_list():
@@ -79,14 +81,15 @@ def section(measure_list, performance_attrs):
 
 @pytest.fixture
 def track(measure_list, performance_attrs):
-    return Track(to_add=measure_list, performance_attrs=performance_attrs)
+    return Track(to_add=measure_list, name=TRACK_NAME, performance_attrs=performance_attrs)
 
 
 def test_track(performance_attrs, measure_list, meter, swing, section):
     # Test: List[Measure] and no instrument or performance_attrs
     # Expect a Track with measures, no track_instrument, no pa and Notes not having reassigned instrument or pa
-    track = Track(to_add=measure_list)
+    track = Track(to_add=measure_list, name=TRACK_NAME)
     assert track.measure_list == measure_list
+    assert track.name == TRACK_NAME
     assert track.track_instrument == Track.DEFAULT_INSTRUMENT
     assert track.meter is None
     assert track.swing is None
