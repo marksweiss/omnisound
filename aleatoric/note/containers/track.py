@@ -187,11 +187,9 @@ class Track(Section):
     # /Measure list management
 
     # Iter / slice support
-    # TODO INHERIT FROM SECTION
     def __len__(self) -> int:
         return len(self.measure_list)
 
-    # TODO INHERIT FROM SECTION
     def __getitem__(self, index: int) -> Measure:
         validate_type('index', index, int)
         if abs(index) >= len(self.measure_list):
@@ -202,7 +200,6 @@ class Track(Section):
         self.index = 0
         return self
 
-    # TODO INHERIT FROM SECTION
     def __next__(self) -> Measure:
         if self.index == len(self.measure_list):
             raise StopIteration

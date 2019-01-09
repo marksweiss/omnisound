@@ -95,6 +95,9 @@ def test_section(meter, swing, performance_attrs, measure_list):
     assert section.meter == meter
     assert section.swing == swing
     assert section.performance_attrs is None
+    for measure in section:
+        assert measure.meter == meter
+        assert measure.swing == swing
 
     # Test: List[Measure] with instrument and performance_attrs
     # Expect a Section with measures, track_instrument, pa and Notes having reassigned instrument and pa
