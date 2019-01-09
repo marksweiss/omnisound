@@ -65,7 +65,6 @@ def validate_not_none(arg_name, val) -> bool:
     return True
 
 
-# TODO TEST
 def validate_not_falsey(arg_name, val) -> bool:
     if not val:
         raise ValueError(f'`{arg_name}` must not be falsey')

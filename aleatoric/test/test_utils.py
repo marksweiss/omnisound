@@ -212,5 +212,20 @@ def test_validate_type_reference_choice():
         validate_type_reference_choice(arg_name, type_ref_val, val_types)
 
 
+def test_validate_not_falsey():
+    arg_name = 'arg'
+    assert validate_not_falsey(arg_name, ' ')
+    assert validate_not_falsey(arg_name, [' '])
+    assert validate_not_falsey(arg_name, {' ': ''})
+    assert validate_not_falsey(arg_name, {' '})
+
+    with pytest.raises(ValueError):
+        validate_not_falsey(arg_name, None)
+        validate_not_falsey(arg_name, '')
+        validate_not_falsey(arg_name, [])
+        validate_not_falsey(arg_name, {})
+        validate_not_falsey(arg_name, set())
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])

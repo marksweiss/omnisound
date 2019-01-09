@@ -86,12 +86,14 @@ def _apply_swing_and_get_note_starts(measure) -> List[float]:
     return actual_note_starts
 
 
-def test_section(performance_attrs, measure_list):
+def test_section(meter, swing, performance_attrs, measure_list):
     # Test: List[Measure] and no instrument or performance_attrs
     # Expect a Section with measures, no track_instrument, no pa and Notes not having reassigned instrument or pa
-    section = Section(measure_list=measure_list, name=SECTION_NAME)
+    section = Section(measure_list=measure_list, name=SECTION_NAME, meter=meter, swing=swing)
     assert section.measure_list == measure_list
     assert section.name == SECTION_NAME
+    assert section.meter == meter
+    assert section.swing == swing
     assert section.performance_attrs is None
 
     # Test: List[Measure] with instrument and performance_attrs
@@ -196,10 +198,13 @@ def test_quantizing_on_off(section):
     assert not meter_2.is_quantizing()
 
 
-def test_assign_meter(meter, section):
+def test_assign_meter_swing(meter, section):
     new_meter = Meter(beats_per_measure=BEATS_PER_MEASURE * 2, beat_dur=BEAT_DUR)
     section.meter = new_meter
     assert section.meter == new_meter
+    new_swing = Swing(swing_factor=SWING_FACTOR * 2)
+    section.swing = new_swing
+    assert section.swing == new_swing
 
 
 def test_quantize(note_list, section):
