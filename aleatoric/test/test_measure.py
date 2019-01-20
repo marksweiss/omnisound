@@ -42,7 +42,7 @@ def measure(note_list):
 
 @pytest.fixture
 def meter():
-    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_dur=BEAT_DUR)
+    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR)
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ def test_measure(meter, swing, measure):
     # Verify attribute assignments
     assert measure.beat == 0
     assert measure.next_note_start == 0.0
-    assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_dur
+    assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_dur.value
     assert measure.meter == meter
     assert measure.swing == swing
 
@@ -138,7 +138,7 @@ def test_quantizing_on_off(measure):
     # Default is quantizing on
     assert measure.is_quantizing()
     # Can override default
-    meter_2 = Meter(beat_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
+    meter_2 = Meter(beat_note_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
     measure.meter = meter_2
     assert not measure.is_quantizing()
     # Can toggle with methods

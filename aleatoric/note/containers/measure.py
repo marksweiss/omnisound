@@ -36,7 +36,7 @@ class Measure(NoteSequence):
        notes in the underlying note_sequence in order sorted by start_time.
     """
 
-    DEFAULT_METER = Meter(beats_per_measure=4, beat_dur=NoteDur.QUARTER, quantizing=True)
+    DEFAULT_METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QUARTER, quantizing=True)
 
     def __init__(self, to_add: Union[List[Note], NoteSequence],
                  meter: Meter = None,
@@ -57,7 +57,7 @@ class Measure(NoteSequence):
         self.beat = 0
         # Support adding notes offset from end of previous note
         self.next_note_start = 0.0
-        self.max_duration = self.meter.beats_per_measure * self.meter.beat_dur
+        self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur.value
 
     # Beat state management
     def reset_current_beat(self):
@@ -78,7 +78,7 @@ class Measure(NoteSequence):
         """
         validate_types(('note', note, Note), ('increment_beat', increment_beat, bool))
 
-        note.start = self.meter.beat_start_times[self.beat]
+        note.start = self.meter.beat_start_times_secs[self.beat]
         self.note_list.append(note)
         self.note_list.sort(key=lambda x: x.start)
         # Increment beat position if flag set and beat is not on last beat of the measure already
@@ -114,7 +114,7 @@ class Measure(NoteSequence):
                 raise ValueError(f'Sequence `to_add` must have a number of notes <= to the number of beats per measure')
 
         # Now iterate the beats per measure and assign each note in note_list to the next start time on the beat
-        for i, beat_start_time in enumerate(self.meter.beat_start_times):
+        for i, beat_start_time in enumerate(self.meter.beat_start_times_secs):
             # There might be fewer notes than beats per measure, because `to_add` is a sequence
             if i == len(note_list):
                 break

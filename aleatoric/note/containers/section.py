@@ -265,7 +265,7 @@ class Section(object):
             raise StopIteration
         measure = self.measure_list[self.index]
         self.index += 1
-        return Measure.copy(measure)
+        return measure
 
     def __eq__(self, other: 'Section') -> bool:
         if not other or len(self) != len(other):

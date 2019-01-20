@@ -167,15 +167,13 @@ class NoteSequence(object):
         """Always return a Note object with note_attrs and perf_attrs populated.
            This is the contract clients can expect, and thus this iterator hides
            where perf_attrs came from and always returns a Note ready for use.
-           Also this deep copy prevents altering the sequence by reference so
-           it can be used and reused.
         """
         if self.index == len(self.note_list):
             raise StopIteration
         note = self.note_list[self.index]
         # perf_attrs comes from the NoteSequence if present, otherwise from the Note
         self.index += 1
-        return note.__class__.copy(note)
+        return note
 
     def __eq__(self, other: 'NoteSequence') -> bool:
         if not other or len(self) != len(other):
