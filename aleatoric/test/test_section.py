@@ -212,19 +212,33 @@ def test_assign_meter_swing(meter, section):
 
 
 def test_quantize(note_list, section):
-    # Modify the note durations in the copy to be longer and require quantization
+    # BEFORE
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00     1.25
+    # n0************
+    #        n1*****
+    #               n2***************
+    #                        n3***************
 
-    def copy_not_list_with_longer_duration(note_list):
+    # AFTER
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00
+    # n0*********
+    #        n1**
+    #            n2*****
+    #                   n3***********
+
+    def copy_note_list_with_longer_duration(note_list):
         note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
         for note in note_list_with_longer_durations:
             note.dur = note.dur * 2
         return note_list_with_longer_durations
 
     before_quantize_note_lists = []
-    before_quantize_note_lists.append(copy_not_list_with_longer_duration(note_list))
-    before_quantize_note_lists.append(copy_not_list_with_longer_duration(note_list))
+    before_quantize_note_lists.append(copy_note_list_with_longer_duration(note_list))
+    before_quantize_note_lists.append(copy_note_list_with_longer_duration(note_list))
     for measure in section:
-        measure.note_list = copy_not_list_with_longer_duration(note_list)
+        measure.note_list = copy_note_list_with_longer_duration(note_list)
 
     section.quantize()
 

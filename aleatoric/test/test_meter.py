@@ -78,69 +78,72 @@ def test_quantizing_on_off(meter):
     assert not meter_2.is_quantizing()
 
 
-# def test_quantize(note_sequence, meter):
-#     # Simplest test case: Note durations sum to measure duration and no quantizing required
-#     # Also note_list is already sorted by start ascending, so the order after quantiazation will be unchanged
-#     expected_note_sequence = NoteSequence.copy(note_sequence)
-#     meter.quantize(note_sequence)
-#     assert expected_note_sequence == note_sequence
+def _setup_test_quantize(note_sequence, meter, quantize_on=True):
+    note_list_with_longer_durations_before_quantize = [CSoundNote.copy(note) for note in note_sequence]
+    for note in note_list_with_longer_durations_before_quantize:
+        note.dur = note.dur * 2
 
-    # Test: Note durations do not sum to measure duration and quantizing required
-    # Copy the list of notes
-    # note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_sequence]
-    # note_sequence_with_longer_durations = NoteSequence(note_list_with_longer_durations)
-    # # Modify the note durations in the copy to be longer and require quantization
-    # for note in note_list_with_longer_durations:
-    #     note.dur = note.dur * 2
-    # # Assert that the original list and the copied list notes do not have equivalent durations
-    # assert [note.dur for note in note_sequence_with_longer_durations] != \
-    #        [note.dur for note in note_sequence]
-    # # Now quantize the copied note list
-    # meter.quantize(note_sequence_with_longer_durations)
-    # # Now assert that after quantization the durations in both note lists are identical
-    # assert [note.dur for note in note_sequence_with_longer_durations] == \
-    #        [note.dur for note in note_sequence]
-    # # Assert that the quantized note start times have been adjusted as expected
-    # for i, note in enumerate(note_sequence):
-    #     start_after_quantization = note_sequence_with_longer_durations[i].start
-    #     start_before_quantization = note.start
-    #     assert start_after_quantization == 0.0 and start_before_quantization == 0.0 or \
-    #         start_after_quantization == start_before_quantization - 0.25
+    if quantize_on:
+        meter.quantizing_on()
+    else:
+        meter.quantizing_off()
+    note_list_with_longer_durations_after_quantize = [CSoundNote.copy(note)
+                                                      for note in note_list_with_longer_durations_before_quantize]
+    meter.quantize(NoteSequence(note_list_with_longer_durations_after_quantize))
+
+    return note_list_with_longer_durations_before_quantize, note_list_with_longer_durations_after_quantize
 
 
-# def test_quantize_on_off(note_sequence, meter):
-#     # Test: Should quantize with quantize set on
-#     note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_sequence]
-#     for note in note_list_with_longer_durations:
-#         note.dur = note.dur * 2
-#     note_sequence_with_longer_durations = NoteSequence(note_list_with_longer_durations)
-#     meter.quantizing_on()
-#     meter.quantize(note_sequence_with_longer_durations)
-#     # Now assert that after quantization the durations in both note lists are identical
-#     assert [note.dur for note in note_sequence_with_longer_durations] == \
-#            [note.dur for note in note_sequence]
-#     # Assert that the quantized note start times have been adjusted as exepected
-#     for i, note in enumerate(note_sequence):
-#         start_after_quantization = note_sequence_with_longer_durations[i].start
-#         start_before_quantization = note.start
-#         assert start_after_quantization == 0.0 and start_before_quantization == 0.0 or \
-#             start_after_quantization == start_before_quantization - 0.25
+def test_quantize_on_off(note_sequence, meter):
+    # BEFORE
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00     1.25
+    # n0************
+    #        n1*************
+    #               n2***************
+    #                        n3***************
 
-# # Test: Should not quantize with quantize set off
-# note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_sequence]
-# for note in note_list_with_longer_durations:
-#     note.dur = note.dur * 2
-# note_sequence_with_longer_durations = NoteSequence(note_list_with_longer_durations)
-# meter.quantizing_off()
-# meter.quantize(note_sequence_with_longer_durations)
-# # Now assert that after quantization the durations in both note lists are not identical
-# assert [note.dur for note in note_sequence_with_longer_durations] != \
-#        [note.dur for note in note_sequence]
-# # Assert that the quantized note start times have not been adjusted
-# for i, note in enumerate(note_sequence):
-#     start_after_quantization = note_sequence_with_longer_durations[i].start
-#     start_before_quantization = note.start
-#     assert start_after_quantization == start_before_quantization
+    # AFTER
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00
+    # n0*********
+    #    n1*********
+    #           n2**********
+    #                   n3************
+
+    # Test quantize on
+    note_list_before_quantize, note_list_after_quantize = _setup_test_quantize(note_sequence, meter, quantize_on=True)
+
+    # Test dur adjustments
+    # Assert that after quantization the durations are adjusted
+    # Expected adjustment is -0.125 because:
+    # - max adjusted start + duration is 1.25
+    # - measure_duration is 1.0
+    # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
+    expected_dur_adjustment = 0.125
+    for i, note in enumerate(note_list_after_quantize):
+        assert note.dur == pytest.approx(note_list_before_quantize[i].dur - expected_dur_adjustment)
+
+    # Test start adjustments
+    # Expected start adjustments
+    # - First note starts at 0.0, no adjustmentj
+    # - Second note is 0.25 - (note.dur * total_adjustment) = 0.125
+    # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
+    # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
+    expected_starts = [0.0, 0.125, 0.375, 0.625]
+    for i, note in enumerate(note_list_after_quantize):
+        assert note.start == pytest.approx(expected_starts[i])
+
+    # Test quantize off
+    note_list_before_quantize, note_list_after_quantize = _setup_test_quantize(note_sequence, meter, quantize_on=False)
+
+    expected_dur_adjustment = 0.125
+    for i, note in enumerate(note_list_after_quantize):
+        assert note.dur != pytest.approx(note_list_before_quantize[i].dur - expected_dur_adjustment)
+
+    expected_starts = [0.0, 0.125, 0.375, 0.625]
+    for i, note in enumerate(note_list_after_quantize):
+        assert note.start == pytest.approx(0.0) or note.start != pytest.approx(expected_starts[i])
 
 
 def test_quantize_to_beat(note_sequence, meter):

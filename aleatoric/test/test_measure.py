@@ -19,6 +19,7 @@ NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AM
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
+TEMPO_QPM = 240
 
 SWING_FACTOR = 0.5
 
@@ -42,7 +43,7 @@ def measure(note_list):
 
 @pytest.fixture
 def meter():
-    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR)
+    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
 
 
 @pytest.fixture
@@ -77,7 +78,7 @@ def test_measure(meter, swing, measure):
     # Verify attribute assignments
     assert measure.beat == 0
     assert measure.next_note_start == 0.0
-    assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_dur.value
+    assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_note_dur.value
     assert measure.meter == meter
     assert measure.swing == swing
 
@@ -148,17 +149,49 @@ def test_quantizing_on_off(measure):
     assert not measure.is_quantizing()
 
 
-def test_quantize(note_list, meter):
-    # Modify the note durations in the copy to be longer and require quantization
+def test_quantize(note_list, measure):
+    # BEFORE
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00     1.25
+    # n0************
+    #        n1*************
+    #               n2***************
+    #                        n3***************
+
+    # AFTER
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00
+    # n0*********
+    #    n1*********
+    #           n2**********
+    #                   n3************
+
     note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
     for note in note_list_with_longer_durations:
         note.dur = note.dur * 2
+    measure.note_list = [CSoundNote.copy(note) for note in note_list_with_longer_durations]
 
-    measure = Measure(to_add=note_list, meter=meter)
     measure.quantize()
-    # Assert that after quantization the durations in both note lists are identical
-    for i, note in enumerate(note_list):
-        assert note.dur == pytest.approx(measure.note_list[i].dur)
+
+    # Test dur adjustments
+    # Assert that after quantization the durations are adjusted
+    # Expected adjustment is -0.125 because:
+    # - max adjusted start + duration is 1.25
+    # - measure_duration is 1.0
+    # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
+    expected_dur_adjustment = 0.125
+    for i, note in enumerate(measure.note_list):
+        assert note.dur == pytest.approx(note_list_with_longer_durations[i].dur - expected_dur_adjustment)
+
+    # Test start adjustments
+    # Expected start adjustments
+    # - First note starts at 0.0, no adjustmentj
+    # - Second note is 0.25 - (note.dur * total_adjustment) = 0.125
+    # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
+    # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
+    expected_starts = [0.0, 0.125, 0.375, 0.625]
+    for i, note in enumerate(measure.note_list):
+        assert note.start == pytest.approx(expected_starts[i])
 
 
 def test_quantize_to_beat(note_list, meter):
