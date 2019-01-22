@@ -11,17 +11,13 @@
 # 1M (ticks per second) / beats per minute * 60
 # 1M (ticks per second) / beats per second
 
-from typing import Union
-
 import midi
 
-from aleatoric.note.adapters.note import Note
 from aleatoric.note.containers.measure import Measure
-from aleatoric.note.containers.note_sequence import NoteSequence
 from aleatoric.note.containers.song import Song
 from aleatoric.note.modifiers.meter import NoteDur
-from aleatoric.player.player import Player, PlayerNoNotesException
-from aleatoric.utils.utils import validate_type_choice, validate_optional_type, validate_type
+from aleatoric.player.player import Player
+from aleatoric.utils.utils import validate_optional_type, validate_type
 
 
 class MidiPlayer(Player):
@@ -67,39 +63,35 @@ class MidiPlayer(Player):
 
     def play_each(self):
         for track in self.song:
+            midi_track = midi.Track()
+            self.midi_pattern.append(midi_track)
+            channel = track.channel
+            midi_track.append(midi.ProgramChangeEvent(tick=0, channel=channel, data=[track.instrument]))
+
             for measure_list in track:
                 for measure in measure_list:
-                    midi_track = midi.Track()
-                    self.midi_pattern.append(midi_track)
+
+                    get_duration_secs_for_note = measure.meter.get_duration_secs_for_note
                     for note in measure:
                         # TODO USE THIS?
                         # performance_attrs = note.pa.as_dict()
-                        # TODO NEED PITCH CONVERSION TO ENUMS USED BY THIS LIBRARY. OWNED BY THIS PLAYER
-                        pitch = self.get_midi_pitch(note.pitch)
-                        midi_note_on = midi.NoteOnEvent(tick=self.current_tick, velocity=note.velocity, pitch=pitch)
+
+                        # NOTE: midi library maps C4 to 48, most documentation and the midi standard map this to 60
+                        # Some systems even map it to 72. We maintian C4 == 60 in MidiNote and pass it here as an
+                        # int mapped that way. So our values are 1 octave higher than midi library enums.
+                        midi_note_on = midi.NoteOnEvent(tick=self.current_tick, channel=channel,
+                                                        velocity=note.velocity, pitch=note.pitch)
                         midi_track.append(midi_note_on)
-                        self.current_tick += measure.meter.get_duration_secs_for_note(note.dur)
-                        midi_note_off = midi.NoteOffEvent(tick=self.current_tick, pitch=pitch)
+
+                        self.current_tick += get_duration_secs_for_note(note.dur) * MidiPlayer.MIDI_TICKS_PER_SECOND
+
+                        midi_note_off = midi.NoteOffEvent(tick=self.current_tick, channel=channel,
+                                                          pitch=note.pitch)
                         midi_track.append(midi_note_off)
-                    midi_track.append(midi.EndOfTrackEvent(tick=self.current_tick))
-        #     self.sc_player >> note.instrument([note.degree],
-        #                                       dur=note.dur,
-        #                                       amp=note.amp,
-        #                                       **performance_attrs)
-        #     sleep(note.dur)
-        #     self.sc_player.stop()
+                    midi_track.append(midi.EndOfTrackEvent(tick=1, data=[]))
 
     def play_all(self):
-        if not self.notes:
-            raise PlayerNoNotesException('No note_group to play')
-        # for note in self.notes:
-        #     performance_attrs = note.pa.as_dict()
-        #     self.sc_player >> note.instrument([note.degree],
-        #                                       dur=note.dur,
-        #                                       amp=note.amp,
-        #                                       **performance_attrs)
-        #     sleep(note.dur)
-        #     self.sc_player.stop()
+        self.play_each()
 
     def improvise(self):
         raise NotImplementedError('MidiPlayer does not support improvising')
