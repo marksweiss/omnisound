@@ -92,9 +92,8 @@ class Meter(object):
         self.measure_dur_secs = self.note_dur_secs * self.beats_per_measure
         self.beat_start_times_secs = [self.note_dur_secs * i for i in range(self.beats_per_measure)]
 
-    @staticmethod
-    def _calculate_beat_start_times(note_beat_dur: NoteDur):
-        pass
+    def get_duration_secs_for_note(self, note_beat_dur: NoteDur):
+        return self.quarter_note_dur_secs * (note_beat_dur.value / NoteDur.QUARTER.value)
 
     def is_quantizing(self):
         return self.quantizing

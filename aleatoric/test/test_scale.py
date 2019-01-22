@@ -3,6 +3,7 @@
 import pytest
 
 from aleatoric.note.adapters.csound_note import CSoundNote
+from aleatoric.note.adapters.midi_note import MidiNote
 from aleatoric.note.generators.scale import Scale
 from aleatoric.note.generators.scale_globals import (HarmonicScale, MajorKey,
                                                      MinorKey)
@@ -49,7 +50,7 @@ def test_is_major_key_is_minor_key(note, scale):
     assert scale_minor.is_minor_key
 
 
-def test_get_pitch_for_key(note, scale):
+def test_get_pitch_for_key_csound(note, scale):
     # Expect that Scale.__init__() will populate the underlying NoteSequence with the notes for the `scale_cls`
     # and `key` (type of scale and root key), starting at the value of `octave` arg passed to Scale.__init__()
     expected_pitches = (4.01, 4.03, 4.05, 4.06, 4.08, 4.10, 4.12)
@@ -64,6 +65,29 @@ def test_get_pitch_for_key(note, scale):
     pitches = [n.pitch for n in scale_minor.note_list]
     for i, expected_pitch in enumerate(expected_pitches):
         assert expected_pitch == pytest.approx(pitches[i])
+
+
+def test_get_pitch_for_key_midi(scale):
+    key = MajorKey.C
+    octave = OCTAVE  # 4
+    pitch_c4 = 48
+    note_prototype = MidiNote(instrument=INSTRUMENT, time=START, duration=DUR, velocity=AMP,
+                              pitch=pitch_c4)
+
+    scale_major = Scale(key=key, octave=octave, harmonic_scale=HARMONIC_SCALE, note_cls=MidiNote,
+                        note_prototype=note_prototype)
+    expected_pitches = (60, 62, 64, 65, 67, 69, 71)
+    pitches = [n.pitch for n in scale_major.note_list]
+    for i, expected_pitch in enumerate(expected_pitches):
+        assert expected_pitch == pitches[i]
+
+    key = MinorKey.C
+    scale_minor = Scale(key=key, octave=octave, harmonic_scale=HarmonicScale.HarmonicMinor, note_cls=MidiNote,
+                        note_prototype=note_prototype)
+    expected_pitches = (60, 62, 63, 65, 67, 68, 71)
+    pitches = [n.pitch for n in scale_minor.note_list]
+    for i, expected_pitch in enumerate(expected_pitches):
+        assert expected_pitch == pitches[i]
 
 
 if __name__ == '__main__':

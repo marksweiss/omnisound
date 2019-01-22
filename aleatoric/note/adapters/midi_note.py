@@ -420,7 +420,7 @@ class MidiNote(Note):
         """
         validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type('octave', octave, int)
-        if cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE:
+        if not (cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE):
             raise ValueError(f'Arg `octave` must be in range {cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}')
 
         if octave == cls.MIN_OCTAVE:
@@ -428,10 +428,10 @@ class MidiNote(Note):
             if key not in cls.KEYS_IN_MIN_OCTAVE:
                 raise ValueError(('If arg `octave` == 0 then `key` must be in '
                                   f'{cls.KEYS_IN_MIN_OCTAVE}'))
-            return cls.PITCH_MAP[key].value - NUM_INTERVALS_IN_OCTAVE
+            return cls.PITCH_MAP[key] - NUM_INTERVALS_IN_OCTAVE
         else:
             interval_offset = (octave - 1) * NUM_INTERVALS_IN_OCTAVE
-            return cls.PITCH_MAP[key].value + interval_offset
+            return cls.PITCH_MAP[key] + interval_offset
 
     @staticmethod
     def copy(source_note: 'MidiNote') -> 'MidiNote':
