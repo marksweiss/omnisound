@@ -37,11 +37,6 @@ def note_list():
 
 
 @pytest.fixture
-def measure(note_list):
-    return NoteSequence(note_list)
-
-
-@pytest.fixture
 def meter():
     return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
 

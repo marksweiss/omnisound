@@ -232,6 +232,7 @@ class MidiTrack(Track):
     def __init__(self, to_add: Optional[Union[List[Measure], Section]] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 name: Optional[str] = None,
                  instrument: Optional[int] = None,
                  channel: int = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
@@ -240,5 +241,6 @@ class MidiTrack(Track):
         super(MidiTrack, self).__init__(to_add=to_add,
                                         meter=meter,
                                         swing=swing,
+                                        name=name,
                                         instrument=instrument,
                                         performance_attrs=performance_attrs)
