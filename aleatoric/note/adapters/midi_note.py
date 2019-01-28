@@ -239,17 +239,20 @@ class MidiNote(Note):
     MAX_PITCH = 108
     DEFAULT_CHANNEL = 1
 
-    def __init__(self, instrument: int = None,
+    def __init__(self, instrument: Union[int, MidiInstrument] = None,
                  time: float = None, duration: float = None, velocity: int = None, pitch: int = None,
                  name: str = None,
                  channel: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_types(('start', time, float), ('duration', duration, float), ('velocity', velocity, int),
                        ('pitch', pitch, int))
-        validate_optional_types(('instrument', instrument, int), ('channel', channel, int),
-                                ('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs))
+        validate_optional_types(('channel', channel, int), ('name', name, str),
+                                ('performance_attrs', performance_attrs, PerformanceAttrs))
+        validate_type_choice('instrument', instrument, (int, MidiInstrument))
         super(MidiNote, self).__init__(name=name)
         self._instrument = instrument
+        if instrument in MidiInstrument:
+            self._instrument = instrument.value
         self._time = time
         self._duration = duration
         self._velocity = velocity

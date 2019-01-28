@@ -209,7 +209,7 @@ def test_note_config():
 
     note_config = _setup_note_config(MidiNote)
     note = MidiNote(**note_config.as_dict())
-    assert note.instrument == MIDI_INSTRUMENT
+    assert note.instrument == MIDI_INSTRUMENT.value
     assert note.time == START
     assert note.velocity == AMP
     assert note.duration == DUR
@@ -217,7 +217,7 @@ def test_note_config():
 
     note_config = _setup_note_config(MidiNote)
     note = MidiNote(*note_config.as_list())
-    assert note.instrument == MIDI_INSTRUMENT
+    assert note.instrument == MIDI_INSTRUMENT.value
     assert note.time == START
     assert note.velocity == AMP
     assert note.duration == DUR
