@@ -86,37 +86,38 @@ class MidiPlayer(Player):
             midi_track = midi.Track()
             self.midi_pattern.append(midi_track)
             channel = track.channel
-            midi_track.append(midi.ProgramChangeEvent(tick=0, channel=channel, data=[track.instrument]))
+            midi_track.append(midi.ProgramChangeEvent(tick=0, channel=channel, data=[track.track_instrument]))
 
-            for measure_list in track:
+            for measure in track.measure_list:
                 # TODO Support Midi Performance Attrs
                 # if op == PLAY_ALL
                 #     measure_performance_attrs = measure.performance_attrs
-                for measure in measure_list:
 
-                    get_duration_secs_for_note = measure.meter.get_duration_secs_for_note
-                    for note in measure:
-                        # TODO Support Midi Performance Attrs
-                        # note_performance_attrs = note.performance_attrs
-                        # if op == PLAY_ALL:
-                        #     self._apply_performance_attrs(note, song_performance_attrs, track_performance_attrs,
-                        #                                   measure_performance_attrs, note_performance_attrs)
-                        # else:
-                        #     self._apply_performance_attrs(note, note_performance_attrs)
+                for note in measure:
+                    # TODO Support Midi Performance Attrs
+                    # note_performance_attrs = note.performance_attrs
+                    # if op == PLAY_ALL:
+                    #     self._apply_performance_attrs(note, song_performance_attrs, track_performance_attrs,
+                    #                                   measure_performance_attrs, note_performance_attrs)
+                    # else:
+                    #     self._apply_performance_attrs(note, note_performance_attrs)
 
-                        # NOTE: midi library maps C4 to 48, most documentation and the midi standard map this to 60
-                        # Some systems even map it to 72. We maintian C4 == 60 in MidiNote and pass it here as an
-                        # int mapped that way. So our values are 1 octave higher than midi library enums.
-                        midi_note_on = midi.NoteOnEvent(tick=self.current_tick, channel=channel,
-                                                        velocity=note.velocity, pitch=note.pitch)
-                        midi_track.append(midi_note_on)
+                    # NOTE: midi library maps C4 to 48, most documentation and the midi standard map this to 60
+                    # Some systems even map it to 72. We maintian C4 == 60 in MidiNote and pass it here as an
+                    # int mapped that way. So our values are 1 octave higher than midi library enums.
+                    midi_note_on = midi.NoteOnEvent(tick=self.current_tick, channel=channel,
+                                                    velocity=note.velocity, pitch=note.pitch)
+                    midi_track.append(midi_note_on)
 
-                        self.current_tick += get_duration_secs_for_note(note.dur) * MidiPlayer.MIDI_TICKS_PER_SECOND
+                    self.current_tick += \
+                        MidiPlayer.MIDI_TICKS_PER_SECOND * \
+                        measure.meter.get_duration_secs_for_note(note.dur)
 
-                        midi_note_off = midi.NoteOffEvent(tick=self.current_tick, channel=channel,
-                                                          pitch=note.pitch)
-                        midi_track.append(midi_note_off)
-                    midi_track.append(midi.EndOfTrackEvent(tick=1, data=[]))
+                    midi_note_off = midi.NoteOffEvent(tick=self.current_tick, channel=channel,
+                                                      pitch=note.pitch)
+                    midi_track.append(midi_note_off)
+
+            midi_track.append(midi.EndOfTrackEvent(tick=1, data=[]))
 
     def improvise(self):
         raise NotImplementedError('MidiPlayer does not support improvising')

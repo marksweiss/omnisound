@@ -7,7 +7,8 @@ from aleatoric.note.containers.measure import (Measure, Meter)
 from aleatoric.note.containers.song import Song
 from aleatoric.note.containers.track import MidiTrack
 from aleatoric.note.containers.note_sequence import NoteSequence
-# from aleatoric.note.generators.scale_globals import MajorKey
+from aleatoric.note.generators.scale import Scale
+from aleatoric.note.generators.scale_globals import HarmonicScale, MajorKey
 from aleatoric.note.modifiers.meter import NoteDur
 from aleatoric.player.midi_player import MidiPlayer
 
@@ -23,27 +24,38 @@ BEAT_DUR = NoteDur.QUARTER
 TEMPO_QPM = 240
 METER = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM, quantizing=True)
 
+KEY = MajorKey.C
+OCTAVE = 4
+HARMONIC_SCALE = HarmonicScale.Major
+NOTE_CLS = MidiNote
+NOTE_PROTOTYPE = MidiNote(time=0.0, duration=NoteDur.QUARTER.value, velocity=100,
+                          pitch=MidiNote.get_pitch_for_key(MajorKey.C, OCTAVE))
+
+SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, note_cls=NOTE_CLS,
+              note_prototype=NOTE_PROTOTYPE)
+
+TRACK = MidiTrack(name=TRACK_NAME, instrument=INSTRUMENT, channel=CHANNEL)
 
 # FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
 if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
-    track = MidiTrack(name=TRACK_NAME, instrument=INSTRUMENT, channel=CHANNEL)
 
     notes = NoteSequence([])
     for i in range(100):
         note_config = NoteConfig(FIELDS)
-        note_config.duration = NoteDur.QUARTER
+        note_config.time = (i % 4) * NoteDur.QUARTER.value
+        note_config.duration = NoteDur.QUARTER.value
         note_config.velocity = 100 - ((i % 4) * 5)
-        note_config.channel = CHANNEL
+        note_config.pitch = SCALE[i % 7].pitch
         note = MidiNote(**note_config.as_dict())
         notes.append(note)
-        if i % 4 == 0:
+        if i > 0 and i % 4 == 0:
             measure = Measure(notes, meter=METER)
             measure.quantize_to_beat()
-            track.append(measure)
+            TRACK.append(measure)
             notes = NoteSequence([])
 
-    song = Song(to_add=track, name=SONG_NAME)
+    song = Song(to_add=TRACK, name=SONG_NAME)
 
     player = MidiPlayer(song=song, midi_file_path='test_song.mid')
     player.play_all()

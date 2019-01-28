@@ -2,6 +2,7 @@
 
 from bisect import bisect_left
 from enum import Enum
+from typing import Union
 
 from aleatoric.note.containers.note_sequence import NoteSequence
 from aleatoric.utils.utils import validate_optional_types, validate_type
@@ -92,8 +93,12 @@ class Meter(object):
         self.measure_dur_secs = self.note_dur_secs * self.beats_per_measure
         self.beat_start_times_secs = [self.note_dur_secs * i for i in range(self.beats_per_measure)]
 
-    def get_duration_secs_for_note(self, note_beat_dur: NoteDur):
-        return self.quarter_note_dur_secs * (note_beat_dur.value / NoteDur.QUARTER.value)
+    def get_duration_secs_for_note(self, note_beat_dur: Union[float, NoteDur]):
+        dur = note_beat_dur
+        if note_beat_dur in NoteDur:
+            dur = note_beat_dur.value
+        # noinspection PyTypeChecker
+        return self.quarter_note_dur_secs * (dur / NoteDur.QUARTER.value)
 
     def is_quantizing(self):
         return self.quantizing

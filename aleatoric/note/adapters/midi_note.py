@@ -246,8 +246,8 @@ class MidiNote(Note):
                  performance_attrs: PerformanceAttrs = None):
         validate_types(('start', time, float), ('duration', duration, float), ('velocity', velocity, int),
                        ('pitch', pitch, int))
-        validate_optional_types(('channel', channel, int), ('name', name, str),
-                                ('performance_attrs', performance_attrs, PerformanceAttrs))
+        validate_optional_types(('instrument', instrument, int), ('channel', channel, int),
+                                ('name', name, str), ('performance_attrs', performance_attrs, PerformanceAttrs))
         super(MidiNote, self).__init__(name=name)
         self._instrument = instrument
         self._time = time
