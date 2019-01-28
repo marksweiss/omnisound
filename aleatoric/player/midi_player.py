@@ -110,8 +110,8 @@ class MidiPlayer(Player):
                     midi_track.append(midi_note_on)
 
                     self.current_tick += \
-                        MidiPlayer.MIDI_TICKS_PER_SECOND * \
-                        measure.meter.get_duration_secs_for_note(note.dur)
+                        int(MidiPlayer.MIDI_TICKS_PER_SECOND *
+                            measure.meter.get_duration_secs_for_note(note.dur))
 
                     midi_note_off = midi.NoteOffEvent(tick=self.current_tick, channel=channel,
                                                       pitch=note.pitch)

@@ -36,12 +36,11 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, note_cls=NO
 
 TRACK = MidiTrack(name=TRACK_NAME, instrument=INSTRUMENT, channel=CHANNEL)
 
-# FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
 if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     notes = NoteSequence([])
-    for i in range(100):
+    for i in range(10):
         note_config = NoteConfig(FIELDS)
         note_config.time = (i % 4) * NoteDur.QUARTER.value
         note_config.duration = NoteDur.QUARTER.value
