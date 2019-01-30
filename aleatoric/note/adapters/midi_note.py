@@ -7,8 +7,10 @@ from aleatoric.note.adapters.note import Note
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 from aleatoric.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from aleatoric.utils.utils import (validate_optional_types, validate_type,
-                                   validate_type_choice, validate_types)
+from aleatoric.utils.utils import (validate_optional_types,
+                                   validate_optional_type_choice,
+                                   validate_type, validate_type_choice,
+                                   validate_types)
 
 FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
 
@@ -248,7 +250,7 @@ class MidiNote(Note):
                        ('pitch', pitch, int))
         validate_optional_types(('channel', channel, int), ('name', name, str),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        validate_type_choice('instrument', instrument, (int, MidiInstrument))
+        validate_optional_type_choice('instrument', instrument, (int, MidiInstrument))
         super(MidiNote, self).__init__(name=name)
         self._instrument = instrument
         if instrument in MidiInstrument:
