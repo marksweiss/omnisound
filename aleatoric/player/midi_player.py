@@ -19,6 +19,7 @@ from aleatoric.player.player import Player
 from aleatoric.utils.utils import validate_optional_type, validate_type
 
 
+# TODO ONLY GARAGEBAND CAN OPEN THE FILES PRODUCED BY THIS, AND THEN ONLY FIRST TRACK
 class MidiPlayer(Player):
     MIDI_TICKS_PER_QUARTER_NOTE = 960
     MIDI_QUARTER_NOTES_PER_BEAT = 4

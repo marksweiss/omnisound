@@ -16,7 +16,6 @@ PITCH = 1.01
 NOTE_CLS = CSoundNote
 OCTAVE = 4
 KEY = MajorKey.C
-HARMONIC_SCALE = HarmonicScale.Major
 
 
 @pytest.fixture
