@@ -21,7 +21,8 @@ CHANNEL = 1
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QUARTER
-TEMPO_QPM = 240
+BPM = 120
+TEMPO_QPM = BPM * 4
 METER = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM, quantizing=True)
 
 KEY = MajorKey.C
@@ -36,21 +37,22 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, note_cls=NO
 
 TRACK = MidiTrack(name=TRACK_NAME, instrument=INSTRUMENT, channel=CHANNEL)
 
+NUM_NOTES = 128
+DUR = NoteDur.QUARTER.value
 if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     notes = NoteSequence([])
-    for i in range(10):
+    for i in range(1, NUM_NOTES + 1):
         note_config = NoteConfig(FIELDS)
-        note_config.time = (i % 4) * NoteDur.QUARTER.value
-        note_config.duration = NoteDur.QUARTER.value
+        note_config.time = (i - 1 % 4) * DUR
+        note_config.duration = DUR
         note_config.velocity = 100 - ((i % 4) * 5)
-        note_config.pitch = SCALE[i % 7].pitch
+        note_config.pitch = SCALE[(i - 1) % 6].pitch
         note = MidiNote(**note_config.as_dict())
         notes.append(note)
-        if i > 0 and i % 4 == 0:
+        if i % NUM_NOTES == 0:
             measure = Measure(notes, meter=METER)
-            measure.quantize_to_beat()
             TRACK.append(measure)
             notes = NoteSequence([])
 

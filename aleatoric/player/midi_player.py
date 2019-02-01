@@ -93,6 +93,9 @@ class MidiPlayer(Player):
                 # if op == PLAY_ALL
                 #     measure_performance_attrs = measure.performance_attrs
 
+                tps = MidiPlayer.MIDI_TICKS_PER_SECOND
+                get_dur_secs = measure.meter.get_duration_secs_for_note
+                measure_tick_offset = 0
                 for note in measure:
                     # TODO Support Midi Performance Attrs
                     # note_performance_attrs = note.performance_attrs
@@ -102,20 +105,32 @@ class MidiPlayer(Player):
                     # else:
                     #     self._apply_performance_attrs(note, note_performance_attrs)
 
+                    # TODO Move this where it belongs
                     # NOTE: midi library maps C4 to 48, most documentation and the midi standard map this to 60
                     # Some systems even map it to 72. We maintian C4 == 60 in MidiNote and pass it here as an
                     # int mapped that way. So our values are 1 octave higher than midi library enums.
-                    midi_note_on = midi.NoteOnEvent(tick=self.current_tick, channel=channel,
-                                                    velocity=note.velocity, pitch=note.pitch)
+
+                    # python-midi automatically places each note after the previous one. So if the note
+                    # starts immediately after the previous note, start_tick == 0.
+                    # So we track offset in each measure and only have a positive start_tick if
+                    # note.time - measure_tick_offset is a positive number. Else it's 0.
+                    start_tick = int(get_dur_secs(note.time) * tps) - measure_tick_offset
+                    # NOTE: This assumes note start times are sorted non-decreasing by start time
+                    if start_tick <= 0:
+                        start_tick = 0
+                    midi_note_on = midi.NoteOnEvent(tick=start_tick,
+                                                    channel=channel,
+                                                    velocity=note.velocity,
+                                                    pitch=note.pitch)
                     midi_track.append(midi_note_on)
 
-                    self.current_tick += \
-                        int(MidiPlayer.MIDI_TICKS_PER_SECOND *
-                            measure.meter.get_duration_secs_for_note(note.dur))
-
-                    midi_note_off = midi.NoteOffEvent(tick=self.current_tick, channel=channel,
-                                                      pitch=note.pitch)
+                    stop_tick = start_tick + int(get_dur_secs(note.dur) * tps)
+                    midi_note_off = midi.NoteOffEvent(tick=stop_tick, channel=channel, pitch=note.pitch)
                     midi_track.append(midi_note_off)
+                    # Now reset the start_tick offset to the end of the current note
+                    measure_tick_offset += stop_tick
+
+                self.current_tick += measure.meter.measure_dur_secs * MidiPlayer.MIDI_TICKS_PER_SECOND
 
             midi_track.append(midi.EndOfTrackEvent(tick=1, data=[]))
 

@@ -98,7 +98,7 @@ class Meter(object):
         if note_beat_dur in NoteDur:
             dur = note_beat_dur.value
         # noinspection PyTypeChecker
-        return self.quarter_note_dur_secs * (dur / NoteDur.QUARTER.value)
+        return self.note_dur_secs * dur
 
     def is_quantizing(self):
         return self.quantizing
