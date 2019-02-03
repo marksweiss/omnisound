@@ -12,12 +12,12 @@ from aleatoric.note.generators.chord_globals import HarmonicChord
 from aleatoric.note.generators.scale import Scale
 from aleatoric.note.generators.scale_globals import HarmonicScale, MajorKey
 from aleatoric.note.modifiers.meter import NoteDur
-from aleatoric.player.midi_player import MidiPlayer
+from aleatoric.player.midi_player import MidiPlayer, MidiPlayerAppendMode
 
 
 SONG_NAME = 'test_midi_song'
-
-INSTRUMENT: int = MidiInstrument.Acoustic_Grand_Piano.value
+INSTRUMENT: int = MidiInstrument.Vibraphone.value
+APPEND_MODE = MidiPlayerAppendMode.AppendAtAbsoluteTime
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QUARTER
@@ -35,10 +35,13 @@ NOTE_PROTOTYPE = MidiNote(time=0.0, duration=NoteDur.QUARTER.value, velocity=100
 
 SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, note_cls=NOTE_CLS,
               note_prototype=NOTE_PROTOTYPE)
+NUM_NOTES_IN_SCALE = 7
 
-
-NUM_NOTES = 16
+NUM_MEASURES = 2
+NUM_NOTES_PER_MEASURE = 16
 DUR = NoteDur.SIXTEENTH.value
+
+
 if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
@@ -47,32 +50,30 @@ if __name__ == '__main__':
     tracks = [ostinato_track, chords_track]
     ostinato_notes = NoteSequence([])
     chords_notes = NoteSequence([])
-    for i in range(1, NUM_NOTES + 1):
-        note_config = NoteConfig(FIELDS)
-        note_config.time = (i - 1 % 4) * DUR
-        note_config.duration = DUR
-        note_config.velocity = 100 - ((i % 4) * 10)
-        note_config.pitch = SCALE[(i - 1) % 6].pitch
-        note = MidiNote(**note_config.as_dict())
-        ostinato_notes.append(note)
+    for _ in range(NUM_MEASURES):
+        for i in range(NUM_NOTES_PER_MEASURE):
+            note_config = NoteConfig(FIELDS)
+            note_config.time = (i % NUM_NOTES_PER_MEASURE) * DUR
+            note_config.duration = DUR
+            note_config.velocity = 100 - ((i % 4) * 5)
+            note_config.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
+            note = MidiNote(**note_config.as_dict())
 
-        chord = Chord(harmonic_chord=HARMONIC_CHORD, note_prototype=note, note_cls=MidiNote,
-                      octave=OCTAVE, key=KEY)
-        # TODO GET MULTITRACK MIDI TO WORK, AND ADD THESE TO chords_notes
-        # TODO FIX MIDIPLAYER TO ACTUALLY ALLOW ADDING MULTIPLE NOTES AT SAME START TIME
-        # chords_notes.extend(chord.note_list)
-        ostinato_notes.extend(chord.note_list)
+            ostinato_notes.append(note)
+            chord = Chord(harmonic_chord=HARMONIC_CHORD, note_prototype=note, note_cls=MidiNote,
+                          octave=OCTAVE, key=KEY)
+            chords_notes.extend(chord.note_list)
 
-        if i % NUM_NOTES == 0:
-            ostinato_measure = Measure(ostinato_notes, meter=METER)
-            ostinato_track.append(ostinato_measure)
-            ostinato_notes = NoteSequence([])
-            # chords_measure = Measure(chords_notes, meter=METER)
-            # chords_track.append(chords_measure)
-            # chords_notes = NoteSequence([])
+        ostinato_measure = Measure(ostinato_notes, meter=METER)
+        ostinato_track.append(ostinato_measure)
+        ostinato_notes = NoteSequence([])
+        chords_measure = Measure(chords_notes, meter=METER)
+        chords_track.append(chords_measure)
+        chords_notes = NoteSequence([])
 
     song = Song(to_add=tracks, name=SONG_NAME)
 
-    player = MidiPlayer(song=song, midi_file_path='test_song.mid')
+    player = MidiPlayer(song=song, append_mode=APPEND_MODE,
+                        midi_file_path='/Users/markweiss/Documents/projects/aleatoric/test_song.mid')
     player.play_all()
     player.write_midi_file()

@@ -93,10 +93,14 @@ class Meter(object):
         self.measure_dur_secs = self.note_dur_secs * self.beats_per_measure
         self.beat_start_times_secs = [self.note_dur_secs * i for i in range(self.beats_per_measure)]
 
-    def get_duration_secs_for_note(self, note_beat_dur: Union[float, NoteDur]):
-        dur = note_beat_dur
-        if note_beat_dur in NoteDur:
-            dur = note_beat_dur.value
+    def get_secs_for_note_time(self, note_time_val: Union[float, NoteDur]):
+        """Helper to convert a note time in NoteDur or float that represents either a note start_time or
+           note duration within a measure in the measure's meter into an absolute floating point value in
+           seconds.
+        """
+        dur = note_time_val
+        if note_time_val in NoteDur:
+            dur = note_time_val.value
         # noinspection PyTypeChecker
         return self.note_dur_secs * dur
 
