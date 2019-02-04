@@ -12,18 +12,69 @@
 # 1M (ticks per second) / beats per second
 
 from enum import Enum
+from typing import List
 
-import midi
+from mido import Message, MidiFile, MidiTrack
 
+from aleatoric.note.adapters.midi_note import MidiNote
+from aleatoric.note.containers.measure import Measure
 from aleatoric.note.containers.song import Song
 from aleatoric.note.modifiers.meter import NoteDur
 from aleatoric.player.player import Player
 from aleatoric.utils.utils import validate_optional_path, validate_types
 
+# TODO FILL OUT TYPE HINTS IN THIS CLASS
+# TODO TESTS!!!
+
 
 class MidiPlayerAppendMode(Enum):
     AppendAfterPreviousNote = 1
     AppendAtAbsoluteTime = 2
+
+
+class MidiEventType(Enum):
+    NOTE_ON = 'note_on'
+    NOTE_OFF = 'note_off'
+
+
+class MidiPlayerEvent(object):
+    """Small type to handle the business logic of creating a sequence of ordered MIDI events,
+       ordered by absolute time of the event, and annotated with their delta time (the offset
+       time from the previous event in a sequence). Each object takes a note and an EventType
+       and calculates its own event_time. `order_events()` orders a sequence of events.
+
+       The object also includes properties for tick (the time converted to MIDI tick), in absolute
+       time since the start of the elements in the sequence), and tick_delta, the offset of this
+       event's tick to the event that preceded it in a sequence.
+    """
+    def __init__(self, note: MidiNote, measure: Measure, event_type: MidiEventType):
+        validate_types(('note', note, MidiNote), ('event_type', event_type, MidiEventType))
+        self.note = note
+        self.measure = measure
+        self.event_type = MidiEventType
+        self.event_time = self._event_time()
+        self.tick = self._tick()
+        self.tick_delta = 0
+
+    def _event_time(self) -> float:
+        if self.event_type == MidiEventType.NOTE_ON:
+            return self.note.time
+        elif self.event_type == MidiEventType.NOTE_OFF:
+            return self.note.time + self.note.dur
+
+    def _tick(self) -> int:
+        return int(self.measure.meter.get_secs_for_note_time(note_time_val=self.event_time) *
+            MidiPlayer.MIDI_TICKS_PER_SECOND)
+
+    @staticmethod
+    def order_event_list(event_list: List['MidiPlayerEvent']):
+        event_list.sort(key=lambda event: event.tick)
+
+    @staticmethod
+    def set_tick_deltas(event_list: List['MidiPlayerEvent']):
+        MidiPlayerEvent.order_event_list(event_list)
+        for i, event in enumerate(event_list[1:]):
+            event.tick_delta = event.tick - event_list[i - 1].tick
 
 
 # TODO ONLY GARAGEBAND CAN OPEN THE FILES PRODUCED BY THIS, AND THEN ONLY FIRST TRACK
@@ -51,14 +102,16 @@ class MidiPlayer(Player):
 
         self.song = song
         self.append_mode = append_mode
+        self.midi_file_path = midi_file_path
         self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
+        # Type 1 - multiple synchronous tracks, all starting at the same time
+        # https://mido.readthedocs.io/en/latest/midi_files.html
+        self.midi_file = MidiFile(type=1)
         # TODO Support Midi Performance Attrs
         # song_performance_attrs = song.performance_attrs
-        self.midi_file_path = midi_file_path
-        self.midi_pattern = midi.Pattern()
 
     def write_midi_file(self):
-        midi.write_midifile(self.midi_file_path, self.midi_pattern)
+        self.midi_file.save(self.midi_file_path)
 
     def play_all(self):
         self._play()  # MidiPlayer.PLAY_ALL)
@@ -68,53 +121,56 @@ class MidiPlayer(Player):
 
     # TODO Support Midi Performance Attrs
     # def _apply_performance_attrs(self, note, *performance_attrs_list):
-        # for pa in performance_attrs_list:
+        # for pa 0in performance_attrs_list:
         #    apply pa to note
 
     def _play(self):  # , op: str): # TODO Support Midi Performance Attrs
-        def _get_note_start_tick(note, measure, track_tick_offset) -> int:
+        def _get_note_start_tick(note, measure, last_stop_tick) -> int:
             """Helper to compute a note start time in ticks depending on whether we are automatically
                appending notes after the previous node or adding notes to the current track at their
                absolute offset since the start of the track.
             """
-            note_start_secs = measure.meter.get_secs_for_note_time(note_time_val=note.time)
-            if self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote:
-                return int(note_start_secs * MidiPlayer.MIDI_TICKS_PER_SECOND) - track_tick_offset
-            else:  # if self.append_mode == MidiPlayerAppendMode.AppendAtAbsoluteTime
-                return track_tick_offset + int(note_start_secs * MidiPlayer.MIDI_TICKS_PER_SECOND)
-
-        def _get_note_stop_tick(note, measure, track_tick_offset) -> int:
-            note_dur_secs = measure.meter.get_secs_for_note_time(note_time_val=note.dur)
-            return track_tick_offset + int(note_dur_secs * MidiPlayer.MIDI_TICKS_PER_SECOND)
-
-        def _reset_track_tick_offset_for_measure(track_tick_offset):
-            """Encapsulates the logic about what level we are restting the tick offset. If the mode is 'relative',
-               i.e. we are appending each note after the previous note, then we reset the offset at the start of
-               each measure. If the mode is 'absolute', i.e. we are appending each note at it's absolute start time
-               relative to the start of the track, then we do not reset the start_tick.
-            """
             if self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote:
                 return 0
             else:  # if self.append_mode == MidiPlayerAppendMode.AppendAtAbsoluteTime
-                return track_tick_offset
+                note_start_tick = \
+                    int(measure.meter.get_secs_for_note_time(note_time_val=note.time) *
+                        MidiPlayer.MIDI_TICKS_PER_SECOND)
+                return note_start_tick - last_stop_tick
+
+
+        # def _get_note_stop_tick(note, measure) -> int:
+        #     note_dur_secs = measure.meter.get_secs_for_note_time(note_time_val=note.dur)
+        #     return int(note_dur_secs * MidiPlayer.MIDI_TICKS_PER_SECOND)
+
 
         for track in self.song:
             # TODO Support Midi Performance Attrs
             # if op == PLAY_ALL
             #     track_performance_attrs = track.performance_attrs
 
-            track_tick_offset = 0
-            midi_track = midi.Track(tick_relative=True)  # self.midi_track_tick_relative)
-            self.midi_pattern.append(midi_track)
-            channel = track.channel
-            midi_track.append(midi.ProgramChangeEvent(tick=track_tick_offset, channel=channel, data=[track.track_instrument]))
+            midi_track = MidiTrack()
+            midi_track.append(Message('program_change', program=track.track_instrument, time=0))
+            self.midi_file.tracks.append(midi_track)
 
+            # mido channels numbered 0..15 instead of MIDI standard 1..16
+            channel = track.channel - 1
+            last_stop_tick = 0
             for measure in track.measure_list:
                 # TODO Support Midi Performance Attrs
                 # if op == PLAY_ALL
-                #     measure_performance_attrs = measure.performance_attrs
-                track_tick_offset = _reset_track_tick_offset_for_measure(track_tick_offset)
+                #     measure_performance_attrs = measure.performance_attrsj
+                # Build an ordered event list of the notes in the measure
+                # NOTE: Assumes first note start on 0.0, because the first note of every measure is 0 offset
+                #       i.e. it assumes it will occur exactly after the last note of the last measure
+                # NOTE: Need to carry over last offset from previous measure, and then this will work :-)
+                event_list = []
                 for note in measure:
+                    event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
+                    event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_OFF))
+                MidiPlayerEvent.set_tick_deltas(event_list)
+
+                for event in event_list:
                     # TODO Support Midi Performance Attrs
                     # note_performance_attrs = note.performance_attrs
                     # if op == PLAY_ALL:
@@ -122,17 +178,9 @@ class MidiPlayer(Player):
                     #                                   measure_performance_attrs, note_performance_attrs)
                     # else:
                     #     self._apply_performance_attrs(note, note_performance_attrs)
-
-                    start_tick = _get_note_start_tick(note, measure, track_tick_offset)
-                    note_on = midi.NoteOnEvent(tick=start_tick, channel=channel, velocity=note.velocity,
-                                               pitch=note.pitch)
-                    midi_track.append(note_on)
-
-                    stop_tick = _get_note_stop_tick(note, measure, start_tick)
-                    note_off = midi.NoteOffEvent(tick=stop_tick, channel=channel, pitch=note.pitch)
-                    midi_track.append(note_off)
-
-            midi_track.make_ticks_rel()
+                    message = Message(event.event_type, time=event.tick_delta, velocity=event.note.amp,
+                                      note=event.note.pitch, channel=channel)
+                    midi_track.append(message)
 
     def improvise(self):
         raise NotImplementedError('MidiPlayer does not support improvising')

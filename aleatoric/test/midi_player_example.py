@@ -17,7 +17,7 @@ from aleatoric.player.midi_player import MidiPlayer, MidiPlayerAppendMode
 
 SONG_NAME = 'test_midi_song'
 INSTRUMENT: int = MidiInstrument.Vibraphone.value
-APPEND_MODE = MidiPlayerAppendMode.AppendAfterPreviousNote
+APPEND_MODE = MidiPlayerAppendMode.AppendAtAbsoluteTime
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QUARTER
@@ -77,8 +77,4 @@ if __name__ == '__main__':
     player = MidiPlayer(song=song, append_mode=APPEND_MODE,
                         midi_file_path='/Users/markweiss/Documents/projects/aleatoric/test_song.mid')
     player.play_all()
-
-    # TEMP DEBUG
-    import pdb; pdb.set_trace()
-
     player.write_midi_file()
