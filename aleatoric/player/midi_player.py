@@ -104,7 +104,7 @@ class MidiPlayer(Player):
             #     track_performance_attrs = track.performance_attrs
 
             track_tick_offset = 0
-            midi_track = midi.Track(tick_relative=self.midi_track_tick_relative)
+            midi_track = midi.Track(tick_relative=True)  # self.midi_track_tick_relative)
             self.midi_pattern.append(midi_track)
             channel = track.channel
             midi_track.append(midi.ProgramChangeEvent(tick=track_tick_offset, channel=channel, data=[track.track_instrument]))
@@ -132,9 +132,7 @@ class MidiPlayer(Player):
                     note_off = midi.NoteOffEvent(tick=stop_tick, channel=channel, pitch=note.pitch)
                     midi_track.append(note_off)
 
-            if self.append_mode == MidiPlayerAppendMode.AppendAtAbsoluteTime:
-                midi_track.make_ticks_rel()
-            midi_track.append(midi.EndOfTrackEvent(tick=1, data=[]))
+            midi_track.make_ticks_rel()
 
     def improvise(self):
         raise NotImplementedError('MidiPlayer does not support improvising')

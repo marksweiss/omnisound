@@ -17,7 +17,7 @@ from aleatoric.player.midi_player import MidiPlayer, MidiPlayerAppendMode
 
 SONG_NAME = 'test_midi_song'
 INSTRUMENT: int = MidiInstrument.Vibraphone.value
-APPEND_MODE = MidiPlayerAppendMode.AppendAtAbsoluteTime
+APPEND_MODE = MidiPlayerAppendMode.AppendAfterPreviousNote
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QUARTER
@@ -46,8 +46,8 @@ if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     ostinato_track = MidiTrack(name='ostinato', instrument=INSTRUMENT, channel=1)
-    chords_track = MidiTrack(name='chords', instrument=INSTRUMENT, channel=2)
-    tracks = [ostinato_track, chords_track]
+    chords_track = MidiTrack(name='chords', instrument=INSTRUMENT, channel=1)
+    tracks = [ostinato_track]  # , chords_track]
     ostinato_notes = NoteSequence([])
     chords_notes = NoteSequence([])
     for _ in range(NUM_MEASURES):
@@ -65,10 +65,11 @@ if __name__ == '__main__':
             chords_notes.extend(chord.note_list)
 
         ostinato_measure = Measure(ostinato_notes, meter=METER)
-        ostinato_track.append(ostinato_measure)
-        ostinato_notes = NoteSequence([])
+        # ostinato_track.append(ostinato_measure)
         chords_measure = Measure(chords_notes, meter=METER)
-        chords_track.append(chords_measure)
+        ostinato_track.append(chords_measure)
+        ostinato_notes = NoteSequence([])
+        # chords_track.append(chords_measure)
         chords_notes = NoteSequence([])
 
     song = Song(to_add=tracks, name=SONG_NAME)
@@ -76,4 +77,8 @@ if __name__ == '__main__':
     player = MidiPlayer(song=song, append_mode=APPEND_MODE,
                         midi_file_path='/Users/markweiss/Documents/projects/aleatoric/test_song.mid')
     player.play_all()
+
+    # TEMP DEBUG
+    import pdb; pdb.set_trace()
+
     player.write_midi_file()
