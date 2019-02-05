@@ -51,7 +51,7 @@ class MidiPlayerEvent(object):
         validate_types(('note', note, MidiNote), ('event_type', event_type, MidiEventType))
         self.note = note
         self.measure = measure
-        self.event_type = MidiEventType
+        self.event_type = event_type
         self.event_time = self._event_time()
         self.tick = self._tick()
         self.tick_delta = 0
@@ -74,7 +74,8 @@ class MidiPlayerEvent(object):
     def set_tick_deltas(event_list: List['MidiPlayerEvent']):
         MidiPlayerEvent.order_event_list(event_list)
         for i, event in enumerate(event_list[1:]):
-            event.tick_delta = event.tick - event_list[i - 1].tick
+            j = i + 1
+            event.tick_delta = event.tick - event_list[j - 1].tick
 
 
 # TODO ONLY GARAGEBAND CAN OPEN THE FILES PRODUCED BY THIS, AND THEN ONLY FIRST TRACK
@@ -125,25 +126,6 @@ class MidiPlayer(Player):
         #    apply pa to note
 
     def _play(self):  # , op: str): # TODO Support Midi Performance Attrs
-        def _get_note_start_tick(note, measure, last_stop_tick) -> int:
-            """Helper to compute a note start time in ticks depending on whether we are automatically
-               appending notes after the previous node or adding notes to the current track at their
-               absolute offset since the start of the track.
-            """
-            if self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote:
-                return 0
-            else:  # if self.append_mode == MidiPlayerAppendMode.AppendAtAbsoluteTime
-                note_start_tick = \
-                    int(measure.meter.get_secs_for_note_time(note_time_val=note.time) *
-                        MidiPlayer.MIDI_TICKS_PER_SECOND)
-                return note_start_tick - last_stop_tick
-
-
-        # def _get_note_stop_tick(note, measure) -> int:
-        #     note_dur_secs = measure.meter.get_secs_for_note_time(note_time_val=note.dur)
-        #     return int(note_dur_secs * MidiPlayer.MIDI_TICKS_PER_SECOND)
-
-
         for track in self.song:
             # TODO Support Midi Performance Attrs
             # if op == PLAY_ALL
@@ -155,7 +137,6 @@ class MidiPlayer(Player):
 
             # mido channels numbered 0..15 instead of MIDI standard 1..16
             channel = track.channel - 1
-            last_stop_tick = 0
             for measure in track.measure_list:
                 # TODO Support Midi Performance Attrs
                 # if op == PLAY_ALL
@@ -164,6 +145,7 @@ class MidiPlayer(Player):
                 # NOTE: Assumes first note start on 0.0, because the first note of every measure is 0 offset
                 #       i.e. it assumes it will occur exactly after the last note of the last measure
                 # NOTE: Need to carry over last offset from previous measure, and then this will work :-)
+                # TODO MAKE MEAURE ALWAYS FILL IN TRAILING (ALL?) RESTS SO THIS IS NOT AN ISSUE
                 event_list = []
                 for note in measure:
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
@@ -178,7 +160,7 @@ class MidiPlayer(Player):
                     #                                   measure_performance_attrs, note_performance_attrs)
                     # else:
                     #     self._apply_performance_attrs(note, note_performance_attrs)
-                    message = Message(event.event_type, time=event.tick_delta, velocity=event.note.amp,
+                    message = Message(event.event_type.value, time=event.tick_delta, velocity=event.note.amp,
                                       note=event.note.pitch, channel=channel)
                     midi_track.append(message)
 

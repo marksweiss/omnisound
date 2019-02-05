@@ -37,7 +37,7 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, note_cls=NO
               note_prototype=NOTE_PROTOTYPE)
 NUM_NOTES_IN_SCALE = 7
 
-NUM_MEASURES = 2
+NUM_MEASURES = 16
 NUM_NOTES_PER_MEASURE = 16
 DUR = NoteDur.SIXTEENTH.value
 
@@ -46,8 +46,8 @@ if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     ostinato_track = MidiTrack(name='ostinato', instrument=INSTRUMENT, channel=1)
-    chords_track = MidiTrack(name='chords', instrument=INSTRUMENT, channel=1)
-    tracks = [ostinato_track]  # , chords_track]
+    chords_track = MidiTrack(name='chords', instrument=MidiInstrument.Acoustic_Grand_Piano.value, channel=2)
+    tracks = [ostinato_track, chords_track]
     ostinato_notes = NoteSequence([])
     chords_notes = NoteSequence([])
     for _ in range(NUM_MEASURES):
@@ -55,14 +55,17 @@ if __name__ == '__main__':
             note_config = NoteConfig(FIELDS)
             note_config.time = (i % NUM_NOTES_PER_MEASURE) * DUR
             note_config.duration = DUR
-            note_config.velocity = 100 - ((i % 4) * 5)
+            note_config.velocity = 100 - ((i % 16) * 5)
             note_config.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
             note = MidiNote(**note_config.as_dict())
-
             ostinato_notes.append(note)
-            chord = Chord(harmonic_chord=HARMONIC_CHORD, note_prototype=note, note_cls=MidiNote,
-                          octave=OCTAVE, key=KEY)
-            chords_notes.extend(chord.note_list)
+
+            if i % 2 == 0:
+                note_prototype = note.copy(note)
+                note_prototype.dur = NoteDur.QUARTER.value
+                chord = Chord(harmonic_chord=HARMONIC_CHORD, note_prototype=note, note_cls=MidiNote,
+                              octave=OCTAVE - 1, key=KEY)
+                chords_notes.extend(chord.note_list)
 
         ostinato_measure = Measure(ostinato_notes, meter=METER)
         # ostinato_track.append(ostinato_measure)
