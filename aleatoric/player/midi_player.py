@@ -21,15 +21,11 @@ from aleatoric.note.containers.measure import Measure
 from aleatoric.note.containers.song import Song
 from aleatoric.note.modifiers.meter import NoteDur
 from aleatoric.player.player import Player
-from aleatoric.utils.utils import validate_optional_path, validate_types
+from aleatoric.utils.utils import validate_optional_path, validate_type, validate_types
+
 
 # TODO FILL OUT TYPE HINTS IN THIS CLASS
 # TODO TESTS!!!
-
-
-class MidiPlayerAppendMode(Enum):
-    AppendAfterPreviousNote = 1
-    AppendAtAbsoluteTime = 2
 
 
 class MidiEventType(Enum):
@@ -78,7 +74,6 @@ class MidiPlayerEvent(object):
             event.tick_delta = event.tick - event_list[j - 1].tick
 
 
-# TODO ONLY GARAGEBAND CAN OPEN THE FILES PRODUCED BY THIS, AND THEN ONLY FIRST TRACK
 class MidiPlayer(Player):
     MIDI_TICKS_PER_QUARTER_NOTE = 960
     MIDI_QUARTER_NOTES_PER_BEAT = 4
@@ -92,19 +87,16 @@ class MidiPlayer(Player):
     PLAY_ALL = 'play_all'
     PLAY_EACH = 'play_each'
 
-    def __init__(self, song: Song = None, append_mode: MidiPlayerAppendMode = None,
-                 midi_file_path: str = None):
+    def __init__(self, song: Song = None, midi_file_path: str = None):
         # TODO REVSIT WHY SONG CANNOT BE A NOTE SEQUENCE. IT SHOULD BE AND PLAYER DESIGN IS BREAKING BECAUST IT ISN'T
         # MidiPlayer only can play a Song with one or more Tracks. Tracks may be bare NoteSequence collections
         # or Measures with Meter
-        validate_types(('song', song, Song), ('append_mode', append_mode, MidiPlayerAppendMode))
+        validate_type('song', song, Song)
         validate_optional_path('midi_file_path', midi_file_path)
         super(MidiPlayer, self).__init__()
 
         self.song = song
-        self.append_mode = append_mode
         self.midi_file_path = midi_file_path
-        self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
         # Type 1 - multiple synchronous tracks, all starting at the same time
         # https://mido.readthedocs.io/en/latest/midi_files.html
         self.midi_file = MidiFile(type=1)

@@ -12,12 +12,11 @@ from aleatoric.note.generators.chord_globals import HarmonicChord
 from aleatoric.note.generators.scale import Scale
 from aleatoric.note.generators.scale_globals import HarmonicScale, MajorKey
 from aleatoric.note.modifiers.meter import NoteDur
-from aleatoric.player.midi_player import MidiPlayer, MidiPlayerAppendMode
+from aleatoric.player.midi_player import MidiPlayer
 
 
 SONG_NAME = 'test_midi_song'
 INSTRUMENT: int = MidiInstrument.Vibraphone.value
-APPEND_MODE = MidiPlayerAppendMode.AppendAtAbsoluteTime
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QUARTER
@@ -68,18 +67,15 @@ if __name__ == '__main__':
                 chords_notes.extend(chord.note_list)
 
         ostinato_measure = Measure(ostinato_notes, meter=METER)
-        # ostinato_track.append(ostinato_measure)
-        chords_measure = Measure(chords_notes, meter=METER)
-        ostinato_track.append(chords_measure)
+        ostinato_track.append(ostinato_measure)
         ostinato_notes = NoteSequence([])
-        # chords_track.append(chords_measure)
+        chords_measure = Measure(chords_notes, meter=METER)
+        chords_track.append(chords_measure)
         chords_notes = NoteSequence([])
 
     song = Song(to_add=tracks, name=SONG_NAME)
 
-    # TODO CHANGE EACH TRCK TO WRITE TO A SEPARATE FILE. HACK FOR NOW.
-    # TODO POST ABOUT MULTIPLE TRACKS
-    player = MidiPlayer(song=song, append_mode=APPEND_MODE,
+    player = MidiPlayer(song=song,
                         midi_file_path='/Users/markweiss/Documents/projects/aleatoric/test_song.mid')
     player.play_all()
     player.write_midi_file()
