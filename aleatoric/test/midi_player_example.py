@@ -77,6 +77,8 @@ if __name__ == '__main__':
 
     song = Song(to_add=tracks, name=SONG_NAME)
 
+    # TODO CHANGE EACH TRCK TO WRITE TO A SEPARATE FILE. HACK FOR NOW.
+    # TODO POST ABOUT MULTIPLE TRACKS
     player = MidiPlayer(song=song, append_mode=APPEND_MODE,
                         midi_file_path='/Users/markweiss/Documents/projects/aleatoric/test_song.mid')
     player.play_all()
