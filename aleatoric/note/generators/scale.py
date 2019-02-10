@@ -15,7 +15,6 @@ from aleatoric.note.adapters.csound_note import CSoundNote
 from aleatoric.note.adapters.foxdot_supercollider_note import \
     FoxDotSupercolliderNote
 from aleatoric.note.adapters.midi_note import MidiNote
-from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 from aleatoric.note.containers.note_sequence import NoteSequence
 from aleatoric.note.generators.scale_globals import (HarmonicScale, MajorKey,
                                                      MinorKey)
@@ -40,8 +39,7 @@ class Scale(NoteSequence):
                  octave: int = None,
                  harmonic_scale: HarmonicScale = None,
                  note_cls: Any = None,
-                 note_prototype: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote] = None,
-                 performance_attrs: PerformanceAttrs = None):
+                 note_prototype: Union[CSoundNote, FoxDotSupercolliderNote, MidiNote] = None):
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
         _, matched_key_type = validate_type_choice('key', key, (MajorKey, MinorKey))

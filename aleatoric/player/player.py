@@ -39,19 +39,23 @@ class Player(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    def __init__(self, note_sequence: NoteSequence):
-        validate_type('note_sequence', note_sequence, NoteSequence)
+    # TODO REMOVE OR FIX
+    def __init__(self): # note_sequence: NoteSequence):
+        # TODO REMOVE OR FIX
+        # validate_type('note_sequence', note_sequence, NoteSequence)
 
-        self.note_sequence = note_sequence
+        # TODO REMOVE OR FIX
+        # self.note_sequence = note_sequence
         self.improvising = False
         self.pre_play_hooks: Dict[str, Any] = {}
         self.pre_play_hooks_list: List[Any] = []
         self.post_play_hooks: Dict[str, int] = {}
         self.post_play_hooks_list: List[Any] = []
 
-    @property
-    def notes(self):
-        return self.note_sequence
+    # TODO REMOVE
+    # @property
+    # def notes(self):
+    #     return self.note_sequence
 
     def add_pre_play_hook(self, name: str, hook: Any):
         self._add_hook(name, hook, self.pre_play_hooks, self.pre_play_hooks_list)

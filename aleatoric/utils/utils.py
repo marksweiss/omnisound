@@ -1,6 +1,8 @@
 # Copyright 2018 Mark S. Weiss
 
 from math import copysign
+from os import access, W_OK
+from os.path import dirname
 from random import random
 from typing import Any, Dict, Optional, Tuple
 
@@ -65,7 +67,6 @@ def validate_not_none(arg_name, val) -> bool:
     return True
 
 
-# TODO TEST
 def validate_not_falsey(arg_name, val) -> bool:
     if not val:
         raise ValueError(f'`{arg_name}` must not be falsey')
@@ -130,6 +131,22 @@ def validate_type_reference_choice(arg_name, type_ref_val, val_types) -> Tuple[b
         raise ValueError((f'arg: `{arg_name}` has val: `{type_ref_val}` '
                           f'but must be one of the following types: `{val_types}`'))
     return matched, matched_type
+
+
+# TODO UNIT TEST
+def validate_path(arg_name, val):
+    if not isinstance(val, str):
+        raise ValueError(f'arg: `{arg_name}` must be type `str` but is type: `{type(val)}`')
+    if not access(dirname(val), W_OK):
+        raise ValueError(f'arg: `{val}` is not a valid path')
+    return True
+
+
+# TODO UNIT TEST
+def validate_optional_path(arg_name, val):
+    if not val:
+        return True
+    return validate_path(arg_name, val)
 
 
 def sign() -> float:

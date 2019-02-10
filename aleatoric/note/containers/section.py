@@ -34,12 +34,10 @@ class Section(object):
 
         self.section_performance_attrs = performance_attrs
         self.section_meter = meter
-        # TODO
         if meter:
             for measure in self.measure_list:
-                measure.swing = meter
+                measure.meter = meter
         self.section_swing = swing
-        # TODO
         if swing:
             for measure in self.measure_list:
                 measure.swing = swing
@@ -267,7 +265,7 @@ class Section(object):
             raise StopIteration
         measure = self.measure_list[self.index]
         self.index += 1
-        return Measure.copy(measure)
+        return measure
 
     def __eq__(self, other: 'Section') -> bool:
         if not other or len(self) != len(other):

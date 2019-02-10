@@ -23,6 +23,7 @@ ATTR_TYPE = int
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
+TEMPO_QPM = 240
 
 SWING_FACTOR = 0.5
 
@@ -55,7 +56,7 @@ def note_sequence(note_list):
 
 @pytest.fixture
 def meter():
-    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_dur=BEAT_DUR)
+    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
 
 
 @pytest.fixture
@@ -86,13 +87,18 @@ def _apply_swing_and_get_note_starts(measure) -> List[float]:
     return actual_note_starts
 
 
-def test_section(performance_attrs, measure_list):
+def test_section(meter, swing, performance_attrs, measure_list):
     # Test: List[Measure] and no instrument or performance_attrs
     # Expect a Section with measures, no track_instrument, no pa and Notes not having reassigned instrument or pa
-    section = Section(measure_list=measure_list, name=SECTION_NAME)
+    section = Section(measure_list=measure_list, name=SECTION_NAME, meter=meter, swing=swing)
     assert section.measure_list == measure_list
     assert section.name == SECTION_NAME
+    assert section.meter == meter
+    assert section.swing == swing
     assert section.performance_attrs is None
+    for measure in section:
+        assert measure.meter == meter
+        assert measure.swing == swing
 
     # Test: List[Measure] with instrument and performance_attrs
     # Expect a Section with measures, track_instrument, pa and Notes having reassigned instrument and pa
@@ -187,7 +193,7 @@ def test_quantizing_on_off(section):
     for measure in section.measure_list:
         assert measure.meter.is_quantizing()
     # Can override default
-    meter_2 = Meter(beat_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
+    meter_2 = Meter(beat_note_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
     assert not meter_2.is_quantizing()
     # Can toggle with methods
     meter_2.quantizing_on()
@@ -196,25 +202,67 @@ def test_quantizing_on_off(section):
     assert not meter_2.is_quantizing()
 
 
-def test_assign_meter(meter, section):
-    new_meter = Meter(beats_per_measure=BEATS_PER_MEASURE * 2, beat_dur=BEAT_DUR)
+def test_assign_meter_swing(meter, section):
+    new_meter = Meter(beats_per_measure=BEATS_PER_MEASURE * 2, beat_note_dur=BEAT_DUR)
     section.meter = new_meter
     assert section.meter == new_meter
+    new_swing = Swing(swing_factor=SWING_FACTOR * 2)
+    section.swing = new_swing
+    assert section.swing == new_swing
 
 
 def test_quantize(note_list, section):
-    # Modify the note durations in the copy to be longer and require quantization
-    note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
-    for note in note_list_with_longer_durations:
-        note.dur = note.dur * 2
-    for measure in section.measure_list:
-        measure.note_list = note_list_with_longer_durations
+    # BEFORE
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00     1.25
+    # n0************
+    #        n1*****
+    #               n2***************
+    #                        n3***************
+
+    # AFTER
+    # measure ------------------------*
+    # 0    0.25    0.50    0.75    1.00
+    # n0*********
+    #        n1**
+    #            n2*****
+    #                   n3***********
+
+    def copy_note_list_with_longer_duration(note_list):
+        note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
+        for note in note_list_with_longer_durations:
+            note.dur = note.dur * 2
+        return note_list_with_longer_durations
+
+    before_quantize_note_lists = []
+    before_quantize_note_lists.append(copy_note_list_with_longer_duration(note_list))
+    before_quantize_note_lists.append(copy_note_list_with_longer_duration(note_list))
+    for measure in section:
+        measure.note_list = copy_note_list_with_longer_duration(note_list)
 
     section.quantize()
-    # Assert that after quantization the durations in both note lists are identical
+
+    # Test dur adjustments
+    # Assert that after quantization the durations are adjusted
+    # Expected adjustment is -0.125 because:
+    # - max adjusted start + duration is 1.25
+    # - measure_duration is 1.0
+    # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
+    expected_dur_adjustment = 0.125
+    for i, measure in enumerate(section.measure_list):
+        for j, note in enumerate(measure.note_list):
+            assert note.dur == pytest.approx(before_quantize_note_lists[i][j].dur - expected_dur_adjustment)
+
+    # Test start adjustments
+    # Expected start adjustments
+    # - First note starts at 0.0, no adjustmentj
+    # - Second note is 0.25 - (note.dur * total_adjustment) = 0.125
+    # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
+    # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
+    expected_starts = [0.0, 0.125, 0.375, 0.625]
     for measure in section.measure_list:
-        for i, note in enumerate(note_list):
-            assert note.dur == pytest.approx(measure.note_list[i].dur)
+        for i, note in enumerate(measure.note_list):
+            assert note.start == pytest.approx(expected_starts[i])
 
 
 def test_quantize_to_beat(note_list, section):

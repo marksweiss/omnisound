@@ -7,8 +7,10 @@ from aleatoric.note.adapters.note import Note
 from aleatoric.note.adapters.performance_attrs import PerformanceAttrs
 from aleatoric.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from aleatoric.utils.utils import (validate_optional_types, validate_type,
-                                   validate_type_choice, validate_types)
+from aleatoric.utils.utils import (validate_optional_types,
+                                   validate_optional_type_choice,
+                                   validate_type, validate_type_choice,
+                                   validate_types)
 
 FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
 
@@ -239,7 +241,7 @@ class MidiNote(Note):
     MAX_PITCH = 108
     DEFAULT_CHANNEL = 1
 
-    def __init__(self, instrument: int = None,
+    def __init__(self, instrument: Union[int, MidiInstrument] = None,
                  time: float = None, duration: float = None, velocity: int = None, pitch: int = None,
                  name: str = None,
                  channel: int = None,
@@ -248,8 +250,11 @@ class MidiNote(Note):
                        ('pitch', pitch, int))
         validate_optional_types(('channel', channel, int), ('name', name, str),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
+        validate_optional_type_choice('instrument', instrument, (int, MidiInstrument))
         super(MidiNote, self).__init__(name=name)
         self._instrument = instrument
+        if instrument in MidiInstrument:
+            self._instrument = instrument.value
         self._time = time
         self._duration = duration
         self._velocity = velocity
@@ -420,7 +425,7 @@ class MidiNote(Note):
         """
         validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type('octave', octave, int)
-        if cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE:
+        if not (cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE):
             raise ValueError(f'Arg `octave` must be in range {cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}')
 
         if octave == cls.MIN_OCTAVE:
@@ -428,10 +433,10 @@ class MidiNote(Note):
             if key not in cls.KEYS_IN_MIN_OCTAVE:
                 raise ValueError(('If arg `octave` == 0 then `key` must be in '
                                   f'{cls.KEYS_IN_MIN_OCTAVE}'))
-            return cls.PITCH_MAP[key].value - NUM_INTERVALS_IN_OCTAVE
+            return cls.PITCH_MAP[key] - NUM_INTERVALS_IN_OCTAVE
         else:
             interval_offset = (octave - 1) * NUM_INTERVALS_IN_OCTAVE
-            return cls.PITCH_MAP[key].value + interval_offset
+            return cls.PITCH_MAP[key] + interval_offset
 
     @staticmethod
     def copy(source_note: 'MidiNote') -> 'MidiNote':

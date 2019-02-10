@@ -187,11 +187,9 @@ class Track(Section):
     # /Measure list management
 
     # Iter / slice support
-    # TODO INHERIT FROM SECTION
     def __len__(self) -> int:
         return len(self.measure_list)
 
-    # TODO INHERIT FROM SECTION
     def __getitem__(self, index: int) -> Measure:
         validate_type('index', index, int)
         if abs(index) >= len(self.measure_list):
@@ -202,13 +200,12 @@ class Track(Section):
         self.index = 0
         return self
 
-    # TODO INHERIT FROM SECTION
     def __next__(self) -> Measure:
         if self.index == len(self.measure_list):
             raise StopIteration
         measure = self.measure_list[self.index]
         self.index += 1
-        return Measure.copy(measure)
+        return measure
 
     def __eq__(self, other: 'Track') -> bool:
         if not other or len(self) != len(other):
@@ -235,6 +232,7 @@ class MidiTrack(Track):
     def __init__(self, to_add: Optional[Union[List[Measure], Section]] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 name: Optional[str] = None,
                  instrument: Optional[int] = None,
                  channel: int = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
@@ -243,5 +241,6 @@ class MidiTrack(Track):
         super(MidiTrack, self).__init__(to_add=to_add,
                                         meter=meter,
                                         swing=swing,
+                                        name=name,
                                         instrument=instrument,
                                         performance_attrs=performance_attrs)

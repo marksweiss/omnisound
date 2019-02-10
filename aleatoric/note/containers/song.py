@@ -172,7 +172,7 @@ class Song(object):
             raise StopIteration
         track = self.track_list[self.index]
         self.index += 1
-        return Track.copy(track)
+        return track
 
     def __eq__(self, other: 'Song') -> bool:
         if not other or len(self) != len(other):

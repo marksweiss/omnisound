@@ -5,7 +5,7 @@ import pytest
 from aleatoric.note.adapters.csound_note import CSoundNote
 from aleatoric.note.generators.chord import Chord
 from aleatoric.note.generators.chord_globals import HarmonicChord
-from aleatoric.note.generators.scale_globals import HarmonicScale, MajorKey
+from aleatoric.note.generators.scale_globals import MajorKey
 
 INSTRUMENT = 1
 START = 0.0
@@ -16,7 +16,6 @@ PITCH = 1.01
 NOTE_CLS = CSoundNote
 OCTAVE = 4
 KEY = MajorKey.C
-HARMONIC_SCALE = HarmonicScale.Major
 
 
 @pytest.fixture
