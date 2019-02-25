@@ -57,6 +57,12 @@ class Scale(NoteSequence):
         self.note_prototype = note_prototype
 
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
+
+        # TODO MINGUS SCALES DO NOT MATCH, note names are 'C#' and 'Bb" etc. Need to map
+        #  with a wrapper function in scale_globals so all the HarmonicScales are the notes in the scale
+        #  from Mingus but in aleatoric Enums or Enum Strings
+        # TODO Then fix mingus_utils and re-pass tests
+
         mingus_keys = harmonic_scale.value(key.name).ascending()
         # Trim the last element because mingus returns the first note in the next octave along with all the
         # notes in the scale of the octave requested. This behavior is observed and not exhaustively tested
@@ -64,6 +70,7 @@ class Scale(NoteSequence):
         if mingus_keys[0] == mingus_keys[-1]:
             mingus_keys = mingus_keys[:-1]
         mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
+        self.keys = [mingus_key_to_key_enum_mapping[mingus_key.upper()] for mingus_key in mingus_keys]
         note_list = get_notes_for_mingus_keys(matched_key_type, mingus_keys,
                                               mingus_key_to_key_enum_mapping,
                                               self.note_prototype, self.note_type, self.octave,

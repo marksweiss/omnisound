@@ -13,14 +13,21 @@ class MajorKey(Enum):
     C_s = major_keys[14].upper()
     D_f = major_keys[2].upper()
     D = major_keys[9].upper()
+    # Special case. This key is validly part of Major triads and other Major scale chords
+    # e.g. - E.G#.B. Of course this is equivalent to E.Ab.B, but it is returned as 'G#'
+    # which it is not included in the Mingus major_keys. So add it manually.
+    D_s = 'D#'
     E_f = major_keys[4].upper()
     E = major_keys[11].upper()
     F = major_keys[6].upper()
     F_s = major_keys[13].upper()
     G_f = major_keys[1].upper()
     G = major_keys[8].upper()
+    # Another special case
+    G_s = 'G#'
     A_f = major_keys[3].upper()
     A = major_keys[10].upper()
+    A_s = 'A#'
     B_f = major_keys[5].upper()
     B = major_keys[12].upper()
     C_f = major_keys[0].upper()
@@ -30,13 +37,14 @@ class MinorKey(Enum):
     C = minor_keys[4].upper()
     C_S = minor_keys[11].upper()
     D = minor_keys[6].upper()
-    D_S = minor_keys[12].upper()
+    D_S = minor_keys[13].upper()
     E_F = minor_keys[1].upper()
     E = minor_keys[8].upper()
     E_S = minor_keys[13].upper()
     F = minor_keys[3].upper()
     F_S = minor_keys[10].upper()
     G = minor_keys[5].upper()
+    G_S = minor_keys[12].upper()
     A_F = minor_keys[0].upper()
     A = minor_keys[7].upper()
     A_S = minor_keys[14].upper()

@@ -14,8 +14,8 @@ class NoteDur(Enum):
     _0_25 = 0.25
     _0_125 = 0.125
     _0_0625 = 0.0625
-    _0_003125 = 0.003125
-    _0_00015625 = 0.00015625
+    _0_03125 = 0.03125
+    _0_015625 = 0.015625
     WHL = _1_0
     WHOLE = _1_0
     HLF = _0_5
@@ -26,10 +26,10 @@ class NoteDur(Enum):
     EIGHTH = _0_125
     SXTNTH = _0_0625
     SIXTEENTH = _0_0625
-    THRTYSCND = _0_003125
-    THIRTYSECOND = _0_003125
-    SXTYFRTH = _0_00015625
-    SIXTYFOURTH = _0_00015625
+    THRTYSCND = _0_03125
+    THIRTYSECOND = _0_03125
+    SXTYFRTH = _0_015625
+    SIXTYFOURTH = _0_015625
 
 
 class InvalidQuantizationDurationException(Exception):

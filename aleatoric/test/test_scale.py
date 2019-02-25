@@ -36,6 +36,8 @@ def test_scale(note, scale):
     assert scale.note_type is NOTE_CLS
     assert scale.harmonic_scale is HARMONIC_SCALE
     assert scale.note_prototype == note
+    assert scale.keys == [MajorKey.C, MajorKey.D, MajorKey.E, MajorKey.F, MajorKey.G,
+                          MajorKey.A, MajorKey.B]
 
 
 def test_is_major_key_is_minor_key(note, scale):
