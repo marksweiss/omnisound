@@ -1,0 +1,11 @@
+Installation
+
+git clone omnisound
+git submodule update --init
+
+pip install mido
+pip install supriya
+pip install python-mingus from this submodule
+
+install supercollider
+install csound
