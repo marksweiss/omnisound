@@ -12,6 +12,7 @@ from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import HarmonicScale, MajorKey
 from omnisound.note.modifiers.meter import NoteDur
+from omnisound.note.modifiers.swing import Swing
 from omnisound.player.midi_player import MidiPlayer, MidiPlayerAppendMode
 
 
@@ -56,6 +57,8 @@ if __name__ == '__main__':
     dur = NoteDur.THIRTYSECOND
     dur_val: float = dur.value
     notes_per_measure = int((1 / BEAT_DUR_VAL) * ((1 / dur_val) / (1 / BEAT_DUR_VAL)))
+    swing_factor = 0.01
+    swing = Swing(swing_on=True, swing_factor=swing_factor, swing_direction=Swing.SwingDirection.Both)
 
     for _ in range(NUM_MEASURES):
         ostinato_notes = NoteSequence([])
@@ -67,7 +70,8 @@ if __name__ == '__main__':
             note_config.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
             note = MidiNote(**note_config.as_dict())
             ostinato_notes.append(note)
-        ostinato_measure = Measure(ostinato_notes, meter=METER)
+        ostinato_measure = Measure(ostinato_notes, swing=swing, meter=METER)
+        ostinato_measure.apply_swing()
         ostinato_track.append(ostinato_measure)
 
     # Chords
