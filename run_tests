@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-pytest aleatoric/test/ -W ignore::UserWarning -W ignore::DeprecationWarning
+pytest omnisound/test/ -W ignore::UserWarning -W ignore::DeprecationWarning
