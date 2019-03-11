@@ -34,6 +34,9 @@ def pitch_to_str(pitch_prec):
         return f'{{p:.{pitch_prec}}}'
     return _pitch_to_str
 
+# TODO EXTEND UNIT TESTS FOR ADDITIONAL ATTRS
+# TODO EXTEND UNIT TESTS FOR CUSTOM TO_STR() HANDLING
+
 
 class CSoundNote(Note):
     """Models a note with attributes aliased to and specific to CSound
