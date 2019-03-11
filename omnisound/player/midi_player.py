@@ -14,6 +14,7 @@
 from enum import Enum
 from typing import List
 
+# noinspection PyProtectedMember
 from mido import Message, MidiFile, MidiTrack
 
 from omnisound.note.adapters.midi_note import MidiNote
@@ -23,7 +24,6 @@ from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
 from omnisound.utils.utils import validate_optional_path, validate_types
 
-# TODO FILL OUT TYPE HINTS IN THIS CLASS
 # TODO TESTS!!!
 
 
@@ -78,7 +78,7 @@ class MidiPlayerEvent(object):
             event.tick_delta = event.tick - event_list[j - 1].tick
 
 
-# TODO ONLY GARAGEBAND CAN OPEN THE FILES PRODUCED BY THIS, AND THEN ONLY FIRST TRACK
+# TODO ONLY GARAGEBAND CAN OPEN THE FILES PRODUCED BY THIS
 class MidiPlayer(Player):
     MIDI_TICKS_PER_QUARTER_NOTE = 960
     MIDI_QUARTER_NOTES_PER_BEAT = 4

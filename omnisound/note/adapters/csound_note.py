@@ -1,15 +1,38 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Union
+from typing import Any, Union
+
+from collections import OrderedDict
 
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_types, validate_type,
+from omnisound.utils.utils import (validate_not_none, validate_optional_types, validate_type,
                                    validate_type_choice, validate_types)
 
 FIELDS = ('instrument', 'start', 'duration', 'amplitude', 'pitch', 'name')
+
+
+class ToStrValWrapper(object):
+    def __init__(self, attr_val: Any, to_str: Any = None):
+        self.val = attr_val
+        self.to_str = to_str or self._to_str
+
+    @staticmethod
+    def _to_str(x):
+        return str(x)
+
+    def __eq__(self, other):
+        return self.val == other.val
+
+
+# Return a function that binds the pitch_precision to a function that returns an fstring that
+# formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
+def pitch_to_str(pitch_prec):
+    def _pitch_to_str(p):
+        return f'{{p:.{pitch_prec}}}'
+    return _pitch_to_str
 
 
 class CSoundNote(Note):
@@ -73,13 +96,27 @@ class CSoundNote(Note):
         self._amplitude = amplitude
         self._pitch = pitch
         self._performance_attrs = performance_attrs
+
         # Handle case that pitch is a float and will have rounding but that sometimes we want
         # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
         # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
         # and for the latter case we default to .5f precision but allow any precision.
         self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
 
+        self._to_str_val_wrappers = OrderedDict()
+        self._to_str_val_wrappers['instrument'] = ToStrValWrapper(self._instrument)
+        self._to_str_val_wrappers['start'] = ToStrValWrapper(self._start, lambda x: f'{x:.5f}')
+        self._to_str_val_wrappers['duration'] = ToStrValWrapper(self._duration, lambda x: f'{x:.5f}')
+        self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(self._amplitude)
+        self._to_str_val_wrappers['pitch'] = ToStrValWrapper(self.pitch, pitch_to_str(self._pitch_precision))
+
     # Custom Interface
+    def add_attr(self, attr_name: str, attr_val: Any, to_str: Any = None):
+        validate_type('attr_name', attr_name, str)
+        validate_not_none('attr_name', attr_val)
+        setattr(self, attr_name, attr_val)
+        self._to_str_val_wrappers[attr_name] = ToStrValWrapper(attr_val, to_str)
+
     @property
     def pitch_precision(self) -> int:
         return self._pitch_precision
@@ -101,11 +138,13 @@ class CSoundNote(Note):
     def instrument(self, instrument: int):
         validate_type('instrument', instrument, int)
         self._instrument = instrument
+        self._to_str_val_wrappers['instrument'] = ToStrValWrapper(instrument)
 
     def i(self, instrument: int = None) -> Union['CSoundNote', int]:
         if instrument is not None:
             validate_type('instrument', instrument, int)
             self._instrument = instrument
+            self._to_str_val_wrappers['instrument'] = ToStrValWrapper(instrument)
             return self
         else:
             return self._instrument
@@ -118,11 +157,13 @@ class CSoundNote(Note):
     def start(self, start: float):
         validate_type('start', start, float)
         self._start = start
+        self._to_str_val_wrappers['start'] = ToStrValWrapper(start, lambda x: f'{x:.5f}')
 
     def s(self, start: float = None) -> Union['CSoundNote', float]:
         if start is not None:
             validate_type('start', start, float)
             self._start = start
+            self._to_str_val_wrappers['start'] = ToStrValWrapper(start, lambda x: f'{x:.5f}')
             return self
         else:
             return self._start
@@ -135,11 +176,13 @@ class CSoundNote(Note):
     def dur(self, duration: float):
         validate_type('duration', duration, float)
         self._duration = duration
+        self._to_str_val_wrappers['duration'] = ToStrValWrapper(duration, lambda x: f'{x:.5f}')
 
     def d(self, duration: float = None) -> Union['CSoundNote', float]:
         if duration is not None:
             validate_type('duration', duration, float)
             self._duration = duration
+            self._to_str_val_wrappers['duration'] = ToStrValWrapper(duration, lambda x: f'{x:.5f}')
             return self
         else:
             return self._duration
@@ -152,6 +195,7 @@ class CSoundNote(Note):
     def duration(self, duration: float):
         validate_type('duration', duration, float)
         self._duration = duration
+        self._to_str_val_wrappers['duration'] = ToStrValWrapper(duration, lambda x: f'{x:.5f}')
 
     @property
     def amp(self) -> int:
@@ -161,11 +205,13 @@ class CSoundNote(Note):
     def amp(self, amplitude: int):
         validate_type('amplitude', amplitude, int)
         self._amplitude = amplitude
+        self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(amplitude)
 
     def a(self, amplitude: int = None) -> Union['CSoundNote', int]:
         if amplitude is not None:
             validate_type('amplitude', amplitude, int)
             self._amplitude = amplitude
+            self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(amplitude)
             return self
         else:
             return self._amplitude
@@ -178,6 +224,7 @@ class CSoundNote(Note):
     def amplitude(self, amplitude: int):
         validate_type('amplitude', amplitude, int)
         self._amplitude = amplitude
+        self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(amplitude)
 
     @property
     def pitch(self) -> float:
@@ -186,12 +233,14 @@ class CSoundNote(Note):
     @pitch.setter
     def pitch(self, pitch: float):
         validate_type('pitch', pitch, float)
+        self._to_str_val_wrappers['pitch'] = ToStrValWrapper(pitch, pitch_to_str(self._pitch_precision))
         self._pitch = pitch
 
     def p(self, pitch: float = None) -> Union['CSoundNote', float]:
         if pitch is not None:
             validate_type('pitch', pitch, float)
             self._pitch = pitch
+            self._to_str_val_wrappers['pitch'] = ToStrValWrapper(pitch, pitch_to_str(self._pitch_precision))
             return self
         else:
             return self._pitch
@@ -243,17 +292,23 @@ class CSoundNote(Note):
                           performance_attrs=source_note.performance_attrs)
 
     def __eq__(self, other: 'CSoundNote') -> bool:
-        """NOTE: Equality ignores Note.name and Note.peformance_attrs. Two CSountNotes are considered equal
+        """NOTE: Equality ignores Note.name and Note.performance_attrs. Two CSoundNotes are considered equal
            if they have the same note attributes.
         """
         return self._instrument == other._instrument and self._start == other._start and \
-            self._duration == other.duration and self._amplitude == other._amplitude and \
-            self._pitch == other._pitch
+               self._duration == other.duration and self._amplitude == other._amplitude and \
+               self._pitch == other._pitch and self._to_str_val_wrappers == other._to_str_val_wrappers
 
     def __str__(self):
         """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
            formatting for pitch to enforce two places for scale pitch syntax, e.g. Middle C == 4.01, and to also
            allow arbitrary precision for floating point values in Hz.
+
+           Note also that we defer all string handling to the ToStrValWrapper class. The class sets up the to_str
+           for the core attributes of the object correctly. And we expect that any calls to add_attr() to add
+           new attributes also correctly set up to_str for that attribute and it's type. Attributes are either
+           integers, which require no special handling, floats other than pitch, which require precision handling,
+           or pitch, which requires precision handling but is a special case because CSound overloads float syntax
+           to express Western 12-tone scale values using float notation.
         """
-        return (f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} '
-                f'{self._pitch:.{self._pitch_precision}f}')
+        return ' '.join([f'{v.to_str(v.val)}' for v in self._to_str_val_wrappers.values()])
