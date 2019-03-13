@@ -31,7 +31,7 @@ class ToStrValWrapper(object):
 # formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
 def pitch_to_str(pitch_prec):
     def _pitch_to_str(p):
-        return f'{{p:.{pitch_prec}}}'
+        return str(round(p, pitch_prec))
     return _pitch_to_str
 
 # TODO EXTEND UNIT TESTS FOR ADDITIONAL ATTRS
@@ -111,6 +111,7 @@ class CSoundNote(Note):
         self._to_str_val_wrappers['start'] = ToStrValWrapper(self._start, lambda x: f'{x:.5f}')
         self._to_str_val_wrappers['duration'] = ToStrValWrapper(self._duration, lambda x: f'{x:.5f}')
         self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(self._amplitude)
+        # self._to_str_val_wrappers['pitch'] = ToStrValWrapper(self.pitch, pitch_to_str(self._pitch_precision))
         self._to_str_val_wrappers['pitch'] = ToStrValWrapper(self.pitch, pitch_to_str(self._pitch_precision))
 
     # Custom Interface
@@ -314,4 +315,4 @@ class CSoundNote(Note):
            or pitch, which requires precision handling but is a special case because CSound overloads float syntax
            to express Western 12-tone scale values using float notation.
         """
-        return ' '.join([f'{v.to_str(v.val)}' for v in self._to_str_val_wrappers.values()])
+        return 'i ' + ' '.join([f'{v.to_str(v.val)}' for v in self._to_str_val_wrappers.values()])

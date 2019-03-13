@@ -109,7 +109,8 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
     assert note.duration == note.dur == note.d() == duration
     assert note.amplitude == note.amp == note.a() == int(amplitude)
     assert note.pitch == note.p() == pitch
-    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {pitch:.2f}' == str(note)
+
+    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {int(amplitude)} {round(pitch, 2)}' == str(note)
 
     note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
                       amplitude=int(amplitude), pitch=pitch)
@@ -124,11 +125,11 @@ def test_csound_note_pitch_precision():
     note = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR,
                       amplitude=int(AMP), pitch=PITCH)
     assert note.pitch_precision == CSoundNote.SCALE_PITCH_PRECISION
-    assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {int(AMP)} {PITCH:.2f}' == str(note)
+    assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {int(AMP)} {round(PITCH, 2)}' == str(note)
 
     note.pitch_precision = 5
     assert note.pitch_precision == 5
-    assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {int(AMP)} {PITCH:.5f}' == str(note)
+    assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {int(AMP)} {round(PITCH, 5)}' == str(note)
 
 
 @pytest.mark.parametrize('degree', PITCHES)
