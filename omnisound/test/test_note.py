@@ -125,7 +125,6 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
     assert note.p() == pitch + 1
 
 
-
 def test_csound_note_pitch_precision():
     note = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR,
                       amplitude=int(AMP), pitch=PITCH)
