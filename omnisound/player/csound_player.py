@@ -54,10 +54,10 @@ class CsoundPlayer(Player):
             # -s - short int sound samples # TODO DO WE WANT THIS?
             # -W - .wav output file format
             # -o - rendered output file name
-            cmd = (f'{CsoundPlayer.CSOUND_OSX_PATH} -m7 -g -s -W -o{self.out_file_path} '
+            cmd = (f'{CsoundPlayer.CSOUND_OSX_PATH} -m7 -d -g -s -W -o{self.out_file_path} '
                    f'{self.orchestra_file_path} {self.score_file_path}')
             print(f'Running Csound rendering command: {cmd}')
-            # subprocess.run(cmd.split())
+            subprocess.run(cmd.split())
 
     def improvise(self):
         raise NotImplementedError('CsoundPlayer does not support improvising')
