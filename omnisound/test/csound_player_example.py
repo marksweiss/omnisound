@@ -10,7 +10,8 @@ from omnisound.note.containers.track import Track
 from omnisound.player.csound_player import CsoundPlayer
 
 SONG_NAME = 'Your Song'
-INSTRUMENT = 1
+INSTRUMENT_1 = 1
+INSTRUMENT_2 = 2
 FUNC_TABLE = 1
 DUR = 0.1
 NUM_NOTES = 10
@@ -18,32 +19,34 @@ BASE_AMP = 10000
 AMP_FACTOR = 5
 AMP_CYCLE = 20
 PITCH = 6.07
-
+OUT_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example.wav'
+SCORE_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example.sco'
+ORCHESTRA_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example.orc'
+SCORE_INCLUDE_FILE_PATH = ('/Users/markweiss/Documents/projects/omnisound/omnisound/test/'
+                           'csound_player_example_ftables_1.txt')
 
 if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
-    ostinato_notes = NoteSequence([])
+    notes = NoteSequence([])
     for i in range(NUM_NOTES):
         note_config = NoteConfig(FIELDS)
-        note_config.instrument = INSTRUMENT
+        note_config.instrument = INSTRUMENT_1
         note_config.start = (i % NUM_NOTES) * DUR
         note_config.duration = DUR
         note_config.amplitude = BASE_AMP
-        # note_config.amplitude = int(BASE_AMP + (BASE_AMP * (((i % AMP_CYCLE) + 1) / NUM_NOTES) * AMP_FACTOR))
         note_config.pitch = PITCH
-        note = CSoundNote(**note_config.as_dict())
-        note.add_attr('func_table', FUNC_TABLE)
-        ostinato_notes.append(note)
+        note_1 = CSoundNote(**note_config.as_dict())
+        note_1.add_attr('func_table', FUNC_TABLE)
+        notes.append(note_1)
+        note_2 = CSoundNote.copy(note_1)
+        note_2.instrument = INSTRUMENT_2
+        notes.append(note_2)
 
-    ostinato_measure = Measure(ostinato_notes)
-    track = Track(to_add=[ostinato_measure], name='ostinato', instrument=INSTRUMENT)
+    measure = Measure(notes)
+    track = Track(to_add=[measure], name='ostinato', instrument=INSTRUMENT_1)
     song = Song(to_add=[track], name=SONG_NAME)
-    player = CsoundPlayer(
-        song=song,
-        out_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_example.wav',
-        score_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_example.sco',
-        orchestra_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/markov_opt_1.orc')
-    player.add_score_include_file (
-        '/Users/markweiss/Documents/projects/omnisound/omnisound/test/oscil_sine_ftables_1.txt')
+    player = CsoundPlayer(song=song, out_file_path=OUT_FILE_PATH,
+                          score_file_path=SCORE_FILE_PATH, orchestra_file_path=ORCHESTRA_FILE_PATH)
+    player.add_score_include_file(SCORE_INCLUDE_FILE_PATH)
     player.play_all()
