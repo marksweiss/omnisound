@@ -23,7 +23,7 @@ OUT_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/cs
 SCORE_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example.sco'
 ORCHESTRA_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example.orc'
 SCORE_INCLUDE_FILE_PATH = ('/Users/markweiss/Documents/projects/omnisound/omnisound/test/'
-                           'csound_player_example_ftables_1.txt')
+                           'csound_player_example_ftables.txt')
 
 if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()

@@ -1,0 +1,15 @@
+__pycache__/
+venv/
+ruby_src/
+.idea/
+.gitignore
+test_foxdot.py
+*.pyc
+ext/python-mingus
+*.DS_Store
+aleatoric/.DS_Store
+aleatoric/*/.DS_Store
+aleatoric/test/*.mid
+*.mid
+omnisound/test/*.wav
+omnisound/test/*.wav

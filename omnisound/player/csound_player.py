@@ -14,9 +14,10 @@ class CsoundPlayer(Player):
 
     def __init__(self, song: Song = None, out_file_path: str = None,
                  score_file_path: str = None, orchestra_file_path: str = None,
-                 csound_path: str = None):
+                 csound_path: str = None, verbose: bool = False):
         validate_types(('song', song, Song), ('out_file_path', out_file_path, str),
-                       ('score_file_path', score_file_path, str), ('orchestra_file_path', orchestra_file_path, str))
+                       ('score_file_path', score_file_path, str), ('orchestra_file_path', orchestra_file_path, str),
+                       ('verbose', verbose, bool))
         validate_optional_type('csound_path', csound_path, str)
         super(CsoundPlayer, self).__init__()
 
@@ -26,6 +27,7 @@ class CsoundPlayer(Player):
         self.orchestra_file_path = orchestra_file_path
         # TODO MAKE MORE PLATFORM-NEUTRAL
         self.csound_path = csound_path or CsoundPlayer.CSOUND_OSX_PATH
+        self.verbose = verbose
         self._include_file_names = []
 
     # TODO FIX THIS HELPER FUNC
@@ -51,13 +53,16 @@ class CsoundPlayer(Player):
             # -m7 - message level includes `note amps`, `out-of-range` and `warnings`
             # -d - suppress all messages to stdout
             # -g - suppress all graphics
-            # -s - short int sound samples # TODO DO WE WANT THIS?
+            # -s - short int sound samples
             # -W - .wav output file format
             # -o - rendered output file name
-            cmd = (f'{CsoundPlayer.CSOUND_OSX_PATH} -m7 -d -g -s -W -o{self.out_file_path} '
+            cmd = (f'{CsoundPlayer.CSOUND_OSX_PATH} -m7 -s -W -o{self.out_file_path} '
                    f'{self.orchestra_file_path} {self.score_file_path}')
-            print(f'Running Csound rendering command: {cmd}')
-            subprocess.run(cmd.split())
+            print(f'{cmd}')
+
+            # TODO GENERATES THE COMMAND STRING BUT ACTUALLY RUNNING IT FROM WITHIN PYTHON SILENTLY
+            #  COMPLETES, RETURNS 255 (CSound return code for 'help'), AND DOES NOT WRITE *.WAV OUTPUT
+            # subprocess.call(cmd.split(), shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def improvise(self):
         raise NotImplementedError('CsoundPlayer does not support improvising')

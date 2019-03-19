@@ -1,4 +1,4 @@
-#include "/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example_ftables_1.txt"
+#include "/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example_ftables.txt"
 
 i 1 0.00000 0.10000 10000 6.07 1
 i 1 0.00000 0.10000 10000 6.07
