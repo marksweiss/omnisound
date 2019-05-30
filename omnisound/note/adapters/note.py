@@ -1,23 +1,27 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Any, Dict, List, Union
+
+from numpy import float64, resize, zeros
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
+from omnisound.utils.utils import (validate_not_none, validate_type)
 
 
 class NoteConfig(object):
     def __init__(self, fields):
-        self._fields = fields
+        self._attr_names = fields
         for field in fields:
             setattr(self, field, None)
 
     def as_dict(self) -> Dict:
-        return {field: getattr(self, field) for field in self._fields}
+        return {field: getattr(self, field) for field in self._attr_names}
 
     def as_list(self) -> List:
-        return [getattr(self, field) for field in self._fields]
+        return [getattr(self, field) for field in self._attr_names]
 
 
 class Note(ABC):
@@ -34,112 +38,68 @@ class Note(ABC):
        In addition, each derived type is expected to define equality, a `copy()` constructor, and `str`. Note that
        `str` may be meaningful output, as in the case of `CSoundNote`, which produces a string that can be inserted
        into a CSound score file which CSound uses to render audio. Or it may be merely a string representation of
-       the information in the note.
+       the information in the note, as is the case for Midi.
 
        Finally, each note is responsible for being able to translate a musical key (pitch on a scale) to a valid
        pitch value for that Note's backend, in the `get_pitch_for_key()` method.
 
        It is is strongly preferred that all getter properties return self in derived classes
-       to support fluid interfaces and defining notes most easily in the least number of lines.
+       to support fluid interfaces for defining and modifying notes most easily in the least number of lines.
     """
 
     DEFAULT_NAME = 'Note'
 
+    INSTRUMENT = 0
+    START = 1
+    DUR = 2
+    AMP = 3
+    PITCH = 4
+    # noinspection SpellCheckingInspection
+    BASE_ATTR_NAMES = {
+        'instrument': INSTRUMENT,
+        'i': INSTRUMENT,
+        'start': START,
+        's': START,
+        'dur': DUR,
+        'd': DUR,
+        'amp': AMP,
+        'a': AMP,
+        'pitch': PITCH,
+        'p': PITCH,
+    }
+    NUM_BASE_ATTRS = 5
+
     def __init__(self, name: str = None):
-        self._name = name or Note.DEFAULT_NAME
+        self.name = name or Note.DEFAULT_NAME
+        # noinspection SpellCheckingInspection
+        self._attr_names = deepcopy(Note.BASE_ATTR_NAMES)
+        self._attrs = zeros((Note.NUM_BASE_ATTRS, 1), dtype=float64)
 
     @property
-    def name(self):
-        return self._name
+    def num_attrs(self) -> int:
+        return len(self._attrs)
 
-    @name.setter
-    def name(self, name: str):
-        self._name = name
+    def add_attr(self, attr_name: str, attr_val: Any):
+        validate_type('attr_name', attr_name, str)
+        validate_not_none('attr_val', attr_val)
+        # If the attr is already set in the Note, just assign it a new value
+        if attr_name in self._attr_names:
+            self._attrs[self._attr_names[attr_name]] = attr_val
+        # Else add the new attr
+        else:
+            next_attr_idx = self.num_attrs
+            self._attr_names[attr_name] = next_attr_idx
+            resize(self._attrs, (next_attr_idx + 1, 1))
+            self._attrs[next_attr_idx] = attr_val
 
-    @property
-    @abstractmethod
-    def instrument(self):
-        raise NotImplemented('Derived type must implement Note.instrument')
+    def __getattr__(self, attr_name: str) -> float64:
+        validate_type('attr_name', attr_name, str)
+        return self.__dict__[attr_name]
 
-    @instrument.setter
-    @abstractmethod
-    def instrument(self, instrument):
-        raise NotImplemented('Derived type must implement Note.instrument')
-
-    @property
-    @abstractmethod
-    def start(self):
-        raise NotImplemented('Derived type must implement Note.start')
-
-    @start.setter
-    @abstractmethod
-    def start(self, start):
-        raise NotImplemented('Derived type must implement Note.start')
-
-    @property
-    @abstractmethod
-    def dur(self):
-        raise NotImplemented('Derived type must implement Note.dur')
-
-    @dur.setter
-    @abstractmethod
-    def dur(self, dur):
-        raise NotImplemented('Derived type must implement Note.dur')
-
-    @property
-    @abstractmethod
-    def amp(self):
-        raise NotImplemented('Derived type must implement Note.amp')
-
-    @amp.setter
-    @abstractmethod
-    def amp(self, amp):
-        raise NotImplemented('Derived type must implement Note.amp')
-
-    @property
-    @abstractmethod
-    def pitch(self):
-        raise NotImplemented('Derived type must implement Note.pitch')
-
-    @pitch.setter
-    @abstractmethod
-    def pitch(self, pitch):
-        raise NotImplemented('Derived type must implement Note.pitch')
-
-    @abstractmethod
-    def i(self, instrument=None):
-        """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
-           a setter or returns self._instrument as a getter.
-        """
-        raise NotImplemented('Derived type must implement Note.i')
-
-    @abstractmethod
-    def s(self, start=None):
-        """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
-           a setter or returns self._start as a getter.
-        """
-        raise NotImplemented('Derived type must implement Note.s')
-
-    @abstractmethod
-    def d(self, dur=None):
-        """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
-           a setter or returns self._dur as a getter.
-        """
-        raise NotImplemented('Derived type must implement Note.d')
-
-    @abstractmethod
-    def a(self, amp=None):
-        """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
-           a setter or returns self._amp as a getter.
-        """
-        raise NotImplemented('Derived type must implement Note.a')
-
-    @abstractmethod
-    def p(self, pitch=None):
-        """Fluent getter and setter that handles case of receiving an arg or not and either returns self as
-           a setter or returns self._pitch as a getter.
-        """
-        raise NotImplemented('Derived type must implement Note.p')
+    def __setattr__(self, attr_name: str, attr_val: Any):
+        validate_type('attr_name', attr_name, str)
+        validate_not_none('attr_val', attr_val)
+        self.__dict__[attr_name] = attr_val
 
     @abstractmethod
     def transpose(self, interval: int):

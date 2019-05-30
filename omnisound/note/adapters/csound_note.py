@@ -2,8 +2,6 @@
 
 from typing import Any, Union
 
-from collections import OrderedDict
-
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
@@ -11,7 +9,14 @@ from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
 from omnisound.utils.utils import (validate_not_none, validate_optional_types, validate_type,
                                    validate_type_choice, validate_types)
 
-FIELDS = ('instrument', 'start', 'duration', 'amplitude', 'pitch', 'name')
+ATTR_NAMES = {
+    'instrument',
+    'start',
+    'duration',
+    'amplitude',
+    'pitch',
+    'name',
+}
 
 
 class ToStrValWrapper(object):
@@ -27,7 +32,7 @@ class ToStrValWrapper(object):
         return self.val == other.val
 
 
-# Return a function that binds the pitch_precision to a function that returns an fstring that
+# Return a function that binds the pitch_precision to a function that returns a string that
 # formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
 def pitch_to_str(pitch_prec):
     def _pitch_to_str(p):
@@ -85,7 +90,7 @@ class CSoundNote(Note):
                  pitch_precision: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_types(('instrument', instrument, int), ('start', start, float),
-                       ('duration', duration, float), ('amplitude', amplitude, int),
+                       ('duration', duration, float), ('amplitude', amplitude, float),
                        ('pitch', pitch, float))
         validate_optional_types(('name', name, str), ('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
@@ -103,7 +108,7 @@ class CSoundNote(Note):
         # and for the latter case we default to .5f precision but allow any precision.
         self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
 
-        self._to_str_val_wrappers = OrderedDict()
+        self._to_str_val_wrappers = dict()
         self._to_str_val_wrappers['instrument'] = ToStrValWrapper(self._instrument)
         self._to_str_val_wrappers['start'] = ToStrValWrapper(self._start, lambda x: f'{x:.5f}')
         self._to_str_val_wrappers['duration'] = ToStrValWrapper(self._duration, lambda x: f'{x:.5f}')
@@ -115,7 +120,10 @@ class CSoundNote(Note):
     def add_attr(self, attr_name: str, attr_val: Any, to_str: Any = None):
         validate_type('attr_name', attr_name, str)
         validate_not_none('attr_name', attr_val)
-        setattr(self, attr_name, attr_val)
+
+        # TODO DYNAMICALLY MANAGE NUMPY ARRAY HERE
+        #  MOVE INTO BASE CLASS
+
         self._to_str_val_wrappers[attr_name] = ToStrValWrapper(attr_val, to_str)
 
     @property
