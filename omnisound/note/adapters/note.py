@@ -79,6 +79,11 @@ class Note(ABC):
     def num_attrs(self) -> int:
         return len(self._attrs)
 
+    def add_attr_name(self, attr_name: str, index: int):
+        validate_type('attr_name', attr_name, str)
+        validate_type('index', index, int)
+        self._attr_names[attr_name] = index
+
     def add_attr(self, attr_name: str, attr_val: Any):
         validate_type('attr_name', attr_name, str)
         validate_not_none('attr_val', attr_val)
