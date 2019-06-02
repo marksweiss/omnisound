@@ -4,24 +4,24 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Union
 
-from numpy import float64, resize, zeros
+from numpy import float64, ndarray, resize, zeros
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.utils.utils import (validate_not_none, validate_type)
+from omnisound.utils.utils import validate_type, validate_types
 
 
 class NoteConfig(object):
     def __init__(self, fields):
-        self._attr_names = fields
+        self._attr_name_idx_map = fields
         for field in fields:
             setattr(self, field, None)
 
     def as_dict(self) -> Dict:
-        return {field: getattr(self, field) for field in self._attr_names}
+        return {field: getattr(self, field) for field in self._attr_name_idx_map}
 
     def as_list(self) -> List:
-        return [getattr(self, field) for field in self._attr_names]
+        return [getattr(self, field) for field in self._attr_name_idx_map]
 
 
 class Note(ABC):
@@ -69,7 +69,7 @@ class Note(ABC):
     }
     NUM_BASE_ATTRS = 5
 
-    def __init__(self, name: str = None, **kwargs):
+    def __init__(self, name: str = None, attrs: ndarray = None, **kwargs):
         """
         :param name: str - optional name of the Note
         :param kwargs: any {name: value} pairs for Note attributes. These can match BASE_ATTR_NAMES, in which case
@@ -79,53 +79,75 @@ class Note(ABC):
          Any base attributes for which no value is provided are initialized to 0.0. All values are stored internally
          as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
          individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
+
+         Storage for the Note is passed in by reference. This allows the Note to provide an OO API to get and set
+         attributes just for this Note, but also to allow the Note to be a row in a matrix owner by a Generator
+         or Modifier, which provides a vector-space API to manipulate all Notes (rows) in the matrix, such as
+         dot product to apply a Vector (another note) to all dimensions, applying a scalar to all Notes
+         in one dimension, and so on.
+
+         NOTE: This API supports adding attributes to the Note. This must not overflow the fixed-size bounds of the
+         backing ndarray, which is owned by a parent Generator or Modifier. The parent is responsible for allocating
+         or reallocating the ndarray correctly.
         """
         self.name = name or Note.DEFAULT_NAME
+        self._num_attrs = Note.NUM_BASE_ATTRS
+
+        self._attrs = attrs
+        self._attrs.fill(0)
+
         if not kwargs:
             # noinspection SpellCheckingInspection
-            self._attr_names = deepcopy(Note.BASE_ATTR_NAMES)
-            self._attrs = zeros((Note.NUM_BASE_ATTRS, 1), dtype=float64)
+            assert len(self._attrs) >= Note.NUM_BASE_ATTRS
+            self._attr_name_idx_map = deepcopy(Note.BASE_ATTR_NAMES)
         # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
         # set the value for that attribute from the value provided. For any that are new attributes, append
-        # those attributes to `self._attrs` and `self._attr_names` and set the value for that attribute.
+        # those attributes to `self._attrs` and `self._attr_name_idx_map` and set the value for that attribute.
         else:
-            self._attr_names = deepcopy(Note.BASE_ATTR_NAMES)
+            for attr_name, attr_val in kwargs.items():
+                validate_types(('kwarg attr_name', attr_name, str), ('kwarg attr_val', attr_val, float))
+            self._attr_name_idx_map = deepcopy(Note.BASE_ATTR_NAMES)
             # Find the names in kwargs but not in BASE_ATTR_NAMES
             new_attr_names = kwargs.keys() - Note.BASE_ATTR_NAMES.keys()
+            assert len(self._attrs) >= Note.NUM_BASE_ATTRS + len(new_attr_names)
             # Add the new names to successive indexes in attr_names
             for i, attr_name in enumerate(new_attr_names):
-                next_attr_idx = len(Note.BASE_ATTR_NAMES) + i + 1
-                self._attr_names[attr_name] = next_attr_idx
-            # Initialize attrs to the length of base_attrs + new_attrs
-            self._attrs = zeros((Note.NUM_BASE_ATTRS + len(new_attr_names), 1), dtype=float64)
+                attr_idx = len(Note.BASE_ATTR_NAMES) + i
+                self._attr_name_idx_map[attr_name] = attr_idx
             # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
-            for attr_name in self._attr_names:
+            for attr_name in self._attr_name_idx_map:
                 if attr_name in kwargs:
-                    self._attrs[self._attr_names[attr_name]] = kwargs[attr_name]
+                    self._attrs[self._attr_name_idx_map[attr_name]] = kwargs[attr_name]
 
     @property
     def num_attrs(self) -> int:
-        return len(self._attrs)
+        return self._num_attrs
 
     def __getattr__(self, attr_name: str) -> float64:
         validate_type('attr_name', attr_name, str)
-        return self._attrs[self._attr_names[attr_name]]
+        return self._attrs[self._attr_name_idx_map[attr_name]]
 
     def __setattr__(self, attr_name: str, attr_val: float):
-        validate_type('attr_name', attr_name, str)
-        validate_type('attr_val', attr_val, float)
+        validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
         # If the attr is already set in the Note, just assign it a new value
-        if attr_name in self._attr_names:
-            self._attrs[self._attr_names[attr_name]] = attr_val
+        if attr_name in self._attr_name_idx_map:
+            self._attrs[self._attr_name_idx_map[attr_name]] = attr_val
         # Else add the new attr to the underlying numpy array
         else:
             # It's a new attribute name, so map the name to the next index in the numpy array, i.e. append it
-            next_attr_idx = self.num_attrs
-            self._attr_names[attr_name] = next_attr_idx
-            # Resize the numpy array to have one more entry
-            resize(self._attrs, (next_attr_idx + 1, 1))
-            # Put the value in the newly appended slot in the numpy array
-            self._attrs[next_attr_idx] = attr_val
+            attr_idx = self.num_attrs
+            self._attr_name_idx_map[attr_name] = attr_idx
+            self._attrs[attr_idx] = attr_val
+            self._num_attrs += 1
+
+    def set(self, attr_name: str, attr_val: float):
+        """Returns `self` for any attribute for fluent API style"""
+        self.__setattr__(attr_name, attr_val)
+        return self
+
+    def get(self, attr_name: str):
+        """Just here for symmetry with `set()`. Equivalent to using property syntax through `__getattr__()`"""
+        return self.__getattr__(attr_name)
 
     @abstractmethod
     def transpose(self, interval: int):
