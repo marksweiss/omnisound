@@ -117,9 +117,8 @@ class CSoundNote(Note):
         # self._to_str_val_wrappers['pitch'] = ToStrValWrapper(self.pitch, pitch_to_str(self._pitch_precision))
         self._to_str_val_wrappers['pitch'] = ToStrValWrapper(self.pitch, pitch_to_str(self._pitch_precision))
 
-    # Custom Interface
-    def add_attr(self, attr_name: str, attr_val: Any, to_str: Any = None):
-        super(self, CSoundNote).add_attr(attr_name, attr_val)
+    def __setattr__(self, attr_name: str, attr_val: Any, to_str: Any = None):
+        super(self, CSoundNote).__setattr__(attr_name, attr_val)
         self._to_str_val_wrappers[attr_name] = ToStrValWrapper(attr_val, to_str)
 
     @property

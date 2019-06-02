@@ -69,42 +69,63 @@ class Note(ABC):
     }
     NUM_BASE_ATTRS = 5
 
-    def __init__(self, name: str = None):
+    def __init__(self, name: str = None, **kwargs):
+        """
+        :param name: str - optional name of the Note
+        :param kwargs: any {name: value} pairs for Note attributes. These can match BASE_ATTR_NAMES, in which case
+         they will set values for them. Or they can be new attr_names, in which case they will be appended to the
+         attributes for the Note and the value will be set for this attribute.
+
+         Any base attributes for which no value is provided are initialized to 0.0. All values are stored internally
+         as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
+         individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
+        """
         self.name = name or Note.DEFAULT_NAME
-        # noinspection SpellCheckingInspection
-        self._attr_names = deepcopy(Note.BASE_ATTR_NAMES)
-        self._attrs = zeros((Note.NUM_BASE_ATTRS, 1), dtype=float64)
+        if not kwargs:
+            # noinspection SpellCheckingInspection
+            self._attr_names = deepcopy(Note.BASE_ATTR_NAMES)
+            self._attrs = zeros((Note.NUM_BASE_ATTRS, 1), dtype=float64)
+        # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
+        # set the value for that attribute from the value provided. For any that are new attributes, append
+        # those attributes to `self._attrs` and `self._attr_names` and set the value for that attribute.
+        else:
+            self._attr_names = deepcopy(Note.BASE_ATTR_NAMES)
+            # Find the names in kwargs but not in BASE_ATTR_NAMES
+            new_attr_names = kwargs.keys() - Note.BASE_ATTR_NAMES.keys()
+            # Add the new names to successive indexes in attr_names
+            for i, attr_name in enumerate(new_attr_names):
+                next_attr_idx = len(Note.BASE_ATTR_NAMES) + i + 1
+                self._attr_names[attr_name] = next_attr_idx
+            # Initialize attrs to the length of base_attrs + new_attrs
+            self._attrs = zeros((Note.NUM_BASE_ATTRS + len(new_attr_names), 1), dtype=float64)
+            # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
+            for attr_name in self._attr_names:
+                if attr_name in kwargs:
+                    self._attrs[self._attr_names[attr_name]] = kwargs[attr_name]
 
     @property
     def num_attrs(self) -> int:
         return len(self._attrs)
 
-    def add_attr_name(self, attr_name: str, index: int):
+    def __getattr__(self, attr_name: str) -> float64:
         validate_type('attr_name', attr_name, str)
-        validate_type('index', index, int)
-        self._attr_names[attr_name] = index
+        return self._attrs[self._attr_names[attr_name]]
 
-    def add_attr(self, attr_name: str, attr_val: Any):
+    def __setattr__(self, attr_name: str, attr_val: float):
         validate_type('attr_name', attr_name, str)
-        validate_not_none('attr_val', attr_val)
+        validate_type('attr_val', attr_val, float)
         # If the attr is already set in the Note, just assign it a new value
         if attr_name in self._attr_names:
             self._attrs[self._attr_names[attr_name]] = attr_val
-        # Else add the new attr
+        # Else add the new attr to the underlying numpy array
         else:
+            # It's a new attribute name, so map the name to the next index in the numpy array, i.e. append it
             next_attr_idx = self.num_attrs
             self._attr_names[attr_name] = next_attr_idx
+            # Resize the numpy array to have one more entry
             resize(self._attrs, (next_attr_idx + 1, 1))
+            # Put the value in the newly appended slot in the numpy array
             self._attrs[next_attr_idx] = attr_val
-
-    def __getattr__(self, attr_name: str) -> float64:
-        validate_type('attr_name', attr_name, str)
-        return self.__dict__[attr_name]
-
-    def __setattr__(self, attr_name: str, attr_val: Any):
-        validate_type('attr_name', attr_name, str)
-        validate_not_none('attr_val', attr_val)
-        self.__dict__[attr_name] = attr_val
 
     @abstractmethod
     def transpose(self, interval: int):
