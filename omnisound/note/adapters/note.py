@@ -127,10 +127,6 @@ class Note(ABC):
         validate_type('attr_name', attr_name, str)
         return self._attrs[self._attr_name_idx_map[attr_name]]
 
-    # TODO THIS IS BROKEN. EITHER FIGURE OUT A WAY TO DYNAMICALLY ADD SETTER AND GETTER DECORATED METHODS
-    #  OR STORE ALL DATA TWICE, ONCE IN THE ARRAY AND AGAIN IN REAL self.__dict__[attr_name] ATTRS AND KEEP IN SYNCH
-    #  AS IT IS NOW CALLS TO self.attr_name WILL FAIL BECAUSE IT'S NOT IN THE dict OF THE OBJECT AND SO CAN'T BE
-    #  CALLED WITH self.attr_name
     def __setattr__(self, attr_name: str, attr_val: float):
         validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
         # If the attr is already set in the Note, just assign it a new value
