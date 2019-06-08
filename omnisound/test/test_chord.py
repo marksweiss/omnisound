@@ -10,7 +10,7 @@ from omnisound.note.generators.scale_globals import MajorKey
 INSTRUMENT = 1
 START = 0.0
 DUR = 1.0
-AMP = 100
+AMP = 100.0
 PITCH = 1.01
 
 NOTE_CLS = CSoundNote

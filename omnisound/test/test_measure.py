@@ -13,7 +13,7 @@ from omnisound.note.containers.measure import (Measure,
 INSTRUMENT = 1
 START = 0.0
 DUR = float(NoteDur.QUARTER.value)
-AMP = 1
+AMP = 1.0
 PITCH = 10.1
 NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 

@@ -9,7 +9,7 @@ from omnisound.note.containers.note_sequence import NoteSequence
 INSTRUMENT = 1
 START = 0.0
 DUR = float(NoteDur.QUARTER.value)
-AMP = 1
+AMP = 1.0
 PITCH = 10.1
 
 BEATS_PER_MEASURE = 4

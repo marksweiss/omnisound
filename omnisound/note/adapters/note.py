@@ -8,20 +8,26 @@ from numpy import float64, ndarray, resize, zeros
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.utils.utils import validate_type, validate_types
+from omnisound.utils.utils import validate_type, validate_type_choice, validate_types
 
 
 class NoteConfig(object):
     def __init__(self, fields):
-        self._attr_name_idx_map = fields
+        self.__dict__['_attr_name_idx_map'] = fields
         for field in fields:
             setattr(self, field, None)
 
     def as_dict(self) -> Dict:
-        return {field: getattr(self, field) for field in self._attr_name_idx_map}
+        return {field: getattr(self, field) for field in self.__dict__['_attr_name_idx_map']}
 
     def as_list(self) -> List:
-        return [getattr(self, field) for field in self._attr_name_idx_map]
+        return [getattr(self, field) for field in self.__dict__['_attr_name_idx_map']]
+
+    def as_array(self) -> ndarray:
+        ret = zeros(len(self.__dict__['_attr_name_idx_map']))
+        for i, field in enumerate(self.__dict__['_attr_name_idx_map']):
+            ret[i] = getattr(self, field)
+        return ret
 
 
 class Note(ABC):
@@ -67,7 +73,7 @@ class Note(ABC):
         'pitch': PITCH,
         'p': PITCH,
     }
-    NUM_BASE_ATTRS = 5
+    NUM_BASE_ATTRS = len(set(BASE_ATTR_NAMES.values()))
 
     def __init__(self, name: str = None, attrs: ndarray = None, **kwargs):
         """
@@ -90,68 +96,81 @@ class Note(ABC):
          backing ndarray, which is owned by a parent Generator or Modifier. The parent is responsible for allocating
          or reallocating the ndarray correctly.
         """
-        self.name = name or Note.DEFAULT_NAME
-        self._num_attrs = Note.NUM_BASE_ATTRS
-
-        self._attrs = attrs
-        self._attrs.fill(0)
+        self.__dict__['_attrs'] = attrs or zeros(Note.NUM_BASE_ATTRS)
+        self.__dict__['_attrs'].fill(0)
+        self.__dict__['_num_attrs'] = Note.NUM_BASE_ATTRS
+        self.__dict__['name'] = name or Note.DEFAULT_NAME
 
         if not kwargs:
             # noinspection SpellCheckingInspection
-            assert len(self._attrs) >= Note.NUM_BASE_ATTRS
-            self._attr_name_idx_map = deepcopy(Note.BASE_ATTR_NAMES)
+            assert len(self.__dict__['_attrs']) >= Note.NUM_BASE_ATTRS
+            self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_ATTR_NAMES)
         # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
         # set the value for that attribute from the value provided. For any that are new attributes, append
-        # those attributes to `self._attrs` and `self._attr_name_idx_map` and set the value for that attribute.
+        # those attributes to `self.__dict__['_attrs']` and `self.__dict__['_attr_name_idx_map']`
+        # and set the value for that attribute.
         else:
             for attr_name, attr_val in kwargs.items():
                 validate_types(('kwarg attr_name', attr_name, str), ('kwarg attr_val', attr_val, float))
-            self._attr_name_idx_map = deepcopy(Note.BASE_ATTR_NAMES)
+            self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_ATTR_NAMES)
             # Find the names in kwargs but not in BASE_ATTR_NAMES
             new_attr_names = kwargs.keys() - Note.BASE_ATTR_NAMES.keys()
-            assert len(self._attrs) >= Note.NUM_BASE_ATTRS + len(new_attr_names)
+            assert len(self.__dict__['_attrs']) >= Note.NUM_BASE_ATTRS + len(new_attr_names)
             # Add the new names to successive indexes in attr_names
             for i, attr_name in enumerate(new_attr_names):
                 attr_idx = len(Note.BASE_ATTR_NAMES) + i
-                self._attr_name_idx_map[attr_name] = attr_idx
+                self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
             # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
-            for attr_name in self._attr_name_idx_map:
+            for attr_name in self.__dict__['_attr_name_idx_map']:
                 if attr_name in kwargs:
-                    self._attrs[self._attr_name_idx_map[attr_name]] = kwargs[attr_name]
+                    self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = kwargs[attr_name]
 
-    @property
+        print('IN INIT')
+        print(self.__dict__['_attr_name_idx_map'])
+
     def num_attrs(self) -> int:
-        return self._num_attrs
+        return self.__dict__['_num_attrs']
+
+    def add_attr_name(self, attr_name: str, attr_idx: int):
+        """Let's the user create more than one attribute that maps to the same attr index. So, for example,
+           it supports aliasing multiple attribute names to one index. This should be called before assigning
+           attributes with __setattr__() in derived class __init__() calls. This way the attributes are already
+           in the attr_name_idx_map and get their value assigned correctly."""
+        self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
+
+    # def add_note_attr(self, attr_name: str, attr_val: float):
+    #     validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
+    #     # It's a new attribute name, so map the name to the next index in the numpy array, i.e. append it
+    #     # and also add the attribute key to the object's `__dict__` so `note.attr` calls are valid. These will be
+    #     # intercepted by `__getattr__` for gets, so we don't need to actually set a value for the key in
+    #     # `self.__dict__`, but we need the key present for the get call to succeed.
+    #     self.__dict__[attr_name] = None
+    #     attr_idx = self.__dict__['_num_attrs']
+    #     self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
+    #     self.__dict__['_attrs'][attr_idx] = attr_val
+    #     self.__dict__['_num_attrs'] += 1
 
     def __getattr__(self, attr_name: str) -> float64:
+        """Handle returning note_attr from _attrs ndarray or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
-        return self._attrs[self._attr_name_idx_map[attr_name]]
 
-    def __setattr__(self, attr_name: str, attr_val: float):
-        validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
-        # If the attr is already set in the Note, just assign it a new value
-        if attr_name in self._attr_name_idx_map:
-            self._attrs[self._attr_name_idx_map[attr_name]] = attr_val
-        # Else add the new attr to the underlying numpy array
+        print(self.__dict__)
+        print(dir(self))
+        print(type(self))
+        print('_attr_name_idx_map' in dir(self))
+
+        if attr_name in self.__dict__['_attr_name_idx_map']:
+            return self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
         else:
-            # It's a new attribute name, so map the name to the next index in the numpy array, i.e. append it
-            # and also add the attribute key to the object's `__dict__` so `note.attr` calls are valid. These will be
-            # intercepted by `__getattr__` for gets, so we don't need to actually set a value for the key in
-            # `self.__dict__`, but we need the key present for the get call to succeed.
-            self.__dict__[attr_name] = None
-            attr_idx = self.num_attrs
-            self._attr_name_idx_map[attr_name] = attr_idx
-            self._attrs[attr_idx] = attr_val
-            self._num_attrs += 1
+            return self.__dict__[attr_name]
 
-    def set(self, attr_name: str, attr_val: float):
-        """Returns `self` for any attribute for fluent API style"""
-        self.__setattr__(attr_name, attr_val)
-        return self
-
-    def get(self, attr_name: str):
-        """Just here for symmetry with `set()`. Equivalent to using property syntax through `__getattr__()`"""
-        return self.__getattr__(attr_name)
+    def __setattr__(self, attr_name: str, attr_val: Any):
+        """Handle setting note_attr from _attrs ndarray or any other attr a derived Note class might define"""
+        validate_type('attr_name', attr_name, str)
+        if attr_name in self.__dict__['_attr_name_idx_map']:
+            self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
+        else:
+            self.__dict__[attr_name] = attr_val
 
     @abstractmethod
     def transpose(self, interval: int):

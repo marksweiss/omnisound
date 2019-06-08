@@ -18,7 +18,7 @@ OCTAVE = 4
 INSTRUMENT = 1
 START = 0.0
 DUR = 1.0
-AMP = 100
+AMP = 100.0
 PITCH = 1.01
 NOTE_PROTOTYPE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 

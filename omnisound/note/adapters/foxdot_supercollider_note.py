@@ -235,7 +235,7 @@ class FoxDotSupercolliderNote(Note):
         return FoxDotSupercolliderNote(synth_def=source_note._synth_def,
                                        delay=source_note._delay, dur=source_note._dur,
                                        amp=source_note._amp, degree=source_note._degree,
-                                       name=source_note._name,
+                                       name=source_note.name,
                                        octave=source_note._octave, scale=source_note._scale,
                                        performance_attrs=source_note._performance_attrs)
 

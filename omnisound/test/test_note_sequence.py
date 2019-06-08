@@ -13,7 +13,7 @@ from omnisound.note.containers.note_sequence import NoteSequence
 INSTRUMENT = 1
 START = 0.0
 DUR = 1.0
-AMP = 100
+AMP = 100.0
 PITCH = 1.01
 NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
