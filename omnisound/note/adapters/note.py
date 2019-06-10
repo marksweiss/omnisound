@@ -12,20 +12,21 @@ from omnisound.utils.utils import validate_type, validate_type_choice, validate_
 
 
 class NoteConfig(object):
-    def __init__(self, fields):
-        self.__dict__['_attr_name_idx_map'] = fields
-        for field in fields:
-            setattr(self, field, None)
+    def __init__(self, attr_names):
+        self._attr_names = attr_names
+        for attr_name in attr_names:
+            setattr(self, attr_name, None)
 
     def as_dict(self) -> Dict:
-        return {field: getattr(self, field) for field in self.__dict__['_attr_name_idx_map']}
+        return {field: getattr(self, field) for field in self._attr_names}
 
     def as_list(self) -> List:
-        return [getattr(self, field) for field in self.__dict__['_attr_name_idx_map']]
+        ret = [getattr(self, field) for field in self._attr_names]
+        return ret
 
     def as_array(self) -> ndarray:
-        ret = zeros(len(self.__dict__['_attr_name_idx_map']))
-        for i, field in enumerate(self.__dict__['_attr_name_idx_map']):
+        ret = zeros(len(self._attr_names))
+        for i, field in enumerate(self._attr_names):
             ret[i] = getattr(self, field)
         return ret
 
@@ -111,7 +112,12 @@ class Note(ABC):
         # and set the value for that attribute.
         else:
             for attr_name, attr_val in kwargs.items():
-                validate_types(('kwarg attr_name', attr_name, str), ('kwarg attr_val', attr_val, float))
+                if attr_name == 'name':
+                    validate_type(attr_name, attr_val, str)
+                elif attr_name in {'instrument', 'i'}:
+                    validate_type(attr_name, attr_val, int)
+                else:
+                    validate_type(attr_name, attr_val, float)
             self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_ATTR_NAMES)
             # Find the names in kwargs but not in BASE_ATTR_NAMES
             new_attr_names = kwargs.keys() - Note.BASE_ATTR_NAMES.keys()
@@ -125,9 +131,6 @@ class Note(ABC):
                 if attr_name in kwargs:
                     self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = kwargs[attr_name]
 
-        print('IN INIT')
-        print(self.__dict__['_attr_name_idx_map'])
-
     def num_attrs(self) -> int:
         return self.__dict__['_num_attrs']
 
@@ -138,31 +141,13 @@ class Note(ABC):
            in the attr_name_idx_map and get their value assigned correctly."""
         self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
 
-    # def add_note_attr(self, attr_name: str, attr_val: float):
-    #     validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
-    #     # It's a new attribute name, so map the name to the next index in the numpy array, i.e. append it
-    #     # and also add the attribute key to the object's `__dict__` so `note.attr` calls are valid. These will be
-    #     # intercepted by `__getattr__` for gets, so we don't need to actually set a value for the key in
-    #     # `self.__dict__`, but we need the key present for the get call to succeed.
-    #     self.__dict__[attr_name] = None
-    #     attr_idx = self.__dict__['_num_attrs']
-    #     self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-    #     self.__dict__['_attrs'][attr_idx] = attr_val
-    #     self.__dict__['_num_attrs'] += 1
-
     def __getattr__(self, attr_name: str) -> float64:
         """Handle returning note_attr from _attrs ndarray or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
-
-        print(self.__dict__)
-        print(dir(self))
-        print(type(self))
-        print('_attr_name_idx_map' in dir(self))
-
         if attr_name in self.__dict__['_attr_name_idx_map']:
             return self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
         else:
-            return self.__dict__[attr_name]
+            return None
 
     def __setattr__(self, attr_name: str, attr_val: Any):
         """Handle setting note_attr from _attrs ndarray or any other attr a derived Note class might define"""
@@ -170,7 +155,17 @@ class Note(ABC):
         if attr_name in self.__dict__['_attr_name_idx_map']:
             self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
         else:
-            self.__dict__[attr_name] = attr_val
+            # It's a new attribute name, so:
+            # - map this attribute name to the next index in attr_name_idx_map
+            # - resize the numpy array storing the values, _attrs, up by 1
+            # - add the attr_name without a value to the object's self.__dict__. This means the object's __getattr__
+            #   will respond to get calls on this attribute, and __getattr__() will intercept these and return
+            #   the value from the correct index of _attrs, because it is defined to do that
+            attr_idx = self.__dict__['_num_attrs']
+            self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
+            resize(self.__dict__['_attrs'], attr_idx + 1)
+            self.__dict__[attr_name] = None
+            self.__dict__['_num_attrs'] += 1
 
     @abstractmethod
     def transpose(self, interval: int):

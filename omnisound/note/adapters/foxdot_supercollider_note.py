@@ -246,7 +246,7 @@ class FoxDotSupercolliderNote(Note):
             self._amp == other._amp and self._degree == other._degree
 
     def __str__(self):
-        s = (f'name: {self._name} delay: {self._delay} '
+        s = (f'name: {self.name} delay: {self._delay} '
              f'dur: {self._dur} amp: {self._amp} degree: {self._degree}')
         if hasattr(self, 'octave'):
             s += f' octave: {self._octave}'

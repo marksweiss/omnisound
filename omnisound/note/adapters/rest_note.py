@@ -15,98 +15,17 @@ class RestNote(Note):
 
     REST_AMP = 0.0
 
-    def __init__(self, instrument: Any = None,
-                 start: Any = None, dur: Any = None, pitch: Any = None,
+    def __init__(self, instrument: Any = None, start: Any = None, dur: Any = None, pitch: Any = None,
                  name: str = None,
                  performance_attrs: PerformanceAttrs = None):
-        super(RestNote, self).__init__(name=name)
-        self._instrument = instrument
-        self._start = start
-        self._dur = dur
-        self._amp = RestNote.REST_AMP
-        self._pitch = pitch
+        super(RestNote, self).__init__(name=name, attrs=None,
+                                       instrument=instrument, start=start, dur=dur, amp=RestNote.REST_AMP, pitch=pitch)
         self._performance_attrs = performance_attrs
 
     # Custom Interface
     @staticmethod
     def to_rest(note: Note):
         note.amp = RestNote.REST_AMP
-
-    # Base Note Interface
-    @property
-    def instrument(self):
-        return self._instrument
-
-    @instrument.setter
-    def instrument(self, instrument):
-        self._instrument = instrument
-
-    def i(self, instrument=None):
-        if instrument is not None:
-            self._instrument = instrument
-            return self
-        else:
-            return self._instrument
-
-    @property
-    def start(self):
-        return self._start
-
-    @start.setter
-    def start(self, start):
-        self._start = start
-
-    def s(self, start=None):
-        if start is not None:
-            self._start = start
-            return self
-        else:
-            return self._start
-
-    @property
-    def dur(self) -> float:
-        return self._dur
-
-    @dur.setter
-    def dur(self, dur):
-        self._dur = dur
-
-    def d(self, dur=None):
-        if dur is not None:
-            self._dur = dur
-            return self
-        else:
-            return self._dur
-
-    @property
-    def amp(self):
-        return self._amp
-
-    @amp.setter
-    def amp(self, amp):
-        self._amp = amp
-
-    def a(self, amp=None):
-        if amp is not None:
-            self._amp = amp
-            return self
-        else:
-            return self._amp
-
-    @property
-    def pitch(self):
-        return self._pitch
-
-    @pitch.setter
-    def pitch(self, pitch):
-        self._pitch = pitch
-
-    def p(self, pitch=None):
-        if pitch is not None:
-            self._pitch = pitch
-            return self
-        else:
-            return self._pitch
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
@@ -126,15 +45,15 @@ class RestNote(Note):
 
     @staticmethod
     def copy(source_note: 'RestNote') -> 'RestNote':
-        return RestNote(instrument=source_note._instrument,
-                        start=source_note._start, dur=source_note._dur,
-                        pitch=source_note._pitch,
-                        name=source_note._name,
+        return RestNote(instrument=source_note.instrument,
+                        start=source_note.start, dur=source_note.dur,
+                        pitch=source_note.pitch,
+                        name=source_note.name,
                         performance_attrs=source_note._performance_attrs)
 
     def __eq__(self, other: 'RestNote') -> bool:
-        return self._instrument == other._instrument and self._start == other._start and \
-            self._dur == other.dur and self._pitch == other._pitch
+        return self.instrument == other.instrument and self.start == other.start and \
+            self.dur == other.dur and self._pitch == other.pitch
 
     def __str__(self):
         return f'i {self.instrument} {self.start:.5f} {self.dur:.5f} {self.amp} {self.pitch}'

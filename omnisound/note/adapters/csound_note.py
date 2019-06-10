@@ -7,14 +7,7 @@ from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice, validate_types)
 
-ATTR_NAMES = {
-    'instrument',
-    'start',
-    'duration',
-    'amplitude',
-    'pitch',
-    'name',
-}
+ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
 
 
 class ToStrValWrapper(object):
@@ -207,11 +200,11 @@ class CSoundNote(Note):
            if they have the same note attributes.
         """
         return self.instrument == other.instrument and \
-            self.start == other.start # and \
-            # self.__dict__['duration'] == other.__dict__['duration'] and \
-            # self.__dict__['amplitude'] == other.__dict__['amplitude'] and \
-            # self.__dict__['pitch'] == other.__dict__['pitch'] \
-            # and self.__dict__['_to_str_val_wrappers'] == other.__dict__['_to_str_val_wrappers']
+            self.start == other.start and \
+            self.duration == other.duration and \
+            self.amplitude == other.amplitude and \
+            self.pitch == other.pitch \
+            and self.__dict__['_to_str_val_wrappers'] == other.__dict__['_to_str_val_wrappers']
 
     def __str__(self):
         """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
