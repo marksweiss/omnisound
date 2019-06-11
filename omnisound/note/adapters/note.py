@@ -150,7 +150,8 @@ class Note(ABC):
             return None
 
     def __setattr__(self, attr_name: str, attr_val: Any):
-        """Handle setting note_attr from _attrs ndarray or any other attr a derived Note class might define"""
+        """Handle setting note_attr from _attrs ndarray or any other attr a derived Note class might define.
+           Returns self to support chained fluent interface style calls."""
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
             self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
@@ -163,7 +164,8 @@ class Note(ABC):
             #   the value from the correct index of _attrs, because it is defined to do that
             attr_idx = self.__dict__['_num_attrs']
             self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-            resize(self.__dict__['_attrs'], attr_idx + 1)
+            self.__dict__['_attrs'] = resize(self.__dict__['_attrs'], attr_idx + 1)
+            self.__dict__['_attrs'][attr_idx] = float(attr_val)
             self.__dict__[attr_name] = None
             self.__dict__['_num_attrs'] += 1
 
