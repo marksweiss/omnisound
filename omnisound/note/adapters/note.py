@@ -8,7 +8,7 @@ from numpy import float64, ndarray, resize, zeros
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.utils.utils import validate_type, validate_type_choice, validate_types
+from omnisound.utils.utils import validate_type
 
 
 class NoteConfig(object):

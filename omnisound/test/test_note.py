@@ -211,6 +211,23 @@ def test_note_config():
     assert note.duration == DUR
     assert note.pitch == PITCH
 
+    note_config = _setup_note_config(CSoundNote)
+    # Can return a numpy array of the Note to manipulate using numpy
+    note_config_array = note_config.as_array()
+    # Can convert the array to a Python list to pass with * like any other list
+    note_config_list = note_config_array.tolist()
+    # Must handle any validation of types required by the underlying note type *after* the conversion, because
+    # Python list can have values of any type, but numpy array is a C-style fixed-type collection that stores
+    # all values as numpy.float64
+    # Instrument is validated as an int in CSoundNote
+    note_config_list[0] = int(note_config_list[0])
+    note = CSoundNote(*note_config_list)
+    assert note.instrument == INSTRUMENT
+    assert note.start == START
+    assert note.amplitude == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
+
     note_config = _setup_note_config(MidiNote)
     note = MidiNote(**note_config.as_dict())
     assert note.instrument == MIDI_INSTRUMENT.value
