@@ -223,8 +223,7 @@ class CSoundNote(Note):
             self.start == other.start and \
             self.duration == other.duration and \
             self.amplitude == other.amplitude and \
-            self.pitch == other.pitch \
-            and self.__dict__['_to_str_val_wrappers'] == other.__dict__['_to_str_val_wrappers']
+            self.pitch == other.pitch
 
     def __str__(self):
         """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
