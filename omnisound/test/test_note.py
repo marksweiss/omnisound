@@ -112,9 +112,32 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
     assert note.pitch == note.p == pitch
     # Add an additional non-core dynamically added attribute to verify correct ordering of attrs and str()
     func_table = 100
-    setattr(note, 'func_table', func_table)
+    note.add_attr('func_table', func_table, to_str=lambda x: str(int(x)))
     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)} {func_table}' == \
         str(note)
+
+
+@pytest.mark.parametrize('pitch', PITCHES)
+@pytest.mark.parametrize('amplitude', AMPS)
+@pytest.mark.parametrize('duration', DURS)
+@pytest.mark.parametrize('start', STARTS)
+def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
+    some_other_value = 100.0
+    note = CSoundNote(instrument=int(some_other_value), start=some_other_value, duration=some_other_value,
+                      amplitude=some_other_value, pitch=some_other_value)
+
+    note.I(INSTRUMENT).S(start).D(duration).A(amplitude).P(pitch)
+
+    assert note.instrument == INSTRUMENT
+    assert note.start == note.s == start
+    assert note.duration == note.dur == note.d == duration
+    assert note.amplitude == note.amp == note.a == amplitude
+    assert note.pitch == note.p == pitch
+    # Add an additional non-core dynamically added attribute to verify correct ordering of attrs and str()
+    func_table = 100
+    note.add_attr('func_table', func_table, to_str=lambda x: str(int(x)))
+    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)} {func_table}' == \
+           str(note)
 
 
 def test_csound_note_pitch_precision():

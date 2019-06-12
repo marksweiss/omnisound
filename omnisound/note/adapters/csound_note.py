@@ -10,19 +10,6 @@ from omnisound.utils.utils import (validate_optional_types, validate_type, valid
 ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
 
 
-class ToStrValWrapper(object):
-    def __init__(self, attr_val: Any, to_str: Any = None):
-        self.val = attr_val
-        self.to_str = to_str or self._to_str
-
-    @staticmethod
-    def _to_str(x):
-        return str(x)
-
-    def __eq__(self, other):
-        return self.val == other.val
-
-
 # Return a function that binds the pitch_precision to a function that returns a string that
 # formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
 def pitch_to_str(pitch_prec):
@@ -93,22 +80,37 @@ class CSoundNote(Note):
         # str_to_val_wrappers are assigned in self.__setattr__()
         self.__dict__['_to_str_val_wrappers'] = dict()
         self.__setattr__('instrument', instrument)
-        self.__setattr__('start', start, to_str=lambda x: f'{x:.5f}')
-        self.__setattr__('duration', duration, to_str=lambda x: f'{x:.5f}')
+        self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
+        self.__setattr__('start', start)
+        self.__dict__['_to_str_val_wrappers']['start'] = lambda x:  f'{x:.5f}'
+        self.__setattr__('duration', duration)
+        self.__dict__['_to_str_val_wrappers']['duration'] = lambda x:  f'{x:.5f}'
         self.__setattr__('amplitude', amplitude)
+        self.__dict__['_to_str_val_wrappers']['amplitude'] = lambda x: str(x)
 
         # Handle case that pitch is a float and will have rounding but that sometimes we want
         # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
         # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
         # and for the latter case we default to .5f precision but allow any precision.
         self.__dict__['_pitch_precision'] = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
-        self.__setattr__('pitch', pitch, to_str=pitch_to_str(self.__dict__['_pitch_precision']))
+        self.__setattr__('pitch', pitch)
+        self.__dict__['_to_str_val_wrappers']['pitch'] = pitch_to_str(self.__dict__['_pitch_precision'])
 
         self.__dict__['_performance_attrs'] = performance_attrs
 
-    def __setattr__(self, attr_name: str, attr_val: Any, to_str: Any = None):
-        super(CSoundNote, self).__setattr__(attr_name, attr_val)
-        self.__dict__['_to_str_val_wrappers'][attr_name] = ToStrValWrapper(attr_val, to_str)
+    # noinspection PyStatementEffect
+    def add_attr(self, attr_name: str, attr_val: [float, int], to_str: Any = None):
+        """Supports adding new attributes and assigning proper to_str handling for them in this class. Note that
+           this does not create a wrapper that also converts the type correctly. This requires static override
+           properties such as we have for instrument and amplitude. Clients using this will still need to cast
+           return values from float if they desire another type.
+        """
+        validate_type('attr_name', attr_name, str)
+        validate_type_choice('attr_val', attr_val, (float, int))
+        if not to_str:
+            to_str = lambda x: str(x)
+        self.__dict__['_to_str_val_wrappers'][attr_name] = to_str
+        self.__setattr__(attr_name, attr_val)
 
     @property
     def pitch_precision(self) -> int:
@@ -130,7 +132,7 @@ class CSoundNote(Note):
     @instrument.setter
     def instrument(self, instrument: int):
         validate_type('instrument', instrument, int)
-        super(CSoundNote, self).instrument = instrument
+        super(CSoundNote, self).__setattr__('instrument', float(instrument))
         self.__dict__['_to_str_val_wrappers']['instrument'] = ToStrValWrapper(instrument)
 
     @property
@@ -236,4 +238,15 @@ class CSoundNote(Note):
            or pitch, which requires precision handling but is a special case because CSound overloads float syntax
            to express Western 12-tone scale values using float notation.
         """
-        return 'i ' + ' '.join([f'{v.to_str(v.val)}' for v in self.__dict__['_to_str_val_wrappers'].values()])
+        base_attr_strs = (f'i {self.__dict__["_to_str_val_wrappers"]["instrument"](self.instrument)} '
+                          f'{self.__dict__["_to_str_val_wrappers"]["start"](self.start)} '
+                          f'{self.__dict__["_to_str_val_wrappers"]["duration"](self.duration)} '
+                          f'{self.__dict__["_to_str_val_wrappers"]["amplitude"](self.amplitude)} '
+                          f'{self.__dict__["_to_str_val_wrappers"]["pitch"](self.pitch)}')
+        attr_strs = [base_attr_strs]
+        for attr_name in self.__dict__["_to_str_val_wrappers"].keys():
+            if attr_name not in ATTR_NAMES:
+                attr_strs.append(
+                    f'{self.__dict__["_to_str_val_wrappers"][attr_name](self.__getattr__(attr_name))}')
+
+        return ' '.join(attr_strs)

@@ -31,6 +31,7 @@ class NoteConfig(object):
         return ret
 
 
+# noinspection PyPep8Naming
 class Note(ABC):
     """Models the core attributes of a musical note common to multiple back ends.
 
@@ -187,6 +188,29 @@ class Note(ABC):
             self.__dict__['_attrs'][attr_idx] = float(attr_val)
             self.__dict__[attr_name] = None
             self.__dict__['_num_attrs'] += 1
+
+    # These standard methods are provided without the ability to override names, etc., to provide API for fluent
+    # chaining calls to set all common Note attributes on one line
+    # e.g. - note.I(1).S(1.0).D(2.5).A(400).P(440)
+    def I(self, instrument: [float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['instrument']] = instrument
+        return self
+
+    def S(self, start: [float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['start']] = start
+        return self
+
+    def D(self, dur: [float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['dur']] = dur
+        return self
+
+    def A(self, amp: [float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['amp']] = amp
+        return self
+
+    def P(self, pitch: [float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['pitch']] = pitch
+        return self
 
     @abstractmethod
     def transpose(self, interval: int):
