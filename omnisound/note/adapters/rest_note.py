@@ -20,7 +20,7 @@ class RestNote(Note):
                  performance_attrs: PerformanceAttrs = None):
         super(RestNote, self).__init__(name=name, attrs=None,
                                        instrument=instrument, start=start, dur=dur, amp=RestNote.REST_AMP, pitch=pitch)
-        self._performance_attrs = performance_attrs
+        self.__dict__['_performance_attrs'] = performance_attrs
 
     # Custom Interface
     @staticmethod
@@ -29,19 +29,19 @@ class RestNote(Note):
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
-        return self._performance_attrs
+        return self.__dict__['_performance_attrs']
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self._performance_attrs = performance_attrs
+        self.__dict__['_performance_attrs'] = performance_attrs
 
     @property
     def pa(self) -> PerformanceAttrs:
-        return self._performance_attrs
+        return self.__dict__['_performance_attrs']
 
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
-        self._performance_attrs = performance_attrs
+        self.__dict__['_performance_attrs'] = performance_attrs
 
     @staticmethod
     def copy(source_note: 'RestNote') -> 'RestNote':
@@ -49,7 +49,7 @@ class RestNote(Note):
                         start=source_note.start, dur=source_note.dur,
                         pitch=source_note.pitch,
                         name=source_note.name,
-                        performance_attrs=source_note._performance_attrs)
+                        performance_attrs=source_note.performance_attrs)
 
     def __eq__(self, other: 'RestNote') -> bool:
         return self.instrument == other.instrument and self.start == other.start and \

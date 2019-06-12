@@ -52,6 +52,23 @@ class Note(ABC):
 
        It is is strongly preferred that all getter properties return self in derived classes
        to support fluid interfaces for defining and modifying notes most easily in the least number of lines.
+
+       NOTE: Standard pattern for extending Note to add custom attributes:
+       In MyNote.__init__():
+       1) Call Note.add_attr_name() for each attribute that you want to add AND map to an existing attribute,
+          e.g. MidiNote maps the alias property name 'time' to the property 'start'
+       2) Call Note.__setattr__() for each attribute that is both a new name (not in Note base) and also does not
+          map to an existing Note attribute. e.g. FoxdotSupercolliderNote has 'octave', which is not represented
+          in the underlying Note
+       3) Call Note.__setattr__() for each attribute that is reused in the underlying Note
+       Add additional methods:
+       4) For each attribute that aliases a new name in the derived note to an attribute in the underlying
+          Note, e.g. 'time' to 'start' in MidiNote, the derived note needs to declare explicit @property get/set
+          methods which call super(MyNote, self).__getattr__('my_attribute_name'), the explicit overridden getattr()
+          in the derived Note
+       5) For each attribute that uses the same name as the underlying attribute but changes the input/output value,
+          applies validation, or otherwise needs logic (typical case is casting the return value from float to int
+          because all Note values are stored as numpy.float64), write overriding property methods as in 4)
     """
 
     DEFAULT_NAME = 'Note'
@@ -140,6 +157,7 @@ class Note(ABC):
            attributes with __setattr__() in derived class __init__() calls. This way the attributes are already
            in the attr_name_idx_map and get their value assigned correctly."""
         self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
+        self.__dict__[attr_name] = None
 
     def __getattr__(self, attr_name: str) -> float64:
         """Handle returning note_attr from _attrs ndarray or any other attr a derived Note class might define"""
@@ -147,6 +165,7 @@ class Note(ABC):
         if attr_name in self.__dict__['_attr_name_idx_map']:
             return self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
         else:
+            # noinspection PyTypeChecker
             return None
 
     def __setattr__(self, attr_name: str, attr_val: Any):

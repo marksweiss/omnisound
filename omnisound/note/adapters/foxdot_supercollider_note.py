@@ -12,7 +12,7 @@ from omnisound.utils.utils import (validate_optional_types, validate_type,
 FIELDS = ('synth_def', 'delay', 'dur', 'amp', 'degree', 'octave', 'scale')
 
 
-# noinspection PyAttributeOutsideInit,PyPropertyDefinition
+# noinspection PyAttributeOutsideInit,PyPropertyDefinition,PyProtectedMember
 class FoxDotSupercolliderNote(Note):
 
     SCALES = {'aeolian', 'chinese', 'chromatic', 'custom', 'default', 'diminished', 'dorian', 'dorian2',
@@ -77,13 +77,16 @@ class FoxDotSupercolliderNote(Note):
         # Add aliased attributes that map to existing base Note attributes
         # Name underlying property with _<prop> because it is wrapped in this class as a @property to handle
         #  type casting from float to int or allowing return of Union[float, int]
-        self.add_attr_name('_delay', Note.BASE_ATTR_NAMES['start'])
-        self.add_attr_name('_degree', Note.BASE_ATTR_NAMES['pitch'])
-        self.__setattr__('_delay', delay)
+        self.add_attr_name('delay', Note.BASE_ATTR_NAMES['start'])
+        self.add_attr_name('degree', Note.BASE_ATTR_NAMES['pitch'])
+        self.__setattr__('delay', delay)
+        self.__setattr__('degree', degree)
         self.__setattr__('dur', dur)
         self.__setattr__('amp', amp)
-        self.__setattr__('_degree', degree)
-        self.__setattr__('_octave', octave)
+        # octave is optional, only set in base Note class if value was provided. 0 and 0.0 are valid values so
+        # must explicitly test for None
+        if octave is not None:
+            self.__setattr__('octave', octave)
 
         self.__dict__['performance_attrs'] = performance_attrs
 
@@ -98,7 +101,6 @@ class FoxDotSupercolliderNote(Note):
     @instrument.setter
     def instrument(self, instrument: Any):
         self.__dict__['_synth_def'] = instrument
-        return self
 
     def i(self, instrument: Any = None) -> Union['FoxDotSupercolliderNote', Any]:
         if instrument is not None:
@@ -114,58 +116,51 @@ class FoxDotSupercolliderNote(Note):
     @synth_def.setter
     def synth_def(self, synth_def: Any):
         self.__dict['_synth_def'] = synth_def
-        return self
 
     @property
     def start(self) -> int:
-        return int(self._delay)
+        return int(super(FoxDotSupercolliderNote, self).__getattr__('start'))
+
+    @start.setter
+    def start(self, start: int):
+        validate_type('start', start, int)
+        super(FoxDotSupercolliderNote, self).__setattr__('start', float(start))
 
     @property
     def delay(self) -> int:
-        return int(self._delay)
+        return int(super(FoxDotSupercolliderNote, self).__getattr__('delay'))
 
     @delay.setter
     def delay(self, delay: int):
         validate_type('delay', delay, int)
-        self._delay = float(delay)
-        return self
+        super(FoxDotSupercolliderNote, self).__setattr__('delay', float(delay))
 
     @property
     def pitch(self) -> Union[float, int]:
-        return self._degree
+        return super(FoxDotSupercolliderNote, self).__getattr__('degree')
 
     @pitch.setter
     def pitch(self, pitch: Union[float, int]):
         validate_type_choice('pitch', pitch, (float, int))
-        self._degree = float(pitch)
-        return self
-
-    def p(self, pitch: Union[float, int] = None) -> Union['FoxDotSupercolliderNote', float, int]:
-        if pitch is not None:
-            validate_type_choice('pitch', pitch, (float, int))
-            self._degree = float(pitch)
-            return self
-        else:
-            return self._degree
+        super(FoxDotSupercolliderNote, self).__setattr__('degree', float(pitch))
 
     @property
     def degree(self) -> Union[float, int]:
-        return self._degree
+        return super(FoxDotSupercolliderNote, self).__getattr__('degree')
 
     @degree.setter
     def degree(self, degree: Union[float, int]):
         validate_type_choice('degree', degree, (float, int))
-        self._degree = float(degree)
+        super(FoxDotSupercolliderNote, self).__setattr__('degree', float(degree))
 
     @property
     def octave(self) -> int:
-        return int(self._octave)
+        return int(super(FoxDotSupercolliderNote, self).__getattr__('octave'))
 
     @octave.setter
     def octave(self, octave: int):
         validate_type('octave', octave, int)
-        self._octave = float(octave)
-        return self
+        super(FoxDotSupercolliderNote, self).__setattr__('octave', float(octave))
 
     @property
     def scale(self) -> str:
@@ -175,29 +170,29 @@ class FoxDotSupercolliderNote(Note):
     def scale(self, scale: str):
         validate_type('scale', scale, str)
         self.__dict__['_scale'] = scale
-        return self
 
     def transpose(self, interval: int):
         """Foxdot pitches as ints are in range 1..12
         """
         validate_type('interval', interval, int)
-        self._degree = (self._degree + interval) % NUM_INTERVALS_IN_OCTAVE
+        super(FoxDotSupercolliderNote, self)._degree = \
+            (int(super(FoxDotSupercolliderNote, self).degree) + interval) % NUM_INTERVALS_IN_OCTAVE
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
-        return self._performance_attrs
+        return self.__dict__['_performance_attrs']
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self._performance_attrs = performance_attrs
+        self.__dict__['_performance_attrs'] = performance_attrs
 
     @property
     def pa(self) -> PerformanceAttrs:
-        return self._performance_attrs
+        return self.__dict__['_performance_attrs']
 
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
-        self._performance_attrs = performance_attrs
+        self.__dict__['_performance_attrs'] = performance_attrs
 
     @classmethod
     def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
@@ -206,8 +201,8 @@ class FoxDotSupercolliderNote(Note):
     @staticmethod
     def copy(source_note: 'FoxDotSupercolliderNote') -> 'FoxDotSupercolliderNote':
         return FoxDotSupercolliderNote(synth_def=source_note.synth_def,
-                                       delay=source_note._delay, dur=source_note.dur,
-                                       amp=source_note.amp, degree=source_note._degree,
+                                       delay=source_note.delay, dur=source_note.dur,
+                                       amp=source_note.amp, degree=source_note.degree,
                                        name=source_note.name,
                                        octave=source_note.octave, scale=source_note.scale,
                                        performance_attrs=source_note._performance_attrs)
@@ -216,14 +211,14 @@ class FoxDotSupercolliderNote(Note):
         # noinspection PyProtectedMember
         return (self.octave is None and other.octave is None or self.octave == other.octave) and \
             (self.scale is None and other.scale is None or self.scale == other.scale) and \
-            self._synth_def == other._synth_def and self._delay == other._delay and self.dur == other.dur and \
-            self.amp == other.amp and self._degree == other._degree
+            self._synth_def == other._synth_def and self.delay == other.delay and self.dur == other.dur and \
+            self.amp == other.amp and self.degree == other.degree
 
     def __str__(self):
-        s = (f'name: {self.name} delay: {self._delay} '
-             f'dur: {self._dur} amp: {self._amp} degree: {self._degree}')
+        s = (f'name: {self.name} delay: {self.delay} '
+             f'dur: {self.dur} amp: {self.amp} degree: {self.degree}')
         if hasattr(self, 'octave'):
-            s += f' octave: {self._octave}'
-        if hasattr(self, '_scale'):
-            s += f' scale: {self._scale}'
+            s += f' octave: {self.octave}'
+        if hasattr(self, 'scale'):
+            s += f' scale: {self.scale}'
         return s

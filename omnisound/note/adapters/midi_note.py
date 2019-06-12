@@ -249,175 +249,122 @@ class MidiNote(Note):
                  name: str = None,
                  channel: int = None,
                  performance_attrs: PerformanceAttrs = None):
-        validate_types(('start', time, float), ('duration', duration, float), ('velocity', velocity, int),
-                       ('pitch', pitch, int))
+        if instrument in MidiInstrument:
+            instrument = instrument.value
+        validate_types(('instrument', instrument, int), ('start', time, float), ('duration', duration, float),
+                       ('velocity', velocity, int), ('pitch', pitch, int))
         validate_optional_types(('channel', channel, int), ('name', name, str),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
         validate_optional_type_choice('instrument', instrument, (int, MidiInstrument))
         super(MidiNote, self).__init__(name=name)
-        self._instrument = instrument
-        if instrument in MidiInstrument:
-            self._instrument = instrument.value
-        self._time = time
-        self._duration = duration
-        self._velocity = velocity
-        self._pitch = pitch
-        self._performance_attrs = performance_attrs
-        self._channel = channel or MidiNote.DEFAULT_CHANNEL
+
+        self.add_attr_name('velocity', Note.AMP)
+        self.add_attr_name('time', Note.START)
+        self.add_attr_name('duration', Note.DUR)
+        self.__setattr__('instrument', instrument)
+        self.__setattr__('time', time)
+        self.__setattr__('duration', duration)
+        self.__setattr__('velocity', velocity)
+        self.__setattr__('pitch', pitch)
+
+        self.__dict__['_performance_attrs'] = performance_attrs
+        self.__dict__['_channel'] = channel or MidiNote.DEFAULT_CHANNEL
 
     # Custom Interface
     def program_change(self, instrument: int):
         validate_type('instrument', instrument, int)
-        self._instrument = instrument
+        super(MidiNote, self).__setattr__('instrument', float(instrument))
 
     @property
     def channel(self) -> int:
-        return self._channel
+        return self.__dict__['_channel']
 
     @channel.setter
     def channel(self, channel: int):
         validate_type('channel', channel, int)
-        self._channel = channel
+        self.__dict__['_channel'] = channel
 
     # Base Note Interface
     @property
     def instrument(self) -> int:
-        return self._instrument
+        return int(super(MidiNote, self).__getattr__('instrument'))
 
     @instrument.setter
     def instrument(self, instrument: int):
         validate_type('instrument', instrument, int)
-        self._instrument = instrument
+        super(MidiNote, self).__setattr__('instrument', float(instrument))
 
     def i(self, instrument: int = None) -> Union['MidiNote', int]:
         if instrument is not None:
             validate_type('instrument', instrument, int)
-            self._instrument = instrument
+            super(MidiNote, self).__setattr__('instrument', float(instrument))
             return self
         else:
-            return self._instrument
-
-    @property
-    def start(self) -> float:
-        return self._time
-
-    @start.setter
-    def start(self, start: float):
-        validate_type('start', start, float)
-        self._time = start
-
-    def s(self, start: float = None) -> Union['MidiNote', float]:
-        if start is not None:
-            validate_type('start', start, float)
-            self._time = start
-            return self
-        else:
-            return self._time
+            return super(MidiNote, self).__getattr__ ('instrument')
 
     @property
     def time(self) -> float:
-        return self._time
+        return super(MidiNote, self).__getattr__('time')
 
     @time.setter
     def time(self, time: float):
         validate_type('time', time, float)
-        self._time = time
-
-    @property
-    def dur(self) -> float:
-        return self._duration
-
-    @dur.setter
-    def dur(self, dur: float):
-        validate_type('dur', dur, float)
-        self._duration = dur
-
-    def d(self, dur: float = None) -> Union['MidiNote', float]:
-        if dur is not None:
-            validate_type('dur', dur, float)
-            self._duration = dur
-            return self
-        else:
-            return self._duration
+        super(MidiNote, self).__setattr__('time', time)
 
     @property
     def duration(self) -> float:
-        return self._duration
+        return super(MidiNote, self).__getattr__('duration')
 
     @duration.setter
     def duration(self, duration: float):
         validate_type('duration', duration, float)
-        self._duration = duration
+        super(MidiNote, self).__setattr__('duration', duration)
 
     @property
-    def amp(self) -> int:
-        return self._velocity
-
-    @amp.setter
-    def amp(self, amp: int):
-        validate_type('amp', amp, int)
-        self._velocity = amp
-
-    def a(self, amp: int = None) -> Union['MidiNote', int]:
-        if amp is not None:
-            validate_type('amp', amp, int)
-            self._velocity = amp
-            return self
-        else:
-            return self._velocity
-
-    @property
-    def velocity(self) -> int:
-        return self._velocity
+    def velocity(self) -> float:
+        return int(super(MidiNote, self).__getattr__('velocity'))
 
     @velocity.setter
-    def velocity(self, velocity: int):
-        validate_type('velocity', velocity, int)
-        self._velocity = velocity
+    def velocity(self, velocity: float):
+        validate_type('velocity', velocity, float)
+        super(MidiNote, self).__setattr__('velocity', velocity)
 
     @property
     def pitch(self) -> int:
-        return self._pitch
+        return int(super(MidiNote, self).__getattr__('pitch'))
 
     @pitch.setter
-    def pitch(self, pitch: int):
+    def pitch(self, pitch: float):
         validate_type('pitch', pitch, int)
-        self._pitch = pitch
+        super(MidiNote, self).__setattr__('pitch', float(pitch))
 
     def transpose(self, interval: int):
         """Midi pitches are ints in the range MIN
         """
         validate_type('interval', interval, int)
-        new_pitch = self.pitch + interval
+
+        new_pitch = super(MidiNote, self).__getattr__('pitch') + interval
         if new_pitch < MidiNote.MIN_PITCH or new_pitch > MidiNote.MAX_PITCH:
             raise ValueError(f'Arg `interval` creates invalid pitch value: {new_pitch}')
-        self._pitch = new_pitch
-
-    def p(self, pitch: int = None) -> Union['MidiNote', int]:
-        if pitch is not None:
-            validate_type('pitch', pitch, int)
-            self._pitch = pitch
-            return self
-        else:
-            return self._pitch
+        super(MidiNote, self).__setattr__ ('pitch', new_pitch)
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
-        return self._performance_attrs
+        return self.__dict__['_performance_attrs']
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
         validate_type('performance_attrs', performance_attrs, int)
-        self._performance_attrs = performance_attrs
+        self.__dict__['_performance_attrs'] = performance_attrs
 
     @property
     def pa(self) -> PerformanceAttrs:
-        return self._performance_attrs
+        return self.__dict__['_performance_attrs']
 
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
         validate_type('performance_attrs', performance_attrs, int)
-        self._performance_attrs = performance_attrs
+        self.__dict__['_performance_attrs'] = performance_attrs
 
     @classmethod
     def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:

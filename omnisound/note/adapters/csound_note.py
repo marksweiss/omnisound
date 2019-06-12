@@ -125,7 +125,7 @@ class CSoundNote(Note):
     # Base Note Interface
     @property
     def instrument(self) -> int:
-        return int(super(CSoundNote, self).instrument)
+        return int(super(CSoundNote, self).__getattr__('instrument'))
 
     @instrument.setter
     def instrument(self, instrument: int):
@@ -135,13 +135,31 @@ class CSoundNote(Note):
 
     @property
     def i(self) -> int:
-        return int(super(self, CSoundNote).instrument)
+        return int(super(CSoundNote, self).__getattr__('instrument'))
 
     @i.setter
     def i(self, instrument: int):
         validate_types('instrument', instrument, (float, int))
-        super(self, CSoundNote).instrument = instrument
+        super(CSoundNote, self).__setattr__('instrument', float(instrument))
         self.__dict__['_to_str_val_wrappers']['instrument'] = ToStrValWrapper(instrument)
+
+    @property
+    def duration(self) -> float:
+        return super(CSoundNote, self).__getattr__('duration')
+
+    @duration.setter
+    def duration(self, duration: float):
+        validate_type('duration', duration, float)
+        super(CSoundNote, self).__setattr__('duration', float(duration))
+
+    @property
+    def amplitude(self) -> float:
+        return super(CSoundNote, self).__getattr__('amplitude')
+
+    @amplitude.setter
+    def amplitude(self, amplitude: float):
+        validate_type('amplitude', amplitude, float)
+        super(CSoundNote, self).__setattr__('amplitude', float(amplitude))
 
     # TODO MODIFY AS MATRIX TRANSFORM GENERIC
     #  ARGS:
