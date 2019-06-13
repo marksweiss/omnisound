@@ -133,7 +133,7 @@ class CSoundNote(Note):
     def instrument(self, instrument: int):
         validate_type('instrument', instrument, int)
         super(CSoundNote, self).__setattr__('instrument', float(instrument))
-        self.__dict__['_to_str_val_wrappers']['instrument'] = ToStrValWrapper(instrument)
+        self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
 
     @property
     def i(self) -> int:
@@ -143,7 +143,7 @@ class CSoundNote(Note):
     def i(self, instrument: int):
         validate_types('instrument', instrument, (float, int))
         super(CSoundNote, self).__setattr__('instrument', float(instrument))
-        self.__dict__['_to_str_val_wrappers']['instrument'] = ToStrValWrapper(instrument)
+        self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
 
     @property
     def duration(self) -> float:
@@ -216,8 +216,8 @@ class CSoundNote(Note):
                           performance_attrs=source_note.performance_attrs)
 
     def __eq__(self, other: 'CSoundNote') -> bool:
-        """NOTE: Equality ignores Note.name and Note.performance_attrs. Two CSoundNotes are considered equal
-           if they have the same note attributes.
+        """NOTE: Equality ignores Note.name, Note.performance_attrs and to_str().
+           Two CSoundNotes are considered equal if they have the same note attributes.
         """
         return self.instrument == other.instrument and \
             self.start == other.start and \

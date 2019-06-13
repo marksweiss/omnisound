@@ -390,11 +390,11 @@ class MidiNote(Note):
 
     @staticmethod
     def copy(source_note: 'MidiNote') -> 'MidiNote':
-        return MidiNote(instrument=source_note._instrument,
-                        time=source_note._time, duration=source_note._duration,
-                        velocity=source_note._velocity, pitch=source_note._pitch,
-                        name=source_note._name,
-                        channel=source_note._channel,
+        return MidiNote(instrument=source_note.instrument,
+                        time=source_note.time, duration=source_note.duration,
+                        velocity=source_note.velocity, pitch=source_note.pitch,
+                        name=source_note.name,
+                        channel=source_note.channel,
                         performance_attrs=source_note._performance_attrs)
 
     def __eq__(self, other: 'MidiNote') -> bool:

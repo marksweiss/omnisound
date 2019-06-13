@@ -172,6 +172,9 @@ class Note(ABC):
     def __setattr__(self, attr_name: str, attr_val: Any):
         """Handle setting note_attr from _attrs ndarray or any other attr a derived Note class might define.
            Returns self to support chained fluent interface style calls."""
+        if attr_name in {'pa', 'performance_attrs'}:
+            self.__dict__['_performance_attrs'] = attr_val
+            return
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
             self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val

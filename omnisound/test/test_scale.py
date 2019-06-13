@@ -1,4 +1,3 @@
-# Copyright 2018 Mark S. Weiss
 
 import pytest
 
@@ -22,7 +21,7 @@ NOTE_CLS = CSoundNote
 
 @pytest.fixture
 def note():
-    return CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
+    return CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=float(AMP), pitch=PITCH)
 
 
 @pytest.fixture
@@ -69,13 +68,12 @@ def test_get_pitch_for_key_csound(note, scale):
         assert expected_pitch == pytest.approx(pitches[i])
 
 
-def test_get_pitch_for_key_midi(scale):
+def test_get_pitch_for_key_midi():
     key = MajorKey.C
     octave = OCTAVE  # 4
     pitch_c4 = 48
     note_prototype = MidiNote(instrument=INSTRUMENT, time=START, duration=DUR, velocity=AMP,
                               pitch=pitch_c4)
-
     scale_major = Scale(key=key, octave=octave, harmonic_scale=HARMONIC_SCALE, note_cls=MidiNote,
                         note_prototype=note_prototype)
     expected_pitches = (60, 62, 64, 65, 67, 69, 71)
