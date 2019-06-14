@@ -63,11 +63,11 @@ def test_note_sequence_iter_note_attr_properties(note_sequence):
 
 
 def test_note_sequence_len_append_getitem(note_sequence):
-    # Returns note_list with 2 Notes
+    # Returns notes with 2 Notes
     note_3 = CSoundNote.copy(NOTE)
     new_amp = NOTE.amp + 1
     note_3.amp = new_amp
-    # Assert initial len() of note_list
+    # Assert initial len() of notes
     assert len(note_sequence) == 2
     # Append and check len again
     note_sequence.append(note_3)

@@ -55,7 +55,7 @@ class Swing(object):
             return
         else:
             swing_direction = swing_direction or self.swing_direction
-            for note in note_sequence.note_list:
+            for note in note_sequence.notes:
                 note.start += self.calculate_swing_adj(note, swing_direction)
 
     def calculate_swing_adj(self, note: Note = None,  swing_direction: SwingDirection = None):

@@ -25,7 +25,7 @@ SWING_FACTOR = 0.5
 
 
 @pytest.fixture
-def note_list():
+def notes():
     note_1 = CSoundNote.copy(NOTE)
     note_2 = CSoundNote.copy(NOTE)
     note_2.start += DUR
@@ -47,8 +47,8 @@ def swing():
 
 
 @pytest.fixture
-def measure(note_list, meter, swing):
-    return Measure(to_add=note_list, meter=meter, swing=swing)
+def measure(notes, meter, swing):
+    return Measure(notes=notes, meter=meter, swing=swing)
 
 
 def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, Measure]:
@@ -62,14 +62,14 @@ def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, M
 
 def _apply_swing_and_get_note_starts(measure) -> List[float]:
     measure.apply_swing()
-    actual_note_starts = [note.start for note in measure.note_list]
+    actual_note_starts = [note.start for note in measure.notes]
     return actual_note_starts
 
 
 def test_measure(meter, swing, measure):
     # Assert post-invariant of `Measure.__init__()`, which is that notes are sorted ascending by start
-    for i in range(len(measure.note_list) - 2):
-        assert measure.note_list[i].start <= measure.note_list[i + 1].start
+    for i in range(len(measure.notes) - 2):
+        assert measure.notes[i].start <= measure.notes[i + 1].start
     # Verify attribute assignments
     assert measure.beat == 0
     assert measure.next_note_start == 0.0
@@ -78,7 +78,7 @@ def test_measure(meter, swing, measure):
     assert measure.swing == swing
 
 
-def test_swing_on_off_apply_swing(note_list, swing, measure):
+def test_swing_on_off_apply_swing(notes, swing, measure):
     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
     """
@@ -98,14 +98,14 @@ def test_swing_on_off_apply_swing(note_list, swing, measure):
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
     assert expected_swing_note_starts == actual_note_starts
 
-    measure = Measure(note_list)
+    measure = Measure(notes)
     with pytest.raises(MeasureSwingNotEnabledException):
         measure.swing_on()
     with pytest.raises(MeasureSwingNotEnabledException):
         measure.swing_off()
 
 
-def test_apply_phrasing(note_list, meter, measure):
+def test_apply_phrasing(notes, meter, measure):
     """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
        and last has swing reverse. This class tests use of Swing class by Measure class.
     """
@@ -119,13 +119,13 @@ def test_apply_phrasing(note_list, meter, measure):
     assert measure[-1].start == expected_phrasing_note_starts[-1]
 
     # If there is only one note in the measure, phrasing is a no-op
-    expected_phrasing_note_starts = [note_list[1].start]
-    short_measure = Measure(to_add=[note_list[1]], meter=measure.meter, swing=measure.swing)
+    expected_phrasing_note_starts = [notes[1].start]
+    short_measure = Measure(notes=[notes[1]], meter=measure.meter, swing=measure.swing)
     short_measure.apply_phrasing()
     assert short_measure[0].start == expected_phrasing_note_starts[0]
 
     # Swing is None by default. Test that operations on swing raise if Swing object not provided to __init__()
-    measure = Measure(to_add=note_list, meter=meter)
+    measure = Measure(notes=notes, meter=meter)
     with pytest.raises(MeasureSwingNotEnabledException):
         measure.apply_phrasing()
 
@@ -144,7 +144,7 @@ def test_quantizing_on_off(measure):
     assert not measure.is_quantizing()
 
 
-def test_quantize(note_list, measure):
+def test_quantize(notes, measure):
     # BEFORE
     # measure ------------------------*
     # 0    0.25    0.50    0.75    1.00     1.25
@@ -161,10 +161,10 @@ def test_quantize(note_list, measure):
     #           n2**********
     #                   n3************
 
-    note_list_with_longer_durations = [CSoundNote.copy(note) for note in note_list]
-    for note in note_list_with_longer_durations:
+    notes_with_longer_durations = [CSoundNote.copy(note) for note in notes]
+    for note in notes_with_longer_durations:
         note.dur = note.dur * 2
-    measure.note_list = [CSoundNote.copy(note) for note in note_list_with_longer_durations]
+    measure.notes = [CSoundNote.copy(note) for note in notes_with_longer_durations]
 
     measure.quantize()
 
@@ -175,8 +175,8 @@ def test_quantize(note_list, measure):
     # - measure_duration is 1.0
     # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
     expected_dur_adjustment = 0.125
-    for i, note in enumerate(measure.note_list):
-        assert note.dur == pytest.approx(note_list_with_longer_durations[i].dur - expected_dur_adjustment)
+    for i, note in enumerate(measure.notes):
+        assert note.dur == pytest.approx(notes_with_longer_durations[i].dur - expected_dur_adjustment)
 
     # Test start adjustments
     # Expected start adjustments
@@ -185,20 +185,20 @@ def test_quantize(note_list, measure):
     # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
     # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
     expected_starts = [0.0, 0.125, 0.375, 0.625]
-    for i, note in enumerate(measure.note_list):
+    for i, note in enumerate(measure.notes):
         assert note.start == pytest.approx(expected_starts[i])
 
 
-def test_quantize_to_beat(note_list, meter):
+def test_quantize_to_beat(notes, meter):
     # Test: Note durations not on the beat, quantization required
-    note_list_with_offset_start_times = [CSoundNote.copy(note) for note in note_list]
-    for note in note_list_with_offset_start_times:
+    notes_with_offset_start_times = [CSoundNote.copy(note) for note in notes]
+    for note in notes_with_offset_start_times:
         note.start = note.start + 0.05
     # Quantize and assert the start times match the original start_times, which are on the beat
-    measure = Measure(to_add=note_list, meter=meter)
+    measure = Measure(notes=notes, meter=meter)
     measure.quantize_to_beat()
-    for i, note in enumerate(note_list):
-        assert note.start == pytest.approx(measure.note_list[i].start)
+    for i, note in enumerate(notes):
+        assert note.start == pytest.approx(measure.notes[i].start)
 
 
 def test_beat(measure):
@@ -221,43 +221,43 @@ def test_beat(measure):
         assert measure.beat <= measure.meter.beats_per_measure
 
 
-def test_add_notes_on_beat(note_list, measure, meter, swing):
+def test_add_notes_on_beat(notes, measure, meter, swing):
     # Test adding a Note and having it copied and placed at each beat position
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     assert len(measure) == 0
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
-    note = note_list[0]
+    note = notes[0]
     measure.add_notes_on_beat(note)
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
     # Test adding a list of notes and having each added at the beat position
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
-    measure.add_notes_on_beat(note_list)
+    measure.add_notes_on_beat(notes)
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
     # Test adding a NoteSequence and having each added at the beat position
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
-    measure.add_notes_on_beat(NoteSequence(note_list))
+    measure.add_notes_on_beat(NoteSequence(notes))
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
     # Test that adding more notes than there are beat positions raises
-    extra_note = CSoundNote.copy(note_list[0])
-    note_list.append(extra_note)
+    extra_note = CSoundNote.copy(notes[0])
+    notes.append(extra_note)
     with pytest.raises(ValueError):
-        measure.add_notes_on_beat(note_list)
+        measure.add_notes_on_beat(notes)
 
 
 def test_add_note_on_beat(meter, swing):
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
 
     # Each note is added on the beat without incrementing the beat, by default ...
     expected_note_start_time = 0.0
@@ -279,39 +279,39 @@ def test_add_note_on_beat(meter, swing):
     assert measure[2].start == expected_note_start_time
 
 
-def test_add_notes_on_start(note_list, measure, meter, swing):
+def test_add_notes_on_start(notes, measure, meter, swing):
     # Test adding a Note and having it copied and placed at each beat position
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     assert len(measure) == 0
 
     # Test adding a list of notes and having each added at the beat position
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
-    measure.add_notes_on_start(note_list)
+    measure.add_notes_on_start(NoteSequence(notes=notes))
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
     # Test adding a NoteSequence and having each added at the beat position
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
-    measure.add_notes_on_start(NoteSequence(note_list))
+    measure.add_notes_on_start(NoteSequence(notes))
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
     # Test that adding notes past measure.max_duration raises
     note = CSoundNote.copy(NOTE)
     note.dur = measure.max_duration + 1
-    note_list = [note]
+    notes = [note]
     with pytest.raises(ValueError):
-        measure.add_notes_on_start(note_list)
+        measure.add_notes_on_start(notes)
 
 
 def test_add_note_on_start(meter, swing):
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
 
     # Each note is added at measure.start, without incrementing the start, by default ...
     expected_note_start_time = 0.0
@@ -340,8 +340,8 @@ def test_add_note_on_start(meter, swing):
 
 
 def test_measure_add_lshift_extend(meter, swing):
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     expected_len = 0
 
     assert len(measure) == expected_len
@@ -358,7 +358,7 @@ def test_measure_add_lshift_extend(meter, swing):
     expected_len += 2
     assert len(measure) == expected_len
     # Append/Add with a NoteSequence
-    new_measure = Measure(NoteSequence(to_add=[NOTE, NOTE]), meter=meter, swing=swing)
+    new_measure = Measure(NoteSequence(notes=[NOTE, NOTE]), meter=meter, swing=swing)
     measure += new_measure
     expected_len += 2
     assert len(measure) == expected_len
@@ -367,15 +367,15 @@ def test_measure_add_lshift_extend(meter, swing):
     expected_len += 2
     assert len(measure) == expected_len
     # Extend with a NoteSequence
-    new_measure = Measure(NoteSequence(to_add=[NOTE, NOTE]), meter=meter, swing=swing)
+    new_measure = Measure(NoteSequence(notes=[NOTE, NOTE]), meter=meter, swing=swing)
     measure.extend(new_measure)
     expected_len += 2
     assert len(measure) == expected_len
 
 
 def test_measure_insert_remove_getitem(meter, swing):
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
 
     # Insert a single note at the front of the list
     start = 0.1
@@ -386,30 +386,30 @@ def test_measure_insert_remove_getitem(meter, swing):
     assert note_front.start == start
 
     # Insert a list of 2 notes at the front of the list
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     note_1 = CSoundNote.copy(NOTE)
     note_2 = CSoundNote.copy(NOTE)
     start_1 = 0.1
     note_1.start = start_1
     start_2 = 0.2
     note_2.start = start_2
-    note_list = [note_1, note_2]
-    measure.insert(0, note_list)
+    notes = [note_1, note_2]
+    measure.insert(0, notes)
     assert measure[0].start == start_1
     assert measure[1].start == start_2
 
     # Insert a NoteSequence of 2 notes at the front of the list
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     note_1 = CSoundNote.copy(NOTE)
     note_2 = CSoundNote.copy(NOTE)
     start_1 = 0.1
     note_1.start = start_1
     start_2 = 0.2
     note_2.start = start_2
-    note_list = [note_1, note_2]
-    measure.insert(0, NoteSequence(note_list))
+    notes = [note_1, note_2]
+    measure.insert(0, NoteSequence(notes))
     assert measure[0].start == start_1
     assert measure[1].start == start_2
 
@@ -421,24 +421,24 @@ def test_measure_insert_remove_getitem(meter, swing):
     assert measure[0].start == pytest.approx(expected_start)
 
     # Remove notes added as NoteSequence and List[Note]
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     note_1 = CSoundNote.copy(NOTE)
     note_2 = CSoundNote.copy(NOTE)
-    note_list = [note_1, note_2]
-    measure.insert(0, note_list)
+    notes = [note_1, note_2]
+    measure.insert(0, notes)
     assert len(measure) == 2
-    measure.remove(note_list)
+    measure.remove(notes)
     assert len(measure) == 0
 
-    empty_note_list = []
-    measure = Measure(to_add=empty_note_list, meter=meter, swing=swing)
+    empty_notes = []
+    measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     note_1 = CSoundNote.copy(NOTE)
     note_2 = CSoundNote.copy(NOTE)
-    note_list = [note_1, note_2]
-    measure.insert(0, NoteSequence(note_list))
+    notes = [note_1, note_2]
+    measure.insert(0, NoteSequence(notes))
     assert len(measure) == 2
-    measure.remove(NoteSequence(note_list))
+    measure.remove(NoteSequence(notes))
     assert len(measure) == 0
 
 

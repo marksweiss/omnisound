@@ -5,7 +5,7 @@
 # TODO FEATURE ChordSequence, i.e. Progressions
 
 from copy import copy
-from typing import Any, List, Union
+from typing import Any, List, Sequence, Union
 
 import pytest
 
@@ -38,18 +38,18 @@ class Measure(NoteSequence):
 
     DEFAULT_METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QUARTER, quantizing=True)
 
-    def __init__(self, to_add: Union[List[Note], NoteSequence],
+    def __init__(self, notes: Sequence[Note],
                  meter: Meter = None,
                  swing: Swing = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('meter', meter, Meter), ('swing', swing, Swing),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
         # Don't validate to_add because it's validated in NoteSequence.__init__()
-        super(Measure, self).__init__(to_add=to_add)
+        super(Measure, self).__init__(notes=notes)
 
         # Sort notes by start time to manage adding on beat
         # NOTE: This modifies the note_sequence in place
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.sort(key=lambda x: x.start)
         self.meter = meter or copy(Measure.DEFAULT_METER)
         self.swing = swing
         self.measure_performance_attrs = performance_attrs
@@ -79,50 +79,45 @@ class Measure(NoteSequence):
         validate_types(('note', note, Note), ('increment_beat', increment_beat, bool))
 
         note.start = self.meter.beat_start_times_secs[self.beat]
-        self.note_list.append(note)
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.append(note)
+        self.notes.sort(key=lambda x: x.start)
         # Increment beat position if flag set and beat is not on last beat of the measure already
         if increment_beat:
             self.increment_beat()
 
         return self
 
-    def add_notes_on_beat(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
+    def add_notes_on_beat(self, to_add: Union[Note, NoteSequence, Sequence[Note]]) -> 'Measure':
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
            to that beat start time.
 
            NOTE: This *replaces* all notes in the Measure with this sequence of notes on the beat
         """
-        # If `to_add` is a Note, the note_list is `to_add` copied beats_per_measure times
+        # If `to_add` is a Note, the notes is `to_add` copied beats_per_measure times
         note_list = []
         try:
             validate_type('to_add', to_add, Note)
             note_list = [to_add.__class__.copy(to_add) for _ in range(self.meter.beats_per_measure)]
         except ValueError:
             pass
-
-        # Otherwise the note_list is the NoteSequence or List[Note] passed in. Retrieve it and validate
-        # that it doesn't have more notes than there are beats per measure.
         if not note_list:
-            # If `to_add` is a NoteSequence or note list, ensure that the number of notes in the sequence
-            # is <= the number of beats in the measure, then assign one note to each beat
-            note_list = self._get_note_list_from_sequence('to_add', to_add)
-            if not note_list:
-                raise ValueError((f'Arg `to_add` must be a Note, NoteSequence or List[Note], '
-                                  f'arg: {to_add} type: {type(to_add)}'))
-            if len(note_list) > self.meter.beats_per_measure:
-                raise ValueError(f'Sequence `to_add` must have a number of notes <= to the number of beats per measure')
+            note_list = to_add
 
-        # Now iterate the beats per measure and assign each note in note_list to the next start time on the beat
+        # Ensure that the number of notes in the sequence is <= the number of beats in the measure,
+        # then assign one note to each beat
+        if len(note_list) > self.meter.beats_per_measure:
+            raise ValueError(f'Sequence `to_add` must have a number of notes <= to number of beats per measure')
+
+        # Now iterate the beats per measure and assign each note in notes to the next start time on the beat
         for i, beat_start_time in enumerate(self.meter.beat_start_times_secs):
             # There might be fewer notes than beats per measure, because `to_add` is a sequence
             if i == len(note_list):
                 break
             note_list[i].start = beat_start_time
 
-        self.note_list = note_list
+        self.notes = note_list
         # Maintain the invariant that notes are sorted ascending by start
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.sort(key=lambda x: x.start)
         return self
     # /Adding notes in sequence on the beat
 
@@ -138,23 +133,23 @@ class Measure(NoteSequence):
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
         note.start = self.next_note_start
-        self.note_list.append(note)
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.append(note)
+        self.notes.sort(key=lambda x: x.start)
         if increment_start:
             self.next_note_start += note.dur
 
         return self
 
-    def add_notes_on_start(self, to_add: Union[NoteSequence, List[Note]]) -> 'Measure':
+    def add_notes_on_start(self, to_add: Union[NoteSequence, Sequence[Note]]) -> 'Measure':
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
            to that of the previous notes start + duration.
            Validates that all the durations fit in the total duration of the measure.
 
            NOTE: This *replaces* all notes in the Measure with this sequence of notes on the beat
         """
-        note_list = self._get_note_list_from_sequence('to_add', to_add)
+        note_list = to_add
         if not note_list:
-            raise ValueError((f'Arg `to_add` must be a NoteSequence or List[Note], '
+            raise ValueError((f'Arg `to_add` must be a NoteSequence, '
                               f'arg: {to_add} type: {type(to_add)}'))
 
         sum_of_durations = sum([note.dur for note in note_list])
@@ -167,9 +162,9 @@ class Measure(NoteSequence):
             note.start = self.next_note_start
             self.next_note_start += note.dur
 
-        self.note_list = note_list
+        self.notes = list(note_list)
         # Maintain the invariant that notes are sorted ascending by start
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.sort(key=lambda x: x.start)
         return self
     # Adding notes in sequence from the current start time, one note immediately after another
 
@@ -223,18 +218,18 @@ class Measure(NoteSequence):
            of having 0 or 1 notes. If there is only 1 note no adjustment is made.
         """
         if self.swing:
-            if len(self.note_list) > 1:
-                self.note_list[0].start += \
-                    self.swing.calculate_swing_adj(self.note_list[0], Swing.SwingDirection.Forward)
-                self.note_list[-1].start += \
-                    self.swing.calculate_swing_adj(self.note_list[-1], Swing.SwingDirection.Reverse)
+            if len(self.notes) > 1:
+                self.notes[0].start += \
+                    self.swing.calculate_swing_adj(self.notes[0], Swing.SwingDirection.Forward)
+                self.notes[-1].start += \
+                    self.swing.calculate_swing_adj(self.notes[-1], Swing.SwingDirection.Reverse)
         else:
             raise MeasureSwingNotEnabledException('Measure.apply_phrasing() called but swing is None in Measure')
     # /Apply Swing and Phrasing to notes
 
     # Getters and setters for all core note properties, get from all notes, apply to all notes
     # Getters retrieve the value for a note property from each note and return a list of values
-    # Setters apply a value for a note property to each note in the note_list
+    # Setters apply a value for a note property to each note in the notes
     # Getters and setters for all core note properties, get from all notes, apply to all notes
     @property
     def pa(self):
@@ -243,7 +238,7 @@ class Measure(NoteSequence):
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
         self.measure_performance_attrs = performance_attrs
-        for note in self.note_list:
+        for note in self.notes:
             note.performance_attrs = performance_attrs
 
     @property
@@ -253,61 +248,62 @@ class Measure(NoteSequence):
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
         self.measure_performance_attrs = performance_attrs
-        for note in self.note_list:
+        for note in self.notes:
             note.performance_attrs = performance_attrs
 
+    # TODO GETTERS AND SETTERS, TRANSPOSE CHANGE TO USE NUMPY APPROACH
     def get_instrument(self) -> List[int]:
-        return [note.instrument for note in self.note_list]
+        return [note.instrument for note in self.notes]
 
     def set_instrument(self, instrument: int):
-        for note in self.note_list:
+        for note in self.notes:
             note.instrument = instrument
 
     instrument = property(get_instrument, set_instrument)
     i = property(get_instrument, set_instrument)
 
     def get_start(self) -> Union[List[float], List[int]]:
-        return [note.start for note in self.note_list]
+        return [note.start for note in self.notes]
 
     def set_start(self, start: Union[float, int]):
-        for note in self.note_list:
+        for note in self.notes:
             note.start = start
 
     start = property(get_start, set_start)
     s = property(get_start, set_start)
 
     def get_dur(self) -> Union[List[float], List[int]]:
-        return [note.dur for note in self.note_list]
+        return [note.dur for note in self.notes]
 
     def set_dur(self, dur: Union[float, int]):
-        for note in self.note_list:
+        for note in self.notes:
             note.dur = dur
 
     dur = property(get_dur, set_dur)
     d = property(get_dur, set_dur)
 
     def get_amp(self) -> Union[List[float], List[int]]:
-        return [note.amp for note in self.note_list]
+        return [note.amp for note in self.notes]
 
     def set_amp(self, amp: Union[float, int]):
-        for note in self.note_list:
+        for note in self.notes:
             note.amp = amp
 
     amp = property(get_amp, set_amp)
     a = property(get_amp, set_amp)
 
     def get_pitch(self) -> Union[List[float], List[int]]:
-        return [note.pitch for note in self.note_list]
+        return [note.pitch for note in self.notes]
 
     def set_pitch(self, pitch: Union[float, int]):
-        for note in self.note_list:
+        for note in self.notes:
             note.pitch = pitch
 
     pitch = property(get_pitch, set_pitch)
     p = property(get_pitch, set_pitch)
 
     def transpose(self, interval: int):
-        for note in self.note_list:
+        for note in self.notes:
             note.transpose(interval)
     # Getters and setters for all core note properties, get from all notes, apply to all notes
 
@@ -315,53 +311,54 @@ class Measure(NoteSequence):
     def get_notes_attr(self, name: str) -> List[Any]:
         """Return list of all values for attribute `name` from all notes in the measure, in start time order"""
         validate_type('name', name, str)
-        return [getattr(note, name) for note in self.note_list]
+        return [getattr(note, name) for note in self.notes]
 
     def set_notes_attr(self, name: str, val: Any):
-        """Apply to all notes in note_list"""
+        """Apply to all notes in notes"""
         validate_type('name', name, str)
-        for note in self.note_list:
+        for note in self.notes:
             setattr(note, name, val)
     # /Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
 
-    # NoteSequence note_list management
-    # Wrap all parent methods to maintain invariant that note_list is sorted by note.start_time ascending
+    # NoteSequence notes management
+    # Wrap all parent methods to maintain invariant that notes is sorted by note.start_time ascending
     def append(self, note: Note) -> 'Measure':
         super(Measure, self).append(note)
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
-    def extend(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
-        super(Measure, self).extend(to_add)
-        self.note_list.sort(key=lambda x: x.start)
+    def extend(self, notes: NoteSequence) -> 'Measure':
+        super(Measure, self).extend(notes)
+        self.notes.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
-    def __add__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
-        return self.extend(to_add)
+    def __add__(self, to_add: Union[Note, NoteSequence]) -> 'Measure':
+        super(Measure, self).__add__(to_add)
+        return self
 
     # noinspection PyUnresolvedReferences
-    def __lshift__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
-        return self.extend(to_add)
+    def __lshift__(self, to_add: Union[Note, NoteSequence]) -> 'Measure':
+        return self.__add__(to_add)
 
-    def insert(self, index: int, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'Measure':
+    def insert(self, index: int, to_add: Union[Note, 'NoteSequence']) -> 'Measure':
         super(Measure, self).insert(index, to_add)
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.sort(key=lambda x: x.start)
         return self
 
-    def remove(self, to_remove: Union[Note, 'NoteSequence', List[Note]]) -> 'Measure':
+    def remove(self, to_remove: Union[Note, 'NoteSequence']) -> 'Measure':
         super(Measure, self).remove(to_remove)
-        self.note_list.sort(key=lambda x: x.start)
+        self.notes.sort(key=lambda x: x.start)
         return self
-    # /NoteSequence note_list management
+    # /NoteSequence notes management
 
     # Iterator support
     def __eq__(self, other: 'Measure') -> bool:
-        if len(self.note_list) != len(other.note_list):
+        if len(self.notes) != len(other.notes):
             return False
-        for i, note in enumerate(self.note_list):
-            if note != other.note_list[i]:
+        for i, note in enumerate(self.notes):
+            if note != other.notes[i]:
                 return False
         return self.meter == other.meter and \
             self.swing == other.swing and \
@@ -373,10 +370,9 @@ class Measure(NoteSequence):
     # noinspection PyUnresolvedReferences
     @staticmethod
     def copy(source_measure: 'Measure') -> 'Measure':
-        # Call the dup() for the subclass of this note type
-        new_note_list = [(note.copy(note))
-                         for note in source_measure.note_list]
-        new_measure = Measure(to_add=new_note_list,
+        new_notes = [(note.__class__.copy(note))
+                     for note in source_measure.notes]
+        new_measure = Measure(notes=new_notes,
                               meter=source_measure.meter, swing=source_measure.swing,
                               performance_attrs=source_measure.measure_performance_attrs)
         new_measure.beat = source_measure.beat

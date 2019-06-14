@@ -97,7 +97,7 @@ if __name__ == '__main__':
             chord = Chord(harmonic_chord=HARMONIC_CHORD, note_prototype=chord_note, note_cls=MidiNote,
                           octave=octave, key=chord_root_key)
             # Append all the notes in the chord note list to the measure notes
-            chords_notes.extend(chord.note_list)
+            chords_notes.extend(chord.notes)
         chords_measure = Measure(chords_notes, meter=METER)
         chords_track.append(chords_measure)
 
