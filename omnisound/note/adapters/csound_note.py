@@ -1,6 +1,9 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Union
+from copy import deepcopy
+from typing import Any, Dict, Union
+
+from numpy import array
 
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
@@ -16,6 +19,7 @@ def pitch_to_str(pitch_prec):
     return _pitch_to_str
 
 
+# noinspection PyUnusedLocal
 class CSoundNote(Note):
     """Models a note with attributes aliased to and specific to CSound
        and with a str() that prints CSound formatted output.
@@ -62,55 +66,38 @@ class CSoundNote(Note):
 
     DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
-    def __init__(self, instrument: int = None,
-                 start: float = None, duration: float = None, amplitude: float = None, pitch: float = None,
-                 name: str = None,
-                 pitch_precision: int = None,
-                 performance_attrs: PerformanceAttrs = None):
-        validate_types(('instrument', instrument, int), ('start', start, float),
-                       ('duration', duration, float), ('amplitude', amplitude, float),
-                       ('pitch', pitch, float))
-        validate_optional_types(('name', name, str), ('pitch_precision', pitch_precision, int),
+    def __init__(self,
+                 attrs: array = None,
+                 attr_name_idx_map: Dict[str, int] = None,
+                 attr_vals_map: Dict[str, float] = None,
+                 row_num: int = None,
+                 pitch_precision: int = None, performance_attrs: PerformanceAttrs = None):
+        validate_optional_types(('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        super(CSoundNote, self).__init__(name=name)
 
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
-        self.add_attr_name('amplitude', Note.AMP)
-        self.add_attr_name('duration', Note.DUR)
+        self.attr_name_idx_map = deepcopy(attr_name_idx_map)
+        self.attr_name_idx_map['amplitude'] = Note.AMP
+        self.attr_name_idx_map['duration'] = Note.DUR
+        super(CSoundNote, self).__init__(attrs=attrs,
+                                         attr_name_idx_map=self.attr_name_idx_map,
+                                         attr_vals_map=attr_vals_map,
+                                         row_num=row_num)
+
         # str_to_val_wrappers are assigned in self.__setattr__()
         self.__dict__['_to_str_val_wrappers'] = dict()
-        self.__setattr__('instrument', instrument)
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
-        self.__setattr__('start', start)
         self.__dict__['_to_str_val_wrappers']['start'] = lambda x:  f'{x:.5f}'
-        self.__setattr__('duration', duration)
         self.__dict__['_to_str_val_wrappers']['duration'] = lambda x:  f'{x:.5f}'
-        self.__setattr__('amplitude', amplitude)
         self.__dict__['_to_str_val_wrappers']['amplitude'] = lambda x: str(x)
-
         # Handle case that pitch is a float and will have rounding but that sometimes we want
         # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
         # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
         # and for the latter case we default to .5f precision but allow any precision.
         self.__dict__['_pitch_precision'] = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
-        self.__setattr__('pitch', pitch)
         self.__dict__['_to_str_val_wrappers']['pitch'] = pitch_to_str(self.__dict__['_pitch_precision'])
 
         self.__dict__['_performance_attrs'] = performance_attrs
-
-    # noinspection PyStatementEffect
-    def add_attr(self, attr_name: str, attr_val: [float, int], to_str: Any = None):
-        """Supports adding new attributes and assigning proper to_str handling for them in this class. Note that
-           this does not create a wrapper that also converts the type correctly. This requires static override
-           properties such as we have for instrument and amplitude. Clients using this will still need to cast
-           return values from float if they desire another type.
-        """
-        validate_type('attr_name', attr_name, str)
-        validate_type_choice('attr_val', attr_val, (float, int))
-        if not to_str:
-            to_str = lambda x: str(x)
-        self.__dict__['_to_str_val_wrappers'][attr_name] = to_str
-        self.__setattr__(attr_name, attr_val)
 
     @property
     def pitch_precision(self) -> int:
@@ -135,33 +122,30 @@ class CSoundNote(Note):
         super(CSoundNote, self).__setattr__('instrument', float(instrument))
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
 
-    @property
-    def i(self) -> int:
-        return int(super(CSoundNote, self).__getattr__('instrument'))
-
-    @i.setter
-    def i(self, instrument: int):
+    # noinspection PyMethodOverriding
+    def I(self, instrument: int):
         validate_types('instrument', instrument, (float, int))
         super(CSoundNote, self).__setattr__('instrument', float(instrument))
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
 
-    @property
-    def duration(self) -> float:
-        return super(CSoundNote, self).__getattr__('duration')
-
-    @duration.setter
-    def duration(self, duration: float):
-        validate_type('duration', duration, float)
-        super(CSoundNote, self).__setattr__('duration', float(duration))
-
-    @property
-    def amplitude(self) -> float:
-        return super(CSoundNote, self).__getattr__('amplitude')
-
-    @amplitude.setter
-    def amplitude(self, amplitude: float):
-        validate_type('amplitude', amplitude, float)
-        super(CSoundNote, self).__setattr__('amplitude', float(amplitude))
+    # TODO CAN WE GET RID OF THESE. THEY ARE ALIASED BUT NOT CASTING TYPE AND BASE SHOULD SUPPORT ALIAS
+    # @property
+    # def duration(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('duration')
+    #
+    # @duration.setter
+    # def duration(self, duration: float):
+    #     validate_type('duration', duration, float)
+    #     super(CSoundNote, self).__setattr__('duration', float(duration))
+    #
+    # @property
+    # def amplitude(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('amplitude')
+    #
+    # @amplitude.setter
+    # def amplitude(self, amplitude: float):
+    #     validate_type('amplitude', amplitude, float)
+    #     super(CSoundNote, self).__setattr__('amplitude', float(amplitude))
 
     # TODO MODIFY AS MATRIX TRANSFORM GENERIC
     #  ARGS:
@@ -207,14 +191,6 @@ class CSoundNote(Note):
                               f'{cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}'))
         return cls.PITCH_MAP[key] + (float(octave) - 1.0)
 
-    @staticmethod
-    def copy(source_note: 'CSoundNote') -> 'CSoundNote':
-        return CSoundNote(instrument=int(source_note.instrument),
-                          start=source_note.start, duration=source_note.dur,
-                          amplitude=source_note.amp, pitch=source_note.pitch,
-                          name=source_note.name,
-                          performance_attrs=source_note.performance_attrs)
-
     def __eq__(self, other: 'CSoundNote') -> bool:
         """NOTE: Equality ignores Note.name, Note.performance_attrs and to_str().
            Two CSoundNotes are considered equal if they have the same note attributes.
@@ -243,8 +219,8 @@ class CSoundNote(Note):
                           f'{self.__dict__["_to_str_val_wrappers"]["amplitude"](self.amplitude)} '
                           f'{self.__dict__["_to_str_val_wrappers"]["pitch"](self.pitch)}')
         attr_strs = [base_attr_strs]
-        for attr_name in self.__dict__["_to_str_val_wrappers"].keys():
-            if attr_name not in ATTR_NAMES:
+        for attr_name in self.attr_name_idx_map.keys():
+            if attr_name not in CSoundNote.ATTR_NAMES:
                 attr_strs.append(
                     f'{self.__dict__["_to_str_val_wrappers"][attr_name](self.__getattr__(attr_name))}')
 

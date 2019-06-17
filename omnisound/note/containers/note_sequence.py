@@ -16,7 +16,7 @@ class NoteSequenceInvalidAppendException(Exception):
 class NoteSequence(object):
     """Provides an iterator abstraction over a collection of Notes. Also owns the storage for the collection
        of Notes as a Numpy array of rank 2. The shape of the array is the number of note attributes and the
-      depth of it is the number of note_attrs.
+       depth of it is the number of note_attrs.
 
        Because the underlying storage is fixed size, there is a default sequence length of 1, but the caller can
        pre-allocate by providing a value for the `num_notes` argument. If note_attrs are added exceeding the size
@@ -33,6 +33,10 @@ class NoteSequence(object):
        passed a reference to a row in a numpy array owned by a NoteSequence. So a Note is just a view over that
        row in the matrix and just an interface to read and write values for a single note, rather than manipulating
        all values at once.
+
+       NOTE: Appending to a a child must be done directly and it also invalidates the range_map in any
+       sequence that the child is a child_sequence of. If you want to modify a Sequence B that is in A.child_sequences,
+       you must 1) modify B, and then 2) call A.update_range_map().
     """
 
     def __init__(self, note_cls: Note = None, num_notes: int = None, num_attributes: int = None,
@@ -62,9 +66,19 @@ class NoteSequence(object):
         self.max_index = 0
         self._range_map_index = 0
         self.range_map = {}
-        self._update_range_map()
+        self.update_range_map()
 
-    def _update_range_map(self):
+    def _fast_update_range_map(self, num_entries: int):
+        # Must copy into a new dict because we are modifying the keys
+        new_range_map = {range_index + num_entries: child_seq
+                         for range_index, child_seq in self.range_map.items()}
+        self.range_map = new_range_map
+
+    def _fast_append_range_map(self, new_entry: 'NoteSequence'):
+        last_range_index = list(self.range_map.keys())[-1]
+        self.range_map[last_range_index + len(new_entry.note_attrs)] = new_entry
+
+    def update_range_map(self):
         # What we need is a data structure that defines the range of indexes covered by a particular NoteSequence
         # and maps that to a reference to that NoteSequence. This __next__() knows which NoteSequence (this one or
         # one of its children, recursively) it is traversing currently and to retrieve elements from it.
@@ -79,6 +93,7 @@ class NoteSequence(object):
         # _index_range_map we reset self.index and self._index_range_map_index to start over at the beginning
         if self.child_sequences:
             # Add entry in output range map for first child_seq in self.child_seqs
+            # noinspection PyAttributeOutsideInit
             self._range_map = {len(self.note_attrs) + len(self.child_sequences[0]): self.child_sequences[0]}
             # Init the queue with the child seqs of self
             child_seqs_queue = [child for child in self.child_sequences]
@@ -158,11 +173,13 @@ class NoteSequence(object):
 
     # noinspection PyCallingNonCallable
     def make_notes(self) -> List[Note]:
+        # Get the notes from this sequence
         notes = [self.note_cls(attrs=note_vals,
                                attr_name_index_map=self.attr_name_index_map,
                                default_attr_vals_map=self.default_attr_vals_map,
                                row_num=i)
                  for i, note_vals in enumerate(self.note_attrs)]
+        # Walk the range map, which is already in the flattened order, and append all notes from that in order
         for note_seq in self._range_map.values():
             notes.extend([self.note_cls(attrs=note_vals,
                                         attr_name_index_map=self.attr_name_index_map,
@@ -171,8 +188,8 @@ class NoteSequence(object):
                           for i, note_vals in enumerate(note_seq.note_attrs)])
         return notes
 
-    # TODO FIX THIS TO EQ ON ALL CHILD SEQUENCES
     def __eq__(self, other: 'NoteSequence') -> bool:
+        # All child sequences must match and the notes in self in both NoteSequences must match
         if len(self.child_sequences) != len(other.child_sequences):
             return False
         for i, note_sequence in enumerate(self.child_sequences):
@@ -182,8 +199,9 @@ class NoteSequence(object):
     # /Manage iter / slice
 
     # Manage note list
-    # TODO CALL _UPDATE AFTER ALL WRITES
     def append(self, note: Note) -> 'NoteSequence':
+        """NOTE: This only supports appending notes to this NoteSequence, not any of its children.
+        """
         validate_type('note', note, Note)
         if self.note_attrs.shape != note.__dict__['_attrs'].shape:
             raise NoteSequenceInvalidAppendException(
@@ -191,23 +209,24 @@ class NoteSequence(object):
         new_note_idx = len(self.note_attrs)
         self.note_attrs = self.note_attrs.resize(self.note_attrs, new_note_idx + 1)
         np.copyto(self.note_attrs[new_note_idx], note.__dict__['_attrs'])
+        self._fast_update_range_map(1)
         return self
 
-    # TODO CALL _UPDATE AFTER ALL WRITES
-    def append_child_sequence(self, child_sequence: 'NoteSequence') -> None:
+    def append_child_sequence(self, child_sequence: 'NoteSequence') -> 'NoteSequence':
         validate_type('child_sequence', child_sequence, NoteSequence)
         self.child_sequences.append(child_sequence)
+        self._fast_append_range_map(child_sequence)
+        return self
 
-    # TODO CALL _UPDATE AFTER ALL WRITES
     def extend(self, note_sequence: 'NoteSequence') -> 'NoteSequence':
         validate_type('note_sequence', note_sequence, NoteSequence)
         if self.note_attrs.shape != note_sequence.note_attrs.shape:
             raise NoteSequenceInvalidAppendException(
                 'NoteSequence extended to a NoteSequence must have the same number of attributes')
         self.note_attrs = np.concatenate((self.note_attrs, note_sequence.note_attrs))
+        self._fast_update_range_map(len(note_sequence))
         return self
 
-    # TODO CALL _UPDATE AFTER ALL WRITES
     def __add__(self, to_add: Union[Note, 'NoteSequence']) -> 'NoteSequence':
         """Overloads the `+` operator to support adding a single Note, a NoteSequence or a List[Note]"""
         if isinstance(to_add, Note):
@@ -215,11 +234,9 @@ class NoteSequence(object):
         else:
             return self.extend(to_add)
 
-    # TODO CALL _UPDATE AFTER ALL WRITES
     def __lshift__(self, to_add: Union[Note, 'NoteSequence']) -> 'NoteSequence':
         return self.__add__(to_add)
 
-    # TODO CALL _UPDATE AFTER ALL WRITES
     def insert(self, index: int, to_add: Union[Note, 'NoteSequence']) -> 'NoteSequence':
         validate_type('index', index, int)
         validate_type_choice('to_add', to_add, (Note, NoteSequence))
@@ -230,9 +247,9 @@ class NoteSequence(object):
             new_notes = to_add.note_attrs
         self.note_attrs = np.insert(self.note_attrs, index, new_notes, axis=0)
 
+        self._fast_update_range_map(len(new_notes))
         return self
 
-    # TODO CALL _UPDATE AFTER ALL WRITES
     def remove(self, to_remove: Union[Note, 'NoteSequence']):
         validate_type_choice('to_add', to_remove, (Note, NoteSequence))
         if isinstance(to_remove, Note):
@@ -244,5 +261,6 @@ class NoteSequence(object):
         range_end = notes_to_remove[-1].row_num
         np.delete(self.note_attrs, range(range_start, range_end), axis=0)
 
+        self._fast_update_range_map(-1)
         return self
     # /Manage note list
