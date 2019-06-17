@@ -158,12 +158,18 @@ class NoteSequence(object):
 
     # noinspection PyCallingNonCallable
     def make_notes(self) -> List[Note]:
-        # TODO FIX THIS TO SUPPORT OVER ALL CHILD SEQS
-        return [self.note_cls(attrs=note_attrs,
-                              attr_name_index_map=self.attr_name_index_map,
-                              default_attr_vals_map=self.default_attr_vals_map,
-                              row_num=i)
-                for i, note_attrs in enumerate(self.note_attrs)]
+        notes = [self.note_cls(attrs=note_vals,
+                               attr_name_index_map=self.attr_name_index_map,
+                               default_attr_vals_map=self.default_attr_vals_map,
+                               row_num=i)
+                 for i, note_vals in enumerate(self.note_attrs)]
+        for note_seq in self._range_map.values():
+            notes.extend([self.note_cls(attrs=note_vals,
+                                        attr_name_index_map=self.attr_name_index_map,
+                                        default_attr_vals_map=self.default_attr_vals_map,
+                                        row_num=i)
+                          for i, note_vals in enumerate(note_seq.note_attrs)])
+        return notes
 
     # TODO FIX THIS TO EQ ON ALL CHILD SEQUENCES
     def __eq__(self, other: 'NoteSequence') -> bool:
