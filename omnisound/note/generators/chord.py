@@ -71,7 +71,7 @@ class Chord(NoteSequence):
         super(Chord, self).__init__(notes=note_list)
 
     def mod_first_inversion(self):
-        """Modifies this Chord's notes to its first inversion. Leaves all other attributes unchanged."""
+        """Modifies this Chord's note_attrs to its first inversion. Leaves all other attributes unchanged."""
         self._mingus_chord = m_first_inversion(self._mingus_chord)
         self.notes = get_notes_for_mingus_keys(self.matched_key_type, self._mingus_chord,
                                                self._mingus_key_to_key_enum_mapping,
@@ -79,7 +79,7 @@ class Chord(NoteSequence):
                                                validate=False)
 
     def mod_second_inversion(self):
-        """Modifies this Chord's notes to its second inversion. Leaves all other attributes unchanged."""
+        """Modifies this Chord's note_attrs to its second inversion. Leaves all other attributes unchanged."""
         self._mingus_chord = m_second_inversion(self._mingus_chord)
         self.notes = get_notes_for_mingus_keys(self.matched_key_type, self._mingus_chord,
                                                self._mingus_key_to_key_enum_mapping,
@@ -87,7 +87,7 @@ class Chord(NoteSequence):
                                                validate=False)
 
     def mod_third_inversion(self):
-        """Modifies this Chord's notes to its third inversion. Leaves all other attributes unchanged."""
+        """Modifies this Chord's note_attrs to its third inversion. Leaves all other attributes unchanged."""
         self._mingus_chord = m_third_inversion(self._mingus_chord)
         self.notes = get_notes_for_mingus_keys(self.matched_key_type, self._mingus_chord,
                                                self._mingus_key_to_key_enum_mapping,
@@ -96,7 +96,7 @@ class Chord(NoteSequence):
 
     @staticmethod
     def copy_first_inversion(source_chord: 'Chord') -> 'Chord':
-        """Copy constructor that creates a new Chord using the attributes of this Chord with a notes
+        """Copy constructor that creates a new Chord using the attributes of this Chord with a note_attrs
             that is generated from copies from this Chord's note_prototype, with pitches which are the
             first inversion of the keys in this Chord.
         """
@@ -111,7 +111,7 @@ class Chord(NoteSequence):
 
     @staticmethod
     def copy_second_inversion(source_chord: 'Chord') -> 'Chord':
-        """Copy constructor that creates a new Chord using the attributes of this Chord with a notes
+        """Copy constructor that creates a new Chord using the attributes of this Chord with a note_attrs
             that is generated from copies from this Chord's note_prototype, with pitches which are the
             second inversion of the keys in this Chord.
         """
@@ -126,7 +126,7 @@ class Chord(NoteSequence):
 
     @staticmethod
     def copy_third_inversion(source_chord: 'Chord') -> 'Chord':
-        """Copy constructor that creates a new Chord using the attributes of this Chord with a notes
+        """Copy constructor that creates a new Chord using the attributes of this Chord with a note_attrs
             that is generated from copies from this Chord's note_prototype, with pitches which are the
             third inversion of the keys in this Chord.
         """
@@ -140,7 +140,7 @@ class Chord(NoteSequence):
         return chord
 
     def mod_transpose(self, interval: int):
-        """Modifies this Chord's notes to transpose all notes by `interval`.
+        """Modifies this Chord's note_attrs to transpose all note_attrs by `interval`.
            Leaves all other attributes unchanged.
         """
         # Don't validate because Note.transpose() validates
@@ -157,7 +157,7 @@ class Chord(NoteSequence):
         return chord
 
     def mod_ostinato(self, init_start_time: Union[float, int], start_time_interval: Union[float, int]):
-        """Modifies the Notes in the notes of this Chord so that their start_times are spaced out, transforming
+        """Modifies the Notes in the note_attrs of this Chord so that their start_times are spaced out, transforming
            the Notes from being a Chord to being an ostinato. The first Note.start_time is set to
            arg `init_start_time`. Each subsequent note will have `init_start_time` + (n * `start_time_interval`)
         """

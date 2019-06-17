@@ -1,7 +1,7 @@
 # Copyright 2019 Mark S. Weiss
 
 from omnisound.note.adapters.midi_note import FIELDS, MidiInstrument, MidiNote
-from omnisound.note.adapters.note import NoteConfig
+from omnisound.note.adapters.note import NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.measure import Measure, Meter
 from omnisound.note.containers.song import Song
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     for _ in range(NUM_MEASURES):
         ostinato_notes = NoteSequence([])
         for i in range(notes_per_measure):
-            note_config = NoteConfig(FIELDS)
+            note_config = NoteValues(FIELDS)
             note_config.time = (i % notes_per_measure) * dur_val
             note_config.duration = dur_val
             note_config.velocity = int(BASE_VELOCITY - ((i % notes_per_measure) / VELOCITY_FACTOR))
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     for _ in range(NUM_MEASURES):
         chords_notes = NoteSequence([])
         for i in range(notes_per_measure):
-            note_config = NoteConfig(FIELDS)
+            note_config = NoteValues(FIELDS)
             note_config.time = 0.0
             note_config.duration = dur_val
             note_config.velocity = BASE_VELOCITY - 20
@@ -96,7 +96,7 @@ if __name__ == '__main__':
                           note_cls=NOTE_CLS, note_prototype=chord_note)
             chord = Chord(harmonic_chord=HARMONIC_CHORD, note_prototype=chord_note, note_cls=MidiNote,
                           octave=octave, key=chord_root_key)
-            # Append all the notes in the chord note list to the measure notes
+            # Append all the note_attrs in the chord note list to the measure note_attrs
             chords_notes.extend(chord.notes)
         chords_measure = Measure(chords_notes, meter=METER)
         chords_track.append(chords_measure)

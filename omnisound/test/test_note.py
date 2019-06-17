@@ -14,7 +14,7 @@ from omnisound.note.adapters.foxdot_supercollider_note import \
     FoxDotSupercolliderNote
 from omnisound.note.adapters.midi_note import FIELDS as MIDI_FIELDS
 from omnisound.note.adapters.midi_note import MidiInstrument, MidiNote
-from omnisound.note.adapters.note import NoteConfig
+from omnisound.note.adapters.note import NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.adapters.rest_note import RestNote
 
@@ -45,21 +45,21 @@ OCTAVE = 4
 def _setup_note_config(note_type: Any):
     note_config = None
     if note_type == CSoundNote:
-        note_config = NoteConfig(CSOUND_FIELDS)
+        note_config = NoteValues(CSOUND_FIELDS)
         note_config.instrument = INSTRUMENT
         note_config.start = START
         note_config.duration = DUR
         note_config.amplitude = AMP
         note_config.pitch = PITCH
     if note_type == MidiNote:
-        note_config = NoteConfig(MIDI_FIELDS)
+        note_config = NoteValues(MIDI_FIELDS)
         note_config.instrument = MIDI_INSTRUMENT
         note_config.time = START
         note_config.duration = DUR
         note_config.velocity = int(AMP)
         note_config.pitch = int(PITCH)
     if note_type == FoxDotSupercolliderNote:
-        note_config = NoteConfig(FOXDOT_FIELDS)
+        note_config = NoteValues(FOXDOT_FIELDS)
         note_config.synth_def = FOX_DOT_INSTRUMENT
         note_config.delay = INT_START
         note_config.dur = DUR

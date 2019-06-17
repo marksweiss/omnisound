@@ -40,8 +40,8 @@ class InvalidQuantizationDurationException(Exception):
 class Meter(object):
     """Class to represent and manage Meter in a musical Measure/Bar. Offers facilities for representing and
        calculating meter using traditional units or floating point values. Can also apply quantizing to a
-       NoteSequence to either fit the notes with the same ration of separation between them but scaled to the
-       duration of the Measure, or to fit notes to the closest beat in the Measure. str displays information about
+       NoteSequence to either fit the note_attrs with the same ration of separation between them but scaled to the
+       duration of the Measure, or to fit note_attrs to the closest beat in the Measure. str displays information about
        the configuration of the object, but repr displays the meter in traditional notation.
 
        `beat_duration` - the duration of one beat
@@ -82,7 +82,7 @@ class Meter(object):
 
         # Actual note duration
         # Map note durations from meter, which are unitless, to time, using tempo, which is a ratio of
-        # quarter-note beats to time. qpm == quarter notes per minute
+        # quarter-note beats to time. qpm == quarter note_attrs per minute
         self.tempo_qpm = tempo or Meter.DEFAULT_QUARTER_NOTES_PER_MINUTE
         self.quarter_note_dur_secs = Meter.SECS_PER_MINUTE / self.tempo_qpm
         # Each note is some fraction of a quarter note. So for N / 4 meters, this ratio is 1.
@@ -118,8 +118,8 @@ class Meter(object):
         Algo for the degree of quantization is this ratio:
         - `notes_duration` = `max(note.start + note.dur) for note in note_sequence`
         -- if the notes_duration matches the measure duration, then no quantization needed, return
-        -- if notes run too long they must be shortened and have their start times made earlier
-        -- if the notes don't run long enough, they must be lengthened to and have their start times made later
+        -- if note_attrs run too long they must be shortened and have their start times made earlier
+        -- if the note_attrs don't run long enough, they must be lengthened to and have their start times made later
 
         - `total_adjustment` = `measure_duration - notes_duration`
         -- negative adjustment if notes_duration too long, positive adjustment if notes_duration not long enough
@@ -180,7 +180,7 @@ class Meter(object):
         validate_type('note_sequence', note_sequence, NoteSequence)
 
         if self.quantizing:
-            # First quantize() to make sure notes in NoteSequence are scaled to duration of Measure
+            # First quantize() to make sure note_attrs in NoteSequence are scaled to duration of Measure
             self.quantize(note_sequence)
             # Then adjust note start times to closest beat
             # Algorithm:

@@ -141,7 +141,7 @@ class MidiPlayer(Player):
                 # TODO Support Midi Performance Attrs
                 # if op == PLAY_ALL
                 #     measure_performance_attrs = measure.performance_attrsj
-                # Build an ordered event list of the notes in the measure
+                # Build an ordered event list of the note_attrs in the measure
                 # NOTE: Assumes first note start on 0.0, because the first note of every measure is 0 offset
                 #       i.e. it assumes it will occur exactly after the last note of the last measure
                 # NOTE: Need to carry over last offset from previous measure, and then this will work :-)

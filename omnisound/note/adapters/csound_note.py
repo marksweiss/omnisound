@@ -7,8 +7,6 @@ from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice, validate_types)
 
-ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
-
 
 # Return a function that binds the pitch_precision to a function that returns a string that
 # formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
@@ -22,6 +20,8 @@ class CSoundNote(Note):
     """Models a note with attributes aliased to and specific to CSound
        and with a str() that prints CSound formatted output.
     """
+
+    ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
 
     PITCH_MAP = {
         MajorKey.C: 1.01,

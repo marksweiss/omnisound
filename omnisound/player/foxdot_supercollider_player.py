@@ -16,7 +16,7 @@ class FoxDotSupercolliderPlayer(Player):
 
     def play_each(self):
         if not self.notes:
-            raise PlayerNoNotesException('No notes to play')
+            raise PlayerNoNotesException('No note_attrs to play')
         for note in self.notes:
             performance_attrs = note.pa.as_dict()
             self.sc_player >> note.instrument([note.degree],

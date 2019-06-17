@@ -32,8 +32,8 @@ class Measure(NoteSequence):
        Additional attributes are Meter, BPM, Scale and Key.
 
        Also manages musical notions of time. So maintains a Meter and knows how long a beat is,
-       current beat position, and can add notes on beat or at a specified time. Also manages the
-       notes in the underlying note_sequence in order sorted by start_time.
+       current beat position, and can add note_attrs on beat or at a specified time. Also manages the
+       note_attrs in the underlying note_sequence in order sorted by start_time.
     """
 
     DEFAULT_METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QUARTER, quantizing=True)
@@ -47,15 +47,15 @@ class Measure(NoteSequence):
         # Don't validate to_add because it's validated in NoteSequence.__init__()
         super(Measure, self).__init__(notes=notes)
 
-        # Sort notes by start time to manage adding on beat
+        # Sort note_attrs by start time to manage adding on beat
         # NOTE: This modifies the note_sequence in place
         self.notes.sort(key=lambda x: x.start)
         self.meter = meter or copy(Measure.DEFAULT_METER)
         self.swing = swing
         self.measure_performance_attrs = performance_attrs
-        # Support adding notes based on Meter
+        # Support adding note_attrs based on Meter
         self.beat = 0
-        # Support adding notes offset from end of previous note
+        # Support adding note_attrs offset from end of previous note
         self.next_note_start = 0.0
         self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur.value
 
@@ -70,11 +70,11 @@ class Measure(NoteSequence):
         self.beat = max(0, self.beat - 1)
     # /Beat state management
 
-    # Adding notes in sequence on the beat
+    # Adding note_attrs in sequence on the beat
     def add_note_on_beat(self, note: Note, increment_beat=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.beat.
         If increment_beat == True the measure_beat is also incremented, after the insertion. So this method
-        is a convenience method for inserting multiple notes in sequence on the beat.
+        is a convenience method for inserting multiple note_attrs in sequence on the beat.
         """
         validate_types(('note', note, Note), ('increment_beat', increment_beat, bool))
 
@@ -91,9 +91,9 @@ class Measure(NoteSequence):
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
            to that beat start time.
 
-           NOTE: This *replaces* all notes in the Measure with this sequence of notes on the beat
+           NOTE: This *replaces* all note_attrs in the Measure with this sequence of note_attrs on the beat
         """
-        # If `to_add` is a Note, the notes is `to_add` copied beats_per_measure times
+        # If `to_add` is a Note, the note_attrs is `to_add` copied beats_per_measure times
         note_list = []
         try:
             validate_type('to_add', to_add, Note)
@@ -103,29 +103,29 @@ class Measure(NoteSequence):
         if not note_list:
             note_list = to_add
 
-        # Ensure that the number of notes in the sequence is <= the number of beats in the measure,
+        # Ensure that the number of note_attrs in the sequence is <= the number of beats in the measure,
         # then assign one note to each beat
         if len(note_list) > self.meter.beats_per_measure:
-            raise ValueError(f'Sequence `to_add` must have a number of notes <= to number of beats per measure')
+            raise ValueError(f'Sequence `to_add` must have a number of note_attrs <= to number of beats per measure')
 
-        # Now iterate the beats per measure and assign each note in notes to the next start time on the beat
+        # Now iterate the beats per measure and assign each note in note_attrs to the next start time on the beat
         for i, beat_start_time in enumerate(self.meter.beat_start_times_secs):
-            # There might be fewer notes than beats per measure, because `to_add` is a sequence
+            # There might be fewer note_attrs than beats per measure, because `to_add` is a sequence
             if i == len(note_list):
                 break
             note_list[i].start = beat_start_time
 
         self.notes = note_list
-        # Maintain the invariant that notes are sorted ascending by start
+        # Maintain the invariant that note_attrs are sorted ascending by start
         self.notes.sort(key=lambda x: x.start)
         return self
-    # /Adding notes in sequence on the beat
+    # /Adding note_attrs in sequence on the beat
 
-    # Adding notes in sequence from the current start time, one note immediately after another
+    # Adding note_attrs in sequence from the current start time, one note immediately after another
     def add_note_on_start(self, note: Note, increment_start=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
            If increment_start == True then measure.start is also incremented, after the insertion. So this method
-           is a convenience method for inserting multiple notes in sequence.
+           is a convenience method for inserting multiple note_attrs in sequence.
            Validates that all the durations fit in the total duration of the measure.
         """
         validate_types(('note', note, Note), ('increment_start', increment_start, bool))
@@ -142,10 +142,10 @@ class Measure(NoteSequence):
 
     def add_notes_on_start(self, to_add: Union[NoteSequence, Sequence[Note]]) -> 'Measure':
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
-           to that of the previous notes start + duration.
+           to that of the previous note_attrs start + duration.
            Validates that all the durations fit in the total duration of the measure.
 
-           NOTE: This *replaces* all notes in the Measure with this sequence of notes on the beat
+           NOTE: This *replaces* all note_attrs in the Measure with this sequence of note_attrs on the beat
         """
         note_list = to_add
         if not note_list:
@@ -163,12 +163,12 @@ class Measure(NoteSequence):
             self.next_note_start += note.dur
 
         self.notes = list(note_list)
-        # Maintain the invariant that notes are sorted ascending by start
+        # Maintain the invariant that note_attrs are sorted ascending by start
         self.notes.sort(key=lambda x: x.start)
         return self
-    # Adding notes in sequence from the current start time, one note immediately after another
+    # Adding note_attrs in sequence from the current start time, one note immediately after another
 
-    # Quantize notes
+    # Quantize note_attrs
     def quantizing_on(self):
         self.meter.quantizing_on()
 
@@ -183,9 +183,9 @@ class Measure(NoteSequence):
 
     def quantize_to_beat(self):
         self.meter.quantize_to_beat(self)
-    # /Quantize notes
+    # /Quantize note_attrs
 
-    # Apply Swing and Phrasing to notes
+    # Apply Swing and Phrasing to note_attrs
     def swing_on(self):
         if self.swing:
             self.swing.swing_on()
@@ -205,7 +205,7 @@ class Measure(NoteSequence):
             raise MeasureSwingNotEnabledException('Measure.is_swing_on() called but swing is None in Measure')
 
     def apply_swing(self):
-        """Moves all notes in Measure according to how self.swing is configured.
+        """Moves all note_attrs in Measure according to how self.swing is configured.
         """
         if self.swing:
             self.swing.apply_swing(self)
@@ -215,7 +215,7 @@ class Measure(NoteSequence):
     def apply_phrasing(self):
         """Moves the first note in Measure forward and the last back by self.swing.swing.swing_factor.
            The idea is to slightly accentuate the metric phrasing of each measure. Handles boundary condition
-           of having 0 or 1 notes. If there is only 1 note no adjustment is made.
+           of having 0 or 1 note_attrs. If there is only 1 note no adjustment is made.
         """
         if self.swing:
             if len(self.notes) > 1:
@@ -225,12 +225,12 @@ class Measure(NoteSequence):
                     self.swing.calculate_swing_adj(self.notes[-1], Swing.SwingDirection.Reverse)
         else:
             raise MeasureSwingNotEnabledException('Measure.apply_phrasing() called but swing is None in Measure')
-    # /Apply Swing and Phrasing to notes
+    # /Apply Swing and Phrasing to note_attrs
 
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Getters and setters for all core note properties, get from all note_attrs, apply to all note_attrs
     # Getters retrieve the value for a note property from each note and return a list of values
-    # Setters apply a value for a note property to each note in the notes
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Setters apply a value for a note property to each note in the note_attrs
+    # Getters and setters for all core note properties, get from all note_attrs, apply to all note_attrs
     @property
     def pa(self):
         return self.measure_performance_attrs
@@ -305,23 +305,23 @@ class Measure(NoteSequence):
     def transpose(self, interval: int):
         for note in self.notes:
             note.transpose(interval)
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Getters and setters for all core note properties, get from all note_attrs, apply to all note_attrs
 
     # Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
     def get_notes_attr(self, name: str) -> List[Any]:
-        """Return list of all values for attribute `name` from all notes in the measure, in start time order"""
+        """Return list of all values for attribute `name` from all note_attrs in the measure, in start time order"""
         validate_type('name', name, str)
         return [getattr(note, name) for note in self.notes]
 
     def set_notes_attr(self, name: str, val: Any):
-        """Apply to all notes in notes"""
+        """Apply to all note_attrs in note_attrs"""
         validate_type('name', name, str)
         for note in self.notes:
             setattr(note, name, val)
     # /Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
 
-    # NoteSequence notes management
-    # Wrap all parent methods to maintain invariant that notes is sorted by note.start_time ascending
+    # NoteSequence note_attrs management
+    # Wrap all parent methods to maintain invariant that note_attrs is sorted by note.start_time ascending
     def append(self, note: Note) -> 'Measure':
         super(Measure, self).append(note)
         self.notes.sort(key=lambda x: x.start)
@@ -351,7 +351,7 @@ class Measure(NoteSequence):
         super(Measure, self).remove(to_remove)
         self.notes.sort(key=lambda x: x.start)
         return self
-    # /NoteSequence notes management
+    # /NoteSequence note_attrs management
 
     # Iterator support
     def __eq__(self, other: 'Measure') -> bool:

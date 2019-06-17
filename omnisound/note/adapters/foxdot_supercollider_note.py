@@ -77,8 +77,8 @@ class FoxDotSupercolliderNote(Note):
         # Add aliased attributes that map to existing base Note attributes
         # Name underlying property with _<prop> because it is wrapped in this class as a @property to handle
         #  type casting from float to int or allowing return of Union[float, int]
-        self.add_attr_name('delay', Note.BASE_ATTR_NAMES['start'])
-        self.add_attr_name('degree', Note.BASE_ATTR_NAMES['pitch'])
+        self.add_attr_name('delay', Note.BASE_NAME_INDEX_MAP['start'])
+        self.add_attr_name('degree', Note.BASE_NAME_INDEX_MAP['pitch'])
         self.__setattr__('delay', delay)
         self.__setattr__('degree', degree)
         self.__setattr__('dur', dur)

@@ -45,7 +45,7 @@ class Swing(object):
         return self
 
     def apply_swing(self, note_sequence: NoteSequence, swing_direction: SwingDirection = None):
-        """Applies swing to all notes in note_sequence, using current object settings, unless swing_direction
+        """Applies swing to all note_attrs in note_sequence, using current object settings, unless swing_direction
            is provided. In that case the swing_direction arg overrides self.swing_direction and is applied.
         """
         validate_type('note_sequence', note_sequence, NoteSequence)
@@ -55,7 +55,7 @@ class Swing(object):
             return
         else:
             swing_direction = swing_direction or self.swing_direction
-            for note in note_sequence.notes:
+            for note in note_sequence.note_attrs:
                 note.start += self.calculate_swing_adj(note, swing_direction)
 
     def calculate_swing_adj(self, note: Note = None,  swing_direction: SwingDirection = None):

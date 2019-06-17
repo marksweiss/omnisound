@@ -52,7 +52,7 @@ def test_is_major_key_is_minor_key(note, scale):
 
 
 def test_get_pitch_for_key_csound(note, scale):
-    # Expect that Scale.__init__() will populate the underlying NoteSequence with the notes for the `scale_cls`
+    # Expect that Scale.__init__() will populate the underlying NoteSequence with the note_attrs for the `scale_cls`
     # and `key` (type of scale and root key), starting at the value of `octave` arg passed to Scale.__init__()
     expected_pitches = (4.01, 4.03, 4.05, 4.06, 4.08, 4.10, 4.12)
     pitches = [n.pitch for n in scale.note_list]

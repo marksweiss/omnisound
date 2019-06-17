@@ -134,7 +134,7 @@ def test_performance_attrs(performance_attrs, measure_list):
 def test_swing_on_apply_swing(section):
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 
-    # Does not adjust notes if swing is off
+    # Does not adjust note_attrs if swing is off
     section.swing_on()
     for measure in section.measure_list:
         actual_note_starts = _apply_swing_and_get_note_starts(measure)
@@ -144,7 +144,7 @@ def test_swing_on_apply_swing(section):
 def test_swing_off_apply_swing(section):
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 
-    # Does adjust notes if swing is on
+    # Does adjust note_attrs if swing is on
     section.swing_off()
     for measure in section.measure_list:
         actual_note_starts = _apply_swing_and_get_note_starts(measure)
@@ -156,7 +156,7 @@ def test_assign_swing_apply_swing(section):
     expected_swing_note_starts = [0.0, 0.5, 1.0, 1.5]
 
     # Create a new Swing object with a different SWING_FACTOR, assign it to the section
-    # and ensure that notes have the exepcted value
+    # and ensure that note_attrs have the exepcted value
     swing = Swing(swing_factor=swing_factor, swing_direction=Swing.SwingDirection.Forward)
     section.swing = swing
     assert section.swing == swing
@@ -167,7 +167,7 @@ def test_assign_swing_apply_swing(section):
 
 
 def test_swing_on_apply_phrasing(note_list, measure, swing, section):
-    """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
+    """If there are at least 2 note_attrs, first and last will be adjusted as though first as swing forward
        and last has swing reverse. This class tests use of Swing class by Measure class.
     """
     expected_phrasing_note_starts = [0.0, 0.375]

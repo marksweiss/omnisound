@@ -14,9 +14,9 @@ class PlayerNoNotesException(Exception):
 class Player(metaclass=ABCMeta):
     @abstractmethod
     def play_each(self):
-        """Play each note. Each notes note_attrs are honored and
+        """Play each note. Each note_attrs note_attrs are honored and
            separate performance_attrs with a matching index are applied
-           to all notes in the batch if they are available.
+           to all note_attrs in the batch if they are available.
 
            Implementers can choose to use pre-play or post-play hooks as they wish.
         """
@@ -24,8 +24,8 @@ class Player(metaclass=ABCMeta):
 
     @abstractmethod
     def play_all(self):
-        """Play notes as a batch. Each notes note_attrs are honored but
-           performance_attrs are applied to all notes in the batch.
+        """Play note_attrs as a batch. Each note_attrs note_attrs are honored but
+           performance_attrs are applied to all note_attrs in the batch.
 
            Implementers can choose to use pre-play or post-play hooks as they wish.
         """
@@ -33,7 +33,7 @@ class Player(metaclass=ABCMeta):
 
     @abstractmethod
     def improvise(self):
-        """Player generates notes according to the concrete class implementation and plays them.
+        """Player generates note_attrs according to the concrete class implementation and plays them.
 
            Implementers should handle checking the state of self.improvising == False.
         """
@@ -54,7 +54,7 @@ class Player(metaclass=ABCMeta):
 
     # TODO REMOVE
     # @property
-    # def notes(self):
+    # def note_attrs(self):
     #     return self.note_sequence
 
     def add_pre_play_hook(self, name: str, hook: Any):

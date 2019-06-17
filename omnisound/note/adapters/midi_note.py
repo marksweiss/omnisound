@@ -368,9 +368,9 @@ class MidiNote(Note):
 
     @classmethod
     def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
-        """MIDI pitches sequence from 21 A0 to 127, the 3 highest notes below C1 to the last note of C7.
+        """MIDI pitches sequence from 21 A0 to 127, the 3 highest note_attrs below C1 to the last note of C7.
            The algorithm is that we store the values for C1-12 as ints in the PITCH_MAP
-           and thus increment by + 12 for every octave > 1, handle the special case for the 3 notes < C1 and
+           and thus increment by + 12 for every octave > 1, handle the special case for the 3 note_attrs < C1 and
            validate that the (key, octave) combination is a valid MIDI pitch.
         """
         validate_type_choice('key', key, (MajorKey, MinorKey))
@@ -379,7 +379,7 @@ class MidiNote(Note):
             raise ValueError(f'Arg `octave` must be in range {cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}')
 
         if octave == cls.MIN_OCTAVE:
-            # Handle edge case of only 3 notes being valid when `octave` == 0
+            # Handle edge case of only 3 note_attrs being valid when `octave` == 0
             if key not in cls.KEYS_IN_MIN_OCTAVE:
                 raise ValueError(('If arg `octave` == 0 then `key` must be in '
                                   f'{cls.KEYS_IN_MIN_OCTAVE}'))

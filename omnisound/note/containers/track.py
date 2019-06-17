@@ -16,9 +16,9 @@ from omnisound.utils.utils import (validate_optional_sequence_of_type,
 
 class Track(Section):
     """A Track is a container of Measures that supports adding, removing and modifying Measures.
-       A track is one sequence of notes in a Song. For example, in a MIDI Song, it maps
-       directly to all the notes in one MIDI Channel. For other backends it is an abstraction holding one
-       sequence of notes rendered by one Player in the final Performance.
+       A track is one sequence of note_attrs in a Song. For example, in a MIDI Song, it maps
+       directly to all the note_attrs in one MIDI Channel. For other backends it is an abstraction holding one
+       sequence of note_attrs rendered by one Player in the final Performance.
 
        Tracks can be constructed empty, or with a list of Measures, and optional PerformanceAttributes.
        PerformanceAttributes and all other Note attributes when set will be applied to all Measures in the Track,
@@ -79,7 +79,7 @@ class Track(Section):
                                     name=name,
                                     performance_attrs=performance_attrs)
 
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Getters and setters for all core note properties, get from all note_attrs, apply to all note_attrs
     def get_instrument(self) -> List[int]:
         return list(chain.from_iterable([measure.instrument for measure in self.measure_list]))
 
@@ -91,7 +91,7 @@ class Track(Section):
 
     instrument = property(get_instrument, set_instrument)
     i = property(get_instrument, set_instrument)
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Getters and setters for all core note properties, get from all note_attrs, apply to all note_attrs
 
     # Section accessor. Read only
     def get_section_map(self) -> Dict[str, Section]:

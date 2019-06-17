@@ -63,11 +63,11 @@ def test_note_sequence_iter_note_attr_properties(note_sequence):
 
 
 def test_note_sequence_len_append_getitem(note_sequence):
-    # Returns notes with 2 Notes
+    # Returns note_attrs with 2 Notes
     note_3 = CSoundNote.copy(NOTE)
     new_amp = NOTE.amp + 1
     note_3.amp = new_amp
-    # Assert initial len() of notes
+    # Assert initial len() of note_attrs
     assert len(note_sequence) == 2
     # Append and check len again
     note_sequence.append(note_3)
@@ -121,7 +121,7 @@ def test_note_sequence_insert_remove_getitem(note_sequence):
     note_front = note_sequence[0]
     assert note_front.amp == new_amp
 
-    # Insert a list of 2 notes at the front of the list
+    # Insert a list of 2 note_attrs at the front of the list
     new_amp_1 = AMP + 2
     # noinspection PyTypeChecker
     new_note_1 = CSoundNote.copy(note_front)
@@ -137,7 +137,7 @@ def test_note_sequence_insert_remove_getitem(note_sequence):
     note_front = note_sequence[1]
     assert note_front.amp == new_amp_2
 
-    # Insert a NoteSequence with 2 notes at the front of the list
+    # Insert a NoteSequence with 2 note_attrs at the front of the list
     new_amp_1 = AMP + 4
     # noinspection PyTypeChecker
     new_note_1 = CSoundNote.copy(note_front)
@@ -154,7 +154,7 @@ def test_note_sequence_insert_remove_getitem(note_sequence):
     note_front = note_sequence[1]
     assert note_front.amp == new_amp_2
 
-    # Remove notes added as NoteSequence, List[Note] and Note
+    # Remove note_attrs added as NoteSequence, List[Note] and Note
     # After removing a note, the new front note is the one added second to most recently
     expected_amp = note_sequence[1].amp
     note_to_remove = note_sequence[0]

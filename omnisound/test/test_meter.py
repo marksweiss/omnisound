@@ -148,7 +148,7 @@ def test_quantize_on_off(note_sequence, meter):
 
 def test_quantize_to_beat(note_sequence, meter):
     # Simplest test case: Note durations sum to measure duration and no quantizing required
-    # Also notes is already sorted by start ascending, so the order after quantiazation will be unchanged
+    # Also note_attrs is already sorted by start ascending, so the order after quantiazation will be unchanged
     expected_note_sequence = NoteSequence.copy(note_sequence)
     meter.quantize_to_beat(note_sequence)
     assert expected_note_sequence == note_sequence

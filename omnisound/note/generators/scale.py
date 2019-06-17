@@ -27,7 +27,7 @@ from omnisound.utils.utils import (enum_to_dict_reverse_mapping,
 
 class Scale(NoteSequence):
     """Encapsulates a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
-       and a root key. Uses mingus.scale to then retrieve the notes in the scale and provide methods to manage
+       and a root key. Uses mingus.scale to then retrieve the note_attrs in the scale and provide methods to manage
        and generate Notes. Derives from NoteSequence so acts as a standard Note container.
     """
     MAJOR_KEY_REVERSE_MAP = enum_to_dict_reverse_mapping('MajorKey', MajorKey)
@@ -59,13 +59,13 @@ class Scale(NoteSequence):
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
 
         # TODO MINGUS SCALES DO NOT MATCH, note names are 'C#' and 'Bb" etc. Need to map
-        #  with a wrapper function in scale_globals so all the HarmonicScales are the notes in the scale
+        #  with a wrapper function in scale_globals so all the HarmonicScales are the note_attrs in the scale
         #  from Mingus but in omnisound Enums or Enum Strings
         # TODO Then fix mingus_utils and re-pass tests
 
         mingus_keys = harmonic_scale.value(key.name).ascending()
         # Trim the last element because mingus returns the first note in the next octave along with all the
-        # notes in the scale of the octave requested. This behavior is observed and not exhaustively tested
+        # note_attrs in the scale of the octave requested. This behavior is observed and not exhaustively tested
         # so check and only remove if the first and last note returned are the same.
         if mingus_keys[0] == mingus_keys[-1]:
             mingus_keys = mingus_keys[:-1]

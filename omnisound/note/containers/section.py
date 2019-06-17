@@ -105,7 +105,7 @@ class Section(object):
             measure.apply_phrasing()
     # /Swing for all Measures in the Section
 
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Getters and setters for all core note properties, get from all note_attrs, apply to all note_attrs
     @property
     def pa(self):
         return self.section_performance_attrs
@@ -187,7 +187,7 @@ class Section(object):
     def set_notes_attr(self, name: str, val: Any):
         for measure in self.measure_list:
             measure.set_notes_attr(name, val)
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
+    # Getters and setters for all core note properties, get from all note_attrs, apply to all note_attrs
 
     # Measure list management
     def append(self, measure: Measure) -> 'Section':

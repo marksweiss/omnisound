@@ -1,17 +1,23 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from typing import Any, Dict, List, Union
 
-from numpy import float64, ndarray, resize, zeros
+from numpy import float64, array
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.utils.utils import validate_type
+from omnisound.utils.utils import validate_type, validate_types
 
 
-class NoteConfig(object):
+INSTRUMENT = I = 0
+START = S = 1
+DUR = D = 2
+AMP = A = 3
+PITCH = P = 4
+
+
+class NoteValues(object):
     def __init__(self, attr_names):
         self._attr_names = attr_names
         for attr_name in attr_names:
@@ -21,14 +27,10 @@ class NoteConfig(object):
         return {field: getattr(self, field) for field in self._attr_names}
 
     def as_list(self) -> List:
-        ret = [getattr(self, field) for field in self._attr_names]
-        return ret
+        return [getattr(self, field) for field in self._attr_names]
 
-    def as_array(self) -> ndarray:
-        ret = zeros(len(self._attr_names))
-        for i, field in enumerate(self._attr_names):
-            ret[i] = getattr(self, field)
-        return ret
+    def as_array(self) -> array:
+        return array(self.as_list())
 
 
 # noinspection PyPep8Naming
@@ -36,10 +38,10 @@ class Note(ABC):
     """Models the core attributes of a musical note common to multiple back ends.
 
        Core properties are defined here that are the property interface for Notes in derived classes, which are
-       notes that define the attributes for a specific back end, e.g. `CSoundNote`, `MidiNote`, etc. The core
+       note_attrs that define the attributes for a specific back end, e.g. `CSoundNote`, `MidiNote`, etc. The core
        properties are `instrument`, `start`, `duration`, `amplitude` and `pitch`. The interface here is abstract so
        types aren't specified, but derived classes are expected to define types and enforce them with validation in
-       `__init__()` and all setters. Derived notes may also create aliased properties for these core properties that
+       `__init__()` and all setters. Derived note_attrs may also create aliased properties for these core properties that
        match the conventions of their backend, and of course they may define additional properties specific to that
        backend.
 
@@ -52,7 +54,7 @@ class Note(ABC):
        pitch value for that Note's backend, in the `get_pitch_for_key()` method.
 
        It is is strongly preferred that all getter properties return self in derived classes
-       to support fluid interfaces for defining and modifying notes most easily in the least number of lines.
+       to support fluid interfaces for defining and modifying note_attrs most easily in the least number of lines.
 
        NOTE: Standard pattern for extending Note to add custom attributes:
        In MyNote.__init__():
@@ -71,16 +73,8 @@ class Note(ABC):
           applies validation, or otherwise needs logic (typical case is casting the return value from float to int
           because all Note values are stored as numpy.float64), write overriding property methods as in 4)
     """
-
-    DEFAULT_NAME = 'Note'
-
-    INSTRUMENT = 0
-    START = 1
-    DUR = 2
-    AMP = 3
-    PITCH = 4
     # noinspection SpellCheckingInspection
-    BASE_ATTR_NAMES = {
+    BASE_NAME_INDEX_MAP = {
         'instrument': INSTRUMENT,
         'i': INSTRUMENT,
         'start': START,
@@ -92,127 +86,99 @@ class Note(ABC):
         'pitch': PITCH,
         'p': PITCH,
     }
-    NUM_BASE_ATTRS = len(set(BASE_ATTR_NAMES.values()))
 
-    def __init__(self, name: str = None, attrs: ndarray = None, **kwargs):
+    def __init__(self,
+                 attrs: array = None,
+                 attr_name_idx_map: Dict[str, int] = None,
+                 attr_vals_map: Dict[str, float] = None,
+                 row_num: int = None):
         """
-        :param name: str - optional name of the Note
-        :param kwargs: any {name: value} pairs for Note attributes. These can match BASE_ATTR_NAMES, in which case
-         they will set values for them. Or they can be new attr_names, in which case they will be appended to the
-         attributes for the Note and the value will be set for this attribute.
+        The Note is a view over a row of a 2D numpy array storing data for one Note. Each row in the array represents
+        a Note in a NoteSequence. The NoteSequence class constructs the storage and manages a sequence of notes. It
+        constructs objects of types derived from Note to provide an OO API with properties and methods to read and
+        write the attributes of a Note (a row of data in the underlying NoteSequence numpy array).
 
-         Any base attributes for which no value is provided are initialized to 0.0. All values are stored internally
-         as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
-         individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
+        `attrs` - numpy array of Note data. Columns are note attributes, values are values for each attribute.
+        `attr_name_idx_map` - map of attribute names to array index storing the value for that attribute. Set by
+           the NoteSequence creating the storage for this Note
+        `attr_vals_map` - a set of values to assign to the attributes of the Note
+        `row_num` - the position of the Note in the NoteSequence it is in. Required for NoteSequence.delete(), but it
+          also serves as the unique_id of the Note in the sequence it is in
 
-         Storage for the Note is passed in by reference. This allows the Note to provide an OO API to get and set
-         attributes just for this Note, but also to allow the Note to be a row in a matrix owner by a Generator
-         or Modifier, which provides a vector-space API to manipulate all Notes (rows) in the matrix, such as
-         dot product to apply a Vector (another note) to all dimensions, applying a scalar to all Notes
-         in one dimension, and so on.
-
-         NOTE: This API supports adding attributes to the Note. This must not overflow the fixed-size bounds of the
-         backing ndarray, which is owned by a parent Generator or Modifier. The parent is responsible for allocating
-         or reallocating the ndarray correctly.
+        Any base attributes for which no value is provided are initialized to 0.0. All values are stored internally
+        as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
+        individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
         """
-        self.__dict__['_attrs'] = attrs or zeros(Note.NUM_BASE_ATTRS)
-        self.__dict__['_attrs'].fill(0)
-        self.__dict__['_num_attrs'] = Note.NUM_BASE_ATTRS
-        self.__dict__['name'] = name or Note.DEFAULT_NAME
+        assert len(attrs) == len(attr_name_idx_map)
+        self.__dict__['attrs'] = attrs
+        self.__dict__['_attr_name_idx_map'] = attr_name_idx_map
+        self.__dict__['row_num'] = row_num
 
-        if not kwargs:
-            # noinspection SpellCheckingInspection
-            assert len(self.__dict__['_attrs']) >= Note.NUM_BASE_ATTRS
-            self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_ATTR_NAMES)
-        # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
-        # set the value for that attribute from the value provided. For any that are new attributes, append
-        # those attributes to `self.__dict__['_attrs']` and `self.__dict__['_attr_name_idx_map']`
-        # and set the value for that attribute.
-        else:
-            for attr_name, attr_val in kwargs.items():
-                if attr_name == 'name':
-                    validate_type(attr_name, attr_val, str)
-                elif attr_name in {'instrument', 'i'}:
-                    validate_type(attr_name, attr_val, int)
+        # Create accessors returning the attr index for each attribute, for convenience. Client can use this to
+        # access Note values using only the note and without passing strings to a dict
+        # Also create accessors for each attribute's value, so property style lookup succeeds for each attribute
+        for attr_name, attr_idx in attr_name_idx_map.items():
+            validate_types(('attr_name', attr_name, str), ('attr_idx', attr_idx, int))
+            self.__dict__[f'{attr_name}_i'] = attr_idx
+            self.__dict__[attr_name] = None
+        # If values are provided assign the value to the attribute's index in the underlying numpy note data
+        if attr_vals_map:
+            for attr_name, attr_val in attr_vals_map.items():
+                validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
+                if attr_name in self.__dict__['_attr_name_idx_map']:
+                    self.__dict__['attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
                 else:
-                    validate_type(attr_name, attr_val, float)
-            self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_ATTR_NAMES)
-            # Find the names in kwargs but not in BASE_ATTR_NAMES
-            new_attr_names = kwargs.keys() - Note.BASE_ATTR_NAMES.keys()
-            assert len(self.__dict__['_attrs']) >= Note.NUM_BASE_ATTRS + len(new_attr_names)
-            # Add the new names to successive indexes in attr_names
-            for i, attr_name in enumerate(new_attr_names):
-                attr_idx = len(Note.BASE_ATTR_NAMES) + i
-                self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-            # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
-            for attr_name in self.__dict__['_attr_name_idx_map']:
-                if attr_name in kwargs:
-                    self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = kwargs[attr_name]
+                    raise ValueError(f'Value provided for attr_name {attr_name} not in attr_name_idx_map')
 
     def num_attrs(self) -> int:
-        return self.__dict__['_num_attrs']
-
-    def add_attr_name(self, attr_name: str, attr_idx: int):
-        """Let's the user create more than one attribute that maps to the same attr index. So, for example,
-           it supports aliasing multiple attribute names to one index. This should be called before assigning
-           attributes with __setattr__() in derived class __init__() calls. This way the attributes are already
-           in the attr_name_idx_map and get their value assigned correctly."""
-        self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-        self.__dict__[attr_name] = None
+        return len(self.__dict__['attrs'])
 
     def __getattr__(self, attr_name: str) -> float64:
         """Handle returning note_attr from _attrs ndarray or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
-        if attr_name in self.__dict__['_attr_name_idx_map']:
-            return self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
-        else:
-            # noinspection PyTypeChecker
-            return None
 
-    def __setattr__(self, attr_name: str, attr_val: Any):
-        """Handle setting note_attr from _attrs ndarray or any other attr a derived Note class might define.
-           Returns self to support chained fluent interface style calls."""
+        if attr_name in {'pa', 'performance_attrs'}:
+            if '_performance_attrs' in self.__dict__:
+                return self.__dict__['_performance_attrs']
+            else:
+                raise ValueError(f'Attempt to access attribute `performance_attrs` which is not set in Note')
+
+        if attr_name in self.__dict__['_attr_name_idx_map']:
+            return self.__dict__['attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
+        else:
+            raise ValueError(f'Invalid attribute name cannot be retrieved: {attr_name}')
+
+    def __setattr__(self, attr_name: str, attr_val: float) -> None:
+        validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
+
         if attr_name in {'pa', 'performance_attrs'}:
             self.__dict__['_performance_attrs'] = attr_val
-            return
-        validate_type('attr_name', attr_name, str)
-        if attr_name in self.__dict__['_attr_name_idx_map']:
-            self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
+        elif attr_name in self.__dict__['_attr_name_idx_map']:
+            self.__dict__['attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
         else:
-            # It's a new attribute name, so:
-            # - map this attribute name to the next index in attr_name_idx_map
-            # - resize the numpy array storing the values, _attrs, up by 1
-            # - add the attr_name without a value to the object's self.__dict__. This means the object's __getattr__
-            #   will respond to get calls on this attribute, and __getattr__() will intercept these and return
-            #   the value from the correct index of _attrs, because it is defined to do that
-            attr_idx = self.__dict__['_num_attrs']
-            self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-            self.__dict__['_attrs'] = resize(self.__dict__['_attrs'], attr_idx + 1)
-            self.__dict__['_attrs'][attr_idx] = float(attr_val)
-            self.__dict__[attr_name] = None
-            self.__dict__['_num_attrs'] += 1
+            raise ValueError(f'Invalid attribute name cannot be set: {attr_name}')
 
     # These standard methods are provided without the ability to override names, etc., to provide API for fluent
     # chaining calls to set all common Note attributes on one line
     # e.g. - note.I(1).S(1.0).D(2.5).A(400).P(440)
     def I(self, instrument: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['instrument']] = instrument
+        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['instrument']] = instrument
         return self
 
     def S(self, start: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['start']] = start
+        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['start']] = start
         return self
 
     def D(self, dur: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['dur']] = dur
+        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['dur']] = dur
         return self
 
     def A(self, amp: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['amp']] = amp
+        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['amp']] = amp
         return self
 
     def P(self, pitch: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['pitch']] = pitch
+        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['pitch']] = pitch
         return self
 
     @abstractmethod
@@ -244,12 +210,7 @@ class Note(ABC):
     @classmethod
     @abstractmethod
     def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> Any:
-        raise NotImplemented('Note subtypes must implement get_pitch() and return a valid pitch value for their type')
-
-    @staticmethod
-    @abstractmethod
-    def copy(source_note: 'Note') -> 'Note':
-        raise NotImplemented('Derived type must implement Note.copy() -> Note')
+        raise NotImplemented('Note subtypes must implement and return a valid pitch value for their type')
 
     @abstractmethod
     def __eq__(self, other: 'Note') -> bool:

@@ -67,7 +67,7 @@ def _apply_swing_and_get_note_starts(measure) -> List[float]:
 
 
 def test_measure(meter, swing, measure):
-    # Assert post-invariant of `Measure.__init__()`, which is that notes are sorted ascending by start
+    # Assert post-invariant of `Measure.__init__()`, which is that note_attrs are sorted ascending by start
     for i in range(len(measure.notes) - 2):
         assert measure.notes[i].start <= measure.notes[i + 1].start
     # Verify attribute assignments
@@ -86,13 +86,13 @@ def test_swing_on_off_apply_swing(notes, swing, measure):
 
     swing.swing_direction = Swing.SwingDirection.Forward
     measure.swing = swing
-    # Does not adjust notes if swing is off
+    # Does not adjust note_attrs if swing is off
     measure.swing_off()
     assert not measure.is_swing_on()
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
     assert expected_swing_note_starts != actual_note_starts
 
-    # Does adjust notes if swing is on
+    # Does adjust note_attrs if swing is on
     measure.swing_on()
     assert measure.is_swing_on()
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
@@ -106,7 +106,7 @@ def test_swing_on_off_apply_swing(notes, swing, measure):
 
 
 def test_apply_phrasing(notes, meter, measure):
-    """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
+    """If there are at least 2 note_attrs, first and last will be adjusted as though first as swing forward
        and last has swing reverse. This class tests use of Swing class by Measure class.
     """
 
@@ -232,7 +232,7 @@ def test_add_notes_on_beat(notes, measure, meter, swing):
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
-    # Test adding a list of notes and having each added at the beat position
+    # Test adding a list of note_attrs and having each added at the beat position
     empty_notes = []
     measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
@@ -248,7 +248,7 @@ def test_add_notes_on_beat(notes, measure, meter, swing):
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
-    # Test that adding more notes than there are beat positions raises
+    # Test that adding more note_attrs than there are beat positions raises
     extra_note = CSoundNote.copy(notes[0])
     notes.append(extra_note)
     with pytest.raises(ValueError):
@@ -285,7 +285,7 @@ def test_add_notes_on_start(notes, measure, meter, swing):
     measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     assert len(measure) == 0
 
-    # Test adding a list of notes and having each added at the beat position
+    # Test adding a list of note_attrs and having each added at the beat position
     empty_notes = []
     measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
@@ -301,7 +301,7 @@ def test_add_notes_on_start(notes, measure, meter, swing):
     assert len(measure) == 4
     assert [note.start for note in measure] == expected_note_start_times
 
-    # Test that adding notes past measure.max_duration raises
+    # Test that adding note_attrs past measure.max_duration raises
     note = CSoundNote.copy(NOTE)
     note.dur = measure.max_duration + 1
     notes = [note]
@@ -385,7 +385,7 @@ def test_measure_insert_remove_getitem(meter, swing):
     note_front = measure[0]
     assert note_front.start == start
 
-    # Insert a list of 2 notes at the front of the list
+    # Insert a list of 2 note_attrs at the front of the list
     empty_notes = []
     measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     note_1 = CSoundNote.copy(NOTE)
@@ -399,7 +399,7 @@ def test_measure_insert_remove_getitem(meter, swing):
     assert measure[0].start == start_1
     assert measure[1].start == start_2
 
-    # Insert a NoteSequence of 2 notes at the front of the list
+    # Insert a NoteSequence of 2 note_attrs at the front of the list
     empty_notes = []
     measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     note_1 = CSoundNote.copy(NOTE)
@@ -420,7 +420,7 @@ def test_measure_insert_remove_getitem(meter, swing):
     assert len(measure) == 1
     assert measure[0].start == pytest.approx(expected_start)
 
-    # Remove notes added as NoteSequence and List[Note]
+    # Remove note_attrs added as NoteSequence and List[Note]
     empty_notes = []
     measure = Measure(notes=empty_notes, meter=meter, swing=swing)
     note_1 = CSoundNote.copy(NOTE)
