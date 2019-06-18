@@ -111,7 +111,7 @@ class Note(ABC):
         """
         assert len(attrs) == len(attr_name_idx_map)
         self.__dict__['attrs'] = attrs
-        self.__dict__['_attr_name_idx_map'] = attr_name_idx_map
+        self.__dict__['attr_name_idx_map'] = attr_name_idx_map
         self.__dict__['row_num'] = row_num
 
         # Create accessors returning the attr index for each attribute, for convenience. Client can use this to
@@ -125,8 +125,8 @@ class Note(ABC):
         if attr_vals_map:
             for attr_name, attr_val in attr_vals_map.items():
                 validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
-                if attr_name in self.__dict__['_attr_name_idx_map']:
-                    self.__dict__['attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
+                if attr_name in self.__dict__['attr_name_idx_map']:
+                    self.__dict__['attrs'][self.__dict__['attr_name_idx_map'][attr_name]] = attr_val
                 else:
                     raise ValueError(f'Value provided for attr_name {attr_name} not in attr_name_idx_map')
 
@@ -136,49 +136,39 @@ class Note(ABC):
     def __getattr__(self, attr_name: str) -> float64:
         """Handle returning note_attr from _attrs ndarray or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
-
-        if attr_name in {'pa', 'performance_attrs'}:
-            if '_performance_attrs' in self.__dict__:
-                return self.__dict__['_performance_attrs']
-            else:
-                raise ValueError(f'Attempt to access attribute `performance_attrs` which is not set in Note')
-
-        if attr_name in self.__dict__['_attr_name_idx_map']:
-            return self.__dict__['attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
-        else:
-            raise ValueError(f'Invalid attribute name cannot be retrieved: {attr_name}')
+        if attr_name in self.__dict__['attr_name_idx_map']:
+            return self.__dict__['attrs'][self.__dict__['attr_name_idx_map'][attr_name]]
+        elif attr_name in self.__dict__:
+            return self.__dict__[attr_name]
 
     def __setattr__(self, attr_name: str, attr_val: float) -> None:
-        validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
-
-        if attr_name in {'pa', 'performance_attrs'}:
-            self.__dict__['_performance_attrs'] = attr_val
-        elif attr_name in self.__dict__['_attr_name_idx_map']:
-            self.__dict__['attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
+        if attr_name in self.__dict__['attr_name_idx_map']:
+            validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
+            self.__dict__['attrs'][self.__dict__['attr_name_idx_map'][attr_name]] = attr_val
         else:
-            raise ValueError(f'Invalid attribute name cannot be set: {attr_name}')
+            self.__dict__[attr_name] = attr_val
 
     # These standard methods are provided without the ability to override names, etc., to provide API for fluent
     # chaining calls to set all common Note attributes on one line
     # e.g. - note.I(1).S(1.0).D(2.5).A(400).P(440)
     def I(self, instrument: [float, int]):
-        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['instrument']] = instrument
+        self.__dict__['attrs'][self.__dict__['attr_name_idx_map']['instrument']] = instrument
         return self
 
     def S(self, start: [float, int]):
-        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['start']] = start
+        self.__dict__['attrs'][self.__dict__['attr_name_idx_map']['start']] = start
         return self
 
     def D(self, dur: [float, int]):
-        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['dur']] = dur
+        self.__dict__['attrs'][self.__dict__['attr_name_idx_map']['dur']] = dur
         return self
 
     def A(self, amp: [float, int]):
-        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['amp']] = amp
+        self.__dict__['attrs'][self.__dict__['attr_name_idx_map']['amp']] = amp
         return self
 
     def P(self, pitch: [float, int]):
-        self.__dict__['attrs'][self.__dict__['_attr_name_idx_map']['pitch']] = pitch
+        self.__dict__['attrs'][self.__dict__['attr_name_idx_map']['pitch']] = pitch
         return self
 
     @abstractmethod
