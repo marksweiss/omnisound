@@ -5,8 +5,9 @@ from typing import Dict, Iterator, List, Union
 import numpy as np
 
 from omnisound.note.adapters.note import Note
-from omnisound.utils.utils import validate_optional_type_choice, validate_type, validate_type_choice, \
-    validate_type_reference, validate_types
+from omnisound.utils.utils import validate_not_falsey, validate_optional_sequence_of_type, \
+    validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, \
+    validate_type_choice, validate_type_reference, validate_types
 
 
 class NoteSequenceInvalidAppendException(Exception):
@@ -40,13 +41,20 @@ class NoteSequence(object):
     """
 
     def __init__(self, note_cls: Note = None, num_notes: int = None, num_attributes: int = None,
-                 attr_name_index_map: Dict[str, int] = None,
+                 attr_name_idx_map: Dict[str, int] = None,
                  default_attr_vals_map: Dict[str, float] = None,
                  child_sequences: List['NoteSequence'] = None):
         validate_type_reference('note_cls', note_cls, Note)
         validate_types(('num_notes', num_notes, int), ('num_attributes', num_attributes, int),
-                       ('attr_name_index_map', attr_name_index_map, dict))
+                       ('attr_name_idx_map', attr_name_idx_map, dict))
+        validate_optional_type('default_attr_vals_map', default_attr_vals_map, dict)
+        validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.keys()), str)
+        validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.values()), int)
+        if default_attr_vals_map:
+            validate_optional_sequence_of_type('attr_vals_map', list(default_attr_vals_map.keys()), str)
+            validate_optional_sequence_of_type('attr_vals_map', list(default_attr_vals_map.values()), float)
         validate_optional_type_choice('child_sequences', child_sequences, (list, set))
+        validate_optional_sequence_of_type('child_sequences', child_sequences, 'NoteSequence')
 
         self.note_cls = note_cls
 
@@ -54,7 +62,7 @@ class NoteSequence(object):
         rows = [[0.0] * num_attributes for _ in range(num_notes)]
         self.note_attrs = np.array(rows)
 
-        self.attr_name_index_map = attr_name_index_map
+        self.attr_name_index_map = attr_name_idx_map
         self.default_attr_vals_map = default_attr_vals_map
         self.child_sequences = child_sequences
 

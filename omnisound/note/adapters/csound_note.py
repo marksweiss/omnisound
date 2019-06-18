@@ -7,8 +7,8 @@ from numpy import array
 from omnisound.note.adapters.note import Note, AMP, DUR
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_not_falsey, validate_optional_types, validate_optional_sequence_of_type,
-                                   validate_sequence_of_type, validate_type, validate_type_choice, validate_types)
+# TODO ISORT
+from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice, validate_types)
 
 
 # Return a function that binds the pitch_precision to a function that returns a string that
@@ -73,16 +73,18 @@ class CSoundNote(Note):
                  row_num: int = None,
                  pitch_precision: int = None,
                  performance_attrs: PerformanceAttrs = None):
-        validate_types(('attr_name_idx_map', attr_name_idx_map, dict),
-                       ('row_num', row_num, int))
-        validate_optional_types(('attr_vals_map', attr_vals_map, dict),
-                                ('pitch_precision', pitch_precision, int),
+        validate_optional_types(('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        validate_not_falsey('attr_name_idx_map', attr_name_idx_map)
-        validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.keys()), str)
-        validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.values()), int)
-        validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_map.keys()), str)
-        validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_map.values()), float)
+        # TODO REMOVE ALL VALIDATION BECAUSE NOTES SHOULD ONLY BE CONSTRUCTED BY SEQUENCES
+        # validate_types(('attr_name_idx_map', attr_name_idx_map, dict),
+        #                ('row_num', row_num, int))
+        # validate_not_falsey('attr_name_idx_map', attr_name_idx_map)
+        # validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.keys()), str)
+        # validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.values()), int)
+        # if attr_vals_map:
+        #     validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_map.keys()), str)
+        #     validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_map.values()), float)
+
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
         attr_name_idx_map['amplitude'] = AMP
         attr_name_idx_map['duration'] = DUR
@@ -90,6 +92,18 @@ class CSoundNote(Note):
                                          attr_name_idx_map=attr_name_idx_map,
                                          attr_vals_map=attr_vals_map,
                                          row_num=row_num)
+
+        # Create accessors for each attribute's value, so property style lookup succeeds for each attribute
+        # Set value for the attribute if attr_vals_map has been provided
+        # Create accessors returning the attr index for each attribute, for convenience. Client can use this to
+        # access Note values using only the note and without passing strings to a dict
+        attr_vals_map = attr_vals_map or {}
+        for attr_name, attr_idx in attr_name_idx_map.items():
+            self.__setattr__(attr_name, attr_vals_map.get(attr_name, 0.0))
+            self.__setattr__(f'{attr_name}_i', attr_idx)
+
+        # TEMP DEBUG
+        import pdb; pdb.set_trace()
 
         self.__dict__['_to_str_val_wrappers'] = dict()
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
@@ -122,6 +136,10 @@ class CSoundNote(Note):
     def instrument(self) -> int:
         return int(super(CSoundNote, self).__getattr__('instrument'))
 
+    @property
+    def i(self) -> int:
+        return int(super(CSoundNote, self).__getattr__('i'))
+
     @instrument.setter
     def instrument(self, instrument: int):
         validate_type('instrument', instrument, int)
@@ -133,33 +151,52 @@ class CSoundNote(Note):
         super(CSoundNote, self).__setattr__('instrument', float(instrument))
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
 
-    @property
-    def start(self) -> float:
-        return super(CSoundNote, self).__getattr__('start')
+    def __getattr__(self, attr_name: str):
+        return super(CSoundNote, self).__getattr__(attr_name)
+
+    # @property
+    # def start(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('start')
+    #
+    # @property
+    # def s(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('start')
 
     # @start.setter
     # def start(self, start: float):
     #     super(CSoundNote, self).__setattr__('start', start)
 
-    @property
-    def duration(self) -> float:
-        return super(CSoundNote, self).__getattr__('duration')
+    # @property
+    # def duration(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('duration')
+    #
+    # @property
+    # def d(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('duration')
 
     # @duration.setter
     # def duration(self, duration: float):
     #     super(CSoundNote, self).__setattr__('duration', duration)
 
-    @property
-    def amplitude(self) -> float:
-        return super(CSoundNote, self).__getattr__('amplitude')
+    # @property
+    # def amplitude(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('amplitude')
+    #
+    # @property
+    # def a(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('amplitude')
 
     # @amplitude.setter
     # def amplitude(self, start: float):
     #     super(CSoundNote, self).__setattr__('amplitude', start)
 
-    @property
-    def pitch(self) -> float:
-        return super(CSoundNote, self).__getattr__('pitch')
+    # @property
+    # def pitch(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('pitch')
+    #
+    # @property
+    # def p(self) -> float:
+    #     return super(CSoundNote, self).__getattr__('pitch')
 
     # TODO MODIFY AS MATRIX TRANSFORM GENERIC
     #  ARGS:

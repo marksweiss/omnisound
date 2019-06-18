@@ -1,5 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
+from copy import deepcopy
 from typing import Any, List
 
 from numpy import array
@@ -94,33 +95,28 @@ def test_note():
         _ = CSoundNote([], {}, {}, 0)
 
 
-def test_note_eq_copy():
-    note_2 = CSoundNote.copy(NOTE)
-    assert NOTE == note_2
-
-    octave = OCTAVE
-    scale = SCALE
-    fox_dot_note = FoxDotSupercolliderNote(synth_def=FOX_DOT_INSTRUMENT, delay=int(START), dur=DUR,
-                                           amp=float(AMP), degree=PITCH, octave=octave, scale=scale)
-    fox_dot_note_2 = FoxDotSupercolliderNote.copy(fox_dot_note)
-    assert fox_dot_note == fox_dot_note_2
-
-
 @pytest.mark.parametrize('pitch', PITCHES)
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
 def test_csound_note_attrs(start, duration, amplitude, pitch):
-    note = CSoundNote(instrument=INSTRUMENT, start=start, duration=duration,
-                      amplitude=amplitude, pitch=pitch)
-    assert note.instrument == INSTRUMENT
-    assert note.start == note.s == start
-    assert note.duration == note.dur == note.d == duration
-    assert note.amplitude == note.amp == note.a == int(amplitude)
-    assert note.pitch == note.p == pitch
     # Add an additional non-core dynamically added attribute to verify correct ordering of attrs and str()
     func_table = 100
-    note.add_attr('func_table', func_table, to_str=lambda x: str(int(x)))
+
+    attrs = array([float(INSTRUMENT), start, duration, amplitude, pitch, func_table])
+    attr_name_idx_map = deepcopy(ATTR_NAME_IDX_MAP)
+    attr_name_idx_map['func_table'] = 5
+
+    note = CSoundNote(attrs=attrs,
+                      attr_name_idx_map=attr_name_idx_map,
+                      row_num=ROW_NUM)
+    assert note.instrument == INSTRUMENT
+    assert note.start == note.s == start
+    assert note.duration == note.d == duration
+    assert note.amplitude == note.a == amplitude
+    assert note.pitch == note.p == pitch
+    assert note.func_table == func_table
+
     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)} {func_table}' == \
         str(note)
 

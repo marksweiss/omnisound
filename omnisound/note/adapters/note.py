@@ -114,13 +114,6 @@ class Note(ABC):
         self.__dict__['attr_name_idx_map'] = attr_name_idx_map
         self.__dict__['row_num'] = row_num
 
-        # Create accessors returning the attr index for each attribute, for convenience. Client can use this to
-        # access Note values using only the note and without passing strings to a dict
-        # Also create accessors for each attribute's value, so property style lookup succeeds for each attribute
-        for attr_name, attr_idx in attr_name_idx_map.items():
-            validate_types(('attr_name', attr_name, str), ('attr_idx', attr_idx, int))
-            self.__dict__[f'{attr_name}_i'] = attr_idx
-            self.__dict__[attr_name] = None
         # If values are provided assign the value to the attribute's index in the underlying numpy note data
         if attr_vals_map:
             for attr_name, attr_val in attr_vals_map.items():
@@ -144,6 +137,7 @@ class Note(ABC):
     def __setattr__(self, attr_name: str, attr_val: float) -> None:
         if attr_name in self.__dict__['attr_name_idx_map']:
             validate_types(('attr_name', attr_name, str), ('attr_val', attr_val, float))
+            self.__dict__[attr_name] = None
             self.__dict__['attrs'][self.__dict__['attr_name_idx_map'][attr_name]] = attr_val
         else:
             self.__dict__[attr_name] = attr_val
