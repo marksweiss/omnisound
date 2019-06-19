@@ -15,7 +15,7 @@ from omnisound.note.adapters.foxdot_supercollider_note import \
     FoxDotSupercolliderNote
 from omnisound.note.adapters.midi_note import FIELDS as MIDI_FIELDS
 from omnisound.note.adapters.midi_note import MidiInstrument, MidiNote
-from omnisound.note.adapters.note import NoteValues
+from omnisound.note.adapters.note import Note, NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.adapters.rest_note import RestNote
 
@@ -34,7 +34,8 @@ PITCHES: List[float] = [0.0, 0.5, 1.0]
 PITCH = PITCHES[0]
 
 ATTRS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
-ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(CSoundNote.ATTR_NAMES)}
+ATTR_NAME_IDX_MAP = deepcopy(Note.BASE_NAME_INDEX_MAP)
+ATTR_NAME_IDX_MAP.update({attr_name: i for i, attr_name in enumerate(CSoundNote.ATTR_NAMES)})
 ATTR_VALS_MAP = {attr_name: ATTRS[i] for i, attr_name in enumerate(CSoundNote.ATTR_NAMES)}
 ROW_NUM = 0
 NOTE = CSoundNote(attrs=ATTRS,
@@ -84,16 +85,6 @@ def test_note():
     assert NOTE.duration == DUR
     assert NOTE.pitch == PITCH
 
-    with pytest.raises(ValueError):
-        # noinspection PyTypeChecker
-        _ = CSoundNote(None, None, None, None)
-    with pytest.raises(ValueError):
-        # noinspection PyTypeChecker
-        _ = CSoundNote(object(), object(), object(), object())
-    with pytest.raises(ValueError):
-        # noinspection PyTypeChecker
-        _ = CSoundNote([], {}, {}, 0)
-
 
 @pytest.mark.parametrize('pitch', PITCHES)
 @pytest.mark.parametrize('amplitude', AMPS)
@@ -109,7 +100,12 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
 
     note = CSoundNote(attrs=attrs,
                       attr_name_idx_map=attr_name_idx_map,
+                      attr_vals_map=ATTR_VALS_MAP,
                       row_num=ROW_NUM)
+
+    # TEMP DEBUG
+    import pdb; pdb.set_trace()
+
     assert note.instrument == INSTRUMENT
     assert note.start == note.s == start
     assert note.duration == note.d == duration
@@ -118,7 +114,7 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
     assert note.func_table == func_table
 
     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)} {func_table}' == \
-        str(note)
+           str(note)
 
 
 @pytest.mark.parametrize('pitch', PITCHES)

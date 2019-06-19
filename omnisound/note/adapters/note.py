@@ -10,11 +10,11 @@ from omnisound.note.generators.scale_globals import MajorKey, MinorKey
 from omnisound.utils.utils import validate_type, validate_types
 
 
-INSTRUMENT = I = 0
-START = S = 1
-DUR = D = 2
-AMP = A = 3
-PITCH = P = 4
+INSTRUMENT_I = I = 0
+START_I = S = 1
+DUR_I = D = 2
+AMP_I = A = 3
+PITCH_I = P = 4
 
 
 class NoteValues(object):
@@ -75,16 +75,16 @@ class Note(ABC):
     """
     # noinspection SpellCheckingInspection
     BASE_NAME_INDEX_MAP = {
-        'instrument': INSTRUMENT,
-        'i': INSTRUMENT,
-        'start': START,
-        's': START,
-        'dur': DUR,
-        'd': DUR,
-        'amp': AMP,
-        'a': AMP,
-        'pitch': PITCH,
-        'p': PITCH,
+        'instrument': INSTRUMENT_I,
+        'i': INSTRUMENT_I,
+        'start': START_I,
+        's': START_I,
+        'dur': DUR_I,
+        'd': DUR_I,
+        'amp': AMP_I,
+        'a': AMP_I,
+        'pitch': PITCH_I,
+        'p': PITCH_I,
     }
 
     def __init__(self,
@@ -109,7 +109,7 @@ class Note(ABC):
         as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
         individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
         """
-        assert len(attrs) == len(attr_name_idx_map)
+        assert len(attr_name_idx_map) >= len(attrs)
         self.__dict__['attrs'] = attrs
         self.__dict__['attr_name_idx_map'] = attr_name_idx_map
         self.__dict__['row_num'] = row_num

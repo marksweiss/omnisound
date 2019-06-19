@@ -4,7 +4,7 @@ from typing import Dict, Union
 
 from numpy import array
 
-from omnisound.note.adapters.note import Note, AMP, DUR
+from omnisound.note.adapters.note import Note, AMP_I, DUR_I
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
 # TODO ISORT
@@ -86,8 +86,8 @@ class CSoundNote(Note):
         #     validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_map.values()), float)
 
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
-        attr_name_idx_map['amplitude'] = AMP
-        attr_name_idx_map['duration'] = DUR
+        attr_name_idx_map['amplitude'] = AMP_I
+        attr_name_idx_map['duration'] = DUR_I
         super(CSoundNote, self).__init__(attrs=attrs,
                                          attr_name_idx_map=attr_name_idx_map,
                                          attr_vals_map=attr_vals_map,
@@ -101,9 +101,6 @@ class CSoundNote(Note):
         for attr_name, attr_idx in attr_name_idx_map.items():
             self.__setattr__(attr_name, attr_vals_map.get(attr_name, 0.0))
             self.__setattr__(f'{attr_name}_i', attr_idx)
-
-        # TEMP DEBUG
-        import pdb; pdb.set_trace()
 
         self.__dict__['_to_str_val_wrappers'] = dict()
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
