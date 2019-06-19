@@ -69,7 +69,7 @@ class FoxDotSupercolliderNote(Note):
         if scale and scale not in FoxDotSupercolliderNote.SCALES:
             raise ValueError(f'arg `scale` must be None or a string in FoxDotSuperColliderNote.SCALES, scale: {scale}')
 
-        super(FoxDotSupercolliderNote, self).__init__(name=name)
+        super(FoxDotSupercolliderNote, self).__init__()
         # Attributes that are not representable as float must be managed at this level in this class and
         # not be created as attributes of the base class
         self.__dict__['_synth_def'] = synth_def
@@ -77,8 +77,8 @@ class FoxDotSupercolliderNote(Note):
         # Add aliased attributes that map to existing base Note attributes
         # Name underlying property with _<prop> because it is wrapped in this class as a @property to handle
         #  type casting from float to int or allowing return of Union[float, int]
-        self.add_attr_name('delay', Note.BASE_ATTR_NAMES['start'])
-        self.add_attr_name('degree', Note.BASE_ATTR_NAMES['pitch'])
+        self.add_attr_name('delay', Note.BASE_NAME_INDEX_MAP['start'])
+        self.add_attr_name('degree', Note.BASE_NAME_INDEX_MAP['pitch'])
         self.__setattr__('delay', delay)
         self.__setattr__('degree', degree)
         self.__setattr__('dur', dur)
@@ -215,7 +215,7 @@ class FoxDotSupercolliderNote(Note):
             self.amp == other.amp and self.degree == other.degree
 
     def __str__(self):
-        s = (f'name: {self.name} delay: {self.delay} '
+        s = (f'delay: {self.delay} '
              f'dur: {self.dur} amp: {self.amp} degree: {self.degree}')
         if hasattr(self, 'octave'):
             s += f' octave: {self.octave}'

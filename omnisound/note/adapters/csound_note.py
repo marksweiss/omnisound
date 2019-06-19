@@ -72,11 +72,11 @@ class CSoundNote(Note):
                        ('pitch', pitch, float))
         validate_optional_types(('name', name, str), ('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        super(CSoundNote, self).__init__(name=name)
+        super(CSoundNote, self).__init__()
 
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
-        self.add_attr_name('amplitude', Note.AMP)
-        self.add_attr_name('duration', Note.DUR)
+        self.add_attr_name('amplitude', Note.BASE_NAME_INDEX_MAP['amp'])
+        self.add_attr_name('duration', Note.BASE_NAME_INDEX_MAP['dur'])
         # str_to_val_wrappers are assigned in self.__setattr__()
         self.__dict__['_to_str_val_wrappers'] = dict()
         self.__setattr__('instrument', instrument)

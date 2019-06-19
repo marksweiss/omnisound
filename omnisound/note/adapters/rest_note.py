@@ -16,9 +16,8 @@ class RestNote(Note):
     REST_AMP = 0.0
 
     def __init__(self, instrument: Any = None, start: Any = None, dur: Any = None, pitch: Any = None,
-                 name: str = None,
                  performance_attrs: PerformanceAttrs = None):
-        super(RestNote, self).__init__(name=name, attrs=None,
+        super(RestNote, self).__init__(attrs=None,
                                        instrument=instrument, start=start, dur=dur, amp=RestNote.REST_AMP, pitch=pitch)
         self.__dict__['_performance_attrs'] = performance_attrs
 
@@ -48,7 +47,6 @@ class RestNote(Note):
         return RestNote(instrument=source_note.instrument,
                         start=source_note.start, dur=source_note.dur,
                         pitch=source_note.pitch,
-                        name=source_note.name,
                         performance_attrs=source_note.performance_attrs)
 
     def __eq__(self, other: 'RestNote') -> bool:

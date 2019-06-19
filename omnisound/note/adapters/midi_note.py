@@ -256,11 +256,11 @@ class MidiNote(Note):
         validate_optional_types(('channel', channel, int), ('name', name, str),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
         validate_optional_type_choice('instrument', instrument, (int, MidiInstrument))
-        super(MidiNote, self).__init__(name=name)
+        super(MidiNote, self).__init__()
 
-        self.add_attr_name('velocity', Note.AMP)
-        self.add_attr_name('time', Note.START)
-        self.add_attr_name('duration', Note.DUR)
+        self.add_attr_name('velocity', Note.BASE_NAME_INDEX_MAP['amp'])
+        self.add_attr_name('time', Note.BASE_NAME_INDEX_MAP['start'])
+        self.add_attr_name('duration', Note.BASE_NAME_INDEX_MAP['dur'])
         self.__setattr__('instrument', instrument)
         self.__setattr__('time', time)
         self.__setattr__('duration', duration)
@@ -406,5 +406,5 @@ class MidiNote(Note):
             self._pitch == other._pitch and self._channel == other._channel
 
     def __str__(self):
-        return (f'name: {self.name} instrument: {self.instrument} time: {self.time} '
+        return (f'instrument: {self.instrument} time: {self.time} '
                 f'duration: {self.duration} velocity: {self.velocity} pitch: {self.pitch} channel: {self.channel}')

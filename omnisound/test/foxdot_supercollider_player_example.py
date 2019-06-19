@@ -7,7 +7,7 @@ from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
 from omnisound.note.adapters.foxdot_supercollider_note import (FIELDS,
                                                                FoxDotSupercolliderNote)
-from omnisound.note.adapters.note import NoteConfig
+from omnisound.note.adapters.note import NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.player.foxdot_supercollider_player import \
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     notes = []
-    note_config = NoteConfig(FIELDS)
+    note_config = NoteValues(FIELDS)
     note_config.name = 'test_note'
     note_config.synth_def = fd_sc_synth
     note_config.amp = 1.0
