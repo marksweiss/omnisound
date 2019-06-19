@@ -121,6 +121,8 @@ class Note(ABC):
             for attr_name in attr_name_idx_map.keys():
                 self.__dict__['_attrs'][attr_name_idx_map[attr_name]] = attr_vals_map[attr_name]
 
+    # TODO THIS SHOULD GO AWAY AND MOVE TO INIT
+    # TODO REMOVE DERIVED CLASS CALLS TO THIS
     def add_attr_name(self, attr_name: str, attr_idx: int):
         """Let's the user create more than one attribute that maps to the same attr index. So, for example,
            it supports aliasing multiple attribute names to one index. This should be called before assigning
@@ -138,6 +140,7 @@ class Note(ABC):
             # noinspection PyTypeChecker
             return None
 
+    # TODO SETTING WITH PROPERTIES MUST BE BROKEN AND UNTESTED
     def __setattr__(self, attr_name: str, attr_val: Any):
         """Handle setting note_attr from _attrs array or any other attr a derived Note class might define.
            Returns self to support chained fluent interface style calls."""
@@ -147,6 +150,7 @@ class Note(ABC):
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
             self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
+        # TODO THIS ENTIRE BLOCK GOES AWAY
         else:
             # It's a new attribute name, so:
             # - map this attribute name to the next index in attr_name_idx_map
