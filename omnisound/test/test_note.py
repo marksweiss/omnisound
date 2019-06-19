@@ -1,7 +1,9 @@
 # Copyright 2018 Mark S. Weiss
 
+from copy import deepcopy
 from typing import Any, List
 
+from numpy import array
 import pytest
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
@@ -14,7 +16,7 @@ from omnisound.note.adapters.foxdot_supercollider_note import \
     FoxDotSupercolliderNote
 from omnisound.note.adapters.midi_note import FIELDS as MIDI_FIELDS
 from omnisound.note.adapters.midi_note import MidiInstrument, MidiNote
-from omnisound.note.adapters.note import NoteValues
+from omnisound.note.adapters.note import Note, NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.adapters.rest_note import RestNote
 
@@ -31,7 +33,7 @@ AMPS: List[float] = [0.0, 1.0, 2.0]
 AMP = AMPS[0]
 PITCHES: List[float] = [0.0, 0.5, 1.0]
 PITCH = PITCHES[0]
-NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
+# NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
 
 PERFORMANCE_ATTRS = PerformanceAttrs()
 ATTR_NAME = 'test_attr'
@@ -285,8 +287,12 @@ def test_note_config():
 
 
 def test_rest():
-    rest_note = RestNote(instrument=INSTRUMENT, start=START, dur=DUR, pitch=PITCH)
-    assert rest_note.amp == 0.0
+    amp = RestNote.REST_AMP + 1.0
+    attrs = array([float(INSTRUMENT), START, DUR, amp, PITCH])
+    attr_name_idx_map = {'instrument': 0, 'start': 1, 'dur': 2, 'amp': 3, 'pitch': 4}
+    rest_note = RestNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=0)
+    assert rest_note.amp != amp
+    assert rest_note.amp == RestNote.REST_AMP
 
 
 if __name__ == '__main__':

@@ -1,6 +1,8 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any
+from typing import Dict
+
+from numpy import array
 
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
@@ -15,10 +17,17 @@ class RestNote(Note):
 
     REST_AMP = 0.0
 
-    def __init__(self, instrument: Any = None, start: Any = None, dur: Any = None, pitch: Any = None,
+    def __init__(self,
+                 attrs: array = None,
+                 attr_name_idx_map: Dict[str, int] = None,
+                 attr_vals_map: Dict[str, float] = None,
+                 note_num: int = None,
                  performance_attrs: PerformanceAttrs = None):
-        super(RestNote, self).__init__(attrs=None,
-                                       instrument=instrument, start=start, dur=dur, amp=RestNote.REST_AMP, pitch=pitch)
+        attrs[Note.BASE_NAME_INDEX_MAP['amp']] = RestNote.REST_AMP
+        super(RestNote, self).__init__(attrs=attrs,
+                                       attr_name_idx_map=attr_name_idx_map,
+                                       attr_vals_map=attr_vals_map,
+                                       note_num=note_num)
         self.__dict__['_performance_attrs'] = performance_attrs
 
     # Custom Interface

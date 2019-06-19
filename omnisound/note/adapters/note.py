@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Dict, List, Union
 
-from numpy import float64, array, resize, zeros
+from numpy import float64, array, resize
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
@@ -83,54 +83,53 @@ class Note(ABC):
         'p': PITCH_I,
     }
 
-    def __init__(self, attrs: array = None, **kwargs):
+    def __init__(self,
+                 attrs: array = None,
+                 attr_name_idx_map: Dict[str, int] = None,
+                 attr_vals_map: Dict[str, float] = None,
+                 note_num: int = None):
         """
-        :param name: str - optional name of the Note
-        :param kwargs: any {name: value} pairs for Note attributes. These can match BASE_ATTR_NAMES, in which case
-         they will set values for them. Or they can be new attr_names, in which case they will be appended to the
-         attributes for the Note and the value will be set for this attribute.
-
-         Any base attributes for which no value is provided are initialized to 0.0. All values are stored internally
-         as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
-         individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
-
-         Storage for the Note is passed in by reference. This allows the Note to provide an OO API to get and set
-         attributes just for this Note, but also to allow the Note to be a row in a matrix owner by a Generator
-         or Modifier, which provides a vector-space API to manipulate all Notes (rows) in the matrix, such as
-         dot product to apply a Vector (another note) to all dimensions, applying a scalar to all Notes
-         in one dimension, and so on.
-
-         NOTE: This API supports adding attributes to the Note. This must not overflow the fixed-size bounds of the
-         backing array, which is owned by a parent Generator or Modifier. The parent is responsible for allocating
-         or reallocating the array correctly.
+        The Note is a view over a row of a 2D numpy array storing data for one Note. Each row in the array represents
+        a Note in a NoteSequence. The NoteSequence class constructs the storage and manages a sequence of notes. It
+        constructs objects of types derived from Note to provide an OO API with properties and methods to read and
+        write the attributes of a Note (a row of data in the underlying NoteSequence numpy array).
+        `attrs` - numpy array of Note data. Columns are note attributes, values are values for each attribute.
+        `attr_name_idx_map` - map of attribute names to array index storing the value for that attribute. Set by
+          the NoteSequence creating the storage for this Note
+        `attr_vals_map` - a set of values to assign to the attributes of the Note
+        `note_num` - the position of the Note in the NoteSequence it is in. Required for NoteSequence.delete(), but it
+         also serves as the unique_id of the Note in the sequence it is in
+        Any base attributes for which no value is provided are initialized to 0.0. All values are stored internally
+        as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
+        individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
         """
-        self.__dict__['_attrs'] = attrs or zeros(7)
-        self.__dict__['_attrs'].fill(0)
+        self.__dict__['_attrs'] = attrs
 
-        if not kwargs:
-            # noinspection SpellCheckingInspection
-            self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_NAME_INDEX_MAP)
-        # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
-        # set the value for that attribute from the value provided. For any that are new attributes, append
-        # those attributes to `self.__dict__['_attrs']` and `self.__dict__['_attr_name_idx_map']`
-        # and set the value for that attribute.
-        else:
-            for attr_name, attr_val in kwargs.items():
+        # noinspection SpellCheckingInspection
+        self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_NAME_INDEX_MAP)
+
+        if attr_vals_map:
+            # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
+            # set the value for that attribute from the value provided. For any that are new attributes, append
+            # those attributes to `self.__dict__['_attrs']` and `self.__dict__['_attr_name_idx_map']`
+            # and set the value for that attribute.
+            for attr_name, attr_val in attr_vals_map.items():
                 if attr_name in {'instrument', 'i'}:
                     validate_type(attr_name, attr_val, int)
                 else:
                     validate_type(attr_name, attr_val, float)
-            self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_NAME_INDEX_MAP)
-            # Find the names in kwargs but not in BASE_ATTR_NAMES
-            new_attr_names = kwargs.keys() - Note.BASE_NAME_INDEX_MAP.keys()
-            # Add the new names to successive indexes in attr_names
-            for i, attr_name in enumerate(new_attr_names):
-                attr_idx = len(Note.BASE_NAME_INDEX_MAP) + i
-                self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-            # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
-            for attr_name in self.__dict__['_attr_name_idx_map']:
-                if attr_name in kwargs:
-                    self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = kwargs[attr_name]
+
+        self.__dict__['_attr_name_idx_map'] = attr_name_idx_map
+        # Find the names in kwargs but not in BASE_ATTR_NAMES
+        new_attr_names = attr_name_idx_map.keys() - Note.BASE_NAME_INDEX_MAP.keys()
+        # Add the new names to successive indexes in attr_names
+        for i, attr_name in enumerate(new_attr_names):
+            attr_idx = len(Note.BASE_NAME_INDEX_MAP) + i
+            self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
+        # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
+        if attr_vals_map:
+            for attr_name in attr_name_idx_map.keys():
+                self.__dict__['_attrs'][attr_name_idx_map[attr_name]] = attr_vals_map[attr_name]
 
     def add_attr_name(self, attr_name: str, attr_idx: int):
         """Let's the user create more than one attribute that maps to the same attr index. So, for example,
