@@ -178,11 +178,12 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
     assert f'delay: {delay} dur: {dur} amp: {float(amp)} degree: {degree} octave: {octave} scale: {scale}' \
            == str(note)
 
-    # with pytest.raises(ValueError):
-    #     scale = 'NOT_A_VALID_SCALE'
-    #     _ = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
-    #                                 amp=amp, degree=degree, octave=octave, scale=scale)
-    #
+    with pytest.raises(ValueError):
+        scale = 'NOT_A_VALID_SCALE'
+        _ = FoxDotSupercolliderNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
+                                    synth_def=synth_def, scale=scale)
+
+
     # scale = SCALE
     # note = FoxDotSupercolliderNote(synth_def=synth_def, delay=delay, dur=dur,
     #                                amp=float(amp), degree=degree, octave=octave, scale=scale)
@@ -201,27 +202,35 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('time', STARTS)
 def test_midi_note_attrs(time, duration, velocity, pitch):
-    note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
-                    velocity=int(velocity), pitch=int(pitch))
-    assert note.time == note.start == note.s == time
-    assert note.duration == note.dur == note.d == duration
-    assert note.velocity == note.amp == note.a == int(velocity)
-    assert note.pitch == note.p == int(pitch)
+    channel = 2
+    attrs = array([INSTRUMENT, time, duration, velocity, pitch])
+    attr_name_idx_map = {'instrument': 0,
+                         'start': 1, 'time': 1,
+                         'dur': 2, 'duration': 2,
+                         'velocity': 3,
+                         'pitch': 4}
+    note = MidiNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
+                    channel=channel)
+
+    assert note.time == note.start == time
+    assert note.duration == note.dur == duration
+    assert note.velocity == int(velocity)
+    assert note.pitch == int(pitch)
     expected_str_note = (f'instrument: {INSTRUMENT} time: {time} duration: {duration} '
-                         f'velocity: {int(velocity)} pitch: {int(pitch)} channel: 1')
+                         f'velocity: {int(velocity)} pitch: {int(pitch)} channel: {channel}')
     assert expected_str_note == str(note)
 
-    note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
-                    velocity=int(velocity), pitch=int(pitch))
-    new_pitch = int(pitch + 1.0)
-    note.s = time + 1
-    note.d = duration + 1
-    note.a = int(velocity) + 1
-    note.p = new_pitch
-    assert note.s == time + 1
-    assert note.d == duration + 1
-    assert note.a == velocity + 1
-    assert note.p == new_pitch
+    # note = MidiNote(instrument=INSTRUMENT, time=time, duration=duration,
+    #                 velocity=int(velocity), pitch=int(pitch))
+    # new_pitch = int(pitch + 1.0)
+    # note.s = time + 1
+    # note.d = duration + 1
+    # note.a = int(velocity) + 1
+    # note.p = new_pitch
+    # assert note.s == time + 1
+    # assert note.d == duration + 1
+    # assert note.a == velocity + 1
+    # assert note.p == new_pitch
 
 
 def test_note_values():

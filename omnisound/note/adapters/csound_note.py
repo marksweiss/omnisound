@@ -3,7 +3,6 @@
 from typing import Any, Dict, Union
 
 from numpy import array
-
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)

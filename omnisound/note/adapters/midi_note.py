@@ -1,17 +1,17 @@
 # Copyright 2018 Mark S. Weiss
 
 from enum import Enum
-from typing import Union
+from typing import Dict, Union
 
+from numpy import array
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_types,
-                                   validate_optional_type_choice,
-                                   validate_type, validate_type_choice,
-                                   validate_types)
+                                   validate_type, validate_type_choice)
 
+# TODO CHANGE TO ATTR_NAMES
 FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
 
 
@@ -244,28 +244,23 @@ class MidiNote(Note):
     MAX_PITCH = 108
     DEFAULT_CHANNEL = 1
 
-    def __init__(self, instrument: Union[int, MidiInstrument] = None,
-                 time: float = None, duration: float = None, velocity: int = None, pitch: int = None,
-                 name: str = None,
+    def __init__(self,
+                 attrs: array = None,
+                 attr_name_idx_map: Dict[str, int] = None,
+                 attr_vals_map: Dict[str, float] = None,
+                 note_num: int = None,
                  channel: int = None,
                  performance_attrs: PerformanceAttrs = None):
-        if instrument in MidiInstrument:
-            instrument = instrument.value
-        validate_types(('instrument', instrument, int), ('start', time, float), ('duration', duration, float),
-                       ('velocity', velocity, int), ('pitch', pitch, int))
-        validate_optional_types(('channel', channel, int), ('name', name, str),
+        validate_optional_types(('channel', channel, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        validate_optional_type_choice('instrument', instrument, (int, MidiInstrument))
-        super(MidiNote, self).__init__()
+        super(MidiNote, self).__init__(attrs=attrs,
+                                       attr_name_idx_map=attr_name_idx_map,
+                                       attr_vals_map=attr_vals_map,
+                                       note_num=note_num)
 
         self.add_attr_name('velocity', Note.BASE_NAME_INDEX_MAP['amp'])
         self.add_attr_name('time', Note.BASE_NAME_INDEX_MAP['start'])
         self.add_attr_name('duration', Note.BASE_NAME_INDEX_MAP['dur'])
-        self.__setattr__('instrument', instrument)
-        self.__setattr__('time', time)
-        self.__setattr__('duration', duration)
-        self.__setattr__('velocity', velocity)
-        self.__setattr__('pitch', pitch)
 
         self.__dict__['_performance_attrs'] = performance_attrs
         self.__dict__['_channel'] = channel or MidiNote.DEFAULT_CHANNEL
@@ -294,13 +289,14 @@ class MidiNote(Note):
         validate_type('instrument', instrument, int)
         super(MidiNote, self).__setattr__('instrument', float(instrument))
 
-    def i(self, instrument: int = None) -> Union['MidiNote', int]:
-        if instrument is not None:
-            validate_type('instrument', instrument, int)
-            super(MidiNote, self).__setattr__('instrument', float(instrument))
-            return self
-        else:
-            return super(MidiNote, self).__getattr__ ('instrument')
+    @property
+    def i(self) -> int:
+        return int(super(MidiNote, self).__getattr__('instrument'))
+
+    @i.setter
+    def i(self, instrument: int):
+        validate_type('instrument', instrument, int)
+        super(MidiNote, self).__setattr__('instrument', float(instrument))
 
     @property
     def time(self) -> float:
@@ -389,12 +385,11 @@ class MidiNote(Note):
             return cls.PITCH_MAP[key] + interval_offset
 
     def __eq__(self, other: 'MidiNote') -> bool:
-        """NOTE: Equality ignores Note.name and Note.peformance_attrs. Two CSountNotes are considered equal
-           if they have the same note attributes.
+        """NOTE: Equality ignores Note.name and Note.performance_attrs.
         """
-        return self._instrument == other._instrument and self._time == other._time and \
-            self._duration == other.duration and self._velocity == other._velocity and \
-            self._pitch == other._pitch and self._channel == other._channel
+        return self._instrument == other.instrument and self._time == other.time and \
+            self._duration == other.duration and self._velocity == other.velocity and \
+            self._pitch == other.pitch and self._channel == other.channel
 
     def __str__(self):
         return (f'instrument: {self.instrument} time: {self.time} '

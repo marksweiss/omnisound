@@ -3,14 +3,13 @@
 from typing import Any, Dict, Union
 
 from numpy import array
-
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_types, validate_type,
-                                   validate_type_choice, validate_types)
+from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice)
 
+# TODO CHANGE TO ATTR_NAMES
 FIELDS = ('synth_def', 'delay', 'dur', 'amp', 'degree', 'octave', 'scale')
 
 
