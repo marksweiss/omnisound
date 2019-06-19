@@ -104,9 +104,7 @@ class Note(ABC):
         individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
         """
         self.__dict__['_attrs'] = attrs
-
-        # noinspection SpellCheckingInspection
-        self.__dict__['_attr_name_idx_map'] = deepcopy(Note.BASE_NAME_INDEX_MAP)
+        self.__dict__['_attr_name_idx_map'] = attr_name_idx_map
 
         if attr_vals_map:
             # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
@@ -118,14 +116,6 @@ class Note(ABC):
                     validate_type(attr_name, attr_val, int)
                 else:
                     validate_type(attr_name, attr_val, float)
-
-        self.__dict__['_attr_name_idx_map'] = attr_name_idx_map
-        # Find the names in kwargs but not in BASE_ATTR_NAMES
-        new_attr_names = attr_name_idx_map.keys() - Note.BASE_NAME_INDEX_MAP.keys()
-        # Add the new names to successive indexes in attr_names
-        for i, attr_name in enumerate(new_attr_names):
-            attr_idx = len(Note.BASE_NAME_INDEX_MAP) + i
-            self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
         # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
         if attr_vals_map:
             for attr_name in attr_name_idx_map.keys():
@@ -223,11 +213,6 @@ class Note(ABC):
     @abstractmethod
     def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> Any:
         raise NotImplemented('Note subtypes must implement get_pitch() and return a valid pitch value for their type')
-
-    @staticmethod
-    @abstractmethod
-    def copy(source_note: 'Note') -> 'Note':
-        raise NotImplemented('Derived type must implement Note.copy() -> Note')
 
     @abstractmethod
     def __eq__(self, other: 'Note') -> bool:

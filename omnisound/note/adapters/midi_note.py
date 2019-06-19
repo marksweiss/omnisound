@@ -388,15 +388,6 @@ class MidiNote(Note):
             interval_offset = (octave - 1) * NUM_INTERVALS_IN_OCTAVE
             return cls.PITCH_MAP[key] + interval_offset
 
-    @staticmethod
-    def copy(source_note: 'MidiNote') -> 'MidiNote':
-        return MidiNote(instrument=source_note.instrument,
-                        time=source_note.time, duration=source_note.duration,
-                        velocity=source_note.velocity, pitch=source_note.pitch,
-                        name=source_note.name,
-                        channel=source_note.channel,
-                        performance_attrs=source_note._performance_attrs)
-
     def __eq__(self, other: 'MidiNote') -> bool:
         """NOTE: Equality ignores Note.name and Note.peformance_attrs. Two CSountNotes are considered equal
            if they have the same note attributes.

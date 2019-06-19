@@ -51,13 +51,6 @@ class RestNote(Note):
     def pa(self, performance_attrs: PerformanceAttrs):
         self.__dict__['_performance_attrs'] = performance_attrs
 
-    @staticmethod
-    def copy(source_note: 'RestNote') -> 'RestNote':
-        return RestNote(instrument=source_note.instrument,
-                        start=source_note.start, dur=source_note.dur,
-                        pitch=source_note.pitch,
-                        performance_attrs=source_note.performance_attrs)
-
     def __eq__(self, other: 'RestNote') -> bool:
         return self.instrument == other.instrument and self.start == other.start and \
             self.dur == other.dur and self._pitch == other.pitch

@@ -198,15 +198,6 @@ class FoxDotSupercolliderNote(Note):
     def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
         return cls.PITCH_MAP[key]
 
-    @staticmethod
-    def copy(source_note: 'FoxDotSupercolliderNote') -> 'FoxDotSupercolliderNote':
-        return FoxDotSupercolliderNote(synth_def=source_note.synth_def,
-                                       delay=source_note.delay, dur=source_note.dur,
-                                       amp=source_note.amp, degree=source_note.degree,
-                                       name=source_note.name,
-                                       octave=source_note.octave, scale=source_note.scale,
-                                       performance_attrs=source_note._performance_attrs)
-
     def __eq__(self, other: 'FoxDotSupercolliderNote') -> bool:
         # noinspection PyProtectedMember
         return (self.octave is None and other.octave is None or self.octave == other.octave) and \
