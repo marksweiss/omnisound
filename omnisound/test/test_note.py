@@ -8,12 +8,15 @@ import pytest
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
+# TODO CHANGE TO ATTR_NAMES
 from omnisound.note.adapters.csound_note import ATTR_NAMES as CSOUND_FIELDS
 from omnisound.note.adapters.csound_note import CSoundNote
+# TODO CHANGE TO ATTR_NAMES
 from omnisound.note.adapters.foxdot_supercollider_note import \
     FIELDS as FOXDOT_FIELDS
 from omnisound.note.adapters.foxdot_supercollider_note import \
     FoxDotSupercolliderNote
+# TODO CHANGE TO ATTR_NAMES
 from omnisound.note.adapters.midi_note import FIELDS as MIDI_FIELDS
 from omnisound.note.adapters.midi_note import MidiInstrument, MidiNote
 from omnisound.note.adapters.note import Note, NoteValues
@@ -234,71 +237,39 @@ def test_midi_note_attrs(time, duration, velocity, pitch):
 
 
 def test_note_values():
-    note_config = _setup_note_values(CSoundNote)
-    note = CSoundNote(**note_config.as_dict())
+    attrs = array([float(INSTRUMENT + 1.0), START + 1.0, DUR + 1.0, AMP + 1.0, PITCH + 1.0])
+    # The field key names must match the key names in note_values, passed as attr_vals_map
+    # The latter come from Note.ATTR_NAMES, e.g. CSoundNote.ATTR_NAMES
+    attr_name_idx_map = {'instrument': 0,
+                         'start': 1,
+                         'duration': 2,
+                         'amplitude': 3,
+                         'pitch': 4}
+    note_values = _setup_note_values(CSoundNote)
+    note = CSoundNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, attr_vals_map=note_values.as_dict(),
+                      note_num=NOTE_NUM)
+    # Validate that the values match note_values, not the different values passed to __init__ in attrs
     assert note.instrument == INSTRUMENT
     assert note.start == START
     assert note.amplitude == AMP
     assert note.duration == DUR
     assert note.pitch == PITCH
 
-    note_config = _setup_note_values(CSoundNote)
-    note_config_list = note_config.as_list()
-    note = CSoundNote(*note_config_list)
-    assert note.instrument == INSTRUMENT
-    assert note.start == START
-    assert note.amplitude == AMP
-    assert note.duration == DUR
-    assert note.pitch == PITCH
-
-    note_config = _setup_note_values(CSoundNote)
-    # Can return a numpy array of the Note to manipulate using numpy
-    note_config_array = note_config.as_array()
-    # Can convert the array to a Python list to pass with * like any other list
-    note_config_list = note_config_array.tolist()
-    # Must handle any validation of types required by the underlying note type *after* the conversion, because
-    # Python list can have values of any type, but numpy array is a C-style fixed-type collection that stores
-    # all values as numpy.float64
-    # Instrument is validated as an int in CSoundNote
-    note_config_list[0] = int(note_config_list[0])
-    note = CSoundNote(*note_config_list)
-    assert note.instrument == INSTRUMENT
-    assert note.start == START
-    assert note.amplitude == AMP
-    assert note.duration == DUR
-    assert note.pitch == PITCH
-
-    note_config = _setup_note_values(MidiNote)
-    note = MidiNote(**note_config.as_dict())
-    assert note.instrument == MIDI_INSTRUMENT.value
-    assert note.time == START
-    assert note.velocity == AMP
-    assert note.duration == DUR
-    assert note.pitch == PITCH
-
-    note_config = _setup_note_values(MidiNote)
-    note = MidiNote(*note_config.as_list())
-    assert note.instrument == MIDI_INSTRUMENT.value
-    assert note.time == START
-    assert note.velocity == AMP
-    assert note.duration == DUR
-    assert note.pitch == PITCH
-
-    note_config = _setup_note_values(FoxDotSupercolliderNote)
-    note = FoxDotSupercolliderNote(**note_config.as_dict())
-    assert note.synth_def == FOX_DOT_INSTRUMENT
-    assert note.degree == START
-    assert note.amp == AMP
-    assert note.delay == DUR
-    assert note.pitch == PITCH
-
-    note_config = _setup_note_values(FoxDotSupercolliderNote)
-    note = FoxDotSupercolliderNote(*note_config.as_list())
-    assert note.synth_def == FOX_DOT_INSTRUMENT
-    assert note.degree == START
-    assert note.amp == AMP
-    assert note.delay == DUR
-    assert note.pitch == PITCH
+    # note_values = _setup_note_values(MidiNote)
+    # note = MidiNote(**note_values.as_dict())
+    # assert note.instrument == MIDI_INSTRUMENT.value
+    # assert note.time == START
+    # assert note.velocity == AMP
+    # assert note.duration == DUR
+    # assert note.pitch == PITCH
+    #
+    # note_values = _setup_note_values(FoxDotSupercolliderNote)
+    # note = FoxDotSupercolliderNote(**note_values.as_dict())
+    # assert note.synth_def == FOX_DOT_INSTRUMENT
+    # assert note.degree == START
+    # assert note.amp == AMP
+    # assert note.delay == DUR
+    # assert note.pitch == PITCH
 
 
 def test_rest():

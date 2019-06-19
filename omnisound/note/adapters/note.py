@@ -1,14 +1,13 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from typing import Any, Dict, List, Union
 
 from numpy import float64, array, resize
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.utils.utils import validate_type
+from omnisound.utils.utils import validate_type, validate_type_choice
 
 
 INSTRUMENT_I = I = 0
@@ -113,11 +112,10 @@ class Note(ABC):
             # and set the value for that attribute.
             for attr_name, attr_val in attr_vals_map.items():
                 if attr_name in {'instrument', 'i'}:
-                    validate_type(attr_name, attr_val, int)
+                    validate_type_choice(attr_name, attr_val, (float, int))
                 else:
                     validate_type(attr_name, attr_val, float)
-        # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
-        if attr_vals_map:
+            # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
             for attr_name in attr_name_idx_map.keys():
                 self.__dict__['_attrs'][attr_name_idx_map[attr_name]] = attr_vals_map[attr_name]
 
