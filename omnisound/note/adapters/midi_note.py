@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Dict, Union
 
 from numpy import array
-from omnisound.note.adapters.note import Note
+from omnisound.note.adapters.note import Note, INSTRUMENT_I
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
@@ -12,7 +12,7 @@ from omnisound.utils.utils import (validate_optional_types,
                                    validate_type, validate_type_choice)
 
 # TODO CHANGE TO ATTR_NAMES
-FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
+FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch')
 
 
 class MidiInstrument(Enum):

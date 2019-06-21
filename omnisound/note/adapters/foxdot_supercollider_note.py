@@ -10,7 +10,7 @@ from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
 from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice)
 
 # TODO CHANGE TO ATTR_NAMES
-FIELDS = ('synth_def', 'delay', 'dur', 'amp', 'degree', 'octave', 'scale')
+FIELDS = ('delay', 'dur', 'amp', 'degree', 'octave')
 
 
 # noinspection PyAttributeOutsideInit,PyPropertyDefinition,PyProtectedMember
@@ -85,6 +85,7 @@ class FoxDotSupercolliderNote(Note):
         # so all the attributes are shifted left one position
         self.add_attr_name('delay', Note.BASE_NAME_INDEX_MAP['start'] - 1)
         self.add_attr_name('degree', Note.BASE_NAME_INDEX_MAP['pitch'] - 1)
+        self.add_attr_name('octave', 4)
 
         self.__dict__['performance_attrs'] = performance_attrs
 

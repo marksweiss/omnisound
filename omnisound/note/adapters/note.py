@@ -111,6 +111,8 @@ class Note(ABC):
             # those attributes to `self.__dict__['_attrs']` and `self.__dict__['_attr_name_idx_map']`
             # and set the value for that attribute.
             for attr_name, attr_val in attr_vals_map.items():
+                if not attr_val:
+                    continue
                 if attr_name in {'instrument', 'i'}:
                     validate_type_choice(attr_name, attr_val, (float, int))
                 else:

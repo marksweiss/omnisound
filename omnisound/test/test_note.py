@@ -62,18 +62,18 @@ def _setup_note_values(note_type: Any):
         note_values.pitch = PITCH
     if note_type == MidiNote:
         note_values = NoteValues(MIDI_FIELDS)
-        note_values.instrument = MIDI_INSTRUMENT
+        note_values.instrument = MIDI_INSTRUMENT.value
         note_values.time = START
         note_values.duration = DUR
-        note_values.velocity = int(AMP)
-        note_values.pitch = int(PITCH)
+        note_values.velocity = AMP
+        note_values.pitch = PITCH
     if note_type == FoxDotSupercolliderNote:
         note_values = NoteValues(FOXDOT_FIELDS)
-        note_values.synth_def = FOX_DOT_INSTRUMENT
         note_values.delay = INT_START
         note_values.dur = DUR
-        note_values.amp = float(AMP)
+        note_values.amp = AMP
         note_values.degree = PITCH
+        note_values.octave = float(OCTAVE)
     return note_values
 
 
@@ -255,21 +255,46 @@ def test_note_values():
     assert note.duration == DUR
     assert note.pitch == PITCH
 
-    # note_values = _setup_note_values(MidiNote)
-    # note = MidiNote(**note_values.as_dict())
-    # assert note.instrument == MIDI_INSTRUMENT.value
-    # assert note.time == START
-    # assert note.velocity == AMP
-    # assert note.duration == DUR
-    # assert note.pitch == PITCH
-    #
-    # note_values = _setup_note_values(FoxDotSupercolliderNote)
-    # note = FoxDotSupercolliderNote(**note_values.as_dict())
-    # assert note.synth_def == FOX_DOT_INSTRUMENT
-    # assert note.degree == START
-    # assert note.amp == AMP
-    # assert note.delay == DUR
-    # assert note.pitch == PITCH
+    time = START
+    duration = DUR
+    velocity = AMP
+    attrs = array([INSTRUMENT, time + 1.0, duration + 1.0, velocity + 1.0, PITCH + 1.0])
+    attr_name_idx_map = {'instrument': 0,
+                         'time': 1,
+                         'duration': 2,
+                         'velocity': 3,
+                         'pitch': 4}
+    note_values = _setup_note_values(MidiNote)
+    note = MidiNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, attr_vals_map=note_values.as_dict(),
+                    note_num=NOTE_NUM)
+    assert note.instrument == MIDI_INSTRUMENT.value
+    assert note.time == START
+    assert note.velocity == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
+
+    synth_def = fd_sc_synth
+    delay = START
+    dur = DUR
+    amp = AMP
+    degree = PITCH
+    attrs = array([delay + 1.0, dur + 1.0, amp + 1.0, degree + 1.0, float(OCTAVE)])
+    attr_name_idx_map = {'delay': 0,
+                         'dur': 1,
+                         'amp': 2,
+                         'degree': 3,
+                         'octave': 4}
+    note_values = _setup_note_values(FoxDotSupercolliderNote)
+    note = FoxDotSupercolliderNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map,
+                                   attr_vals_map=note_values.as_dict(),
+                                   note_num=NOTE_NUM,
+                                   synth_def=synth_def, scale=SCALE)
+    assert note.synth_def == FOX_DOT_INSTRUMENT
+    assert note.degree == START
+    assert note.amp == AMP
+    assert note.delay == DUR
+    assert note.pitch == PITCH
+    assert note.octave == OCTAVE
 
 
 def test_rest():
