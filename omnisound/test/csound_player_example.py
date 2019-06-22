@@ -37,7 +37,7 @@ if __name__ == '__main__':
         note_config.amplitude = BASE_AMP
         note_config.pitch = PITCH
         note_1 = CSoundNote(**note_config.as_dict())
-        note_1.add_attr('func_table', FUNC_TABLE)
+        note_1.set_to_str_for_attr ('func_table')
         notes.append(note_1)
         note_2 = CSoundNote.copy(note_1)
         note_2.instrument = INSTRUMENT_2

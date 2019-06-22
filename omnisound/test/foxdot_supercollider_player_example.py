@@ -5,7 +5,7 @@ from time import sleep
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from omnisound.note.adapters.foxdot_supercollider_note import (FIELDS,
+from omnisound.note.adapters.foxdot_supercollider_note import (ATTR_NAMES,
                                                                FoxDotSupercolliderNote)
 from omnisound.note.adapters.note import NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
     notes = []
-    note_config = NoteValues(FIELDS)
+    note_config = NoteValues(ATTR_NAMES)
     note_config.name = 'test_note'
     note_config.synth_def = fd_sc_synth
     note_config.amp = 1.0

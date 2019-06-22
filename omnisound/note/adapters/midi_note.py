@@ -11,8 +11,7 @@ from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
 from omnisound.utils.utils import (validate_optional_types,
                                    validate_type, validate_type_choice)
 
-# TODO CHANGE TO ATTR_NAMES
-FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch')
+ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
 
 
 class MidiInstrument(Enum):
@@ -258,10 +257,6 @@ class MidiNote(Note):
                                        attr_vals_map=attr_vals_map,
                                        note_num=note_num)
 
-        self.add_attr_name('velocity', Note.BASE_NAME_INDEX_MAP['amp'])
-        self.add_attr_name('time', Note.BASE_NAME_INDEX_MAP['start'])
-        self.add_attr_name('duration', Note.BASE_NAME_INDEX_MAP['dur'])
-
         self.__dict__['_performance_attrs'] = performance_attrs
         self.__dict__['_channel'] = channel or MidiNote.DEFAULT_CHANNEL
 
@@ -298,31 +293,31 @@ class MidiNote(Note):
         validate_type('instrument', instrument, int)
         super(MidiNote, self).__setattr__('instrument', float(instrument))
 
+    # @property
+    # def time(self) -> float:
+    #     return super(MidiNote, self).__getattr__('time')
+
+    # @time.setter
+    # def time(self, time: float):
+    #     validate_type('time', time, float)
+    #     super(MidiNote, self).__setattr__('time', time)
+    #
+    # @property
+    # def duration(self) -> float:
+    #     return super(MidiNote, self).__getattr__('duration')
+    #
+    # @duration.setter
+    # def duration(self, duration: float):
+    #     validate_type('duration', duration, float)
+    #     super(MidiNote, self).__setattr__('duration', duration)
+    #
     @property
-    def time(self) -> float:
-        return super(MidiNote, self).__getattr__('time')
-
-    @time.setter
-    def time(self, time: float):
-        validate_type('time', time, float)
-        super(MidiNote, self).__setattr__('time', time)
-
-    @property
-    def duration(self) -> float:
-        return super(MidiNote, self).__getattr__('duration')
-
-    @duration.setter
-    def duration(self, duration: float):
-        validate_type('duration', duration, float)
-        super(MidiNote, self).__setattr__('duration', duration)
-
-    @property
-    def velocity(self) -> float:
+    def velocity(self) -> int:
         return int(super(MidiNote, self).__getattr__('velocity'))
 
     @velocity.setter
-    def velocity(self, velocity: float):
-        validate_type('velocity', velocity, float)
+    def velocity(self, velocity: int):
+        validate_type('velocity', velocity, int)
         super(MidiNote, self).__setattr__('velocity', velocity)
 
     @property
@@ -330,7 +325,7 @@ class MidiNote(Note):
         return int(super(MidiNote, self).__getattr__('pitch'))
 
     @pitch.setter
-    def pitch(self, pitch: float):
+    def pitch(self, pitch: int):
         validate_type('pitch', pitch, int)
         super(MidiNote, self).__setattr__('pitch', float(pitch))
 

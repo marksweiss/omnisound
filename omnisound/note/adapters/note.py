@@ -1,9 +1,10 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Any, Dict, List, Union
 
-from numpy import float64, array, resize
+from numpy import float64, array
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
@@ -102,89 +103,57 @@ class Note(ABC):
         as `numpy.float64` and returned as that type. Derived types wishing to cast values can do so by wrapping
         individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
         """
+
+        # Individual notes can modify values of attributes by reference, so alias underlying numpy array of values
         self.__dict__['_attrs'] = attrs
-        self.__dict__['_attr_name_idx_map'] = attr_name_idx_map
+        # Individual notes cannot modify the attributes and attribute-index mappings of a Note, so avoid aliasing bugs
+        self.__dict__['_attr_name_idx_map'] = deepcopy(attr_name_idx_map)
 
         if attr_vals_map:
             # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
-            # set the value for that attribute from the value provided. For any that are new attributes, append
-            # those attributes to `self.__dict__['_attrs']` and `self.__dict__['_attr_name_idx_map']`
-            # and set the value for that attribute.
+            # set the value for that attribute from the value provided.
             for attr_name, attr_val in attr_vals_map.items():
-                if not attr_val:
-                    continue
-                if attr_name in {'instrument', 'i'}:
-                    validate_type_choice(attr_name, attr_val, (float, int))
-                else:
-                    validate_type(attr_name, attr_val, float)
-            # For every attr_name, if it is in kwargs then assign attrs to the value passed in in kwargs
-            for attr_name in attr_name_idx_map.keys():
-                self.__dict__['_attrs'][attr_name_idx_map[attr_name]] = attr_vals_map[attr_name]
-
-    # TODO THIS SHOULD GO AWAY AND MOVE TO INIT
-    # TODO REMOVE DERIVED CLASS CALLS TO THIS
-    def add_attr_name(self, attr_name: str, attr_idx: int):
-        """Let's the user create more than one attribute that maps to the same attr index. So, for example,
-           it supports aliasing multiple attribute names to one index. This should be called before assigning
-           attributes with __setattr__() in derived class __init__() calls. This way the attributes are already
-           in the attr_name_idx_map and get their value assigned correctly."""
-        self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-        self.__dict__[attr_name] = None
+                validate_type_choice(attr_name, attr_val, (float, int))
+                self.__dict__['_attrs'][attr_name_idx_map[attr_name]] = float64(attr_val)
 
     def __getattr__(self, attr_name: str) -> float64:
         """Handle returning note_attr from _attrs array or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
             return self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
+        elif attr_name in self.__dict__['_attrs']:
+            return self.__dict__['_attrs'][attr_name]
         else:
-            # noinspection PyTypeChecker
-            return None
+            raise ValueError(f'No attribute in Note for {attr_name}')
 
-    # TODO SETTING WITH PROPERTIES MUST BE BROKEN AND UNTESTED
-    def __setattr__(self, attr_name: str, attr_val: Any):
-        """Handle setting note_attr from _attrs array or any other attr a derived Note class might define.
-           Returns self to support chained fluent interface style calls."""
-        if attr_name in {'pa', 'performance_attrs'}:
-            self.__dict__['_performance_attrs'] = attr_val
-            return
+    def __setattr__(self, attr_name: str, attr_val: Union[float, int]):
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
-            self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = attr_val
-        # TODO THIS ENTIRE BLOCK GOES AWAY
+            self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = float64(attr_val)
         else:
-            # It's a new attribute name, so:
-            # - map this attribute name to the next index in attr_name_idx_map
-            # - resize the numpy array storing the values, _attrs, up by 1
-            # - add the attr_name without a value to the object's self.__dict__. This means the object's __getattr__
-            #   will respond to get calls on this attribute, and __getattr__() will intercept these and return
-            #   the value from the correct index of _attrs, because it is defined to do that
-            attr_idx = len(self.__dict__['_attrs'])
-            self.__dict__['_attr_name_idx_map'][attr_name] = attr_idx
-            self.__dict__['_attrs'] = resize(self.__dict__['_attrs'], attr_idx + 1)
-            self.__dict__['_attrs'][attr_idx] = float(attr_val)
-            self.__dict__[attr_name] = None
+            self.__dict__[attr_name] = attr_val
 
     # These standard methods are provided without the ability to override names, etc., to provide API for fluent
     # chaining calls to set all common Note attributes on one line
     # e.g. - note.I(1).S(1.0).D(2.5).A(400).P(440)
-    def I(self, instrument: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['instrument']] = instrument
+    def I(self, instrument: Union[float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['instrument']] = float64(instrument)
         return self
 
-    def S(self, start: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['start']] = start
+    def S(self, start: Union[float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['start']] = float64(start)
         return self
 
-    def D(self, dur: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['dur']] = dur
+    def D(self, dur: Union[float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['dur']] = float64(dur)
         return self
 
-    def A(self, amp: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['amp']] = amp
+    def A(self, amp: Union[float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['amp']] = float64(amp)
         return self
 
-    def P(self, pitch: [float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['pitch']] = pitch
+    def P(self, pitch: Union[float, int]):
+        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['pitch']] = float64(pitch)
         return self
 
     @abstractmethod

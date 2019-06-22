@@ -8,7 +8,7 @@ from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice, validate_types)
 
-ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
+CSOUND_ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
 
 
 # Return a function that binds the pitch_precision to a function that returns a string that
@@ -78,8 +78,6 @@ class CSoundNote(Note):
                                          note_num=note_num)
 
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
-        self.add_attr_name('amplitude', Note.BASE_NAME_INDEX_MAP['amp'])
-        self.add_attr_name('duration', Note.BASE_NAME_INDEX_MAP['dur'])
         # str_to_val_wrappers are assigned in self.__setattr__()
         self.__dict__['_to_str_val_wrappers'] = dict()
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
@@ -97,16 +95,13 @@ class CSoundNote(Note):
         self.__dict__['_performance_attrs'] = performance_attrs
 
     # noinspection PyStatementEffect
-    # TODO RENAME THIS TO BE set_attr_str_wrapper()
-    # TODO CHANGE SIGNATURE TO REMOVE attr_val
-    def add_attr(self, attr_name: str, attr_val: [float, int], to_str: Any = None):
+    def set_to_str_for_attr(self, attr_name: str, to_str: Any = None):
         """Supports adding new attributes and assigning proper to_str handling for them in this class. Note that
            this does not create a wrapper that also converts the type correctly. This requires static override
            properties such as we have for instrument and amplitude. Clients using this will still need to cast
            return values from float if they desire another type.
         """
         validate_type('attr_name', attr_name, str)
-        validate_type_choice('attr_val', attr_val, (float, int))
         if not to_str:
             to_str = lambda x: str(x)
         self.__dict__['_to_str_val_wrappers'][attr_name] = to_str
@@ -143,24 +138,6 @@ class CSoundNote(Note):
         validate_types('instrument', instrument, (float, int))
         super(CSoundNote, self).__setattr__('instrument', float(instrument))
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
-
-    @property
-    def duration(self) -> float:
-        return super(CSoundNote, self).__getattr__('duration')
-
-    @duration.setter
-    def duration(self, duration: float):
-        validate_type('duration', duration, float)
-        super(CSoundNote, self).__setattr__('duration', float(duration))
-
-    @property
-    def amplitude(self) -> float:
-        return super(CSoundNote, self).__getattr__('amplitude')
-
-    @amplitude.setter
-    def amplitude(self, amplitude: float):
-        validate_type('amplitude', amplitude, float)
-        super(CSoundNote, self).__setattr__('amplitude', float(amplitude))
 
     # TODO MODIFY AS MATRIX TRANSFORM GENERIC
     #  ARGS:
@@ -234,7 +211,7 @@ class CSoundNote(Note):
                      f'{self.__dict__["_to_str_val_wrappers"]["amplitude"](self.amplitude)}',
                      f'{self.__dict__["_to_str_val_wrappers"]["pitch"](self.pitch)}']
         for attr_name in self.__dict__["_attr_name_idx_map"].keys():
-            if attr_name not in ATTR_NAMES and attr_name not in self.BASE_NAME_INDEX_MAP:
+            if attr_name not in CSOUND_ATTR_NAMES and attr_name not in self.BASE_NAME_INDEX_MAP:
                 attr_strs.append(f'{self.__dict__["_to_str_val_wrappers"][attr_name](self.__getattr__(attr_name))}')
 
         return ' '.join(attr_strs)

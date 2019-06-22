@@ -9,8 +9,7 @@ from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice)
 
-# TODO CHANGE TO ATTR_NAMES
-FIELDS = ('delay', 'dur', 'amp', 'degree', 'octave')
+ATTR_NAMES = ('delay', 'dur', 'amp', 'degree', 'octave')
 
 
 # noinspection PyAttributeOutsideInit,PyPropertyDefinition,PyProtectedMember
@@ -83,9 +82,6 @@ class FoxDotSupercolliderNote(Note):
         #  type casting from float to int or allowing return of Union[float, int]
         # -1 because FoxDot doesn't store instrument in index 0, because it's not a numeric type for this note type
         # so all the attributes are shifted left one position
-        self.add_attr_name('delay', Note.BASE_NAME_INDEX_MAP['start'] - 1)
-        self.add_attr_name('degree', Note.BASE_NAME_INDEX_MAP['pitch'] - 1)
-        self.add_attr_name('octave', 4)
 
         self.__dict__['performance_attrs'] = performance_attrs
 
@@ -134,24 +130,6 @@ class FoxDotSupercolliderNote(Note):
     def delay(self, delay: int):
         validate_type('delay', delay, int)
         super(FoxDotSupercolliderNote, self).__setattr__('delay', float(delay))
-
-    @property
-    def pitch(self) -> Union[float, int]:
-        return super(FoxDotSupercolliderNote, self).__getattr__('degree')
-
-    @pitch.setter
-    def pitch(self, pitch: Union[float, int]):
-        validate_type_choice('pitch', pitch, (float, int))
-        super(FoxDotSupercolliderNote, self).__setattr__('degree', float(pitch))
-
-    @property
-    def degree(self) -> Union[float, int]:
-        return super(FoxDotSupercolliderNote, self).__getattr__('degree')
-
-    @degree.setter
-    def degree(self, degree: Union[float, int]):
-        validate_type_choice('degree', degree, (float, int))
-        super(FoxDotSupercolliderNote, self).__setattr__('degree', float(degree))
 
     @property
     def octave(self) -> int:
