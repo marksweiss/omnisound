@@ -78,7 +78,7 @@ def test_note():
     attr_name_idx_map['amplitude'] = AMP_I
     attr_name_idx_map['duration'] = DUR_I
 
-    note = CSoundNote(attrs=ATTRS, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
+    note = CSoundNote(attr_vals=ATTRS, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
 
     # TODO GET RID OF THIS ANOMALY FOR ALL NOTE TYPE BY LETTING THEM REGISTER TYPE HANDLERS FOR __getattr__
     # TODO CAN DO THIS IN THE BASE CLASS SO GETATTR JUST WORKS
@@ -114,14 +114,14 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
     # Add an additional non-core dynamically added attribute to verify correct ordering of attrs and str()
     func_table = 100
 
-    attrs = array([float(INSTRUMENT), start, duration, amplitude, pitch, func_table])
+    attr_vals = array([float(INSTRUMENT), start, duration, amplitude, pitch, func_table])
     attr_name_idx_map = {'i': 0, 'instrument': 0,
                          's': 1, 'start': 1,
                          'd': 2, 'dur': 2, 'duration': 2,
                          'a': 3, 'amp': 3, 'amplitude': 3,
                          'p': 4, 'pitch': 4,
                          'func_table': 5}
-    note = CSoundNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
+    note = CSoundNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
     assert note.instrument == INSTRUMENT
     assert note.start == note.s == start
     assert note.duration == note.dur == note.d == duration
@@ -140,13 +140,13 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
 @pytest.mark.parametrize('start', STARTS)
 def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
     some_other_val = 100.0
-    attrs = array([float(INSTRUMENT), some_other_val, some_other_val, some_other_val, some_other_val])
+    attr_vals = array([float(INSTRUMENT), some_other_val, some_other_val, some_other_val, some_other_val])
     attr_name_idx_map = {'i': 0, 'instrument': 0,
                          's': 1, 'start': 1,
                          'd': 2, 'dur': 2, 'duration': 2,
                          'a': 3, 'amp': 3, 'amplitude': 3,
                          'p': 4, 'pitch': 4}
-    note = CSoundNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
+    note = CSoundNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
     note.I(INSTRUMENT).S(start).D(duration).A(amplitude).P(pitch)
 
     assert note.instrument == INSTRUMENT
@@ -159,13 +159,13 @@ def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
 
 
 def test_csound_note_pitch_precision():
-    attrs = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
+    attr_vals = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
     attr_name_idx_map = {'i': 0, 'instrument': 0,
                          's': 1, 'start': 1,
                          'd': 2, 'dur': 2, 'duration': 2,
                          'a': 3, 'amp': 3, 'amplitude': 3,
                          'p': 4, 'pitch': 4}
-    note = CSoundNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
+    note = CSoundNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM)
     assert note.pitch_precision == CSoundNote.SCALE_PITCH_PRECISION  # == 2
     assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {round(AMP, 2)} {round(PITCH, 2)}' == str(note)
 
@@ -182,13 +182,13 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
     synth_def = fd_sc_synth
     octave = OCTAVE
     scale = SCALE
-    attrs = array([delay, dur, amp, degree, OCTAVE])
+    attr_vals = array([delay, dur, amp, degree, OCTAVE])
     attr_name_idx_map = {'start': 0, 'delay': 0,
                          'dur': 1,
                          'amp': 2,
                          'pitch': 3, 'degree': 3,
                          'octave': 4}
-    note = FoxDotSupercolliderNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
+    note = FoxDotSupercolliderNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
                                    synth_def=synth_def, scale=SCALE)
 
     assert note.delay == note.start == delay
@@ -203,7 +203,7 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
 
     with pytest.raises(ValueError):
         scale = 'NOT_A_VALID_SCALE'
-        _ = FoxDotSupercolliderNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
+        _ = FoxDotSupercolliderNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
                                     synth_def=synth_def, scale=scale)
 
     note.delay += 1.0
@@ -223,13 +223,13 @@ def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
 @pytest.mark.parametrize('time', STARTS)
 def test_midi_note_attrs(time, duration, velocity, pitch):
     channel = 2
-    attrs = array([INSTRUMENT, time, duration, velocity, pitch])
+    attr_vals = array([INSTRUMENT, time, duration, velocity, pitch])
     attr_name_idx_map = {'instrument': 0,
                          'start': 1, 'time': 1,
                          'dur': 2, 'duration': 2,
                          'velocity': 3,
                          'pitch': 4}
-    note = MidiNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
+    note = MidiNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, note_num=NOTE_NUM,
                     channel=channel)
 
     assert note.time == note.start == time
@@ -253,7 +253,7 @@ def test_midi_note_attrs(time, duration, velocity, pitch):
 
 
 def test_note_values():
-    attrs = array([float(INSTRUMENT + 1.0), START + 1.0, DUR + 1.0, AMP + 1.0, PITCH + 1.0])
+    attr_vals = array([float(INSTRUMENT + 1.0), START + 1.0, DUR + 1.0, AMP + 1.0, PITCH + 1.0])
     # The field key names must match the key names in note_values, passed as attr_vals_map
     # The latter come from Note.CSOUND_ATTR_NAMES, e.g. CSoundNote.CSOUND_ATTR_NAMES
     attr_name_idx_map = {'instrument': 0,
@@ -262,7 +262,7 @@ def test_note_values():
                          'amplitude': 3,
                          'pitch': 4}
     note_values = _setup_note_values(CSoundNote)
-    note = CSoundNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, attr_vals_map=note_values.as_dict(),
+    note = CSoundNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, attr_vals_map=note_values.as_dict(),
                       note_num=NOTE_NUM)
     # Validate that the values match note_values, not the different values passed to __init__ in attrs
     assert note.instrument == INSTRUMENT
@@ -274,14 +274,14 @@ def test_note_values():
     time = START
     duration = DUR
     velocity = AMP
-    attrs = array([INSTRUMENT, time + 1.0, duration + 1.0, velocity + 1.0, PITCH + 1.0])
+    attr_vals = array([INSTRUMENT, time + 1.0, duration + 1.0, velocity + 1.0, PITCH + 1.0])
     attr_name_idx_map = {'instrument': 0,
                          'time': 1,
                          'duration': 2,
                          'velocity': 3,
                          'pitch': 4}
     note_values = _setup_note_values(MidiNote)
-    note = MidiNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, attr_vals_map=note_values.as_dict(),
+    note = MidiNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, attr_vals_map=note_values.as_dict(),
                     note_num=NOTE_NUM)
     assert note.instrument == MIDI_INSTRUMENT.value
     assert note.time == START
@@ -294,14 +294,14 @@ def test_note_values():
     dur = DUR
     amp = AMP
     degree = PITCH
-    attrs = array([delay + 1.0, dur + 1.0, amp + 1.0, degree + 1.0, float(OCTAVE)])
+    attr_vals = array([delay + 1.0, dur + 1.0, amp + 1.0, degree + 1.0, float(OCTAVE)])
     attr_name_idx_map = {'delay': 0,
                          'dur': 1,
                          'amp': 2,
                          'degree': 3,
                          'octave': 4}
     note_values = _setup_note_values(FoxDotSupercolliderNote)
-    note = FoxDotSupercolliderNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map,
+    note = FoxDotSupercolliderNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map,
                                    attr_vals_map=note_values.as_dict(),
                                    note_num=NOTE_NUM,
                                    synth_def=synth_def, scale=SCALE)
@@ -314,9 +314,9 @@ def test_note_values():
 
 def test_rest():
     amp = RestNote.REST_AMP + 1.0
-    attrs = array([float(INSTRUMENT), START, DUR, amp, PITCH])
+    attr_vals = array([float(INSTRUMENT), START, DUR, amp, PITCH])
     attr_name_idx_map = {'instrument': 0, 'start': 1, 'dur': 2, 'amp': 3, 'pitch': 4}
-    rest_note = RestNote(attrs=attrs, attr_name_idx_map=attr_name_idx_map, note_num=0)
+    rest_note = RestNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, note_num=0)
     assert rest_note.amp != amp
     assert rest_note.amp == RestNote.REST_AMP
 

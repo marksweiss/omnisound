@@ -7,7 +7,7 @@ from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice)
+from omnisound.utils.utils import (validate_optional_types, validate_type)
 
 ATTR_NAMES = ('delay', 'dur', 'amp', 'degree', 'octave')
 
@@ -56,7 +56,7 @@ class FoxDotSupercolliderNote(Note):
     }
 
     def __init__(self,
-                 attrs: array = None,
+                 attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_map: Dict[str, float] = None,
                  note_num: int = None,
@@ -68,7 +68,7 @@ class FoxDotSupercolliderNote(Note):
         if scale and scale not in FoxDotSupercolliderNote.SCALES:
             raise ValueError(f'arg `scale` must be None or a string in FoxDotSuperColliderNote.SCALES, scale: {scale}')
         super(FoxDotSupercolliderNote, self).__init__(
-            attrs=attrs,
+            attr_vals=attr_vals,
             attr_name_idx_map=attr_name_idx_map,
             attr_vals_map=attr_vals_map,
             note_num=note_num)

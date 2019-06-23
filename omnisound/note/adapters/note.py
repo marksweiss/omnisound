@@ -84,7 +84,7 @@ class Note(ABC):
     }
 
     def __init__(self,
-                 attrs: array = None,
+                 attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_map: Dict[str, float] = None,
                  note_num: int = None):
@@ -93,7 +93,7 @@ class Note(ABC):
         a Note in a NoteSequence. The NoteSequence class constructs the storage and manages a sequence of notes. It
         constructs objects of types derived from Note to provide an OO API with properties and methods to read and
         write the attributes of a Note (a row of data in the underlying NoteSequence numpy array).
-        `attrs` - numpy array of Note data. Columns are note attributes, values are values for each attribute.
+        `attr_vals` - numpy array of Note data. Columns are note attributes, values are values for each attribute.
         `attr_name_idx_map` - map of attribute names to array index storing the value for that attribute. Set by
           the NoteSequence creating the storage for this Note
         `attr_vals_map` - a set of values to assign to the attributes of the Note
@@ -105,31 +105,33 @@ class Note(ABC):
         """
 
         # Individual notes can modify values of attributes by reference, so alias underlying numpy array of values
-        self.__dict__['_attrs'] = attrs
+        self.__dict__['_attr_vals'] = attr_vals
         # Individual notes cannot modify the attributes and attribute-index mappings of a Note, so avoid aliasing bugs
         self.__dict__['_attr_name_idx_map'] = deepcopy(attr_name_idx_map)
+        # Derived classes can provide type cast function to wrap values passed to and returned from getattr/setattr
+        # self.__dict__['_attr_val_type_cast_map']
 
         if attr_vals_map:
             # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
             # set the value for that attribute from the value provided.
             for attr_name, attr_val in attr_vals_map.items():
                 validate_type_choice(attr_name, attr_val, (float, int))
-                self.__dict__['_attrs'][attr_name_idx_map[attr_name]] = float64(attr_val)
+                self.__dict__['_attr_vals'][attr_name_idx_map[attr_name]] = float64(attr_val)
 
     def __getattr__(self, attr_name: str) -> float64:
         """Handle returning note_attr from _attrs array or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
-            return self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]]
-        elif attr_name in self.__dict__['_attrs']:
-            return self.__dict__['_attrs'][attr_name]
+            return self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map'][attr_name]]
+        elif attr_name in self.__dict__['_attr_vals']:
+            return self.__dict__['_attr_vals'][attr_name]
         else:
             raise ValueError(f'No attribute in Note for {attr_name}')
 
     def __setattr__(self, attr_name: str, attr_val: Union[float, int]):
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
-            self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map'][attr_name]] = float64(attr_val)
+            self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map'][attr_name]] = float64(attr_val)
         else:
             self.__dict__[attr_name] = attr_val
 
@@ -137,23 +139,23 @@ class Note(ABC):
     # chaining calls to set all common Note attributes on one line
     # e.g. - note.I(1).S(1.0).D(2.5).A(400).P(440)
     def I(self, instrument: Union[float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['instrument']] = float64(instrument)
+        self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['instrument']] = float64(instrument)
         return self
 
     def S(self, start: Union[float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['start']] = float64(start)
+        self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['start']] = float64(start)
         return self
 
     def D(self, dur: Union[float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['dur']] = float64(dur)
+        self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['dur']] = float64(dur)
         return self
 
     def A(self, amp: Union[float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['amp']] = float64(amp)
+        self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['amp']] = float64(amp)
         return self
 
     def P(self, pitch: Union[float, int]):
-        self.__dict__['_attrs'][self.__dict__['_attr_name_idx_map']['pitch']] = float64(pitch)
+        self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['pitch']] = float64(pitch)
         return self
 
     @abstractmethod

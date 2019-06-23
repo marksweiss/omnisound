@@ -64,7 +64,7 @@ class CSoundNote(Note):
     DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
     def __init__(self,
-                 attrs: array = None,
+                 attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_map: Dict[str, float] = None,
                  note_num: int = None,
@@ -72,7 +72,7 @@ class CSoundNote(Note):
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        super(CSoundNote, self).__init__(attrs=attrs,
+        super(CSoundNote, self).__init__(attr_vals=attr_vals,
                                          attr_name_idx_map=attr_name_idx_map,
                                          attr_vals_map=attr_vals_map,
                                          note_num=note_num)
