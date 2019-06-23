@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from enum import Enum
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 from numpy import array
 from omnisound.note.adapters.note import Note
@@ -246,16 +246,26 @@ class MidiNote(Note):
     def __init__(self,
                  attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_map: Dict[str, float] = None,
-                 note_num: int = None,
+                 attr_vals_defaults_map: Dict[str, float] = None,
+                 attr_get_type_cast_map: Dict[str, Any] = None,
+                 note_sequence_num: int = None,
                  channel: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('channel', channel, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
+
+        # Handle case of a custom function for type casting getattr return value, for a non-standard attr
+        attr_get_type_cast_map = attr_get_type_cast_map or {}
+        # Append a default getattr() type cast mappings to int for instrument, velocity and pitch
+        attr_get_type_cast_map['instrument'] = int
+        attr_get_type_cast_map['i'] = int
+        attr_get_type_cast_map['velocity'] = int
+        attr_get_type_cast_map['pitch'] = int
         super(MidiNote, self).__init__(attr_vals=attr_vals,
                                        attr_name_idx_map=attr_name_idx_map,
-                                       attr_vals_map=attr_vals_map,
-                                       note_num=note_num)
+                                       attr_vals_defaults_map=attr_vals_defaults_map,
+                                       attr_get_type_cast_map=attr_get_type_cast_map,
+                                       note_sequence_num=note_sequence_num)
 
         self.__dict__['_performance_attrs'] = performance_attrs
         self.__dict__['_channel'] = channel or MidiNote.DEFAULT_CHANNEL
@@ -274,46 +284,8 @@ class MidiNote(Note):
         validate_type('channel', channel, int)
         self.__dict__['_channel'] = channel
 
-    # Base Note Interface
-    @property
-    def instrument(self) -> int:
-        return int(super(MidiNote, self).__getattr__('instrument'))
-
-    @instrument.setter
-    def instrument(self, instrument: int):
-        validate_type('instrument', instrument, int)
-        super(MidiNote, self).__setattr__('instrument', float(instrument))
-
-    @property
-    def i(self) -> int:
-        return int(super(MidiNote, self).__getattr__('instrument'))
-
-    @i.setter
-    def i(self, instrument: int):
-        validate_type('instrument', instrument, int)
-        super(MidiNote, self).__setattr__('instrument', float(instrument))
-
-    @property
-    def velocity(self) -> int:
-        return int(super(MidiNote, self).__getattr__('velocity'))
-
-    @velocity.setter
-    def velocity(self, velocity: int):
-        validate_type('velocity', velocity, int)
-        super(MidiNote, self).__setattr__('velocity', velocity)
-
-    @property
-    def pitch(self) -> int:
-        return int(super(MidiNote, self).__getattr__('pitch'))
-
-    @pitch.setter
-    def pitch(self, pitch: int):
-        validate_type('pitch', pitch, int)
-        super(MidiNote, self).__setattr__('pitch', float(pitch))
-
     def transpose(self, interval: int):
-        """Midi pitches are ints in the range MIN
-        """
+        """Midi pitches are ints in the range MIN_PITCH..MAX_PITCH"""
         validate_type('interval', interval, int)
 
         new_pitch = super(MidiNote, self).__getattr__('pitch') + interval

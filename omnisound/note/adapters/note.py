@@ -1,8 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
-from copy import deepcopy
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Mapping, Union
 
 from numpy import float64, array
 
@@ -85,9 +84,10 @@ class Note(ABC):
 
     def __init__(self,
                  attr_vals: array = None,
-                 attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_map: Dict[str, float] = None,
-                 note_num: int = None):
+                 attr_name_idx_map: Mapping[str, int] = None,
+                 attr_vals_defaults_map: Mapping[str, float] = None,
+                 attr_get_type_cast_map: Dict[str, Any] = None,
+                 note_sequence_num: int = None):
         """
         The Note is a view over a row of a 2D numpy array storing data for one Note. Each row in the array represents
         a Note in a NoteSequence. The NoteSequence class constructs the storage and manages a sequence of notes. It
@@ -96,7 +96,12 @@ class Note(ABC):
         `attr_vals` - numpy array of Note data. Columns are note attributes, values are values for each attribute.
         `attr_name_idx_map` - map of attribute names to array index storing the value for that attribute. Set by
           the NoteSequence creating the storage for this Note
-        `attr_vals_map` - a set of values to assign to the attributes of the Note
+        `attr_vals_defaults_map` - a set of values to assign to the attributes of the Note
+        `attr_get_type_cast_map` - mapping of string keys which must match a key in attr_name_idx_map, that is must
+          refer to a note attribute, with values which must be type names. Type names are callable type casting
+          functions when used with function call syntax, so these values are used to cast the value for an attribute
+          retrieved from attr_vals in __getattr__, before returning that value. For example, if a derived Note class
+          returns int values for an attribute instead of float64, the dict would have an entry: {'my_attr_name': int}
         `note_num` - the position of the Note in the NoteSequence it is in. Required for NoteSequence.delete(), but it
          also serves as the unique_id of the Note in the sequence it is in
         Any base attributes for which no value is provided are initialized to 0.0. All values are stored internally
@@ -104,17 +109,19 @@ class Note(ABC):
         individual attributes. An example of this is `CsoundNote.instrument`, which must be `int`.
         """
 
-        # Individual notes can modify values of attributes by reference, so alias underlying numpy array of values
+        # Individual notes can modify values of attributes stored in this numpy array by
         self.__dict__['_attr_vals'] = attr_vals
-        # Individual notes cannot modify the attributes and attribute-index mappings of a Note, so avoid aliasing bugs
-        self.__dict__['_attr_name_idx_map'] = deepcopy(attr_name_idx_map)
-        # Derived classes can provide type cast function to wrap values passed to and returned from getattr/setattr
-        # self.__dict__['_attr_val_type_cast_map']
+        # Individual notes must not modify attribute-index mappings of a Note
+        self.__dict__['_attr_name_idx_map'] = attr_name_idx_map
+        # Derived classes can provide type cast function to wrap values returned from getattr
+        # These can be modified during the lifetime of the note as desired
+        self.__dict__['_attr_get_type_cast_map'] = attr_get_type_cast_map or {}
+        self.__dict__['note_sequence_num'] = note_sequence_num
 
-        if attr_vals_map:
+        if attr_vals_defaults_map:
             # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
             # set the value for that attribute from the value provided.
-            for attr_name, attr_val in attr_vals_map.items():
+            for attr_name, attr_val in attr_vals_defaults_map.items():
                 validate_type_choice(attr_name, attr_val, (float, int))
                 self.__dict__['_attr_vals'][attr_name_idx_map[attr_name]] = float64(attr_val)
 
@@ -122,14 +129,15 @@ class Note(ABC):
         """Handle returning note_attr from _attrs array or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
         if attr_name in self.__dict__['_attr_name_idx_map']:
-            return self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map'][attr_name]]
-        elif attr_name in self.__dict__['_attr_vals']:
-            return self.__dict__['_attr_vals'][attr_name]
+            type_caster = self.__dict__['_attr_get_type_cast_map'].get(attr_name, float64)
+            return type_caster(
+                self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map'][attr_name]])
         else:
             raise ValueError(f'No attribute in Note for {attr_name}')
 
     def __setattr__(self, attr_name: str, attr_val: Union[float, int]):
         validate_type('attr_name', attr_name, str)
+        validate_type_choice('attr_name', attr_val, (float, int))
         if attr_name in self.__dict__['_attr_name_idx_map']:
             self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map'][attr_name]] = float64(attr_val)
         else:
@@ -139,22 +147,27 @@ class Note(ABC):
     # chaining calls to set all common Note attributes on one line
     # e.g. - note.I(1).S(1.0).D(2.5).A(400).P(440)
     def I(self, instrument: Union[float, int]):
+        validate_type_choice('attr_name', instrument, (float, int))
         self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['instrument']] = float64(instrument)
         return self
 
     def S(self, start: Union[float, int]):
+        validate_type_choice('attr_name', start, (float, int))
         self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['start']] = float64(start)
         return self
 
     def D(self, dur: Union[float, int]):
+        validate_type_choice('attr_name', dur, (float, int))
         self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['dur']] = float64(dur)
         return self
 
     def A(self, amp: Union[float, int]):
+        validate_type_choice('attr_name', amp, (float, int))
         self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['amp']] = float64(amp)
         return self
 
     def P(self, pitch: Union[float, int]):
+        validate_type_choice('attr_name', pitch, (float, int))
         self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map']['pitch']] = float64(pitch)
         return self
 

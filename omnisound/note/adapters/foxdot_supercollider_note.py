@@ -58,8 +58,9 @@ class FoxDotSupercolliderNote(Note):
     def __init__(self,
                  attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_map: Dict[str, float] = None,
-                 note_num: int = None,
+                 attr_vals_defaults_map: Dict[str, float] = None,
+                 attr_get_type_cast_map: Dict[str, Any] = None,
+                 note_sequence_num: int = None,
                  synth_def: Any = None,
                  scale: str = None,
                  performance_attrs: PerformanceAttrs = None):
@@ -67,11 +68,19 @@ class FoxDotSupercolliderNote(Note):
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
         if scale and scale not in FoxDotSupercolliderNote.SCALES:
             raise ValueError(f'arg `scale` must be None or a string in FoxDotSuperColliderNote.SCALES, scale: {scale}')
+
+        # Handle case of a custom function for type casting getattr return value, for a non-standard attr
+        attr_get_type_cast_map = attr_get_type_cast_map or {}
+        # Append a default getattr() type cast mappings to int for instrument, velocity and pitch
+        attr_get_type_cast_map['start'] = int
+        attr_get_type_cast_map['delay'] = int
+        attr_get_type_cast_map['octave'] = int
         super(FoxDotSupercolliderNote, self).__init__(
             attr_vals=attr_vals,
             attr_name_idx_map=attr_name_idx_map,
-            attr_vals_map=attr_vals_map,
-            note_num=note_num)
+            attr_vals_defaults_map=attr_vals_defaults_map,
+            attr_get_type_cast_map=attr_get_type_cast_map,
+            note_sequence_num=note_sequence_num)
 
         # Attributes that are not representable as float must be managed at this level in this class and
         # not be created as attributes of the base class
@@ -112,33 +121,6 @@ class FoxDotSupercolliderNote(Note):
     @synth_def.setter
     def synth_def(self, synth_def: Any):
         self.__dict['_synth_def'] = synth_def
-
-    @property
-    def start(self) -> int:
-        return int(super(FoxDotSupercolliderNote, self).__getattr__('start'))
-
-    @start.setter
-    def start(self, start: int):
-        validate_type('start', start, int)
-        super(FoxDotSupercolliderNote, self).__setattr__('start', float(start))
-
-    @property
-    def delay(self) -> int:
-        return int(super(FoxDotSupercolliderNote, self).__getattr__('delay'))
-
-    @delay.setter
-    def delay(self, delay: int):
-        validate_type('delay', delay, int)
-        super(FoxDotSupercolliderNote, self).__setattr__('delay', float(delay))
-
-    @property
-    def octave(self) -> int:
-        return int(super(FoxDotSupercolliderNote, self).__getattr__('octave'))
-
-    @octave.setter
-    def octave(self, octave: int):
-        validate_type('octave', octave, int)
-        super(FoxDotSupercolliderNote, self).__setattr__('octave', float(octave))
 
     @property
     def scale(self) -> str:

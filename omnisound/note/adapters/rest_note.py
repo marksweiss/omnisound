@@ -20,14 +20,14 @@ class RestNote(Note):
     def __init__(self,
                  attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_map: Dict[str, float] = None,
-                 note_num: int = None,
+                 attr_vals_defaults_map: Dict[str, float] = None,
+                 note_sequence_num: int = None,
                  performance_attrs: PerformanceAttrs = None):
         attr_vals[Note.BASE_NAME_INDEX_MAP['amp']] = RestNote.REST_AMP
         super(RestNote, self).__init__(attr_vals=attr_vals,
                                        attr_name_idx_map=attr_name_idx_map,
-                                       attr_vals_map=attr_vals_map,
-                                       note_num=note_num)
+                                       attr_vals_defaults_map=attr_vals_defaults_map,
+                                       note_sequence_num=note_sequence_num)
         self.__dict__['_performance_attrs'] = performance_attrs
 
     # Custom Interface

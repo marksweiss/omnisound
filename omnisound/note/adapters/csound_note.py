@@ -66,20 +66,35 @@ class CSoundNote(Note):
     def __init__(self,
                  attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_map: Dict[str, float] = None,
-                 note_num: int = None,
+                 attr_vals_defaults_map: Dict[str, float] = None,
+                 attr_get_type_cast_map: Dict[str, Any] = None,
+                 note_sequence_num: int = None,
                  pitch_precision: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
+
+        # Handle case of a custom function for type casting getattr return value, for a non-standard attr
+        attr_get_type_cast_map = attr_get_type_cast_map or {}
+        # First set a function to convert this value to a str(), which CSoundNote requires for all attributes
+        # The user can always override this by calling set_to_str_for_attr(), but since we know the attr is
+        # non-standard we can provide a default here
+        self.__dict__['_to_str_val_wrappers'] = dict()
+        for attr_name in attr_get_type_cast_map:
+            self.__dict__['_to_str_val_wrappers'][attr_name] = lambda x: str(x)
+        # Then append a default getattr() type cast mapping for instrument, which we always want to return as int
+        attr_get_type_cast_map['instrument'] = int
+        # Then pass the attrs array, map of attr names to attr array indexes, map of attr names to default values
+        # and map of attr names to getattr() type case values, to base Note, which then uses all this config
+        # to provide get/set semantics over the Note
         super(CSoundNote, self).__init__(attr_vals=attr_vals,
                                          attr_name_idx_map=attr_name_idx_map,
-                                         attr_vals_map=attr_vals_map,
-                                         note_num=note_num)
+                                         attr_vals_defaults_map=attr_vals_defaults_map,
+                                         attr_get_type_cast_map=attr_get_type_cast_map,
+                                         note_sequence_num=note_sequence_num)
 
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
         # str_to_val_wrappers are assigned in self.__setattr__()
-        self.__dict__['_to_str_val_wrappers'] = dict()
         self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
         self.__dict__['_to_str_val_wrappers']['start'] = lambda x:  f'{x:.5f}'
         self.__dict__['_to_str_val_wrappers']['duration'] = lambda x:  f'{x:.5f}'
@@ -117,27 +132,6 @@ class CSoundNote(Note):
 
     def set_scale_pitch_precision(self):
         self.__dict__['_pitch_precision'] = CSoundNote.SCALE_PITCH_PRECISION
-
-    # Base Note Interface
-    @property
-    def instrument(self) -> int:
-        return int(super(CSoundNote, self).__getattr__('instrument'))
-
-    @instrument.setter
-    def instrument(self, instrument: int):
-        validate_type('instrument', instrument, int)
-        super(CSoundNote, self).__setattr__('instrument', float(instrument))
-        self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
-
-    @property
-    def i(self) -> int:
-        return int(super(CSoundNote, self).__getattr__('instrument'))
-
-    @i.setter
-    def i(self, instrument: int):
-        validate_types('instrument', instrument, (float, int))
-        super(CSoundNote, self).__setattr__('instrument', float(instrument))
-        self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
 
     # TODO MODIFY AS MATRIX TRANSFORM GENERIC
     #  ARGS:
