@@ -10,7 +10,7 @@ from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.utils.mingus_utils import get_notes_for_mingus_keys
+from omnisound.utils.mingus_utils import set_notes_pitches_to_mingus_keys
 from omnisound.utils.utils import (validate_type_choice,
                                    validate_type_reference_choice,
                                    validate_types)
@@ -21,11 +21,10 @@ from mingus.core.chords import third_inversion as m_third_inversion
 
 class Chord(NoteSequence):
     """Represents a musical Chord, that is a group of Notes that harmonically work together according to the rules
-       of some harmonic system. As an implementation it is a NoteSequence in the category of a generator of Notes,
-       similar to Measure. Like Measure, it uses mingus-python to return lists of pitches as string names and
-       converts those to Notes, using `note_prototype` to copy from and set the pitches of each Note to the correct
-       value for the `note_cls` for each key in the Chord. So a CMajor triad Chord for `note_cls` CSoundNote
-       and `octave` = 4 will have three Notes with pitches 4.01, 4.05, and 4.08.
+       of some harmonic system. It uses mingus-python to return lists of pitches as string names and
+       sets Note pitches to the value for the `note_cls` for each key in the Chord.
+       So a CMajor triad Chord for `note_cls` CSoundNote and `octave` = 4 will have three Notes
+       with pitches 4.01, 4.05, and 4.08.
     """
     def __init__(self,
                  harmonic_chord: Any = None,
@@ -64,35 +63,35 @@ class Chord(NoteSequence):
 
         # Convert to Notes for this chord's note_type with pitch assigned for the key in the chord
         self._mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[self.matched_key_type.__name__]
-        note_list = get_notes_for_mingus_keys(self.matched_key_type, self._mingus_chord,
-                                              self._mingus_key_to_key_enum_mapping,
-                                              self.note_prototype, self.note_type, self.octave,
-                                              validate=False)
+        note_list = set_notes_pitches_to_mingus_keys(self.matched_key_type, self._mingus_chord,
+                                                     self._mingus_key_to_key_enum_mapping,
+                                                     self.note_prototype, self.note_type, self.octave,
+                                                     validate=False)
         super(Chord, self).__init__(to_add=note_list)
 
     def mod_first_inversion(self):
         """Modifies this Chord's note_list to its first inversion. Leaves all other attributes unchanged."""
         self._mingus_chord = m_first_inversion(self._mingus_chord)
-        self.note_list = get_notes_for_mingus_keys(self.matched_key_type, self._mingus_chord,
-                                                   self._mingus_key_to_key_enum_mapping,
-                                                   self.note_prototype, self.note_type, self.octave,
-                                                   validate=False)
+        self.note_list = set_notes_pitches_to_mingus_keys(self.matched_key_type, self._mingus_chord,
+                                                          self._mingus_key_to_key_enum_mapping,
+                                                          self.note_prototype, self.note_type, self.octave,
+                                                          validate=False)
 
     def mod_second_inversion(self):
         """Modifies this Chord's note_list to its second inversion. Leaves all other attributes unchanged."""
         self._mingus_chord = m_second_inversion(self._mingus_chord)
-        self.note_list = get_notes_for_mingus_keys(self.matched_key_type, self._mingus_chord,
-                                                   self._mingus_key_to_key_enum_mapping,
-                                                   self.note_prototype, self.note_type, self.octave,
-                                                   validate=False)
+        self.note_list = set_notes_pitches_to_mingus_keys(self.matched_key_type, self._mingus_chord,
+                                                          self._mingus_key_to_key_enum_mapping,
+                                                          self.note_prototype, self.note_type, self.octave,
+                                                          validate=False)
 
     def mod_third_inversion(self):
         """Modifies this Chord's note_list to its third inversion. Leaves all other attributes unchanged."""
         self._mingus_chord = m_third_inversion(self._mingus_chord)
-        self.note_list = get_notes_for_mingus_keys(self.matched_key_type, self._mingus_chord,
-                                                   self._mingus_key_to_key_enum_mapping,
-                                                   self.note_prototype, self.note_type, self.octave,
-                                                   validate=False)
+        self.note_list = set_notes_pitches_to_mingus_keys(self.matched_key_type, self._mingus_chord,
+                                                          self._mingus_key_to_key_enum_mapping,
+                                                          self.note_prototype, self.note_type, self.octave,
+                                                          validate=False)
 
     @staticmethod
     def copy_first_inversion(source_chord: 'Chord') -> 'Chord':
@@ -103,10 +102,10 @@ class Chord(NoteSequence):
         chord = Chord.copy(source_chord)
         # noinspection PyProtectedMember
         mingus_chord = m_first_inversion(source_chord._mingus_chord)
-        chord.note_list = get_notes_for_mingus_keys(source_chord.matched_key_type, mingus_chord,
-                                                    source_chord._mingus_key_to_key_enum_mapping,
-                                                    source_chord.note_prototype, source_chord.note_type,
-                                                    source_chord.octave, validate=False)
+        chord.note_list = set_notes_pitches_to_mingus_keys(source_chord.matched_key_type, mingus_chord,
+                                                           source_chord._mingus_key_to_key_enum_mapping,
+                                                           source_chord.note_prototype, source_chord.note_type,
+                                                           source_chord.octave, validate=False)
         return chord
 
     @staticmethod
@@ -118,10 +117,10 @@ class Chord(NoteSequence):
         chord = Chord.copy(source_chord)
         # noinspection PyProtectedMember
         mingus_chord = m_second_inversion(source_chord._mingus_chord)
-        chord.note_list = get_notes_for_mingus_keys(source_chord.matched_key_type, mingus_chord,
-                                                    source_chord._mingus_key_to_key_enum_mapping,
-                                                    source_chord.note_prototype, source_chord.note_type,
-                                                    source_chord.octave, validate=False)
+        chord.note_list = set_notes_pitches_to_mingus_keys(source_chord.matched_key_type, mingus_chord,
+                                                           source_chord._mingus_key_to_key_enum_mapping,
+                                                           source_chord.note_prototype, source_chord.note_type,
+                                                           source_chord.octave, validate=False)
         return chord
 
     @staticmethod
@@ -133,10 +132,10 @@ class Chord(NoteSequence):
         chord = Chord.copy(source_chord)
         # noinspection PyProtectedMember
         mingus_chord = m_third_inversion(source_chord._mingus_chord)
-        chord.note_list = get_notes_for_mingus_keys(source_chord.matched_key_type, mingus_chord,
-                                                    source_chord._mingus_key_to_key_enum_mapping,
-                                                    source_chord.note_prototype, source_chord.note_type,
-                                                    source_chord.octave, validate=False)
+        chord.note_list = set_notes_pitches_to_mingus_keys(source_chord.matched_key_type, mingus_chord,
+                                                           source_chord._mingus_key_to_key_enum_mapping,
+                                                           source_chord.note_prototype, source_chord.note_type,
+                                                           source_chord.octave, validate=False)
         return chord
 
     def mod_transpose(self, interval: int):

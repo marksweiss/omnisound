@@ -18,7 +18,7 @@ from omnisound.note.adapters.midi_note import MidiNote
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.scale_globals import (HarmonicScale, MajorKey,
                                                      MinorKey)
-from omnisound.utils.mingus_utils import get_notes_for_mingus_keys
+from omnisound.utils.mingus_utils import set_notes_pitches_to_mingus_keys
 from omnisound.utils.utils import (enum_to_dict_reverse_mapping,
                                    validate_type_choice,
                                    validate_type_reference_choice,
@@ -71,9 +71,9 @@ class Scale(NoteSequence):
             mingus_keys = mingus_keys[:-1]
         mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[matched_key_type.__name__]
         self.keys = [mingus_key_to_key_enum_mapping[mingus_key.upper()] for mingus_key in mingus_keys]
-        note_list = get_notes_for_mingus_keys(matched_key_type, mingus_keys,
-                                              mingus_key_to_key_enum_mapping,
-                                              self.note_prototype, self.note_type, self.octave,
-                                              validate=False)
+        note_list = set_notes_pitches_to_mingus_keys(matched_key_type, mingus_keys,
+                                                     mingus_key_to_key_enum_mapping,
+                                                     self.note_prototype, self.note_type, self.octave,
+                                                     validate=False)
 
         super(Scale, self).__init__(to_add=note_list)

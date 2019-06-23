@@ -50,12 +50,11 @@ class Swing(object):
         """
         validate_type('note_sequence', note_sequence, NoteSequence)
         validate_optional_type('swing_direction', swing_direction, Swing.SwingDirection)
-
         if not self.swinging:
             return
         else:
             swing_direction = swing_direction or self.swing_direction
-            for note in note_sequence.note_list:
+            for note in note_sequence:
                 note.start += self.calculate_swing_adj(note, swing_direction)
 
     def calculate_swing_adj(self, note: Note = None,  swing_direction: SwingDirection = None):

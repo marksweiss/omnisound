@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-pytest omnisound/test/$1 -W ignore::UserWarning -W ignore::DeprecationWarning
+pytest omnisound/test/$1.py -W ignore::UserWarning -W ignore::DeprecationWarning

@@ -71,6 +71,7 @@ class Measure(NoteSequence):
     # /Beat state management
 
     # Adding notes in sequence on the beat
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def add_note_on_beat(self, note: Note, increment_beat=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.beat.
         If increment_beat == True the measure_beat is also incremented, after the insertion. So this method
@@ -87,6 +88,7 @@ class Measure(NoteSequence):
 
         return self
 
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def add_notes_on_beat(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
            to that beat start time.
@@ -127,6 +129,7 @@ class Measure(NoteSequence):
     # /Adding notes in sequence on the beat
 
     # Adding notes in sequence from the current start time, one note immediately after another
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def add_note_on_start(self, note: Note, increment_start=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
            If increment_start == True then measure.start is also incremented, after the insertion. So this method
@@ -145,6 +148,7 @@ class Measure(NoteSequence):
 
         return self
 
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def add_notes_on_start(self, to_add: Union[NoteSequence, List[Note]]) -> 'Measure':
         """Uses note as a template and makes copies of it to fill the measure. Each new note's start time is set
            to that of the previous notes start + duration.
@@ -326,30 +330,36 @@ class Measure(NoteSequence):
 
     # NoteSequence note_list management
     # Wrap all parent methods to maintain invariant that note_list is sorted by note.start_time ascending
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def append(self, note: Note) -> 'Measure':
         super(Measure, self).append(note)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def extend(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         super(Measure, self).extend(to_add)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
     # noinspection PyUnresolvedReferences
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def __add__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         return self.extend(to_add)
 
     # noinspection PyUnresolvedReferences
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def __lshift__(self, to_add: Union[Note, NoteSequence, List[Note]]) -> 'Measure':
         return self.extend(to_add)
 
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def insert(self, index: int, to_add: Union[Note, 'NoteSequence', List[Note]]) -> 'Measure':
         super(Measure, self).insert(index, to_add)
         self.note_list.sort(key=lambda x: x.start)
         return self
 
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     def remove(self, to_remove: Union[Note, 'NoteSequence', List[Note]]) -> 'Measure':
         super(Measure, self).remove(to_remove)
         self.note_list.sort(key=lambda x: x.start)
@@ -371,6 +381,7 @@ class Measure(NoteSequence):
     # /Iterator support
 
     # noinspection PyUnresolvedReferences
+    # TODO BROKEN UNTIL NOTE SEQ MANAGING ARRAY CHANGES
     @staticmethod
     def copy(source_measure: 'Measure') -> 'Measure':
         # Call the dup() for the subclass of this note type

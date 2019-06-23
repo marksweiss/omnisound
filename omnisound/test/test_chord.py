@@ -1,5 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
+from numpy import array
 import pytest
 
 from omnisound.note.adapters.csound_note import CSoundNote
@@ -13,6 +14,10 @@ DUR = 1.0
 AMP = 100.0
 PITCH = 1.01
 
+ATTRS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
+ATTR_NAME_IDX_MAP = {'instrument': 0, 'start': 1, 'dur': 2, 'amp': 3, 'pitch': 4}
+NOTE_SEQUENCE_NUM = 0
+
 NOTE_CLS = CSoundNote
 OCTAVE = 4
 KEY = MajorKey.C
@@ -20,7 +25,8 @@ KEY = MajorKey.C
 
 @pytest.fixture
 def note():
-    return CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
+    return CSoundNote(attr_vals=ATTRS, attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                      note_sequence_num=NOTE_SEQUENCE_NUM)
 
 
 def test_chord(note):

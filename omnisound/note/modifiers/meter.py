@@ -115,7 +115,7 @@ class Meter(object):
 
     def quantize(self, note_sequence: NoteSequence):
         """
-        Algo for the degree of quantization is this ratio:
+        Also for the degree of quantization is this ratio:
         - `notes_duration` = `max(note.start + note.dur) for note in note_sequence`
         -- if the notes_duration matches the measure duration, then no quantization needed, return
         -- if notes run too long they must be shortened and have their start times made earlier
@@ -125,7 +125,7 @@ class Meter(object):
         -- negative adjustment if notes_duration too long, positive adjustment if notes_duration not long enough
         -- total_adjustment must be < a whole note, i.e. < 1.0
 
-        - Duration adjustmnet
+        - Duration adjustment
         -- Each note.dur adjusted by `note.dur += (note.dur * total_adjustment)`
 
         - Start adjustment
@@ -133,7 +133,7 @@ class Meter(object):
         -- `for i, note in enumerate(note_sequence):
                note.start += start_adjustment * i`
 
-        Example: Notes run longer than the duation of the measure
+        Example: Notes run longer than the duration of the measure
 
         measure ------------------------*
         0    0.25    0.50    0.75    1.00     1.25
