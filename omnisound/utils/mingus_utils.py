@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Dict, Mapping, Sequence, Union
 
 from omnisound.note.adapters.csound_note import CSoundNote
 from omnisound.note.adapters.foxdot_supercollider_note import \

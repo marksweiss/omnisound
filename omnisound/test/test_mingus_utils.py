@@ -1,5 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
+from numpy import array, copy as np_copy
 import pytest
 
 from omnisound.note.adapters.csound_note import CSoundNote
@@ -20,42 +21,56 @@ START = 0.0
 DUR = 1.0
 AMP = 100.0
 PITCH = 1.01
-NOTE_PROTOTYPE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
+ATTR_VALS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
+ATTR_NAME_IDX_MAP = {'instrument': 0, 'start': 1, 'dur': 2, 'amp': 3, 'pitch': 4}
+NOTE_SEQUENCE_NUM = 0
 
 
-def test_get_note_for_mingus_key():
+@pytest.fixture
+def note_prototype():
+    return _note()
+
+
+def _note():
+    # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
+    attr_vals = np_copy(ATTR_VALS)
+    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, note_sequence_num=NOTE_SEQUENCE_NUM)
+
+
+def test_get_note_for_mingus_key(note_prototype):
     # Octave = 4, key = 'C' == 4.01 in CSound.
     expected_pitch = 4.01
     # Assert that the prototype note used to create the new note is not the expected pitch after
     # we get the note for the mingus_key.
-    assert expected_pitch != pytest.approx(NOTE_PROTOTYPE.pitch)
+    assert expected_pitch != pytest.approx(note_prototype.pitch)
 
-    note = set_note_pitch_to_mingus_key(MATCHED_KEY_TYPE,
-                                        MINGUS_KEY,
-                                        MINGUS_KEY_TO_KEY_ENUM_MAPPING,
-                                        NOTE_PROTOTYPE,
-                                        NOTE_TYPE,
-                                        OCTAVE,
-                                        validate=True)
+    set_note_pitch_to_mingus_key(MATCHED_KEY_TYPE,
+                                 MINGUS_KEY,
+                                 MINGUS_KEY_TO_KEY_ENUM_MAPPING,
+                                 note_prototype,
+                                 NOTE_TYPE,
+                                 OCTAVE,
+                                 validate=True)
     # Assert that the note that returns has the expected pitch mapped to the mingus_key
-    assert expected_pitch == pytest.approx(note.pitch)
+    assert expected_pitch == pytest.approx(note_prototype.pitch)
 
 
-def test_get_notes_for_mingus_keys():
+def test_get_notes_for_mingus_keys(note_prototype):
     # Octave = 4, key = 'C' == 4.01 in CSound.
     expected_pitches = [4.01, 4.03]
     # Assert that the prototype note used to create the new note is not the expected pitch after
     # we get the note for the mingus_key.
     for expected_pitch in expected_pitches:
-        assert not expected_pitch == pytest.approx(NOTE_PROTOTYPE.pitch)
+        assert not expected_pitch == pytest.approx(note_prototype.pitch)
 
-    note_list = set_notes_pitches_to_mingus_keys(MATCHED_KEY_TYPE,
-                                                 MINGUS_KEY_LIST,
-                                                 MINGUS_KEY_TO_KEY_ENUM_MAPPING,
-                                                 NOTE_PROTOTYPE,
-                                                 NOTE_TYPE,
-                                                 OCTAVE,
-                                                 validate=True)
+    note_list = [_note(), _note()]
+    set_notes_pitches_to_mingus_keys(MATCHED_KEY_TYPE,
+                                     MINGUS_KEY_LIST,
+                                     MINGUS_KEY_TO_KEY_ENUM_MAPPING,
+                                     note_list,
+                                     NOTE_TYPE,
+                                     OCTAVE,
+                                     validate=True)
     # Assert that the note that returns has the expected pitch mapped to the mingus_key
     for i, expected_pitch in enumerate(expected_pitches):
         assert expected_pitch == pytest.approx(note_list[i].pitch)
