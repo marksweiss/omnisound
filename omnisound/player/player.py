@@ -14,7 +14,7 @@ class PlayerNoNotesException(Exception):
 class Player(metaclass=ABCMeta):
     @abstractmethod
     def play_each(self):
-        """Play each note. Each notes note_attrs are honored and
+        """Play each note. Each notes note_attr_vals are honored and
            separate performance_attrs with a matching index are applied
            to all notes in the batch if they are available.
 
@@ -24,7 +24,7 @@ class Player(metaclass=ABCMeta):
 
     @abstractmethod
     def play_all(self):
-        """Play notes as a batch. Each notes note_attrs are honored but
+        """Play notes as a batch. Each notes note_attr_vals are honored but
            performance_attrs are applied to all notes in the batch.
 
            Implementers can choose to use pre-play or post-play hooks as they wish.

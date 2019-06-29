@@ -1,5 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
+from numpy import array, copy as np_copy
 import pytest
 
 from omnisound.note.adapters.csound_note import CSoundNote
@@ -8,40 +9,41 @@ from omnisound.note.containers.note_sequence import NoteSequence
 
 # noinspection PyProtectedMember
 
-
-
 INSTRUMENT = 1
 START = 0.0
 DUR = 1.0
 AMP = 100.0
 PITCH = 1.01
-NOTE = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
+ATTR_VALS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
+ATTR_NAME_IDX_MAP = {'instrument': 0, 'start': 1, 'dur': 2, 'amp': 3, 'pitch': 4}
+NOTE_SEQUENCE_NUM = 0
+
+NOTE_CLS = CSoundNote
+NUM_NOTES = 2
+NUM_ATTRIBUTES = len(ATTR_VALS)
 
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100
 ATTR_TYPE = int
 
 
-@pytest.fixture
-def note_list():
-    note_1 = CSoundNote.copy(NOTE)
-    note_2 = CSoundNote.copy(NOTE)
-    perf_attrs = PerformanceAttrs()
-    perf_attrs.add_attr(attr_name=ATTR_NAME, val=ATTR_VAL, attr_type=ATTR_TYPE)
-    note_1.performance_attrs = perf_attrs
-    note_2.performance_attrs = perf_attrs
-    note_list = [note_1, note_2]
-    return note_list
+def _note():
+    # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
+    attr_vals = np_copy(ATTR_VALS)
+    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, note_sequence_num=NOTE_SEQUENCE_NUM)
+
+
+def _note_sequence():
+    note_sequence = NoteSequence(note_cls=NOTE_CLS,
+                                 num_notes=NUM_NOTES,
+                                 num_attributes=NUM_ATTRIBUTES,
+                                 attr_name_idx_map=ATTR_NAME_IDX_MAP)
+    return note_sequence
 
 
 @pytest.fixture
-def note_sequence(note_list):
-    return NoteSequence(to_add=note_list)
-
-
-def test_note_sequence(note_list, note_sequence):
-    assert note_sequence
-    assert note_sequence.note_list == note_sequence.nl == note_list
+def note_sequence():
+    return _note_sequence()
 
 
 def test_note_sequence_iter_note_attr_properties(note_sequence):
@@ -49,25 +51,21 @@ def test_note_sequence_iter_note_attr_properties(note_sequence):
     first_loop_count = 0
     for note in note_sequence:
         assert note.start == START
-        # noinspection PyUnresolvedReferences
-        assert note.pa.test_attr == ATTR_VAL
         first_loop_count += 1
     # Iterate again. This tests that __iter__() resets the loop state
     second_loop_count = 0
     for note in note_sequence:
         assert note.start == START
-        # noinspection PyUnresolvedReferences
-        assert note.pa.test_attr == ATTR_VAL
         second_loop_count += 1
     assert first_loop_count == second_loop_count
 
 
 def test_note_sequence_len_append_getitem(note_sequence):
-    # Returns note_list with 2 Notes
-    note_3 = CSoundNote.copy(NOTE)
-    new_amp = NOTE.amp + 1
+    # Returns note_attr_vals with 2 Notes
+    note_3 = _note()
+    new_amp = _note().amp + 1
     note_3.amp = new_amp
-    # Assert initial len() of note_list
+    # Assert initial len() of note_attr_vals
     assert len(note_sequence) == 2
     # Append and check len again
     note_sequence.append(note_3)
@@ -81,93 +79,57 @@ def test_note_sequence_add_lshift_extend(note_sequence):
     expected_len = 2
     assert len(note_sequence) == expected_len
     # Append/Add and check len again
-    note_sequence += NOTE
+    note_sequence += _note()
     expected_len += 1
     assert len(note_sequence) == expected_len
     # Append/Add with lshift syntax
-    note_sequence << NOTE
+    note_sequence << _note()
     expected_len += 1
     assert len(note_sequence) == expected_len
-    # Append/Add with a List[Note]
-    note_sequence += [NOTE, NOTE]
-    expected_len += 2
-    assert len(note_sequence) == expected_len
     # Append/Add with a NoteSequence
-    new_note_sequence = NoteSequence([NOTE, NOTE])
-    note_sequence += new_note_sequence
-    expected_len += 2
-    assert len(note_sequence) == expected_len
-    # Extend with a List[Note]
-    note_sequence.extend([NOTE, NOTE])
+    note_sequence += _note_sequence()
     expected_len += 2
     assert len(note_sequence) == expected_len
     # Extend with a NoteSequence
-    new_note_sequence = NoteSequence([NOTE, NOTE])
-    note_sequence.extend(new_note_sequence)
+    note_sequence.extend(_note_sequence())
     expected_len += 2
     assert len(note_sequence) == expected_len
 
 
-def test_note_sequence_insert_remove_getitem(note_sequence):
-    note_front = note_sequence[0]
-    assert note_front.amp == AMP
+def test_note_sequence_insert_remove_getitem():
+    note_sequence = NoteSequence(note_cls=NOTE_CLS,
+                                 num_notes=NUM_NOTES,
+                                 num_attributes=NUM_ATTRIBUTES,
+                                 attr_name_idx_map=ATTR_NAME_IDX_MAP)
 
     # Insert a single note at the front of the list
     new_amp = AMP + 1
     # noinspection PyTypeChecker
-    new_note = CSoundNote.copy(note_front)
+    new_note = _note()
     new_note.amp = new_amp
     note_sequence.insert(0, new_note)
     note_front = note_sequence[0]
     assert note_front.amp == new_amp
 
-    # Insert a list of 2 notes at the front of the list
-    new_amp_1 = AMP + 2
-    # noinspection PyTypeChecker
-    new_note_1 = CSoundNote.copy(note_front)
-    new_note_1.amp = new_amp_1
-    new_amp_2 = AMP + 3
-    # noinspection PyTypeChecker
-    new_note_2 = CSoundNote.copy(note_front)
-    new_note_2.amp = new_amp_2
-    new_note_list = [new_note_1, new_note_2]
-    note_sequence.insert(0, new_note_list)
-    note_front = note_sequence[0]
-    assert note_front.amp == new_amp_1
-    note_front = note_sequence[1]
-    assert note_front.amp == new_amp_2
-
-    # Insert a NoteSequence with 2 notes at the front of the list
+    # Insert a NoteSequence with 2 note_attr_vals at the front of the list
     new_amp_1 = AMP + 4
-    # noinspection PyTypeChecker
-    new_note_1 = CSoundNote.copy(note_front)
-    new_note_1.amp = new_amp_1
     new_amp_2 = AMP + 5
-    # noinspection PyTypeChecker
-    new_note_2 = CSoundNote.copy(note_front)
-    new_note_2.amp = new_amp_2
-    new_note_list = [new_note_1, new_note_2]
-    new_note_sequence = NoteSequence(new_note_list)
-    note_sequence.insert(0, new_note_sequence)
+    note_sequence_1 = _note_sequence()
+    note_sequence_1[0].amp = new_amp_1
+    note_sequence_1[1].amp = new_amp_2
+    note_sequence.insert(0, note_sequence_1)
     note_front = note_sequence[0]
     assert note_front.amp == new_amp_1
     note_front = note_sequence[1]
     assert note_front.amp == new_amp_2
 
-    # Remove notes added as NoteSequence, List[Note] and Note
+    # Remove note_attr_vals added as NoteSequence, List[Note] and Note
     # After removing a note, the new front note is the one added second to most recently
-    expected_amp = note_sequence[1].amp
     note_to_remove = note_sequence[0]
+    expected_amp = note_sequence[1].amp
     note_sequence.remove(note_to_remove)
     note_front = note_sequence[0]
     assert note_front.amp == expected_amp
-    expected_amp = note_sequence[1].amp
-    for i in range(4):
-        note_to_remove = note_sequence[0]
-        note_sequence.remove(note_to_remove)
-        note_front = note_sequence[0]
-        assert note_front.amp == expected_amp
-        expected_amp = note_sequence[1].amp
 
 
 if __name__ == '__main__':

@@ -94,27 +94,10 @@ def validate_optional_sequence_of_type(arg_name, seq_val, val_type) -> bool:
 
 def validate_type_reference(arg_name, type_ref_val, val_type):
     """Validates that type_ref_val is a type that is a direct alias of a type.
-       Example:
-           class A(object):
-               pass
-
-           # a is an alias of the type A
-           a = A
-           # isinstance returns False
-
-           isinstnace(A, a)  # => False
-
-           # a is an object of type A
-           a = A()
-           # isinstance returns True
-           isinstance(A, a)  # => True
-
-           # a is an alias of the type A
-           a = A
-           # use type operator to test to get valid result for a var that is a reference to a type
-           a is A # => True
+       NOTE: the `is` operator does not match subtypes. isinstance() using the instantiated object of the type
+       of the variable that is a reference to a type, compared to either the type or its base class type, succeeds.
     """
-    if not (type_ref_val is val_type):
+    if not isinstance(type_ref_val.__call__(), val_type):
         raise ValueError(f'arg: `{arg_name}` has val: `{type_ref_val}` but must be alias to type: `{val_type}`')
     return True
 

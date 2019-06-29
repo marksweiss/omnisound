@@ -37,10 +37,10 @@ class NoteValues(object):
 class Note(ABC):
     """Models the core attributes of a musical note common to multiple back ends.
        Core properties are defined here that are the property interface for Notes in derived classes, which are
-       note_attrs that define the attributes for a specific back end, e.g. `CSoundNote`, `MidiNote`, etc. The core
+       note_attr_vals that define the attributes for a specific back end, e.g. `CSoundNote`, `MidiNote`, etc. The core
        properties are `instrument`, `start`, `duration`, `amplitude` and `pitch`. The interface here is abstract so
        types aren't specified, but derived classes are expected to define types and enforce them with validation in
-       `__init__()` and all setters. Derived note_attrs may also create aliased properties for these core properties that
+       `__init__()` and all setters. Derived note_attr_vals may also create aliased properties for these core properties that
        match the conventions of their backend, and of course they may define additional properties specific to that
        backend.
        In addition, each derived type is expected to define equality, a `copy()` constructor, and `str`. Note that
@@ -50,7 +50,7 @@ class Note(ABC):
        Finally, each note is responsible for being able to translate a musical key (pitch on a scale) to a valid
        pitch value for that Note's backend, in the `get_pitch_for_key()` method.
        It is is strongly preferred that all getter properties return self in derived classes
-       to support fluid interfaces for defining and modifying note_attrs most easily in the least number of lines.
+       to support fluid interfaces for defining and modifying note_attr_vals most easily in the least number of lines.
        NOTE: Standard pattern for extending Note to add custom attributes:
        In MyNote.__init__():
        1) Call Note.add_attr_name() for each attribute that you want to add AND map to an existing attribute,
@@ -135,10 +135,10 @@ class Note(ABC):
         else:
             raise ValueError(f'No attribute in Note for {attr_name}')
 
-    def __setattr__(self, attr_name: str, attr_val: Union[float, int]):
+    def __setattr__(self, attr_name: str, attr_val: Any):
         validate_type('attr_name', attr_name, str)
-        validate_type_choice('attr_name', attr_val, (float, int))
         if attr_name in self.__dict__['_attr_name_idx_map']:
+            validate_type_choice('attr_val', attr_val, (float, int))
             self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map'][attr_name]] = float64(attr_val)
         else:
             self.__dict__[attr_name] = attr_val
