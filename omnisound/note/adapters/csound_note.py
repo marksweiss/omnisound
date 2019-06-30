@@ -6,9 +6,7 @@ from numpy import array
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice, validate_types)
-
-CSOUND_ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
+from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice)
 
 
 # Return a function that binds the pitch_precision to a function that returns a string that
@@ -23,6 +21,8 @@ class CSoundNote(Note):
     """Models a note with attributes aliased to and specific to CSound
        and with a str() that prints CSound formatted output.
     """
+    ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
+    ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(ATTR_NAMES)}
 
     PITCH_MAP = {
         MajorKey.C: 1.01,
@@ -206,7 +206,7 @@ class CSoundNote(Note):
                      f'{self.__dict__["_to_str_val_wrappers"]["amplitude"](self.amplitude)}',
                      f'{self.__dict__["_to_str_val_wrappers"]["pitch"](self.pitch)}']
         for attr_name in self.__dict__["_attr_name_idx_map"].keys():
-            if attr_name not in CSOUND_ATTR_NAMES and attr_name not in self.BASE_NAME_INDEX_MAP:
+            if attr_name not in CSoundNote.ATTR_NAMES and attr_name not in self.BASE_NAME_INDEX_MAP:
                 attr_strs.append(f'{self.__dict__["_to_str_val_wrappers"][attr_name](self.__getattr__(attr_name))}')
 
         return ' '.join(attr_strs)

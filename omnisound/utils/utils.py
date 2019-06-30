@@ -136,18 +136,18 @@ def sign() -> float:
     return copysign(1.0, random() - 0.5)
 
 
-def enum_to_dict(enum_class_name: str, enum_class) -> Dict:
+def enum_to_dict(enum_class) -> Dict:
     """Uses the fact that enum classes have a __members__
        method that returns an iterable of string names of the fields in the enum. For each one we then
        get a reference to the enum field itself with getattr() and get a reference to the value in the
        enum mapped to that field with, unfortunately, an eval()
     """
-    validate_type('enum_class_name', enum_class_name, str)
+    enum_class_name = enum_class.__name__
     return {getattr(enum_class, enum_member): eval(f'{enum_class_name}.{enum_member}.value')
             for enum_member in enum_class.__members__}
 
 
-def enum_to_dict_reverse_mapping(enum_class_name: str, enum_class) -> Dict:
-    validate_type('enum_class_name', enum_class_name, str)
+def enum_to_dict_reverse_mapping(enum_class) -> Dict:
+    enum_class_name = enum_class.__name__
     return {eval(f'{enum_class_name}.{enum_member}.value'): getattr(enum_class, enum_member)
             for enum_member in enum_class.__members__}

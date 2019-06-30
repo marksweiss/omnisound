@@ -30,8 +30,8 @@ class Scale(NoteSequence):
        and a root key. Uses mingus.scale to then retrieve the notes in the scale and provide methods to manage
        and generate Notes. Derives from NoteSequence so acts as a standard Note container.
     """
-    MAJOR_KEY_REVERSE_MAP = enum_to_dict_reverse_mapping('MajorKey', MajorKey)
-    MINOR_KEY_REVERSE_MAP = enum_to_dict_reverse_mapping('MinorKey', MinorKey)
+    MAJOR_KEY_REVERSE_MAP = enum_to_dict_reverse_mapping(MajorKey)
+    MINOR_KEY_REVERSE_MAP = enum_to_dict_reverse_mapping(MinorKey)
     KEY_MAPS = {'MajorKey': MAJOR_KEY_REVERSE_MAP, 'MinorKey': MINOR_KEY_REVERSE_MAP}
 
     def __init__(self,

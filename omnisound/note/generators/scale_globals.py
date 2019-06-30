@@ -61,7 +61,7 @@ class DiatonicWrapper(m_scales.Diatonic):
         mapped in the HarmonicScale enum have the same signature.
 
         Clients can pass semitones as an additional argument to override this default behavior, but it requires
-        manual work rather than having the Scale class below hydrate the notes in a NoteSequenc automatically.
+        manual work rather than having the Scale class below hydrate the notes in a NoteSequence automatically.
         """
         semitones = semitones or (3, 7)
         super(DiatonicWrapper, self).__init__(key, semitones, octaves=octave)

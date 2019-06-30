@@ -8,11 +8,8 @@ import pytest
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import pluck as fd_sc_synth
 
-from omnisound.note.adapters.csound_note import CSOUND_ATTR_NAMES
 from omnisound.note.adapters.csound_note import CSoundNote
-from omnisound.note.adapters.foxdot_supercollider_note import ATTR_NAMES as FOXDOT_ATTR_NAMES
 from omnisound.note.adapters.foxdot_supercollider_note import FoxDotSupercolliderNote
-from omnisound.note.adapters.midi_note import ATTR_NAMES as MIDI_ATTR_NAMES
 from omnisound.note.adapters.midi_note import MidiInstrument, MidiNote
 from omnisound.note.adapters.note import AMP_I, DUR_I, NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
@@ -48,21 +45,21 @@ OCTAVE = 4
 def _setup_note_values(note_type: Any):
     note_values = None
     if note_type == CSoundNote:
-        note_values = NoteValues(CSOUND_ATTR_NAMES)
+        note_values = NoteValues(CSoundNote.ATTR_NAMES)
         note_values.instrument = INSTRUMENT
         note_values.start = START
         note_values.duration = DUR
         note_values.amplitude = AMP
         note_values.pitch = PITCH
     if note_type == MidiNote:
-        note_values = NoteValues(MIDI_ATTR_NAMES)
+        note_values = NoteValues(MidiNote.ATTR_NAMES)
         note_values.instrument = MIDI_INSTRUMENT.value
         note_values.time = START
         note_values.duration = DUR
         note_values.velocity = AMP
         note_values.pitch = PITCH
     if note_type == FoxDotSupercolliderNote:
-        note_values = NoteValues(FOXDOT_ATTR_NAMES)
+        note_values = NoteValues(FoxDotSupercolliderNote.ATTR_NAMES)
         note_values.delay = INT_START
         note_values.dur = DUR
         note_values.amp = AMP
@@ -274,7 +271,7 @@ def test_midi_note_attrs(time, duration, velocity, pitch):
 def test_note_values():
     attr_vals = array([float(INSTRUMENT + 1.0), START + 1.0, DUR + 1.0, AMP + 1.0, PITCH + 1.0])
     # The field key names must match the key names in note_values, passed as attr_vals_map
-    # The latter come from Note.CSOUND_ATTR_NAMES, e.g. CSoundNote.CSOUND_ATTR_NAMES
+    # The latter come from Note.attr_names, e.g. CSoundNote.attr_names
     attr_name_idx_map = {'instrument': 0,
                          'start': 1,
                          'duration': 2,

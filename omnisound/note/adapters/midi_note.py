@@ -11,8 +11,6 @@ from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
 from omnisound.utils.utils import (validate_optional_types,
                                    validate_type, validate_type_choice)
 
-ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
-
 
 class MidiInstrument(Enum):
     Acoustic_Grand_Piano = 0
@@ -198,6 +196,9 @@ class MidiNote(Note):
        and with a str() that prints MIDI formatted output.
     """
 
+    ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
+    ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(ATTR_NAMES)}
+
     PITCH_MAP = {
         MajorKey.C: 24,
         MajorKey.C_s: 25,
@@ -291,7 +292,7 @@ class MidiNote(Note):
         new_pitch = super(MidiNote, self).__getattr__('pitch') + interval
         if new_pitch < MidiNote.MIN_PITCH or new_pitch > MidiNote.MAX_PITCH:
             raise ValueError(f'Arg `interval` creates invalid pitch value: {new_pitch}')
-        super(MidiNote, self).__setattr__ ('pitch', new_pitch)
+        super(MidiNote, self).__setattr__('pitch', new_pitch)
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:

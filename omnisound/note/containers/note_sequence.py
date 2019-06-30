@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, Iterator, List, Union
+from typing import Any, Dict, Iterator, Sequence, Union
 
 import numpy as np
 
@@ -40,20 +40,21 @@ class NoteSequence(object):
        you must 1) modify B, and then 2) call A.update_range_map().
     """
 
-    def __init__(self, note_cls: Any = None, num_notes: int = None, num_attributes: int = None,
+    def __init__(self, note_cls: Any = None,
+                 num_notes: int = None,
+                 num_attributes: int = None,
                  attr_name_idx_map: Dict[str, int] = None,
-                 default_attr_vals_map: Dict[str, float] = None,
-                 # TODO CHANGE FROM LIST TO SEQUENCE
-                 child_sequences: List['NoteSequence'] = None):
+                 attr_vals_defaults_map: Dict[str, float] = None,
+                 child_sequences: Sequence['NoteSequence'] = None):
         validate_type_reference('note_cls', note_cls, Note)
         validate_types(('num_notes', num_notes, int), ('num_attributes', num_attributes, int),
                        ('attr_name_idx_map', attr_name_idx_map, dict))
-        validate_optional_type('default_attr_vals_map', default_attr_vals_map, dict)
+        validate_optional_type('attr_vals_defaults_map', attr_vals_defaults_map, dict)
         validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.keys()), str)
         validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.values()), int)
-        if default_attr_vals_map:
-            validate_optional_sequence_of_type('attr_vals_map', list(default_attr_vals_map.keys()), str)
-            validate_optional_sequence_of_type('attr_vals_map', list(default_attr_vals_map.values()), float)
+        if attr_vals_defaults_map:
+            validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_defaults_map.keys()), str)
+            validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_defaults_map.values()), float)
         validate_optional_type_choice('child_sequences', child_sequences, (list, set))
         validate_optional_sequence_of_type('child_sequences', child_sequences, 'NoteSequence')
 
@@ -66,7 +67,7 @@ class NoteSequence(object):
         self._num_attributes = num_attributes
 
         self.attr_name_index_map = attr_name_idx_map
-        self.default_attr_vals_map = default_attr_vals_map
+        self.attr_vals_defaults_map = attr_vals_defaults_map
         self.child_sequences = child_sequences
 
         # Absolute index position over all sequences, that is self.note_attr_vals and the note_attr_vals of each
@@ -142,7 +143,7 @@ class NoteSequence(object):
         if index < len(self.note_attr_vals):
             return self.note_cls(attr_vals=self.note_attr_vals[index],
                                  attr_name_idx_map=self.attr_name_index_map,
-                                 attr_vals_defaults_map=self.default_attr_vals_map,
+                                 attr_vals_defaults_map=self.attr_vals_defaults_map,
                                  note_sequence_num=index)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
         # flattened sequence of child_sequences, or it's invalid
@@ -159,7 +160,7 @@ class NoteSequence(object):
                     adjusted_index = index - index_range_sum
                     return self.note_cls(attrs=note_attrs[adjusted_index],
                                          attr_name_index_map=self.attr_name_index_map,
-                                         default_attr_vals_map=self.default_attr_vals_map,
+                                         default_attr_vals_map=self.attr_vals_defaults_map,
                                          row_num=index)
                     # noinspection PyUnreachableCode
                     break
@@ -184,18 +185,18 @@ class NoteSequence(object):
         return note
 
     # noinspection PyCallingNonCallable
-    def make_notes(self) -> List[Note]:
+    def make_notes(self) -> Sequence[Note]:
         # Get the notes from this sequence
         notes = [self.note_cls(attrs=note_vals,
                                attr_name_index_map=self.attr_name_index_map,
-                               default_attr_vals_map=self.default_attr_vals_map,
+                               default_attr_vals_map=self.attr_vals_defaults_map,
                                row_num=i)
                  for i, note_vals in enumerate(self.note_attr_vals)]
         # Walk the range map, which is already in the flattened order, and append all notes from that in order
         for note_seq in self._range_map.values():
             notes.extend([self.note_cls(attrs=note_vals,
                                         attr_name_index_map=self.attr_name_index_map,
-                                        default_attr_vals_map=self.default_attr_vals_map,
+                                        default_attr_vals_map=self.attr_vals_defaults_map,
                                         row_num=i)
                           for i, note_vals in enumerate(note_seq.note_attr_vals)])
         return notes
@@ -264,7 +265,6 @@ class NoteSequence(object):
             new_notes = to_add.note_attr_vals
         self.note_attr_vals = np.insert(self.note_attr_vals, index, new_notes, axis=0)
 
-        # TODO BUG RIGHT HERE CUT OFF THE LAST TWO NOTES
         self._fast_update_range_map(len(new_notes))
         self.num_notes += len(new_notes)
         return self
@@ -283,4 +283,12 @@ class NoteSequence(object):
         self._fast_update_range_map(-1)
         self.num_notes -= 1
         return self
+
+    @staticmethod
+    def copy(other: 'NoteSequence') -> 'NoteSequence':
+        validate_type('other', other, NoteSequence)
+        return NoteSequence(other.note_cls, other.num_notes, other._num_attributes,
+                            other.attr_name_index_map, other.attr_vals_defaults_map,
+                            other.child_sequences)
+
     # /Manage note list

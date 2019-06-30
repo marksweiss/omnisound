@@ -9,11 +9,12 @@ from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_types, validate_type)
 
-ATTR_NAMES = ('delay', 'dur', 'amp', 'degree', 'octave')
-
 
 # noinspection PyAttributeOutsideInit,PyPropertyDefinition,PyProtectedMember
 class FoxDotSupercolliderNote(Note):
+
+    ATTR_NAMES = ('delay', 'dur', 'amp', 'degree', 'octave')
+    ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(ATTR_NAMES)}
 
     SCALES = {'aeolian', 'chinese', 'chromatic', 'custom', 'default', 'diminished', 'dorian', 'dorian2',
               'egyptian', 'freq', 'harmonicMajor', 'harmonicMinor', 'indian', 'justMajor', 'justMinor',

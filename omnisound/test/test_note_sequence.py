@@ -4,7 +4,6 @@ from numpy import array, copy as np_copy
 import pytest
 
 from omnisound.note.adapters.csound_note import CSoundNote
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 
 # noinspection PyProtectedMember
@@ -15,16 +14,18 @@ DUR = 1.0
 AMP = 100.0
 PITCH = 1.01
 ATTR_VALS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
-ATTR_NAME_IDX_MAP = {'instrument': 0, 'start': 1, 'dur': 2, 'amp': 3, 'pitch': 4}
 NOTE_SEQUENCE_NUM = 0
 
 NOTE_CLS = CSoundNote
+ATTR_NAME_IDX_MAP = NOTE_CLS.ATTR_NAME_IDX_MAP
 NUM_NOTES = 2
 NUM_ATTRIBUTES = len(ATTR_VALS)
 
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100
 ATTR_TYPE = int
+
+# TODO TEST COVERAGE FOR CHILD SEQUENCES
 
 
 def _note():
@@ -63,8 +64,8 @@ def test_note_sequence_iter_note_attr_properties(note_sequence):
 def test_note_sequence_len_append_getitem(note_sequence):
     # Returns note_attr_vals with 2 Notes
     note_3 = _note()
-    new_amp = _note().amp + 1
-    note_3.amp = new_amp
+    new_amp = _note().amplitude + 1
+    note_3.amplitude = new_amp
     # Assert initial len() of note_attr_vals
     assert len(note_sequence) == 2
     # Append and check len again
@@ -72,7 +73,7 @@ def test_note_sequence_len_append_getitem(note_sequence):
     assert len(note_sequence) == 3
     # Check that last element has modified attribute, using NoteSequence[idx]
     # to access the note directly by index
-    assert note_sequence[2].amp == new_amp
+    assert note_sequence[2].amplitude == new_amp
 
 
 def test_note_sequence_add_lshift_extend(note_sequence):
@@ -106,30 +107,30 @@ def test_note_sequence_insert_remove_getitem():
     new_amp = AMP + 1
     # noinspection PyTypeChecker
     new_note = _note()
-    new_note.amp = new_amp
+    new_note.amplitude = new_amp
     note_sequence.insert(0, new_note)
     note_front = note_sequence[0]
-    assert note_front.amp == new_amp
+    assert note_front.amplitude == new_amp
 
     # Insert a NoteSequence with 2 note_attr_vals at the front of the list
     new_amp_1 = AMP + 4
     new_amp_2 = AMP + 5
     note_sequence_1 = _note_sequence()
-    note_sequence_1[0].amp = new_amp_1
-    note_sequence_1[1].amp = new_amp_2
+    note_sequence_1[0].amplitude = new_amp_1
+    note_sequence_1[1].amplitude = new_amp_2
     note_sequence.insert(0, note_sequence_1)
     note_front = note_sequence[0]
-    assert note_front.amp == new_amp_1
+    assert note_front.amplitude == new_amp_1
     note_front = note_sequence[1]
-    assert note_front.amp == new_amp_2
+    assert note_front.amplitude == new_amp_2
 
     # Remove note_attr_vals added as NoteSequence, List[Note] and Note
     # After removing a note, the new front note is the one added second to most recently
     note_to_remove = note_sequence[0]
-    expected_amp = note_sequence[1].amp
+    expected_amp = note_sequence[1].amplitude
     note_sequence.remove(note_to_remove)
     note_front = note_sequence[0]
-    assert note_front.amp == expected_amp
+    assert note_front.amplitude == expected_amp
 
 
 if __name__ == '__main__':

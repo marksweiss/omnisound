@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Dict, List, Mapping, Sequence, Union
 
 from numpy import float64, array
 
@@ -18,13 +18,15 @@ PITCH_I = P = 4
 
 
 class NoteValues(object):
+    DEFAULT_VAL = 0.0
+
     def __init__(self, attr_names):
         self._attr_names = attr_names
         for attr_name in attr_names:
             setattr(self, attr_name, None)
 
     def as_dict(self) -> Dict:
-        return {field: getattr(self, field) for field in self._attr_names}
+        return {field: getattr(self, field) or NoteValues.DEFAULT_VAL for field in self._attr_names}
 
     def as_list(self) -> List:
         return [getattr(self, field) for field in self._attr_names]

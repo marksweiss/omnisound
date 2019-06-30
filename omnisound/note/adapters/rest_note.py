@@ -15,6 +15,9 @@ class RestNote(Note):
        for musical rests.
     """
 
+    ATTR_NAMES = ('instrument', 'start', 'dur', 'amp', 'pitch')
+    ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(ATTR_NAMES)}
+
     REST_AMP = 0.0
 
     def __init__(self,

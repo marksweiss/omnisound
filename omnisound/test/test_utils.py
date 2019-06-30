@@ -10,13 +10,13 @@ ARG_NAME = 'arg'
 
 def test_enum_to_dict():
     expected_dict = {TestEnum.ENUM_NAME: ENUM_VAL}
-    actual_dict = enum_to_dict('TestEnum', TestEnum)
+    actual_dict = enum_to_dict(TestEnum)
     assert expected_dict == actual_dict
 
 
 def test_enum_to_dict_reverse_mapping():
     expected_dict = {ENUM_VAL: TestEnum.ENUM_NAME}
-    actual_dict = enum_to_dict_reverse_mapping('TestEnum', TestEnum)
+    actual_dict = enum_to_dict_reverse_mapping(TestEnum)
     assert expected_dict == actual_dict
 
 
