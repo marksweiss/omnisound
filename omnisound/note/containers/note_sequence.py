@@ -66,7 +66,7 @@ class NoteSequence(object):
         # THIS MUST NOT BE ALTERED
         self._num_attributes = num_attributes
 
-        self.attr_name_index_map = attr_name_idx_map
+        self.attr_name_idx_map = attr_name_idx_map
         self.attr_vals_defaults_map = attr_vals_defaults_map
         self.child_sequences = child_sequences
 
@@ -75,6 +75,9 @@ class NoteSequence(object):
         # So if this sequence has 10 notes and it has one child sequence with 11 notes then self.index
         # will move from 0 to 20 and then reset to 0.
         self.index = 0
+        # We can't simply use the size of the 0th axis of the underlying numpy array because a sequence
+        # can include child sequences, and `num_notes` is the total number of notes in the sequence and list
+        # of child sequences
         self.num_notes = num_notes
         self._range_map_index = 0
         self.range_map = {}
@@ -142,7 +145,7 @@ class NoteSequence(object):
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
             return self.note_cls(attr_vals=self.note_attr_vals[index],
-                                 attr_name_idx_map=self.attr_name_index_map,
+                                 attr_name_idx_map=self.attr_name_idx_map,
                                  attr_vals_defaults_map=self.attr_vals_defaults_map,
                                  note_sequence_num=index)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
@@ -159,7 +162,7 @@ class NoteSequence(object):
                     # is the running sum of all the previous indexes so we need to subtract that from index
                     adjusted_index = index - index_range_sum
                     return self.note_cls(attrs=note_attrs[adjusted_index],
-                                         attr_name_index_map=self.attr_name_index_map,
+                                         attr_name_index_map=self.attr_name_idx_map,
                                          default_attr_vals_map=self.attr_vals_defaults_map,
                                          row_num=index)
                     # noinspection PyUnreachableCode
@@ -188,14 +191,14 @@ class NoteSequence(object):
     def make_notes(self) -> Sequence[Note]:
         # Get the notes from this sequence
         notes = [self.note_cls(attrs=note_vals,
-                               attr_name_index_map=self.attr_name_index_map,
+                               attr_name_index_map=self.attr_name_idx_map,
                                default_attr_vals_map=self.attr_vals_defaults_map,
                                row_num=i)
                  for i, note_vals in enumerate(self.note_attr_vals)]
         # Walk the range map, which is already in the flattened order, and append all notes from that in order
         for note_seq in self._range_map.values():
             notes.extend([self.note_cls(attrs=note_vals,
-                                        attr_name_index_map=self.attr_name_index_map,
+                                        attr_name_index_map=self.attr_name_idx_map,
                                         default_attr_vals_map=self.attr_vals_defaults_map,
                                         row_num=i)
                           for i, note_vals in enumerate(note_seq.note_attr_vals)])
@@ -288,7 +291,7 @@ class NoteSequence(object):
     def copy(other: 'NoteSequence') -> 'NoteSequence':
         validate_type('other', other, NoteSequence)
         return NoteSequence(other.note_cls, other.num_notes, other._num_attributes,
-                            other.attr_name_index_map, other.attr_vals_defaults_map,
+                            other.attr_name_idx_map, other.attr_vals_defaults_map,
                             other.child_sequences)
 
     # /Manage note list
