@@ -8,7 +8,7 @@ import pytest
 from omnisound.note.adapters.csound_note import CSoundNote
 from omnisound.note.containers.measure import (Measure,
                                                MeasureSwingNotEnabledException,
-                                               Meter, NoteDur, NoteSequence,
+                                               Meter, NoteDur,
                                                Swing)
 
 INSTRUMENT = 1
@@ -16,9 +16,12 @@ START = 0.0
 DUR = float(NoteDur.QUARTER.value)
 AMP = 1.0
 PITCH = 10.1
+
 ATTR_VALS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
-ATTR_NAME_IDX_MAP = {'instrument': 0, 'start': 1, 'dur': 2, 'amp': 3, 'pitch': 4}
-NOTE_SEQUENCE_NUM = 0
+NOTE_CLS = CSoundNote
+ATTR_NAME_IDX_MAP = NOTE_CLS.ATTR_NAME_IDX_MAP
+NUM_NOTES = 2
+NUM_ATTRIBUTES = len(ATTR_VALS)
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
@@ -27,6 +30,23 @@ TEMPO_QPM = 240
 SWING_FACTOR = 0.5
 
 
+def _measure(meter, swing):
+    return Measure(note_cls=NOTE_CLS,
+                   num_notes=NUM_NOTES,
+                   num_attributes=NUM_ATTRIBUTES,
+                   attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                   meter=meter,
+                   swing=swing)
+
+
+# TODO REMOVE
+def _note():
+    # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
+    attr_vals = np_copy(ATTR_VALS)
+    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, note_sequence_num=NOTE_SEQUENCE_NUM)
+
+
+# TODO REMOVE
 @pytest.fixture
 def note_list():
     note_1 = _note()
@@ -50,14 +70,8 @@ def swing():
 
 
 @pytest.fixture
-def measure(note_list, meter, swing):
-    return Measure(to_add=note_list, meter=meter, swing=swing)
-
-
-def _note():
-    # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
-    attr_vals = np_copy(ATTR_VALS)
-    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, note_sequence_num=NOTE_SEQUENCE_NUM)
+def measure(meter, swing):
+    return _measure(meter, swing)
 
 
 def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, Measure]:
@@ -71,14 +85,14 @@ def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, M
 
 def _apply_swing_and_get_note_starts(measure) -> List[float]:
     measure.apply_swing()
-    actual_note_starts = [note.start for note in measure.note_list]
+    actual_note_starts = [note.start for note in measure]
     return actual_note_starts
 
 
 def test_measure(meter, swing, measure):
     # Assert post-invariant of `Measure.__init__()`, which is that notes are sorted ascending by start
-    for i in range(len(measure.note_list) - 2):
-        assert measure.note_list[i].start <= measure.note_list[i + 1].start
+    for i in range(len(measure) - 2):
+        assert measure[i].start <= measure[i + 1].start
     # Verify attribute assignments
     assert measure.beat == 0
     assert measure.next_note_start == 0.0
@@ -87,7 +101,7 @@ def test_measure(meter, swing, measure):
     assert measure.swing == swing
 
 
-def test_swing_on_off_apply_swing(note_list, swing, measure):
+def test_swing_on_off_apply_swing(swing, measure):
     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
     """
@@ -107,11 +121,13 @@ def test_swing_on_off_apply_swing(note_list, swing, measure):
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
     assert expected_swing_note_starts == actual_note_starts
 
-    measure = Measure(note_list)
+    # Construct a Measure with no Swing and verify expected exceptions are raised
+    no_swing = None
+    measure_2 = _measure(meter, no_swing)
     with pytest.raises(MeasureSwingNotEnabledException):
-        measure.swing_on()
+        measure_2.swing_on()
     with pytest.raises(MeasureSwingNotEnabledException):
-        measure.swing_off()
+        measure_2.swing_off()
 
 
 def test_apply_phrasing(note_list, meter, measure):

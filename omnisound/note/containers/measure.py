@@ -9,7 +9,7 @@ from typing import Any, Dict, Union
 
 import pytest
 
-from omnisound.note.adapters.note import Note
+from omnisound.note.adapters.note import Note, START_I
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.modifiers.meter import Meter, NoteDur
@@ -71,17 +71,12 @@ class Measure(NoteSequence):
         # The underlying NoteSequence stores the notes in a numpy array, which is a fixed-order data structure.
         # So we compute an ordered array mapping note start times to their index in the underlying array, then
         #  swap the values into the right indexes so the Notes in the underlying array are in sorted order
-        sorted_notes = [note for note in self]
-        # So this is a list of references to underlying Notes, sorted by start time
-        sorted_notes.sort(key=lambda x: x.start)
-        # For each note, copy out a dict of its attribute names and attribute vales, also in sorted order
-        notes_attr_vals_to_copy = [{attr_name: note.__getattr__(attr_name)
-                                    for attr_name in self.attr_name_idx_map.keys()}
-                                   for note in sorted_notes]
+        sorted_notes = [note.as_list() for note in self]
+        sorted_notes.sort(key=lambda x: x[START_I])
         # Now walk the dict of copied attributes, and write them back into the underlying notes at each index
-        for i, note_attr_vals in enumerate(notes_attr_vals_to_copy):
-            for attr_name, attr_val in note_attr_vals.items():
-                self[i].__setattr__(attr_name, attr_val)
+        for i, sorted_note in enumerate(sorted_notes):
+            for j, attr_name in enumerate(self.attr_name_idx_map.keys()):
+                self[i].__setattr__(attr_name, sorted_note[j])
 
     # Beat state management
     def reset_current_beat(self):

@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Mapping, Sequence, Union
+from typing import Any, Dict, List, Mapping, Union
 
 from numpy import float64, array
 
@@ -207,6 +207,9 @@ class Note(ABC):
     @abstractmethod
     def __eq__(self, other: 'Note') -> bool:
         raise NotImplemented('Derived type must implement Note.__eq__() -> bool')
+
+    def as_list(self) -> List[float]:
+        return [self.__dict__['_attr_vals'][i] for i in range(len(self.__dict__['_attr_name_idx_map']))]
 
     @abstractmethod
     def __str__(self):
