@@ -142,6 +142,8 @@ class Note(ABC):
         if attr_name in self.__dict__['_attr_name_idx_map']:
             validate_type_choice('attr_val', attr_val, (float, int))
             self.__dict__['_attr_vals'][self.__dict__['_attr_name_idx_map'][attr_name]] = float64(attr_val)
+
+            x = 5
         else:
             self.__dict__[attr_name] = attr_val
 

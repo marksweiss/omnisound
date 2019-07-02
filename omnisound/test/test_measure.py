@@ -2,7 +2,6 @@
 
 from typing import List, Tuple
 
-from numpy import array, copy as np_copy
 import pytest
 
 from omnisound.note.adapters.csound_note import CSoundNote
@@ -11,17 +10,22 @@ from omnisound.note.containers.measure import (Measure,
                                                Meter, NoteDur,
                                                Swing)
 
-INSTRUMENT = 1
+INSTRUMENT = 1.0
 START = 0.0
 DUR = float(NoteDur.QUARTER.value)
 AMP = 1.0
 PITCH = 10.1
 
-ATTR_VALS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
 NOTE_CLS = CSoundNote
 ATTR_NAME_IDX_MAP = NOTE_CLS.ATTR_NAME_IDX_MAP
-NUM_NOTES = 2
-NUM_ATTRIBUTES = len(ATTR_VALS)
+ATTR_VALS_DEFAULTS_MAP = {'instrument': INSTRUMENT,
+                          'start': START,
+                          'duration': DUR,
+                          'amplitude': AMP,
+                          'pitch': PITCH}
+NUM_NOTES = 4
+NUM_ATTRIBUTES = len(ATTR_NAME_IDX_MAP)
+NOTE_SEQUENCE_NUM = 0
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
@@ -30,33 +34,29 @@ TEMPO_QPM = 240
 SWING_FACTOR = 0.5
 
 
-def _measure(meter, swing):
-    return Measure(note_cls=NOTE_CLS,
-                   num_notes=NUM_NOTES,
-                   num_attributes=NUM_ATTRIBUTES,
-                   attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                   meter=meter,
-                   swing=swing)
+def _measure(meter, swing, attr_vals_defaults_map=None):
+    measure = Measure(note_cls=NOTE_CLS,
+                      num_notes=NUM_NOTES,
+                      num_attributes=NUM_ATTRIBUTES,
+                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                      attr_vals_defaults_map=attr_vals_defaults_map,
+                      meter=meter,
+                      swing=swing)
+    measure[1].start += DUR
+    measure[2].start += (DUR * 2)
+    measure[3].start += (DUR * 3)
+
+    # TEMP DEBUG
+    import pdb; pdb.set_trace()
+
+    assert measure[1].start == DUR
+
+    return measure
 
 
-# TODO REMOVE
-def _note():
-    # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
-    attr_vals = np_copy(ATTR_VALS)
-    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, note_sequence_num=NOTE_SEQUENCE_NUM)
-
-
-# TODO REMOVE
 @pytest.fixture
-def note_list():
-    note_1 = _note()
-    note_2 = _note()
-    note_2.start += DUR
-    note_3 = _note()
-    note_3.start += (DUR * 2)
-    note_4 = _note()
-    note_4.start += (DUR * 3)
-    return [note_1, note_2, note_3, note_4]
+def measure(meter, swing):
+    return _measure(meter, swing)
 
 
 @pytest.fixture
@@ -67,11 +67,6 @@ def meter():
 @pytest.fixture
 def swing():
     return Swing(swing_factor=SWING_FACTOR)
-
-
-@pytest.fixture
-def measure(meter, swing):
-    return _measure(meter, swing)
 
 
 def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, Measure]:
@@ -89,7 +84,7 @@ def _apply_swing_and_get_note_starts(measure) -> List[float]:
     return actual_note_starts
 
 
-def test_measure(meter, swing, measure):
+def test_measure(measure, meter, swing):
     # Assert post-invariant of `Measure.__init__()`, which is that notes are sorted ascending by start
     for i in range(len(measure) - 2):
         assert measure[i].start <= measure[i + 1].start
@@ -101,7 +96,7 @@ def test_measure(meter, swing, measure):
     assert measure.swing == swing
 
 
-def test_swing_on_off_apply_swing(swing, measure):
+def test_swing_on_off_apply_swing(measure, meter, swing):
     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
     """
@@ -130,29 +125,35 @@ def test_swing_on_off_apply_swing(swing, measure):
         measure_2.swing_off()
 
 
-def test_apply_phrasing(note_list, meter, measure):
+def test_apply_phrasing(measure, meter, swing):
     """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
        and last has swing reverse. This class tests use of Swing class by Measure class.
     """
-
     expected_phrasing_note_starts = [0.0, 0.375]
-    measure.swing_on()
 
+    measure.swing_on()
     # If there are two or more noes, first note adjusted down, last note adjusted up
     measure.apply_phrasing()
     assert measure[0].start == expected_phrasing_note_starts[0]
     assert measure[-1].start == expected_phrasing_note_starts[-1]
 
     # If there is only one note in the measure, phrasing is a no-op
-    expected_phrasing_note_starts = [note_list[1].start]
-    short_measure = Measure(to_add=[note_list[1]], meter=measure.meter, swing=measure.swing)
+    num_notes = 1
+    short_measure = Measure(note_cls=NOTE_CLS,
+                            num_notes=num_notes,
+                            num_attributes=NUM_ATTRIBUTES,
+                            attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                            meter=meter,
+                            swing=swing)
+    expected_phrasing_note_starts = [short_measure[0].start]
     short_measure.apply_phrasing()
     assert short_measure[0].start == expected_phrasing_note_starts[0]
 
     # Swing is None by default. Test that operations on swing raise if Swing object not provided to __init__()
-    measure = Measure(to_add=note_list, meter=meter)
+    no_swing = None
+    measure_no_swing = _measure(meter, no_swing)
     with pytest.raises(MeasureSwingNotEnabledException):
-        measure.apply_phrasing()
+        measure_no_swing.apply_phrasing()
 
 
 def test_quantizing_on_off(measure):
@@ -485,15 +486,22 @@ def test_beat(measure):
 #     assert len(measure) == 0
 
 
-def test_set_get_instrument(measure):
-    assert measure.instrument == [1, 1, 1, 1]
-    assert measure.i == [1, 1, 1, 1]
-    measure.instrument = 2
-    assert measure.instrument == [2, 2, 2, 2]
-    assert measure.i == [2, 2, 2, 2]
-    measure.i = 3
-    assert measure.instrument == [3, 3, 3, 3]
-    assert measure.i == [3, 3, 3, 3]
+def test_set_get_instrument(meter, swing):
+    measure = _measure(meter, swing, attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP)
+
+    # assert measure.instrument == [1.0, 1.0, 1.0, 1.0]
+    # assert measure.i == [1.0, 1.0, 1.0, 1.0]
+    from datetime import datetime
+    measure[0].instrument = datetime.now().timestamp()
+    measure[1].instrument = datetime.now().timestamp()
+    measure[2].instrument = datetime.now().timestamp()
+    measure[3].instrument = datetime.now().timestamp()
+    measure.set_instrument(2.0)
+    assert measure.get_instrument() == [2.0, 2.0, 2.0, 2.0]
+    # assert measure.i == [2, 2, 2, 2]
+    # measure.i = 3
+    # assert measure.instrument == [3, 3, 3, 3]
+    # assert measure.i == [3, 3, 3, 3]
 
 
 def test_set_get_start(measure):

@@ -5,7 +5,7 @@
 # TODO FEATURE ChordSequence, i.e. Progressions
 
 from copy import copy
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import pytest
 
@@ -15,7 +15,7 @@ from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
 from omnisound.utils.utils import (validate_optional_types,
-                                   validate_types)
+                                   validate_type, validate_types)
 
 
 class MeasureSwingNotEnabledException(Exception):
@@ -235,9 +235,75 @@ class Measure(NoteSequence):
     # /Apply Swing and Phrasing to notes
 
     # Getters and setters for all core note properties, get from all notes, apply to all notes
-    # Getters retrieve the value for a note property from each note and return a list of values
-    # Setters apply a value for a note property to each note in the note_list
+    def get_instrument(self) -> Union[List[float], List[int]]:
+        return [note.instrument for note in self]
+
+    def set_instrument(self, instrument: Union[float, int]):
+        for note in self:
+            note.instrument = instrument
+
+    # instrument = property(get_instrument, set_instrument)
+    # i = property(get_instrument, set_instrument)
+
+    def get_start(self) -> List[float]:
+        return [note.start for note in self]
+
+    def set_start(self, start: float):
+        for note in self:
+            note.start = start
+
+    start = property(get_start, set_start)
+    s = property(get_start, set_start)
+
+    def get_dur(self) -> List[float]:
+        return [note.dur for note in self]
+
+    def set_dur(self, dur: float):
+        for note in self:
+            note.dur = dur
+
+    dur = property(get_dur, set_dur)
+    d = property(get_dur, set_dur)
+
+    def get_amp(self) -> Union[List[float], List[int]]:
+        return [note.amp for note in self]
+
+    def set_amp(self, amp: Union[float, int]):
+        for note in self:
+            note.amp = amp
+
+    amp = property(get_amp, set_amp)
+    a = property(get_amp, set_amp)
+
+    def get_pitch(self) -> Union[List[float], List[int]]:
+        return [note.pitch for note in self]
+
+    def set_pitch(self, pitch: Union[float, int]):
+        for note in self:
+            note.pitch = pitch
+
+    pitch = property(get_pitch, set_pitch)
+    p = property(get_pitch, set_pitch)
+
+    def transpose(self, interval: int):
+        for note in self:
+            note.transpose(interval)
+
     # Getters and setters for all core note properties, get from all notes, apply to all notes
+
+    # Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
+    def get_notes_attr(self, name: str) -> List[Any]:
+        """Return list of all values for attribute `name` from all notes in the measure, in start time order"""
+        validate_type('name', name, str)
+        return [getattr(note, name) for note in self]
+
+    def set_notes_attr(self, name: str, val: Any):
+        """Apply to all notes in note_list"""
+        validate_type('name', name, str)
+        for note in self:
+            setattr(note, name, val)
+    # /Dynamic setter for any other attributes not common to all Notes, e.g. `channel` in MidiNote
+
     @property
     def pa(self):
         return self.measure_performance_attrs

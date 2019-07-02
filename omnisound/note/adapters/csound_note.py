@@ -66,7 +66,6 @@ class CSoundNote(Note):
     def __init__(self,
                  attr_vals: array = None,
                  attr_name_idx_map: Dict[str, int] = None,
-                 # TODO RENAME attr_default_vals_map
                  attr_vals_defaults_map: Dict[str, float] = None,
                  attr_get_type_cast_map: Dict[str, Any] = None,
                  note_sequence_num: int = None,
