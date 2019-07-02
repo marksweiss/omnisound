@@ -48,7 +48,7 @@ def note_sequence():
 def _note():
     # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
     attr_vals = np_copy(ATTR_VALS)
-    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, note_sequence_num=NOTE_SEQUENCE_NUM)
+    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, seq_idx=NOTE_SEQUENCE_NUM)
 
 
 def test_get_note_for_mingus_key(note):

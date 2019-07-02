@@ -68,7 +68,7 @@ class CSoundNote(Note):
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_defaults_map: Dict[str, float] = None,
                  attr_get_type_cast_map: Dict[str, Any] = None,
-                 note_sequence_num: int = None,
+                 seq_idx: int = None,
                  pitch_precision: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('pitch_precision', pitch_precision, int),
@@ -91,7 +91,7 @@ class CSoundNote(Note):
                                          attr_name_idx_map=attr_name_idx_map,
                                          attr_vals_defaults_map=attr_vals_defaults_map,
                                          attr_get_type_cast_map=attr_get_type_cast_map,
-                                         note_sequence_num=note_sequence_num)
+                                         seq_idx=seq_idx)
 
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
         # str_to_val_wrappers are assigned in self.__setattr__()

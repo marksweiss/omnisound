@@ -249,7 +249,7 @@ class MidiNote(Note):
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_defaults_map: Dict[str, float] = None,
                  attr_get_type_cast_map: Dict[str, Any] = None,
-                 note_sequence_num: int = None,
+                 seq_idx: int = None,
                  channel: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('channel', channel, int),
@@ -266,7 +266,7 @@ class MidiNote(Note):
                                        attr_name_idx_map=attr_name_idx_map,
                                        attr_vals_defaults_map=attr_vals_defaults_map,
                                        attr_get_type_cast_map=attr_get_type_cast_map,
-                                       note_sequence_num=note_sequence_num)
+                                       seq_idx=seq_idx)
 
         self.__dict__['_performance_attrs'] = performance_attrs
         self.__dict__['_channel'] = channel or MidiNote.DEFAULT_CHANNEL

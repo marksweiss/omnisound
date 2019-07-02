@@ -30,7 +30,7 @@ def note():
     # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
     attr_vals = np_copy(ATTR_VALS)
     return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                      note_sequence_num=NOTE_SEQUENCE_NUM)
+                      seq_idx=NOTE_SEQUENCE_NUM)
 
 
 @pytest.fixture(scope='function')

@@ -61,7 +61,7 @@ class FoxDotSupercolliderNote(Note):
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_defaults_map: Dict[str, float] = None,
                  attr_get_type_cast_map: Dict[str, Any] = None,
-                 note_sequence_num: int = None,
+                 seq_idx: int = None,
                  synth_def: Any = None,
                  scale: str = None,
                  performance_attrs: PerformanceAttrs = None):
@@ -81,7 +81,7 @@ class FoxDotSupercolliderNote(Note):
             attr_name_idx_map=attr_name_idx_map,
             attr_vals_defaults_map=attr_vals_defaults_map,
             attr_get_type_cast_map=attr_get_type_cast_map,
-            note_sequence_num=note_sequence_num)
+            seq_idx=seq_idx)
 
         # Attributes that are not representable as float must be managed at this level in this class and
         # not be created as attributes of the base class
