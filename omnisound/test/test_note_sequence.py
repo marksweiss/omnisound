@@ -1,6 +1,5 @@
 # Copyright 2018 Mark S. Weiss
 
-from numpy import array, copy as np_copy
 import pytest
 
 from omnisound.note.adapters.csound_note import CSoundNote
@@ -13,25 +12,17 @@ START = 0.0
 DUR = 1.0
 AMP = 100.0
 PITCH = 1.01
-ATTR_VALS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
-NOTE_SEQUENCE_NUM = 0
+NOTE_SEQUENCE_IDX = 0
 
 NOTE_CLS = CSoundNote
 ATTR_NAME_IDX_MAP = NOTE_CLS.ATTR_NAME_IDX_MAP
 NUM_NOTES = 2
-NUM_ATTRIBUTES = len(ATTR_VALS)
+NUM_ATTRIBUTES = len(ATTR_NAME_IDX_MAP)
 
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100
 ATTR_TYPE = int
-
 # TODO TEST COVERAGE FOR CHILD SEQUENCES
-
-
-def _note():
-    # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
-    attr_vals = np_copy(ATTR_VALS)
-    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP, seq_idx=NOTE_SEQUENCE_NUM)
 
 
 def _note_sequence():
@@ -45,6 +36,10 @@ def _note_sequence():
 @pytest.fixture
 def note_sequence():
     return _note_sequence()
+
+
+def _note():
+    return CSoundNote(note_sequence=_note_sequence(), note_sequence_index=NOTE_SEQUENCE_IDX)
 
 
 def test_note_sequence_iter_note_attr_properties(note_sequence):
@@ -64,7 +59,7 @@ def test_note_sequence_iter_note_attr_properties(note_sequence):
 def test_note_sequence_len_append_getitem(note_sequence):
     # Returns note_attr_vals with 2 Notes
     note_3 = _note()
-    new_amp = _note().amplitude + 1
+    new_amp = AMP + 1
     note_3.amplitude = new_amp
     # Assert initial len() of note_attr_vals
     assert len(note_sequence) == 2

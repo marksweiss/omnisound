@@ -54,13 +54,12 @@ class Note(ABC):
 
     def __init__(self,
                  note_sequence: NoteSequence = None,
+                 note_sequence_index: int = None,
                  attr_vals_defaults_map: Mapping[str, float] = None,
-                 attr_get_type_cast_map: Mapping[str, Any] = None,
-                 note_sequence_index: int = None):
+                 attr_get_type_cast_map: Mapping[str, Any] = None):
         self._ns = note_sequence
         self._ns_idx = note_sequence_index
-        self.__dict__['_attr_get_type_cast_map'] = attr_get_type_cast_map or {}
-
+        self._attr_get_type_cast_map = attr_get_type_cast_map or {}
         if attr_vals_defaults_map:
             # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
             # set the value for that attribute from the value provided.
@@ -73,7 +72,7 @@ class Note(ABC):
         """Handle returning note_attr from _attrs array or any other attr a derived Note class might define"""
         validate_type('attr_name', attr_name, str)
         if attr_name in self._ns.attr_name_idx_map:
-            type_caster = self.__dict__['_attr_get_type_cast_map'].get(attr_name, float64)
+            type_caster = self._attr_get_type_cast_map.get(attr_name, float64)
             return type_caster(
                 self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map[attr_name]])
         else:

@@ -1,10 +1,10 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, Union
+from typing import Any, Mapping, Union
 
-from numpy import array
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
+from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_types, validate_type, validate_type_choice)
 
@@ -64,11 +64,10 @@ class CSoundNote(Note):
     DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
     def __init__(self,
-                 attr_vals: array = None,
-                 attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_defaults_map: Dict[str, float] = None,
-                 attr_get_type_cast_map: Dict[str, Any] = None,
-                 seq_idx: int = None,
+                 note_sequence: NoteSequence = None,
+                 note_sequence_index: int = None,
+                 attr_vals_defaults_map: Mapping[str, float] = None,
+                 attr_get_type_cast_map: Mapping[str, Any] = None,
                  pitch_precision: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('pitch_precision', pitch_precision, int),
@@ -79,35 +78,34 @@ class CSoundNote(Note):
         # First set a function to convert this value to a str(), which CSoundNote requires for all attributes
         # The user can always override this by calling set_to_str_for_attr(), but since we know the attr is
         # non-standard we can provide a default here
-        self.__dict__['_to_str_val_wrappers'] = dict()
+        self._to_str_val_wrappers = dict()
         for attr_name in attr_get_type_cast_map:
-            self.__dict__['_to_str_val_wrappers'][attr_name] = lambda x: str(x)
+            self._to_str_val_wrappers[attr_name] = lambda x: str(x)
         # Then append a default getattr() type cast mapping for instrument, which we always want to return as int
         attr_get_type_cast_map['instrument'] = int
         # Then pass the attrs array, map of attr names to attr array indexes, map of attr names to default values
         # and map of attr names to getattr() type case values, to base Note, which then uses all this config
         # to provide get/set semantics over the Note
-        super(CSoundNote, self).__init__(attr_vals=attr_vals,
-                                         attr_name_idx_map=attr_name_idx_map,
+        super(CSoundNote, self).__init__(note_sequence=note_sequence,
+                                         note_sequence_index=note_sequence_index,
                                          attr_vals_defaults_map=attr_vals_defaults_map,
-                                         attr_get_type_cast_map=attr_get_type_cast_map,
-                                         seq_idx=seq_idx)
+                                         attr_get_type_cast_map=attr_get_type_cast_map)
 
         # Add custom property names for this Note type, map to correct underlying attribute index in base class
         # str_to_val_wrappers are assigned in self.__setattr__()
-        self.__dict__['_to_str_val_wrappers']['instrument'] = lambda x: str(x)
-        self.__dict__['_to_str_val_wrappers']['start'] = lambda x:  f'{x:.5f}'
-        self.__dict__['_to_str_val_wrappers']['duration'] = lambda x:  f'{x:.5f}'
-        self.__dict__['_to_str_val_wrappers']['amplitude'] = lambda x: str(x)
+        self._to_str_val_wrappers['instrument'] = lambda x: str(x)
+        self._to_str_val_wrappers['start'] = lambda x:  f'{x:.5f}'
+        self._to_str_val_wrappers['duration'] = lambda x:  f'{x:.5f}'
+        self._to_str_val_wrappers['amplitude'] = lambda x: str(x)
 
         # Handle case that pitch is a float and will have rounding but that sometimes we want
         # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
         # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
         # and for the latter case we default to .5f precision but allow any precision.
-        self.__dict__['_pitch_precision'] = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
-        self.__dict__['_to_str_val_wrappers']['pitch'] = pitch_to_str(self.__dict__['_pitch_precision'])
+        self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
+        self._to_str_val_wrappers['pitch'] = pitch_to_str(self._pitch_precision)
 
-        self.__dict__['_performance_attrs'] = performance_attrs
+        self._performance_attrs = performance_attrs
 
     # noinspection PyStatementEffect
     def set_to_str_for_attr(self, attr_name: str, to_str: Any = None):
@@ -119,19 +117,19 @@ class CSoundNote(Note):
         validate_type('attr_name', attr_name, str)
         if not to_str:
             to_str = lambda x: str(x)
-        self.__dict__['_to_str_val_wrappers'][attr_name] = to_str
+        self._to_str_val_wrappers[attr_name] = to_str
 
     @property
     def pitch_precision(self) -> int:
-        return self.__dict__['_pitch_precision']
+        return self._pitch_precision
 
     @pitch_precision.setter
     def pitch_precision(self, pitch_precision: int):
         validate_type('pitch_precision', pitch_precision, int)
-        self.__dict__['_pitch_precision'] = pitch_precision
+        self._pitch_precision = pitch_precision
 
     def set_scale_pitch_precision(self):
-        self.__dict__['_pitch_precision'] = CSoundNote.SCALE_PITCH_PRECISION
+        self._pitch_precision = CSoundNote.SCALE_PITCH_PRECISION
 
     # TODO MODIFY AS MATRIX TRANSFORM GENERIC
     #  ARGS:
@@ -154,19 +152,19 @@ class CSoundNote(Note):
 
     @property
     def performance_attrs(self) -> PerformanceAttrs:
-        return self.__dict__['_performance_attrs']
+        return self._performance_attrs
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self.__dict__['_performance_attrs'] = performance_attrs
+        self._performance_attrs = performance_attrs
 
     @property
     def pa(self) -> PerformanceAttrs:
-        return self.__dict__['_performance_attrs']
+        return self._performance_attrs
 
     @pa.setter
     def pa(self, performance_attrs: PerformanceAttrs):
-        self.__dict__['_performance_attrs'] = performance_attrs
+        self._performance_attrs = performance_attrs
 
     @classmethod
     def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> float:
