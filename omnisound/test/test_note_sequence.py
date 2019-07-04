@@ -3,7 +3,7 @@
 import pytest
 
 from omnisound.note.adapters.csound_note import CSoundNote
-from omnisound.note.containers.note_sequence import NoteSequence
+from omnisound.note.containers.note_sequence import NoteSequence, note_builder
 
 # noinspection PyProtectedMember
 
@@ -102,6 +102,18 @@ def test_note_sequence_insert_remove_getitem():
     new_amp = AMP + 1
     # noinspection PyTypeChecker
     new_note = _note()
+
+    note_0 = note_sequence.note(0)
+    note_0.set('amplitude', new_amp)
+
+    # TEMP DEBUG
+    import pdb; pdb.set_trace()
+
+    note_0 = note_builder(NOTE_CLS, note_sequence.note_attr_vals,
+                          ATTR_NAME_IDX_MAP, NOTE_SEQUENCE_IDX)
+    note_0.g_amplitude()
+
+
     new_note.amplitude = new_amp
     note_sequence.insert(0, new_note)
     note_front = note_sequence[0]

@@ -4,6 +4,7 @@ from typing import Any, Dict, Iterator, Sequence, Union
 
 import numpy as np
 
+# TODO CIRCULAR DEPENDENCY
 from omnisound.note.adapters.note import Note
 from omnisound.utils.utils import validate_optional_sequence_of_type, \
     validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, \
@@ -12,6 +13,65 @@ from omnisound.utils.utils import validate_optional_sequence_of_type, \
 
 class NoteSequenceInvalidAppendException(Exception):
     pass
+
+
+class Note(object):
+    def __init__(self, note_attrs, attr_name_idx_map):
+        self.note_attrs = note_attrs
+        self.attr_name_idx_map = attr_name_idx_map
+
+    def set(self, attr_name, attr_val):
+        self.note_attrs[self.attr_name_idx_map[attr_name]] = attr_val
+
+    def get(self, attr_name):
+        return self.note_attrs[self.attr_name_idx_map[attr_name]]
+
+
+# class GetWrapper:
+#     def __init__(self, note_attr_vals, attr_name_idx_map, note_index, bound_attr_name):
+#         self.note_attr_vals = note_attr_vals
+#         self.attr_name_idx_map = attr_name_idx_map
+#         self.note_index = note_index
+#         self.bound_attr_name = bound_attr_name
+
+def getter(attr_name):
+    def foo(self):
+        return self.note_attr_vals[self.note_index][self.attr_name_idx_map[attr_name]]
+    return foo
+
+# class SetWrapper:
+#     def __init__(self, note_attr_vals, attr_name_idx_map, note_index, bound_attr_name):
+#         self.note_attr_vals = note_attr_vals
+#         self.attr_name_idx_map = attr_name_idx_map
+#         self.note_index = note_index
+#         self.bound_attr_name = bound_attr_name
+
+
+def setter(attr_name):
+    def foo(self, attr_val):
+        self.note_attr_vals[self.note_index][self.attr_name_idx_map[attr_name]] = attr_val
+    return foo
+
+
+class NoteMeta(type):
+    def __new__(cls, cls_name, cls_bases, cls_namespace):
+        ret_cls = super().__new__(cls, cls_name, cls_bases, cls_namespace)
+        ret_cls.note_attr_vals = None
+        ret_cls.attr_name_idx_map = None
+        ret_cls.note_index = None
+        return ret_cls
+
+
+def note_builder(note_cls, note_attr_vals, attr_name_idx_map, note_index):
+    cls_bases = ()
+    methods = {f'g_{attr_name}': getter(attr_name) for attr_name in attr_name_idx_map.keys()}
+    methods.update({f's_{attr_name}': setter(attr_name) for attr_name in attr_name_idx_map.keys()})
+    cls = NoteMeta(note_cls.__name__, cls_bases, methods)
+    note = cls()
+    note.note_attr_vals = note_attr_vals
+    note.attr_name_idx_map = attr_name_idx_map
+    note.note_index = note_index
+    return note
 
 
 class NoteSequence(object):
@@ -46,7 +106,6 @@ class NoteSequence(object):
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_defaults_map: Dict[str, float] = None,
                  child_sequences: Sequence['NoteSequence'] = None):
-        validate_type_reference('note_cls', note_cls, Note)
         validate_types(('num_notes', num_notes, int), ('num_attributes', num_attributes, int),
                        ('attr_name_idx_map', attr_name_idx_map, dict))
         validate_optional_type('attr_vals_defaults_map', attr_vals_defaults_map, dict)
@@ -64,7 +123,7 @@ class NoteSequence(object):
         rows = [[0.0] * num_attributes for _ in range(num_notes)]
         self.note_attr_vals = np.array(rows)
         # THIS MUST NOT BE ALTERED
-        self._num_attributes = num_attributes
+        self._num_attributes = self.note_attr_vals.shape[0]
 
         self.attr_name_idx_map = attr_name_idx_map
         self.attr_vals_defaults_map = attr_vals_defaults_map
@@ -82,6 +141,9 @@ class NoteSequence(object):
         self._range_map_index = 0
         self.range_map = {}
         self.update_range_map()
+
+    def note(self, index):
+        return Note(self.note_attr_vals[index], self.attr_name_idx_map)
 
     def _fast_update_range_map(self, num_entries: int):
         # Must copy into a new dict because we are modifying the keys
@@ -144,10 +206,8 @@ class NoteSequence(object):
             raise ValueError(f'`index` out of range index: {index} max_index: {self.num_notes}')
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
-            return self.note_cls(attr_vals=self.note_attr_vals[index],
-                                 attr_name_idx_map=self.attr_name_idx_map,
-                                 attr_vals_defaults_map=self.attr_vals_defaults_map,
-                                 note_sequence_num=index)
+            return self.note_cls(note_sequence=self,
+                                 note_sequence_index=index)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
         # flattened sequence of child_sequences, or it's invalid
         else:
@@ -227,7 +287,7 @@ class NoteSequence(object):
         new_note_idx = len(self.note_attr_vals)
         # noinspection PyTypeChecker
         self.note_attr_vals.resize(new_note_idx + 1, self._num_attributes)
-        np.copyto(self.note_attr_vals[new_note_idx], note.__dict__['_attr_vals'])
+        np.copyto(self.note_attr_vals[new_note_idx], note.ns.note_attr_vals)
         self._fast_update_range_map(1)
         self.num_notes += 1
         return self
@@ -263,7 +323,7 @@ class NoteSequence(object):
         validate_type_choice('to_add', to_add, (Note, NoteSequence))
 
         if isinstance(to_add, Note):
-            new_notes = to_add.__dict__['_attr_vals']
+            new_notes = to_add.ns.note_attr_vals[to_add.ns_idx]
         else:
             new_notes = to_add.note_attr_vals
         self.note_attr_vals = np.insert(self.note_attr_vals, index, new_notes, axis=0)
@@ -275,12 +335,9 @@ class NoteSequence(object):
     def remove(self, to_remove: Union[Note, 'NoteSequence']):
         validate_type_choice('to_add', to_remove, (Note, NoteSequence))
         if isinstance(to_remove, Note):
-            notes_to_remove = [to_remove]
-        else:
-            notes_to_remove = to_remove
-
-        range_start = notes_to_remove[0].note_sequence_num
-        range_end = notes_to_remove[-1].note_sequence_num + 1
+            to_remove = [to_remove]
+        range_start = to_remove[0].ns_idx
+        range_end = to_remove[-1].ns_idx + 1
         self.note_attr_vals = np.delete(self.note_attr_vals, range(range_start, range_end), axis=0)
 
         self._fast_update_range_map(-1)

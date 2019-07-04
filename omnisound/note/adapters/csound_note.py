@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Mapping, Union
+from typing import Any, Mapping, Sequence, Union
 
 from omnisound.note.adapters.note import Note
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
@@ -66,12 +66,21 @@ class CSoundNote(Note):
     def __init__(self,
                  note_sequence: NoteSequence = None,
                  note_sequence_index: int = None,
+                 attr_names: Sequence[str] = None,
                  attr_vals_defaults_map: Mapping[str, float] = None,
                  attr_get_type_cast_map: Mapping[str, Any] = None,
                  pitch_precision: int = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('pitch_precision', pitch_precision, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
+
+        for attr_name in CSoundNote.ATTR_NAMES:
+            setattr(self, attr_name, 0.0)
+        # Add additional custom attributes
+        attr_names = attr_names or []
+        custom_attrs = set(attr_names) - set(CSoundNote.ATTR_NAMES)
+        for attr_name in custom_attrs:
+            setattr(self, attr_name, 0.0)
 
         # Handle case of a custom function for type casting getattr return value, for a non-standard attr
         attr_get_type_cast_map = attr_get_type_cast_map or {}

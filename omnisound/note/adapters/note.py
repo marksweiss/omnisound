@@ -1,14 +1,13 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABC, abstractmethod
-from typing import Any, List, Mapping, Union
+from typing import Any, List, Mapping, Sequence, Union
 
 from numpy import float64, array
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.utils.utils import validate_type, validate_type_choice
+from omnisound.utils.utils import validate_type_choice
 
 
 INSTRUMENT_I = I = 0
@@ -53,66 +52,53 @@ class Note(ABC):
     }
 
     def __init__(self,
-                 note_sequence: NoteSequence = None,
+                 # Ideally we would strongly type this as NoteSequence, but that is a circular dependency
+                 note_sequence: Any = None,
                  note_sequence_index: int = None,
                  attr_vals_defaults_map: Mapping[str, float] = None,
                  attr_get_type_cast_map: Mapping[str, Any] = None):
-        self._ns = note_sequence
-        self._ns_idx = note_sequence_index
+        self.ns = note_sequence
+        self.ns_idx = note_sequence_index
         self._attr_get_type_cast_map = attr_get_type_cast_map or {}
+
         if attr_vals_defaults_map:
             # The user provided attributes and values. For any of them that match BASE_ATTR_NAMES, simply
             # set the value for that attribute from the value provided.
             for attr_name, attr_val in attr_vals_defaults_map.items():
                 validate_type_choice(attr_name, attr_val, (float, int))
-                self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map[attr_name]] = \
+                self.ns.note_attr_vals[self.ns_idx][self.ns.attr_name_idx_map[attr_name]] = \
                     float64(attr_val)
-
-    def __getattr__(self, attr_name: str) -> float64:
-        """Handle returning note_attr from _attrs array or any other attr a derived Note class might define"""
-        validate_type('attr_name', attr_name, str)
-        if attr_name in self._ns.attr_name_idx_map:
-            type_caster = self._attr_get_type_cast_map.get(attr_name, float64)
-            return type_caster(
-                self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map[attr_name]])
-        else:
-            raise ValueError(f'No attribute in Note for {attr_name}')
-
-    def __setattr__(self, attr_name: str, attr_val: Any):
-        validate_type('attr_name', attr_name, str)
-        if attr_name in self._ns.attr_name_idx_map:
-            validate_type_choice('attr_val', attr_val, (float, int))
-            self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map[attr_name]] = float64(attr_val)
-        else:
-            self.__dict__[attr_name] = attr_val
 
     # These standard methods are provided without the ability to override names, etc., to provide API for fluent
     # chaining calls to set all common Note attributes on one line
     # e.g. - note.I(1).S(1.0).D(2.5).A(400).P(440)
     def I(self, instrument: Union[float, int]):
         validate_type_choice('attr_name', instrument, (float, int))
-        self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map['instrument']] = float64(instrument)
+        self.ns.note_attr_vals[self.ns_idx][self.ns.attr_name_idx_map['instrument']] = float64(instrument)
         return self
 
     def S(self, start: Union[float, int]):
         validate_type_choice('attr_name', start, (float, int))
-        self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map['start']] = float64(start)
+        self.ns.note_attr_vals[self.ns_idx][self.ns.attr_name_idx_map['start']] = float64(start)
         return self
 
     def D(self, dur: Union[float, int]):
         validate_type_choice('attr_name', dur, (float, int))
-        self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map['dur']] = float64(dur)
+        self.ns.note_attr_vals[self.ns_idx][self.ns.attr_name_idx_map['dur']] = float64(dur)
         return self
 
     def A(self, amp: Union[float, int]):
         validate_type_choice('attr_name', amp, (float, int))
-        self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map['amp']] = float64(amp)
+        self.ns.note_attr_vals[self.ns_idx][self.ns.attr_name_idx_map['amp']] = float64(amp)
         return self
 
     def P(self, pitch: Union[float, int]):
         validate_type_choice('attr_name', pitch, (float, int))
-        self._ns.note_attr_vals[self._ns_idx][self._ns.attr_name_idx_map['pitch']] = float64(pitch)
+        self.ns.note_attr_vals[self.ns_idx][self.ns.attr_name_idx_map['pitch']] = float64(pitch)
         return self
+
+    def as_list(self) -> List[float]:
+        return [self.ns.note_attr_vals[self.ns_idx][i] for i in range(len(self.ns.attr_name_idx_map))]
 
     @abstractmethod
     def transpose(self, interval: int):
@@ -148,9 +134,6 @@ class Note(ABC):
     @abstractmethod
     def __eq__(self, other: 'Note') -> bool:
         raise NotImplemented('Derived type must implement Note.__eq__() -> bool')
-
-    def as_list(self) -> List[float]:
-        return [self._ns.note_attr_vals[self._ns_idx][i] for i in range(len(self._ns.attr_name_idx_map))]
 
     @abstractmethod
     def __str__(self):
