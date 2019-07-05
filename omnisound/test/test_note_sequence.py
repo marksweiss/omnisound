@@ -64,6 +64,13 @@ def test_copy(note_sequence):
     assert new_note_sequence[1].amplitude == note_sequence[1].amplitude
 
 
+def test_eq(note_sequence):
+    new_note_sequence = NoteSequence.copy(note_sequence)
+    assert note_sequence == new_note_sequence
+    note_sequence[0].amplitude = AMP
+    assert note_sequence != new_note_sequence
+
+
 def test_note_sequence_iter_note_attr_properties(note_sequence):
     # Iterate once and assert attributes of elements. This tests __iter__() and __next__()
     first_loop_count = 0

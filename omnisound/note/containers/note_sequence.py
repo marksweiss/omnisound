@@ -67,7 +67,7 @@ class NoteSequence(object):
 
         self.attr_name_idx_map = attr_name_idx_map
         self.attr_vals_defaults_map = attr_vals_defaults_map
-        self.child_sequences = child_sequences
+        self.child_sequences = child_sequences or []
 
         # Absolute index position over all sequences, that is self.note_attr_vals and the note_attr_vals of each
         # child_sequence, and, recursively, any of its child sequences.
