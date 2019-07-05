@@ -1,14 +1,11 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, Iterator, Sequence, Union
+from typing import Any, Dict, Iterator, Sequence
 
 import numpy as np
 
-# TODO CIRCULAR DEPENDENCY
-from omnisound.note.adapters.note import Note
 from omnisound.utils.utils import validate_optional_sequence_of_type, \
-    validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, \
-    validate_type_choice, validate_types
+    validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, validate_types
 
 
 class NoteSequenceInvalidAppendException(Exception):
@@ -148,7 +145,7 @@ class NoteSequence(object):
         return self.num_notes
 
     # noinspection PyCallingNonCallable
-    def _get_note_for_index(self, index: int) -> Note:
+    def _get_note_for_index(self, index: int) -> Any:
         """Factory method to construct a Note over a stored Note value at an index in the underlying array"""
         validate_type('index', index, int)
         if index >= self.num_notes:
@@ -182,10 +179,10 @@ class NoteSequence(object):
                     break
                 index_range_sum += index_range
 
-    def __getitem__(self, index: int) -> Note:
+    def __getitem__(self, index: int) -> Any:
         return self._get_note_for_index(index)
 
-    def __iter__(self) -> Iterator[Note]:
+    def __iter__(self) -> Iterator[Any]:
         """Reset iter position. This behavior complements __next__ to make the
            container support being iterated multiple times.
         """
@@ -193,7 +190,7 @@ class NoteSequence(object):
         return self
 
     # noinspection PyCallingNonCallable
-    def __next__(self) -> Note:
+    def __next__(self) -> Any:
         if self.index == self.num_notes:
             raise StopIteration
         note = self._get_note_for_index(self.index)
@@ -201,7 +198,7 @@ class NoteSequence(object):
         return note
 
     # noinspection PyCallingNonCallable
-    def make_notes(self) -> Sequence[Note]:
+    def make_notes(self) -> Sequence[Any]:
         # Get the notes from this sequence
         notes = [self.make_note(self.note_attr_vals[i],
                                 self.attr_name_idx_map,
@@ -232,10 +229,9 @@ class NoteSequence(object):
     # /Manage iter / slice
 
     # Manage note list
-    def append(self, note: Note) -> 'NoteSequence':
+    def append(self, note: Any) -> 'NoteSequence':
         """NOTE: This only supports appending notes to this NoteSequence, not any of its children.
         """
-        validate_type('note', note, Note)
         if self.note_attr_vals[0].shape != note.__dict__['_attr_vals'].shape:
             raise NoteSequenceInvalidAppendException(
                     'Note added to a NoteSequence must have the same number of attributes')
@@ -263,33 +259,27 @@ class NoteSequence(object):
         self.num_notes += len(note_sequence)
         return self
 
-    def __add__(self, to_add: Union[Note, 'NoteSequence']) -> 'NoteSequence':
+    def __add__(self, to_add: Any) -> 'NoteSequence':
         """Overloads the `+` operator to support adding a single Note, a NoteSequence or a List[Note]"""
-        if isinstance(to_add, Note):
-            return self.append(to_add)
-        else:
+        if isinstance(to_add, NoteSequence):
             return self.extend(to_add)
+        else:
+            return self.append(to_add)
 
-    def __lshift__(self, to_add: Union[Note, 'NoteSequence']) -> 'NoteSequence':
+    def __lshift__(self, to_add: Any) -> 'NoteSequence':
         return self.__add__(to_add)
 
-    def insert(self, index: int, to_add: Union[Note, 'NoteSequence']) -> 'NoteSequence':
+    def insert(self, index: int, to_add: Any) -> 'NoteSequence':
         validate_type('index', index, int)
-        validate_type_choice('to_add', to_add, (Note, NoteSequence))
-
-        if isinstance(to_add, Note):
-            new_notes = to_add.ns.note_attr_vals[to_add.ns_idx]
-        else:
-            new_notes = to_add.note_attr_vals
+        new_notes = to_add.note_attr_vals
         self.note_attr_vals = np.insert(self.note_attr_vals, index, new_notes, axis=0)
 
         self._fast_update_range_map(len(new_notes))
         self.num_notes += len(new_notes)
         return self
 
-    def remove(self, to_remove: Union[Note, 'NoteSequence']):
-        validate_type_choice('to_add', to_remove, (Note, NoteSequence))
-        if isinstance(to_remove, Note):
+    def remove(self, to_remove: Any):
+        if not isinstance(to_remove, NoteSequence):
             to_remove = [to_remove]
         range_start = to_remove[0].ns_idx
         range_end = to_remove[-1].ns_idx + 1

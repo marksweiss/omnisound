@@ -37,9 +37,9 @@ def note_sequence():
     return _note_sequence()
 
 
-def _note(note_sequence):
+def _note():
     return csound_note.make_note(
-        note_sequence.note_attr_vals[NOTE_SEQUENCE_IDX],
+        _note_sequence().note_attr_vals[NOTE_SEQUENCE_IDX],
         ATTR_NAME_IDX_MAP,
         NOTE_SEQUENCE_IDX)
 
@@ -60,7 +60,7 @@ def test_note_sequence_iter_note_attr_properties(note_sequence):
 
 def test_note_sequence_len_append_getitem(note_sequence):
     # Returns note_attr_vals with 2 Notes
-    note_3 = _note(note_sequence)
+    note_3 = _note()
     new_amp = AMP + 1
     note_3.amplitude = new_amp
     # Assert initial len() of note_attr_vals
@@ -77,11 +77,11 @@ def test_note_sequence_add_lshift_extend(note_sequence):
     expected_len = 2
     assert len(note_sequence) == expected_len
     # Append/Add and check len again
-    note_sequence += _note(note_sequence)
+    note_sequence += _note()
     expected_len += 1
     assert len(note_sequence) == expected_len
     # Append/Add with lshift syntax
-    note_sequence << _note(note_sequence)
+    note_sequence << _note()
     expected_len += 1
     assert len(note_sequence) == expected_len
     # Append/Add with a NoteSequence
@@ -94,32 +94,27 @@ def test_note_sequence_add_lshift_extend(note_sequence):
     assert len(note_sequence) == expected_len
 
 
+# noinspection PyUnresolvedReferences
 def test_note_sequence_insert_remove_getitem():
     note_sequence = NoteSequence(make_note=csound_note.make_note,
                                  num_notes=NUM_NOTES,
                                  num_attributes=NUM_ATTRIBUTES,
                                  attr_name_idx_map=ATTR_NAME_IDX_MAP)
 
-    # Insert a single note at the front of the list
+    # Get the first note in the sequence, and get its amplitude
+    note_front = note_sequence.note(0)
+    note_front_amp = note_front.amplitude
+    # Insert a new note at the front of the sequence, with a different amplitude
     new_amp = AMP + 1
-    # noinspection PyTypeChecker
-    # new_note = _note(note_sequence)
+    new_note = _note()
+    new_note.amplitude = new_amp
+    note_sequence.insert(0, new_note)
+    new_note_front = note_sequence[0]
+    new_note_front_amp = new_note_front.amplitude
+    # Assert that the new note inserted can be retrieved and is the expected new first note
+    assert note_front_amp != new_note_front_amp
+    assert new_note_front.amplitude == new_amp
 
-    # TEMP DEBUG
-    import pdb; pdb.set_trace()
-
-    note_0 = note_sequence.note(0)
-    note_0.amplitude = new_amp
-    # note_0 = note_builder(NOTE_CLS, note_sequence.note_attr_vals,
-    #                       ATTR_NAME_IDX_MAP, NOTE_SEQUENCE_IDX)
-    ret = note_0.amplitude
-    #
-    #
-    # new_note.amplitude = new_amp
-    # note_sequence.insert(0, new_note)
-    # note_front = note_sequence[0]
-    # assert note_front.amplitude == new_amp
-    #
     # # Insert a NoteSequence with 2 note_attr_vals at the front of the list
     # new_amp_1 = AMP + 4
     # new_amp_2 = AMP + 5
@@ -138,8 +133,6 @@ def test_note_sequence_insert_remove_getitem():
     # expected_amp = note_sequence[1].amplitude
     # note_sequence.remove(note_to_remove)
     # note_front = note_sequence[0]
-
-    assert True
 
 
 if __name__ == '__main__':
