@@ -30,7 +30,7 @@ AMP = AMPS[0]
 PITCHES: List[float] = [0.0, 0.5, 1.0]
 PITCH = PITCHES[0]
 
-ATTR_VALS_DEFAULT_MAP = {'instrument': float(INSTRUMENT),
+ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
                          'start': START,
                          'duration': DUR,
                          'amplitude': AMP,
@@ -51,12 +51,15 @@ NUM_NOTES = 2
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
-def _note_sequence():
+def _note_sequence(attr_name_idx_map = None, attr_vals_defaults_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    num_attributes = num_attributes  or NUM_ATTRIBUTES
     note_sequence = NoteSequence(make_note=csound_note.make_note,
                                  num_notes=NUM_NOTES,
-                                 num_attributes=NUM_ATTRIBUTES,
-                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                 attr_vals_defaults_map=ATTR_VALS_DEFAULT_MAP)
+                                 num_attributes=num_attributes,
+                                 attr_name_idx_map=attr_name_idx_map,
+                                 attr_vals_defaults_map=attr_vals_defaults_map)
     return note_sequence
 
 
@@ -65,10 +68,17 @@ def note_sequence():
     return _note_sequence()
 
 
-def _note(attr_name_idx_map=ATTR_NAME_IDX_MAP):
+def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
+          attr_get_type_cast_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
     return csound_note.make_note(
-            _note_sequence().note_attr_vals[NOTE_SEQUENCE_IDX],
-            attr_name_idx_map)
+        _note_sequence(
+            attr_name_idx_map=attr_name_idx_map,
+            attr_vals_defaults_map=attr_vals_defaults_map,
+            num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
+        attr_name_idx_map,
+        attr_get_type_cast_map=attr_get_type_cast_map)
 
 
 def _setup_note_values(note_cls_name: str):
@@ -130,41 +140,81 @@ def test_note():
     assert note.pitch == PITCH + 1.0
 
 
-# @pytest.mark.parametrize('pitch', PITCHES)
-# @pytest.mark.parametrize('amplitude', AMPS)
-# @pytest.mark.parametrize('duration', DURS)
-# @pytest.mark.parametrize('start', STARTS)
-# def test_csound_note_attrs(start, duration, amplitude, pitch):
-#     # Add an additional non-core dynamically added attribute to verify correct ordering of attrs and str()
-#     # Note that in real usage only a Generator determines the attributes of a Note because it constructs
-#     # the underlying storage for all Notes in a NoteSequence. But this shows that the Note interface
-#     # supports notes with new non-standard attributes, which can be retrieved by name, included in str(note)
-#     # and can be cast to an arbitrary return type.
-#     func_table = 100
-#     attr_vals = array([float(INSTRUMENT), start, duration, amplitude, pitch, func_table])
-#     attr_name_idx_map = {'i': 0, 'instrument': 0,
-#                          's': 1, 'start': 1,
-#                          'd': 2, 'dur': 2, 'duration': 2,
-#                          'a': 3, 'amp': 3, 'amplitude': 3,
-#                          'p': 4, 'pitch': 4,
-#                          'func_table': 5}
-#     attr_get_type_cast_map = {'func_table': int}
-#     note = CSoundNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map,
-#                       attr_get_type_cast_map=attr_get_type_cast_map,
-#                       seq_idx=NOTE_SEQUENCE_IDX)
-#
-#     assert note.instrument == INSTRUMENT
-#     assert note.start == note.s == start
-#     assert note.duration == note.dur == note.d == duration
-#     assert note.amplitude == note.amp == note.a == amplitude
-#     assert note.pitch == note.p == pitch
-#     # Assert that non-core dynamically added attribute (which in real use would only be added by a Generator
-#     #  and never directly by an end user) has the expected data type
-#     assert note.func_table == func_table
-#     assert type(note.func_table) == type(func_table) == int
-#
-#     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)} {func_table}' == \
-#         str(note)
+@pytest.mark.parametrize('pitch', PITCHES)
+@pytest.mark.parametrize('amplitude', AMPS)
+@pytest.mark.parametrize('duration', DURS)
+@pytest.mark.parametrize('start', STARTS)
+def test_csound_note_attrs(start, duration, amplitude, pitch):
+    # Add an additional non-core dynamically added attribute to verify correct ordering of attrs and str()
+    func_table = 100
+    # Add multiple aliased property names for note attributes
+    attr_name_idx_map = {'i': 0, 'instrument': 0,
+                         's': 1, 'start': 1,
+                         'd': 2, 'dur': 2, 'duration': 2,
+                         'a': 3, 'amp': 3, 'amplitude': 3,
+                         'p': 4, 'pitch': 4,
+                         'func_table': 5}
+    # Test using a custom cast function for an attribute, a custom attribute
+    attr_get_type_cast_map = {'func_table': int}
+    # Test assigning default values to each note created in the underlying NoteSequence
+    attr_vals_defaults_map = {
+        'instrument': float(INSTRUMENT),
+        'start': start,
+        'duration': duration,
+        'amplitude': amplitude,
+        'pitch': pitch,
+        'func_table': float(func_table),
+    }
+    note = _note(attr_name_idx_map=attr_name_idx_map,
+                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 attr_get_type_cast_map=attr_get_type_cast_map,
+                 num_attributes=len(attr_vals_defaults_map))
+
+    assert note.instrument == note.i == int(INSTRUMENT)
+    assert type(note.instrument) == int
+    assert note.start == note.s == start
+    assert note.duration == note.dur == note.d == duration
+    assert note.amplitude == note.amp == note.a == amplitude
+    assert note.pitch == note.p == pitch
+    # Assert that non-core dynamically added attribute (which in real use would only be added by a Generator
+    #  and never directly by an end user) has the expected data type
+    assert note.func_table == func_table
+    assert type(note.func_table) == type(func_table) == int
+
+
+@pytest.mark.parametrize('pitch', PITCHES)
+@pytest.mark.parametrize('amplitude', AMPS)
+@pytest.mark.parametrize('duration', DURS)
+@pytest.mark.parametrize('start', STARTS)
+def test_csound_note_to_str(start, duration, amplitude, pitch):
+    func_table = 100
+    # Add multiple aliased property names for note attributes
+    attr_name_idx_map = {'instrument': 0,
+                         'start': 1,
+                         'duration': 2,
+                         'amplitude': 3,
+                         'pitch': 4,
+                         'func_table': 5}
+    # Test using a custom cast function for an attribute, a custom attribute
+    attr_get_type_cast_map = {'func_table': int}
+    # Test assigning default values to each note created in the underlying NoteSequence
+    attr_vals_defaults_map = {
+        'instrument': float(INSTRUMENT),
+        'start': start,
+        'duration': duration,
+        'amplitude': amplitude,
+        'pitch': pitch,
+        'func_table': float(func_table),
+    }
+    note = _note(attr_name_idx_map=attr_name_idx_map,
+                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 attr_get_type_cast_map=attr_get_type_cast_map,
+                 num_attributes=len(attr_vals_defaults_map))
+    # Have to manually add the string formatter for additional custom note attributes
+    note.set_attr_str_formatter('func_table', lambda x: str(x))
+
+    assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)} {func_table}' == \
+        str(note)
 #
 #
 # @pytest.mark.parametrize('pitch', PITCHES)

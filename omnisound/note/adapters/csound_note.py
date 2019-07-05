@@ -101,15 +101,20 @@ def s_pitch_precision():
     def _s_pitch_precision(self, pitch_precision: int) -> None:
         validate_type('pitch_precision', pitch_precision, int)
         self.pitch_precision = pitch_precision
-        self.to_str_val_wrappers['pitch'] = pitch_to_str(self.pitch_precision)
+        self.attr_to_str_formatter_map['pitch'] = pitch_to_str(self.pitch_precision)
     return _s_pitch_precision
 
 
 def set_scale_pitch_precision():
     def _set_scale_pitch_precision(self) -> None:
         self.pitch_precision = SCALE_PITCH_PRECISION
-        self.to_str_val_wrappers['pitch'] = pitch_to_str(self.pitch_precision)
+        self.attr_to_str_formatter_map['pitch'] = pitch_to_str(self.pitch_precision)
     return _set_scale_pitch_precision
+
+
+def set_attr_str_formatter(self, attr_name: str, formatter: Any):
+    validate_type('attr_name', attr_name, str)
+    self.attr_to_str_formatter_map[attr_name] = formatter
 
 
 # Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
@@ -132,39 +137,35 @@ def setter(attr_name: str):
 
 
 # Method implementations for dunder magic methods so the object supports `__eq__` and `__str__`, etc.
-def eq():
-    def _eq(self, other) -> bool:
-        return self.instrument == other.instrument and \
-            self.start == other.start and \
-            self.duration == other.duration and \
-            self.amplitude == other.amplitude and \
-            self.pitch == other.pitch
-    return _eq
+def eq(self, other) -> bool:
+    return self.instrument == other.instrument and \
+        self.start == other.start and \
+        self.duration == other.duration and \
+        self.amplitude == other.amplitude and \
+        self.pitch == other.pitch
 
 
-def to_str():
-    def _to_str(self) -> str:
-        """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
-           formatting for pitch to enforce two places for scale pitch syntax, e.g. Middle C == 4.01, and to also
-           allow arbitrary precision for floating point values in Hz.
+def to_str(self) -> str:
+    """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
+       formatting for pitch to enforce two places for scale pitch syntax, e.g. Middle C == 4.01, and to also
+       allow arbitrary precision for floating point values in Hz.
 
-           Note also that we defer all string handling to the ToStrValWrapper class. The class sets up the to_str
-           for the core attributes of the object correctly.
-           Attributes are either integers, which require no special handling, floats other than pitch,
-           which require precision handling, or pitch, which requires precision handling but is a special case
-           because CSound overloads float syntax to express Western 12-tone scale values using float notation.
-        """
-        attr_strs = [f'i {self.to_str_val_wrappers["instrument"](self.instrument)}',
-                     f'{self.to_str_val_wrappers["start"](self.start)}',
-                     f'{self.to_str_val_wrappers["duration"](self.duration)}',
-                     f'{self.to_str_val_wrappers["amplitude"](self.amplitude)}',
-                     f'{self.to_str_val_wrappers["pitch"](self.pitch)}']
-        for attr_name in self.attr_name_idx_map.keys():
-            if attr_name not in ATTR_NAMES:
-                attr_strs.append(f'{self.to_str_val_wrappers[attr_name](getattr(self, attr_name))}')
+       Note also that we defer all string handling to the ToStrValWrapper class. The class sets up the to_str
+       for the core attributes of the object correctly.
+       Attributes are either integers, which require no special handling, floats other than pitch,
+       which require precision handling, or pitch, which requires precision handling but is a special case
+       because CSound overloads float syntax to express Western 12-tone scale values using float notation.
+    """
+    attr_strs = [f'i {self.attr_to_str_formatter_map["instrument"](self.instrument)}',
+                 f'{self.attr_to_str_formatter_map["start"](self.start)}',
+                 f'{self.attr_to_str_formatter_map["duration"](self.duration)}',
+                 f'{self.attr_to_str_formatter_map["amplitude"](self.amplitude)}',
+                 f'{self.attr_to_str_formatter_map["pitch"](self.pitch)}']
+    for attr_name in self.attr_name_idx_map.keys():
+        if attr_name not in ATTR_NAMES:
+            attr_strs.append(f'{self.attr_to_str_formatter_map[attr_name](getattr(self, attr_name))}')
 
-        return ' '.join(attr_strs)
-    return _to_str
+    return ' '.join(attr_strs)
 
 
 # Meta class for dynamically creating a CSoundNote class with property accessors for an arbitrary list
@@ -186,7 +187,7 @@ class CSoundNoteMeta(type):
         cls.performance_attrs = None
 
         # Attributes always present and assigned internally in init
-        cls.to_str_val_wrappers = {}
+        cls.attr_to_str_formatter_map = {}
 
         return cls
 
@@ -203,6 +204,7 @@ def _make_cls(attr_name_idx_map):
     # noinspection PyTypeChecker
     methods['pitch_precision'] = property(g_pitch_precision, s_pitch_precision)
     methods['set_scale_pitch_precision'] = set_scale_pitch_precision
+    methods['set_attr_str_formatter'] = set_attr_str_formatter
     methods['transpose'] = transpose
     methods['__eq__'] = eq
     methods['__str__'] = to_str
@@ -229,23 +231,23 @@ def make_note(note_attr_vals: ndarray,
     note.attr_name_idx_map = attr_name_idx_map
 
     # Set string formatters for note attributes, this is specific to CSound per the comments
-    note.to_str_val_wrappers['instrument'] = lambda x: str(x)
-    note.to_str_val_wrappers['start'] = lambda x:  f'{x:.5f}'
-    note.to_str_val_wrappers['duration'] = lambda x:  f'{x:.5f}'
-    note.to_str_val_wrappers['amplitude'] = lambda x: str(x)
+    note.set_attr_str_formatter('instrument', lambda x: str(x))
+    note.set_attr_str_formatter('start', lambda x:  f'{x:.5f}')
+    note.set_attr_str_formatter('duration', lambda x:  f'{x:.5f}')
+    note.set_attr_str_formatter('amplitude', lambda x: str(x))
     # Handle case that pitch is a float and will have rounding but that sometimes we want
     # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
     # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
     # and for the latter case we default to .5f precision but allow any precision.
     # This is DEFAULT_PITCH_PRECISION to start with. User can call setter to update the value.
-    note.to_str_val_wrappers['pitch'] = pitch_to_str(note.pitch_precision)
+    note.set_attr_str_formatter('pitch', pitch_to_str(note.pitch_precision))
 
     # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
     note.attr_get_type_cast_map = attr_get_type_cast_map or {}
     for attr_name in note.attr_name_idx_map:
         if attr_name not in note.attr_get_type_cast_map:
             note.attr_get_type_cast_map[attr_name] = lambda x: x
-    # instrument is always returned as an int
+    # Instrument is always returned as an int
     note.attr_get_type_cast_map['instrument'] = int
 
     return note
