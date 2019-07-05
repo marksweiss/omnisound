@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, Iterator, Sequence
+from typing import Any, Dict, Iterator, Sequence, Tuple
 
 import numpy as np
 
@@ -278,15 +278,15 @@ class NoteSequence(object):
         self.num_notes += len(new_notes)
         return self
 
-    def remove(self, to_remove: Any):
-        if not isinstance(to_remove, NoteSequence):
-            to_remove = [to_remove]
-        range_start = to_remove[0].ns_idx
-        range_end = to_remove[-1].ns_idx + 1
+    def remove(self, range_to_remove: Tuple[int, int]) -> 'NoteSequence':
+        assert len(range_to_remove) == 2
+        validate_sequence_of_type('range_to_remove', range_to_remove, int)
+        # noinspection PyTupleAssignmentBalance
+        range_start, range_end = range_to_remove
         self.note_attr_vals = np.delete(self.note_attr_vals, range(range_start, range_end), axis=0)
 
-        self._fast_update_range_map(-1)
-        self.num_notes -= 1
+        self._fast_update_range_map(-(range_end - range_start))
+        self.num_notes -= (range_end - range_start)
         return self
 
     @staticmethod

@@ -115,24 +115,11 @@ def test_note_sequence_insert_remove_getitem():
     assert note_front_amp != new_note_front_amp
     assert new_note_front.amplitude == new_amp
 
-    # # Insert a NoteSequence with 2 note_attr_vals at the front of the list
-    # new_amp_1 = AMP + 4
-    # new_amp_2 = AMP + 5
-    # note_sequence_1 = _note_sequence()
-    # note_sequence_1[0].amplitude = new_amp_1
-    # note_sequence_1[1].amplitude = new_amp_2
-    # note_sequence.insert(0, note_sequence_1)
-    # note_front = note_sequence[0]
-    # assert note_front.amplitude == new_amp_1
-    # note_front = note_sequence[1]
-    # assert note_front.amplitude == new_amp_2
-    #
-    # # Remove note_attr_vals added as NoteSequence, List[Note] and Note
-    # # After removing a note, the new front note is the one added second to most recently
-    # note_to_remove = note_sequence[0]
-    # expected_amp = note_sequence[1].amplitude
-    # note_sequence.remove(note_to_remove)
-    # note_front = note_sequence[0]
+    # After removing a note, the new front note is the one added second to most recently
+    expected_amp = note_sequence[1].amplitude
+    note_sequence.remove((0, 1))
+    note_front = note_sequence[0]
+    assert expected_amp == note_front.amplitude
 
 
 if __name__ == '__main__':

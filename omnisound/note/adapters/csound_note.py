@@ -5,7 +5,8 @@ from typing import Any, Mapping, Union
 from numpy import ndarray
 
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_type, validate_type_choice)
+from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
+                                   validate_sequence_of_type, validate_type, validate_types, validate_type_choice)
 
 
 CLASS_NAME = 'CSoundNote'
@@ -89,7 +90,7 @@ def transpose():
     return _transpose
 
 
-# Prototypes/Implementations of object methods
+# Prototypes/Implementations of CSound-specific accessors
 def g_pitch_precision():
     def _g_pitch_precision(self) -> int:
         return self.pitch_precision
@@ -111,6 +112,8 @@ def set_scale_pitch_precision():
     return _set_scale_pitch_precision
 
 
+# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
+# created when the class is constructed for the Note.
 def getter(attr_name: str):
     def _getter(self) -> Any:
         return self.attr_get_type_cast_map[attr_name](self.note_attr_vals[self.attr_name_idx_map[attr_name]])
@@ -128,6 +131,7 @@ def setter(attr_name: str):
     return _setter
 
 
+# Method implementations for dunder magic methods so the object suppoerts `__eq__` and `__str__`, etc.
 def eq():
     def _eq(self, other) -> bool:
         return self.instrument == other.instrument and \
@@ -163,6 +167,13 @@ def to_str():
     return _to_str
 
 
+# Meta class for dynamically creating a CSoundNote class with property accessors for an arbitrary list
+# of note attributes. Accessors are dynamically created in `_make_cls()`. This is the mechanism for overloading
+# class creation and passing that dynamically created list of methods in to Python `type` class, which is the
+# meta class that creates classes. Methods are passed in argument named `dct` by common convention.
+# NOTE: Through experimentation found that by creating attributes here in the `cls` object, we can refer to them
+#  in the `getter()` and `setter()` wrappers through `self`, if we create them in overloaded `__new__()`. This
+#  did no work with overloaded `__init__()`.
 class CSoundNoteMeta(type):
     def __new__(mcs, name, bases, dct):
         cls = super().__new__(mcs, name, bases, dct)
@@ -206,7 +217,15 @@ def make_note(note_attr_vals: ndarray,
               note_index: int,
               attr_vals_defaults_map: Mapping[str, Any] = None,
               attr_get_type_cast_map: Mapping[str, Any] = None):
-    validate_type('note_attr_vals', note_attr_vals, ndarray)
+    validate_types(('note_attr_vals', note_attr_vals, ndarray), ('note_index', note_index, int))
+    validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
+    validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
+    validate_optional_type('attr_vals_defaults_map', attr_vals_defaults_map, Mapping)
+    validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
+    if attr_vals_defaults_map:
+        validate_optional_sequence_of_type('attr_vals_defaults_map', attr_vals_defaults_map.keys(), str)
+    if attr_get_type_cast_map:
+        validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
 
     cls = _make_cls(attr_name_idx_map)
     note = cls()
