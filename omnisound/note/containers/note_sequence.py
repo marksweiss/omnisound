@@ -8,70 +8,11 @@ import numpy as np
 from omnisound.note.adapters.note import Note
 from omnisound.utils.utils import validate_optional_sequence_of_type, \
     validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, \
-    validate_type_choice, validate_type_reference, validate_types
+    validate_type_choice, validate_types
 
 
 class NoteSequenceInvalidAppendException(Exception):
     pass
-
-
-class Note(object):
-    def __init__(self, note_attrs, attr_name_idx_map):
-        self.note_attrs = note_attrs
-        self.attr_name_idx_map = attr_name_idx_map
-
-    def set(self, attr_name, attr_val):
-        self.note_attrs[self.attr_name_idx_map[attr_name]] = attr_val
-
-    def get(self, attr_name):
-        return self.note_attrs[self.attr_name_idx_map[attr_name]]
-
-
-# class GetWrapper:
-#     def __init__(self, note_attr_vals, attr_name_idx_map, note_index, bound_attr_name):
-#         self.note_attr_vals = note_attr_vals
-#         self.attr_name_idx_map = attr_name_idx_map
-#         self.note_index = note_index
-#         self.bound_attr_name = bound_attr_name
-
-def getter(attr_name):
-    def foo(self):
-        return self.note_attr_vals[self.note_index][self.attr_name_idx_map[attr_name]]
-    return foo
-
-# class SetWrapper:
-#     def __init__(self, note_attr_vals, attr_name_idx_map, note_index, bound_attr_name):
-#         self.note_attr_vals = note_attr_vals
-#         self.attr_name_idx_map = attr_name_idx_map
-#         self.note_index = note_index
-#         self.bound_attr_name = bound_attr_name
-
-
-def setter(attr_name):
-    def foo(self, attr_val):
-        self.note_attr_vals[self.note_index][self.attr_name_idx_map[attr_name]] = attr_val
-    return foo
-
-
-class NoteMeta(type):
-    def __new__(cls, cls_name, cls_bases, cls_namespace):
-        ret_cls = super().__new__(cls, cls_name, cls_bases, cls_namespace)
-        ret_cls.note_attr_vals = None
-        ret_cls.attr_name_idx_map = None
-        ret_cls.note_index = None
-        return ret_cls
-
-
-def note_builder(note_cls, note_attr_vals, attr_name_idx_map, note_index):
-    cls_bases = ()
-    methods = {f'g_{attr_name}': getter(attr_name) for attr_name in attr_name_idx_map.keys()}
-    methods.update({f's_{attr_name}': setter(attr_name) for attr_name in attr_name_idx_map.keys()})
-    cls = NoteMeta(note_cls.__name__, cls_bases, methods)
-    note = cls()
-    note.note_attr_vals = note_attr_vals
-    note.attr_name_idx_map = attr_name_idx_map
-    note.note_index = note_index
-    return note
 
 
 class NoteSequence(object):
@@ -100,11 +41,12 @@ class NoteSequence(object):
        you must 1) modify B, and then 2) call A.update_range_map().
     """
 
-    def __init__(self, note_cls: Any = None,
+    def __init__(self, make_note: Any = None,
                  num_notes: int = None,
                  num_attributes: int = None,
                  attr_name_idx_map: Dict[str, int] = None,
                  attr_vals_defaults_map: Dict[str, float] = None,
+                 attr_get_type_cast_map: Dict[str, Any] = None,
                  child_sequences: Sequence['NoteSequence'] = None):
         validate_types(('num_notes', num_notes, int), ('num_attributes', num_attributes, int),
                        ('attr_name_idx_map', attr_name_idx_map, dict))
@@ -117,7 +59,8 @@ class NoteSequence(object):
         validate_optional_type_choice('child_sequences', child_sequences, (list, set))
         validate_optional_sequence_of_type('child_sequences', child_sequences, 'NoteSequence')
 
-        self.note_cls = note_cls
+        self.make_note = make_note
+        self.attr_get_type_cast_map = attr_get_type_cast_map
 
         # Construct empty 2D numpy array of the specified dimensions. Each row stores a Note's values.
         rows = [[0.0] * num_attributes for _ in range(num_notes)]
@@ -143,7 +86,12 @@ class NoteSequence(object):
         self.update_range_map()
 
     def note(self, index):
-        return Note(self.note_attr_vals[index], self.attr_name_idx_map)
+        return self._get_note_for_index(index)
+        # return self.make_note(self.note_attr_vals[index],
+        #                       self.attr_name_idx_map,
+        #                       index,
+        #                       attr_vals_defaults_map=self.attr_vals_defaults_map,
+        #                       attr_get_type_cast_map=self.attr_get_type_cast_map)
 
     def _fast_update_range_map(self, num_entries: int):
         # Must copy into a new dict because we are modifying the keys
@@ -179,6 +127,7 @@ class NoteSequence(object):
                 # Peek the front element, it's the next one we are processing
                 cur_seq = child_seqs_queue[0]
                 # Add the range entry for the element being processed, it's the next range entry
+                # noinspection PyUnresolvedReferences
                 self._range_map[list(self._range_map.keys())[-1] + len(cur_seq)] = cur_seq
                 # Insert each child of the current entry in queue order at the front of the queue before
                 # all siblings of the current node but after the current node.
@@ -206,8 +155,11 @@ class NoteSequence(object):
             raise ValueError(f'`index` out of range index: {index} max_index: {self.num_notes}')
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
-            return self.note_cls(note_sequence=self,
-                                 note_sequence_index=index)
+            return self.make_note(self.note_attr_vals[index],
+                                  self.attr_name_idx_map,
+                                  index,
+                                  attr_vals_defaults_map=self.attr_vals_defaults_map,
+                                  attr_get_type_cast_map=self.attr_get_type_cast_map)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
         # flattened sequence of child_sequences, or it's invalid
         else:
@@ -221,10 +173,11 @@ class NoteSequence(object):
                     # Adjust index to access the note_attr_vals with offset of 0. The index entry from range_map
                     # is the running sum of all the previous indexes so we need to subtract that from index
                     adjusted_index = index - index_range_sum
-                    return self.note_cls(attrs=note_attrs[adjusted_index],
-                                         attr_name_index_map=self.attr_name_idx_map,
-                                         default_attr_vals_map=self.attr_vals_defaults_map,
-                                         row_num=index)
+                    return self.make_note(note_attrs[adjusted_index],
+                                          self.attr_name_idx_map,
+                                          index,
+                                          attr_vals_defaults_map=self.attr_vals_defaults_map,
+                                          attr_get_type_cast_map=self.attr_get_type_cast_map)
                     # noinspection PyUnreachableCode
                     break
                 index_range_sum += index_range
@@ -250,18 +203,20 @@ class NoteSequence(object):
     # noinspection PyCallingNonCallable
     def make_notes(self) -> Sequence[Note]:
         # Get the notes from this sequence
-        notes = [self.note_cls(attrs=note_vals,
-                               attr_name_index_map=self.attr_name_idx_map,
-                               default_attr_vals_map=self.attr_vals_defaults_map,
-                               row_num=i)
-                 for i, note_vals in enumerate(self.note_attr_vals)]
+        notes = [self.make_note(self.note_attr_vals[i],
+                                self.attr_name_idx_map,
+                                i,
+                                attr_vals_defaults_map=self.attr_vals_defaults_map,
+                                attr_get_type_cast_map=self.attr_get_type_cast_map)
+                 for i in range(self.note_attr_vals.shape[0])]
         # Walk the range map, which is already in the flattened order, and append all notes from that in order
         for note_seq in self._range_map.values():
-            notes.extend([self.note_cls(attrs=note_vals,
-                                        attr_name_index_map=self.attr_name_idx_map,
-                                        default_attr_vals_map=self.attr_vals_defaults_map,
-                                        row_num=i)
-                          for i, note_vals in enumerate(note_seq.note_attr_vals)])
+            notes.extend([self.make_note(note_seq.note_attr_vals[i],
+                                         self.attr_name_idx_map,
+                                         i,
+                                         attr_vals_defaults_map=self.attr_vals_defaults_map,
+                                         attr_get_type_cast_map=self.attr_get_type_cast_map)
+                          for i in range(note_seq.note_attr_vals.shape[0])])
         return notes
 
     def __eq__(self, other: 'NoteSequence') -> bool:
@@ -347,7 +302,7 @@ class NoteSequence(object):
     @staticmethod
     def copy(other: 'NoteSequence') -> 'NoteSequence':
         validate_type('other', other, NoteSequence)
-        return NoteSequence(other.note_cls, other.num_notes, other._num_attributes,
+        return NoteSequence(other.make_note, other.num_notes, other._num_attributes,
                             other.attr_name_idx_map, other.attr_vals_defaults_map,
                             other.child_sequences)
 
