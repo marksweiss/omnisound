@@ -5,8 +5,6 @@ import pytest
 import omnisound.note.adapters.csound_note as csound_note
 from omnisound.note.containers.note_sequence import NoteSequence
 
-# noinspection PyProtectedMember
-
 INSTRUMENT = 1
 START = 0.0
 DUR = 1.0
@@ -42,6 +40,28 @@ def _note():
         _note_sequence().note_attr_vals[NOTE_SEQUENCE_IDX],
         ATTR_NAME_IDX_MAP,
         NOTE_SEQUENCE_IDX)
+
+
+def test_len(note_sequence):
+    assert len(note_sequence) == NUM_NOTES
+
+
+def test_get_item(note_sequence):
+    note_0 = note_sequence[0]
+    note_1 = note_sequence[1]
+    assert note_0
+    assert note_0.amplitude == 0.0
+    assert note_1
+    assert note_1.amplitude == 0.0
+
+
+def test_copy(note_sequence):
+    note_sequence[0].amplitude = AMP
+    note_sequence[1].amplitude = AMP + 1
+    new_note_sequence = NoteSequence.copy(note_sequence)
+    assert id(note_sequence) != id(new_note_sequence)
+    assert new_note_sequence[0].amplitude == note_sequence[0].amplitude
+    assert new_note_sequence[1].amplitude == note_sequence[1].amplitude
 
 
 def test_note_sequence_iter_note_attr_properties(note_sequence):

@@ -290,10 +290,16 @@ class NoteSequence(object):
         return self
 
     @staticmethod
-    def copy(other: 'NoteSequence') -> 'NoteSequence':
-        validate_type('other', other, NoteSequence)
-        return NoteSequence(other.make_note, other.num_notes, other._num_attributes,
-                            other.attr_name_idx_map, other.attr_vals_defaults_map,
-                            other.child_sequences)
+    def copy(source: 'NoteSequence') -> 'NoteSequence':
+        validate_type('other', source, NoteSequence)
+        copy = NoteSequence(make_note=source.make_note,
+                            num_notes=source.num_notes,
+                            num_attributes=source._num_attributes,
+                            attr_name_idx_map=source.attr_name_idx_map,
+                            attr_vals_defaults_map=source.attr_vals_defaults_map,
+                            child_sequences=source.child_sequences)
+        # Copy the underlying np array from source note to target
+        copy.note_attr_vals = np.copy(source.note_attr_vals)
+        return copy
 
     # /Manage note list
