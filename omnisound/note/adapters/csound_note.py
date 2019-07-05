@@ -6,7 +6,7 @@ from numpy import ndarray
 
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
-                                   validate_sequence_of_type, validate_type, validate_types, validate_type_choice)
+                                   validate_sequence_of_type, validate_type, validate_type_choice)
 
 
 CLASS_NAME = 'CSoundNote'
@@ -131,7 +131,7 @@ def setter(attr_name: str):
     return _setter
 
 
-# Method implementations for dunder magic methods so the object suppoerts `__eq__` and `__str__`, etc.
+# Method implementations for dunder magic methods so the object supports `__eq__` and `__str__`, etc.
 def eq():
     def _eq(self, other) -> bool:
         return self.instrument == other.instrument and \
@@ -181,7 +181,6 @@ class CSoundNoteMeta(type):
         # Attributes assigned by the caller
         cls.note_attr_vals = None
         cls.attr_name_idx_map = None
-        cls.note_index = None
         cls.attr_get_type_cast_map = None
         cls.pitch_precision = DEFAULT_PITCH_PRECISION
         cls.performance_attrs = None
@@ -214,16 +213,11 @@ def _make_cls(attr_name_idx_map):
 
 def make_note(note_attr_vals: ndarray,
               attr_name_idx_map: Mapping[str, int],
-              note_index: int,
-              attr_vals_defaults_map: Mapping[str, Any] = None,
               attr_get_type_cast_map: Mapping[str, Any] = None):
-    validate_types(('note_attr_vals', note_attr_vals, ndarray), ('note_index', note_index, int))
+    validate_type('note_attr_vals', note_attr_vals, ndarray)
     validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
     validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
-    validate_optional_type('attr_vals_defaults_map', attr_vals_defaults_map, Mapping)
     validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
-    if attr_vals_defaults_map:
-        validate_optional_sequence_of_type('attr_vals_defaults_map', attr_vals_defaults_map.keys(), str)
     if attr_get_type_cast_map:
         validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
 
@@ -233,13 +227,6 @@ def make_note(note_attr_vals: ndarray,
     # Assign core attributes
     note.note_attr_vals = note_attr_vals
     note.attr_name_idx_map = attr_name_idx_map
-    note.note_index = note_index
-
-    # Set note attribute values if defaults provided
-    attr_vals_defaults_map = attr_vals_defaults_map or {}
-    for attr_name, attr_val in attr_vals_defaults_map.items():
-        if hasattr(note, attr_name):
-            setattr(note, attr_name, attr_val)
 
     # Set string formatters for note attributes, this is specific to CSound per the comments
     note.to_str_val_wrappers['instrument'] = lambda x: str(x)

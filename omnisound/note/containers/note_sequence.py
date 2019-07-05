@@ -66,7 +66,13 @@ class NoteSequence(object):
         self._num_attributes = self.note_attr_vals.shape[1]
 
         self.attr_name_idx_map = attr_name_idx_map
-        self.attr_vals_defaults_map = attr_vals_defaults_map
+        if attr_vals_defaults_map:
+            assert set(attr_vals_defaults_map.keys()) <= set(attr_name_idx_map.keys())
+            self.attr_vals_defaults_map = attr_vals_defaults_map
+            for note_attr in self.note_attr_vals:
+                for attr_name, attr_val in self.attr_vals_defaults_map.items():
+                    note_attr[self.attr_name_idx_map[attr_name]] = attr_val
+
         self.child_sequences = child_sequences or []
 
         # Absolute index position over all sequences, that is self.note_attr_vals and the note_attr_vals of each
@@ -116,8 +122,6 @@ class NoteSequence(object):
         if index < len(self.note_attr_vals):
             return self.make_note(self.note_attr_vals[index],
                                   self.attr_name_idx_map,
-                                  index,
-                                  attr_vals_defaults_map=self.attr_vals_defaults_map,
                                   attr_get_type_cast_map=self.attr_get_type_cast_map)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
         # flattened sequence of child_sequences, or it's invalid
@@ -134,8 +138,6 @@ class NoteSequence(object):
                     adjusted_index = index - index_range_sum
                     return self.make_note(note_attrs[adjusted_index],
                                           self.attr_name_idx_map,
-                                          index,
-                                          attr_vals_defaults_map=self.attr_vals_defaults_map,
                                           attr_get_type_cast_map=self.attr_get_type_cast_map)
                     # noinspection PyUnreachableCode
                     break
@@ -164,16 +166,12 @@ class NoteSequence(object):
         # Get the notes from this sequence
         notes = [self.make_note(self.note_attr_vals[i],
                                 self.attr_name_idx_map,
-                                i,
-                                attr_vals_defaults_map=self.attr_vals_defaults_map,
                                 attr_get_type_cast_map=self.attr_get_type_cast_map)
                  for i in range(self.note_attr_vals.shape[0])]
         # Walk the range map, which is already in the flattened order, and append all notes from that in order
-        for note_seq in self._range_map.values():
+        for note_seq in self.range_map.values():
             notes.extend([self.make_note(note_seq.note_attr_vals[i],
                                          self.attr_name_idx_map,
-                                         i,
-                                         attr_vals_defaults_map=self.attr_vals_defaults_map,
                                          attr_get_type_cast_map=self.attr_get_type_cast_map)
                           for i in range(note_seq.note_attr_vals.shape[0])])
         return notes

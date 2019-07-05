@@ -38,8 +38,7 @@ def note_sequence():
 def _note():
     return csound_note.make_note(
         _note_sequence().note_attr_vals[NOTE_SEQUENCE_IDX],
-        ATTR_NAME_IDX_MAP,
-        NOTE_SEQUENCE_IDX)
+        ATTR_NAME_IDX_MAP)
 
 
 def test_len(note_sequence):
