@@ -63,7 +63,7 @@ class NoteSequence(object):
         rows = [[0.0] * num_attributes for _ in range(num_notes)]
         self.note_attr_vals = np.array(rows)
         # THIS MUST NOT BE ALTERED
-        self._num_attributes = self.note_attr_vals.shape[0]
+        self._num_attributes = self.note_attr_vals.shape[1]
 
         self.attr_name_idx_map = attr_name_idx_map
         self.attr_vals_defaults_map = attr_vals_defaults_map
@@ -232,13 +232,13 @@ class NoteSequence(object):
     def append(self, note: Any) -> 'NoteSequence':
         """NOTE: This only supports appending notes to this NoteSequence, not any of its children.
         """
-        if self.note_attr_vals[0].shape != note.__dict__['_attr_vals'].shape:
+        if self.note_attr_vals[0].shape != note.note_attr_vals.shape:
             raise NoteSequenceInvalidAppendException(
                     'Note added to a NoteSequence must have the same number of attributes')
         new_note_idx = len(self.note_attr_vals)
         # noinspection PyTypeChecker
         self.note_attr_vals.resize(new_note_idx + 1, self._num_attributes)
-        np.copyto(self.note_attr_vals[new_note_idx], note.ns.note_attr_vals)
+        np.copyto(self.note_attr_vals[new_note_idx], note.note_attr_vals)
         self._fast_update_range_map(1)
         self.num_notes += 1
         return self
