@@ -79,22 +79,15 @@ class NoteSequence(object):
     def note(self, index):
         return self._get_note_for_index(index)
 
-
     def update_range_map(self):
         # What we need is a data structure that defines the range of indexes covered by a particular NoteSequence
-        # and maps that to a reference to that NoteSequence. This __next__() knows which NoteSequence (this one or
-        # one of its children, recursively) it is traversing currently and to retrieve elements from it.
-        # We traverse all sequences DFS and flatten that into one list
-        # Each index has a length. Each index is mapped to a unique (increasing) integer key, which is the bound
-        # of the range of index positions that are in that sequence.
+        # and maps that to a reference to that NoteSequence.
         # Example: This NoteSeq has 10 notes and it has two children, the first has 11 and the second has 12
         #          The _index_range_map is: {10: self, 21: child_1, 33: child_2}
-
-        def _update_seq_subtree(seq, seqs_queue):
-            seqs_queue.append(seq)
-            for child in seq.child_sequences:
+        def _update_seq_subtree(update_seq, seqs_queue):
+            seqs_queue.append(update_seq)
+            for child in update_seq.child_sequences:
                 _update_seq_subtree(child, seqs_queue)
-
         child_seqs_queue = []
         for child_seq in self.child_sequences:
             _update_seq_subtree(child_seq, child_seqs_queue)
@@ -105,8 +98,7 @@ class NoteSequence(object):
             # Only add the actual length of the next sequence, because len() is overloaded for this type
             # and gets the last key and sequence in the range map and adds the key to the length of that sequence's
             # note_attr_vals. So if we take len(sequences) here rather than len(sequence.note_attr_vals) we will
-            # double count the last sequence in the current range_map and add it twice to last_index and create
-            # incorrect entries
+            # double count the last sequence in the current range_map
             last_index += len(seq.note_attr_vals)
 
     # Manage iter / slice
