@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from collections import KeysView
+from collections import KeysView, ValuesView
 from math import copysign
 from os import access, W_OK
 from os.path import dirname
@@ -76,7 +76,7 @@ def validate_not_falsey(arg_name, val) -> bool:
 
 def validate_sequence_of_type(arg_name, seq_val, val_type) -> bool:
     """Must be a valid collection type. Can be empty. If there are values they must match val_type."""
-    validate_type_choice(arg_name, seq_val, (KeysView, list, tuple, set))
+    validate_type_choice(arg_name, seq_val, (KeysView, ValuesView, list, tuple, set))
     for val in seq_val:
         validate_type(arg_name, val, val_type)
     return True
@@ -87,7 +87,7 @@ def validate_optional_sequence_of_type(arg_name, seq_val, val_type) -> bool:
     if not seq_val:
         return True
     else:
-        validate_type_choice(arg_name, seq_val, (KeysView, list, tuple, set))
+        validate_type_choice(arg_name, seq_val, (KeysView, ValuesView, list, tuple, set))
         for val in seq_val:
             validate_type(arg_name, val, val_type)
     return True

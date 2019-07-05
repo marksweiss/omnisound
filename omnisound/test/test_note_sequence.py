@@ -149,5 +149,38 @@ def test_note_sequence_insert_remove_getitem():
     assert expected_amp == note_front.amplitude
 
 
+def test_child_sequences(note_sequence):
+    child_sequence = NoteSequence.copy(note_sequence)
+    child_sequence[0].amplitude = AMP
+    init_len = len(note_sequence)
+    note_sequence.append_child_sequence(child_sequence)
+    assert len(note_sequence.child_sequences) == 1
+    assert len(note_sequence) == init_len + len(child_sequence)
+    child_sequence = note_sequence.child_sequences[0]
+    assert child_sequence[0].amplitude == AMP
+    # Add another note_sequence
+    child_sequence_2 = NoteSequence.copy(_note_sequence())
+    note_sequence.append_child_sequence(child_sequence_2)
+    assert len(note_sequence.child_sequences) == 2
+    assert len(note_sequence) == init_len + len(child_sequence) + len(child_sequence_2)
+
+    # NOTE: IF WE ADD A SEQUENCE TO ITSELF IT IS A CYCLE AND WE ARE IN INFINITE LOOP
+    # Validate that attempting to create a cycle by appending a note to be its own child raises
+    with pytest.raises(ValueError):
+        note_sequence.append_child_sequence(note_sequence)
+
+
+def test_nested_child_sequences(note_sequence):
+    note_sequence_len = len(note_sequence)
+    child_sequence = NoteSequence.copy(_note_sequence())
+    child_sequence_len = len(child_sequence)
+    child_child_sequence = NoteSequence.copy(_note_sequence())
+    child_child_sequence_len = len(child_child_sequence)
+    child_sequence.append_child_sequence(child_child_sequence)
+    note_sequence.append_child_sequence(child_sequence)
+    assert len(note_sequence.child_sequences) == 1
+    assert len(note_sequence) == note_sequence_len + child_sequence_len + child_child_sequence_len
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])

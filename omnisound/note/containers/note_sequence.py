@@ -48,13 +48,13 @@ class NoteSequence(object):
         validate_types(('num_notes', num_notes, int), ('num_attributes', num_attributes, int),
                        ('attr_name_idx_map', attr_name_idx_map, dict))
         validate_optional_type('attr_vals_defaults_map', attr_vals_defaults_map, dict)
-        validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.keys()), str)
-        validate_sequence_of_type('attr_name_idx_map', list(attr_name_idx_map.values()), int)
+        validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
+        validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.values(), int)
         if attr_vals_defaults_map:
             validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_defaults_map.keys()), str)
             validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_defaults_map.values()), float)
         validate_optional_type_choice('child_sequences', child_sequences, (list, set))
-        validate_optional_sequence_of_type('child_sequences', child_sequences, 'NoteSequence')
+        validate_optional_sequence_of_type('child_sequences', child_sequences, NoteSequence)
 
         self.make_note = make_note
         self.attr_get_type_cast_map = attr_get_type_cast_map
@@ -74,31 +74,11 @@ class NoteSequence(object):
         # So if this sequence has 10 notes and it has one child sequence with 11 notes then self.index
         # will move from 0 to 20 and then reset to 0.
         self.index = 0
-        # We can't simply use the size of the 0th axis of the underlying numpy array because a sequence
-        # can include child sequences, and `num_notes` is the total number of notes in the sequence and list
-        # of child sequences
-        self.num_notes = num_notes
-        self._range_map_index = 0
-        self.range_map = {}
-        self.update_range_map()
+        self.range_map = {0: self}
 
     def note(self, index):
         return self._get_note_for_index(index)
-        # return self.make_note(self.note_attr_vals[index],
-        #                       self.attr_name_idx_map,
-        #                       index,
-        #                       attr_vals_defaults_map=self.attr_vals_defaults_map,
-        #                       attr_get_type_cast_map=self.attr_get_type_cast_map)
 
-    def _fast_update_range_map(self, num_entries: int):
-        # Must copy into a new dict because we are modifying the keys
-        new_range_map = {range_index + num_entries: child_seq
-                         for range_index, child_seq in self.range_map.items()}
-        self.range_map = new_range_map
-
-    def _fast_append_range_map(self, new_entry: 'NoteSequence'):
-        last_range_index = list(self.range_map.keys())[-1]
-        self.range_map[last_range_index + len(new_entry.note_attr_vals)] = new_entry
 
     def update_range_map(self):
         # What we need is a data structure that defines the range of indexes covered by a particular NoteSequence
@@ -109,47 +89,37 @@ class NoteSequence(object):
         # of the range of index positions that are in that sequence.
         # Example: This NoteSeq has 10 notes and it has two children, the first has 11 and the second has 12
         #          The _index_range_map is: {10: self, 21: child_1, 33: child_2}
-        # The algorithm in __next_() is to walk this, keeping track of the current total value of self.index. Each time
-        # this value is above the current key value we increment _index_range_map_index and change the current reference
-        # to a sequence to the next one in _index_range_map_index.values(). After we have visited all the keys in
-        # _index_range_map we reset self.index and self._index_range_map_index to start over at the beginning
-        if self.child_sequences:
-            # Add entry in output range map for first child_seq in self.child_seqs
-            # noinspection PyAttributeOutsideInit
-            self._range_map = {len(self.note_attr_vals) + len(self.child_sequences[0]): self.child_sequences[0]}
-            # Init the queue with the child seqs of self
-            child_seqs_queue = [child for child in self.child_sequences]
-            # Process the queue
-            while child_seqs_queue:
-                # Peek the front element, it's the next one we are processing
-                cur_seq = child_seqs_queue[0]
-                # Add the range entry for the element being processed, it's the next range entry
-                # noinspection PyUnresolvedReferences
-                self._range_map[list(self._range_map.keys())[-1] + len(cur_seq)] = cur_seq
-                # Insert each child of the current entry in queue order at the front of the queue before
-                # all siblings of the current node but after the current node.
-                # So this is a combination of DFS and BFS. It's queue order processing of siblings bug then DFS
-                # of each sibling (visit all its children before its sibling)
-                for child_seq in reversed(cur_seq.child_sequences):
-                    child_seqs_queue.insert(1, child_seq)
-                # We are done processing current node. Pop it and then the next element we will process is either
-                # this element's first child, just inserted, or it's next sibling if it had no children
-                del child_seqs_queue[0]
 
-            # Update num_notes with the last entry in range_map, this is the highest index in the flattened
-            # sequence of all notes in self and all child_sequences
-            self.num_notes = list(self._range_map.keys())[-1]
+        def _update_seq_subtree(seq, seqs_queue):
+            seqs_queue.append(seq)
+            for child in seq.child_sequences:
+                _update_seq_subtree(child, seqs_queue)
+
+        child_seqs_queue = []
+        for child_seq in self.child_sequences:
+            _update_seq_subtree(child_seq, child_seqs_queue)
+
+        last_index = len(self.note_attr_vals)
+        for seq in child_seqs_queue:
+            self.range_map[last_index] = seq
+            # Only add the actual length of the next sequence, because len() is overloaded for this type
+            # and gets the last key and sequence in the range map and adds the key to the length of that sequence's
+            # note_attr_vals. So if we take len(sequences) here rather than len(sequence.note_attr_vals) we will
+            # double count the last sequence in the current range_map and add it twice to last_index and create
+            # incorrect entries
+            last_index += len(seq.note_attr_vals)
 
     # Manage iter / slice
     def __len__(self) -> int:
-        return self.num_notes
+        k, v = tuple(self.range_map.items())[-1]
+        return k + len(v.note_attr_vals)
 
     # noinspection PyCallingNonCallable
     def _get_note_for_index(self, index: int) -> Any:
         """Factory method to construct a Note over a stored Note value at an index in the underlying array"""
         validate_type('index', index, int)
-        if index >= self.num_notes:
-            raise ValueError(f'`index` out of range index: {index} max_index: {self.num_notes}')
+        if index >= len(self):
+            raise ValueError(f'`index` out of range index: {index} max_index: {len(self)}')
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
             return self.make_note(self.note_attr_vals[index],
@@ -161,12 +131,12 @@ class NoteSequence(object):
         # flattened sequence of child_sequences, or it's invalid
         else:
             index_range_sum = len(self.note_attr_vals)
-            for index_range in self._range_map.keys():
+            for index_range in self.range_map.keys():
                 # Dict keys are in order they were written, so ascending order, so each one is the max index
                 # for that range. So the first entry it is less than is the entry it is in range of.
                 if index < index_range:
                     # Get the note attrs for the note_sequence for the range this index is in
-                    note_attrs = self._range_map[index_range]
+                    note_attrs = self.range_map[index_range]
                     # Adjust index to access the note_attr_vals with offset of 0. The index entry from range_map
                     # is the running sum of all the previous indexes so we need to subtract that from index
                     adjusted_index = index - index_range_sum
@@ -191,7 +161,7 @@ class NoteSequence(object):
 
     # noinspection PyCallingNonCallable
     def __next__(self) -> Any:
-        if self.index == self.num_notes:
+        if self.index == len(self):
             raise StopIteration
         note = self._get_note_for_index(self.index)
         self.index += 1
@@ -239,14 +209,15 @@ class NoteSequence(object):
         # noinspection PyTypeChecker
         self.note_attr_vals.resize(new_note_idx + 1, self._num_attributes)
         np.copyto(self.note_attr_vals[new_note_idx], note.note_attr_vals)
-        self._fast_update_range_map(1)
-        self.num_notes += 1
+        self.update_range_map()
         return self
 
     def append_child_sequence(self, child_sequence: 'NoteSequence') -> 'NoteSequence':
+        if id(self) == id(child_sequence):
+            raise ValueError('Cycle detected! Attempt to append a NoteSequence to itself as a child sequence.')
         validate_type('child_sequence', child_sequence, NoteSequence)
         self.child_sequences.append(child_sequence)
-        self._fast_append_range_map(child_sequence)
+        self.update_range_map()
         return self
 
     def extend(self, note_sequence: 'NoteSequence') -> 'NoteSequence':
@@ -255,8 +226,7 @@ class NoteSequence(object):
             raise NoteSequenceInvalidAppendException(
                 'NoteSequence extended to a NoteSequence must have the same number of attributes')
         self.note_attr_vals = np.concatenate((self.note_attr_vals, note_sequence.note_attr_vals))
-        self._fast_update_range_map(len(note_sequence))
-        self.num_notes += len(note_sequence)
+        self.update_range_map()
         return self
 
     def __add__(self, to_add: Any) -> 'NoteSequence':
@@ -274,8 +244,7 @@ class NoteSequence(object):
         new_notes = to_add.note_attr_vals
         self.note_attr_vals = np.insert(self.note_attr_vals, index, new_notes, axis=0)
 
-        self._fast_update_range_map(len(new_notes))
-        self.num_notes += len(new_notes)
+        self.update_range_map()
         return self
 
     def remove(self, range_to_remove: Tuple[int, int]) -> 'NoteSequence':
@@ -285,15 +254,14 @@ class NoteSequence(object):
         range_start, range_end = range_to_remove
         self.note_attr_vals = np.delete(self.note_attr_vals, range(range_start, range_end), axis=0)
 
-        self._fast_update_range_map(-(range_end - range_start))
-        self.num_notes -= (range_end - range_start)
+        self.update_range_map()
         return self
 
     @staticmethod
     def copy(source: 'NoteSequence') -> 'NoteSequence':
-        validate_type('other', source, NoteSequence)
+        validate_type('source', source, NoteSequence)
         copy = NoteSequence(make_note=source.make_note,
-                            num_notes=source.num_notes,
+                            num_notes=len(source),
                             num_attributes=source._num_attributes,
                             attr_name_idx_map=source.attr_name_idx_map,
                             attr_vals_defaults_map=source.attr_vals_defaults_map,
