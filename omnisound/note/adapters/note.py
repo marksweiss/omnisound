@@ -25,15 +25,17 @@ BASE_ATTR_NAMES = tuple(BASE_ATTR_NAME_IDX_MAP.keys())
 DEFAULT_VAL = 0.0
 
 
-# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
-# created when the class is constructed for the Note.
 def getter(attr_name: str):
+    """Prototype of generic Note-attribute accessor. This is parameterized by attr_name and dynamically
+    created when the class is constructed for the specific Note type."""
     def _getter(self) -> Any:
         return self.attr_get_type_cast_map[attr_name](self.note_attr_vals[self.attr_name_idx_map[attr_name]])
     return _getter
 
 
 def setter(attr_name: str):
+    """Prototype of generic Note-attribute accessor. This is parameterized by attr_name and dynamically
+    created when the class is constructed for the specific Note type."""
     def _setter(self, attr_val) -> None:
         if attr_name in self.attr_name_idx_map:
             validate_type('attr_name', attr_name, str)

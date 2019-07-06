@@ -181,5 +181,23 @@ def test_nested_child_sequences(note_sequence):
     assert len(note_sequence) == note_sequence_len + child_sequence_len + child_child_sequence_len
 
 
+def test_make_notes(note_sequence):
+    assert len(note_sequence) == 2
+    notes = note_sequence.make_notes()
+    assert notes
+    assert len(notes) == 2
+
+    child_sequence = NoteSequence.copy(_note_sequence())
+    child_child_sequence = NoteSequence.copy(_note_sequence())
+    child_sequence.append_child_sequence(child_child_sequence)
+    note_sequence.append_child_sequence(child_sequence)
+    assert len(note_sequence) == 6
+    notes = note_sequence.make_notes()
+    assert len(notes) == 6
+
+    for note in notes:
+        assert note.amplitude == 0.0
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])

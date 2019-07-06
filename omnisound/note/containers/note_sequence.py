@@ -162,15 +162,9 @@ class NoteSequence(object):
         self.index += 1
         return note
 
-    # TODO UNIT TEST COVERAGE
     # noinspection PyCallingNonCallable
     def make_notes(self) -> Sequence[Any]:
-        # Get the notes from this sequence
-        notes = [self.make_note(self.note_attr_vals[i],
-                                self.attr_name_idx_map,
-                                attr_get_type_cast_map=self.attr_get_type_cast_map)
-                 for i in range(self.note_attr_vals.shape[0])]
-        # Walk the range map, which is already in the flattened order, and append all notes from that in order
+        notes = []
         for note_seq in self.range_map.values():
             notes.extend([self.make_note(note_seq.note_attr_vals[i],
                                          self.attr_name_idx_map,
