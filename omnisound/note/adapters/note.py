@@ -70,3 +70,7 @@ def as_list(note) -> List[float]:
 def as_dict(note) -> Dict[str, float]:
     attr_names = list(note.attr_name_idx_map.keys())
     return {attr_names[i]: note.note_attr_vals[i] for i in range(note.note_attr_vals.shape[0])}
+
+
+def make_rest_note(note, amplitude_attr_name):
+    setattr(note, amplitude_attr_name, 0.0)

@@ -5,7 +5,7 @@ from typing import List
 import pytest
 
 import omnisound.note.adapters.csound_note as csound_note
-from omnisound.note.adapters.note import as_dict, as_list
+from omnisound.note.adapters.note import as_dict, as_list, make_rest_note
 from omnisound.note.containers.note_sequence import NoteSequence
 
 
@@ -76,6 +76,20 @@ def test_as_dict(note):
 def test_as_list(note):
     expected = list(ATTR_VALS_DEFAULTS_MAP.values())
     assert as_list(note) == expected
+
+
+def test_make_rest_note(note):
+    attr_vals_defaults_map = {
+        'instrument': float(INSTRUMENT),
+        'start': START,
+        'duration': DUR,
+        'amplitude': AMP + 100.0,
+        'pitch': PITCH,
+    }
+    note = _note(attr_vals_defaults_map=attr_vals_defaults_map)
+    assert note.amplitude == AMP + 100.0
+    make_rest_note(note, 'amplitude')
+    assert note.amplitude == 0.0
 
 
 if __name__ == '__main__':
