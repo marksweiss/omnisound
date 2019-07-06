@@ -79,14 +79,15 @@ def note():
     return _note()
 
 
-def _setup_note_s():
-    note_s = NoteValues(midi_note.ATTR_NAMES)
-    note_s.instrument = MIDI_INSTRUMENT.value
-    note_s.time = START
-    note_s.duration = DUR
-    note_s.velocity = AMP
-    note_s.pitch = PITCH
-    return note_s
+def _setup_note_values():
+    note_values = NoteValues(midi_note.ATTR_NAMES)
+    # noinspection PyTypeChecker
+    note_values.instrument = float(MIDI_INSTRUMENT.value)
+    note_values.time = START
+    note_values.duration = DUR
+    note_values.velocity = AMP
+    note_values.pitch = PITCH
+    return note_values
 
 
 # noinspection PyTypeChecker
@@ -232,6 +233,18 @@ def test_midi_note_channel(note):
     assert note.channel == midi_note.DEFAULT_CHANNEL
     note.channel = midi_note.DEFAULT_CHANNEL + 1
     assert note.channel == midi_note.DEFAULT_CHANNEL + 1
+
+
+def test_note_values():
+    note_values = _setup_note_values()
+    note = _note(attr_vals_defaults_map=note_values.as_dict())
+
+    # noinspection PyTypeChecker
+    assert note.instrument == float(MIDI_INSTRUMENT.value)
+    assert note.time == START
+    assert note.duration == AMP
+    assert note.velocity == DUR
+    assert note.pitch == PITCH
 
 
 if __name__ == '__main__':

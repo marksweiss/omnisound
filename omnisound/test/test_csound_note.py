@@ -78,10 +78,9 @@ def note():
     return _note()
 
 
-# TODO TEST NOTE VALUES
 def _setup_note_values():
     note_values = NoteValues(csound_note.ATTR_NAMES)
-    note_values.instrument = INSTRUMENT
+    note_values.instrument = float(INSTRUMENT)
     note_values.start = START
     note_values.duration = DUR
     note_values.amplitude = AMP
@@ -248,6 +247,17 @@ def test_csound_note_pitch_precision(note):
     assert note.pitch_precision == csound_note.DEFAULT_PITCH_PRECISION  # == 5
     note.set_scale_pitch_precision()
     assert note.pitch_precision == csound_note.SCALE_PITCH_PRECISION  # == 2
+
+
+def test_note_values():
+    note_values = _setup_note_values()
+    note = _note(attr_vals_defaults_map=note_values.as_dict())
+
+    assert note.instrument == INSTRUMENT
+    assert note.start == START
+    assert note.amplitude == AMP
+    assert note.duration == DUR
+    assert note.pitch == PITCH
 
 
 if __name__ == '__main__':

@@ -10,7 +10,6 @@ from omnisound.note.adapters.note import NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 
-INSTRUMENT = 1
 STARTS: List[float] = [1.0, 0.5, 1.5]
 INT_STARTS: List[int] = [1, 5, 10]
 START = STARTS[0]
@@ -79,14 +78,13 @@ def note():
     return _note()
 
 
-# TODO TEST NOTE VALUES
 def _setup_note_values():
     note_values = NoteValues(foxdot_note.ATTR_NAMES)
-    note_values.instrument = INSTRUMENT
-    note_values.start = START
-    note_values.duration = DUR
-    note_values.amplitude = AMP
-    note_values.pitch = PITCH
+    note_values.delay = START
+    note_values.dur = DUR
+    note_values.amp = AMP
+    note_values.degree = PITCH
+    note_values.octave = float(OCTAVE)
     return note_values
 
 
@@ -210,3 +208,19 @@ def test_foxdot_note_attrs_fluent(start, duration, amplitude, pitch):
     assert note.amplitude == note.amp == note.a == amplitude
     assert note.degree == pitch
     assert note.octave == OCTAVE
+
+
+def test_note_values():
+    note_values = _setup_note_values()
+    note = _note(attr_vals_defaults_map=note_values.as_dict())
+
+    # noinspection PyTypeChecker
+    assert note.delay == START
+    assert note.dur == DUR
+    assert note.amp == AMP
+    assert note.degree == PITCH
+    assert note.octave == float(OCTAVE)
+
+
+if __name__ == '__main__':
+    pytest.main(['-xrf'])
