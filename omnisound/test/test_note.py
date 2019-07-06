@@ -19,22 +19,22 @@ from omnisound.note.containers.note_sequence import NoteSequence
 INSTRUMENT = 1
 FOX_DOT_INSTRUMENT = fd_sc_synth
 MIDI_INSTRUMENT = MidiInstrument.Accordion
-STARTS: List[float] = [0.0, 0.5, 1.0]
-INT_STARTS: List[int] = [0, 5, 10]
+STARTS: List[float] = [1.0, 0.5, 1.5]
+INT_STARTS: List[int] = [1, 5, 10]
 START = STARTS[0]
 INT_START = INT_STARTS[0]
-DURS: List[float] = [0.0, 1.0, 2.5]
+DURS: List[float] = [1.0, 2.0, 2.5]
 DUR = DURS[0]
-AMPS: List[float] = [0.0, 1.0, 2.0]
+AMPS: List[float] = [1.0, 2.0, 3.0]
 AMP = AMPS[0]
-PITCHES: List[float] = [0.0, 0.5, 1.0]
+PITCHES: List[float] = [1.0, 1.5, 2.0]
 PITCH = PITCHES[0]
 
 ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
-                         'start': START,
-                         'duration': DUR,
-                         'amplitude': AMP,
-                         'pitch': PITCH}
+                          'start': START,
+                          'duration': DUR,
+                          'amplitude': AMP,
+                          'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 
 PERFORMANCE_ATTRS = PerformanceAttrs()
@@ -79,6 +79,11 @@ def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
             num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
         attr_name_idx_map,
         attr_get_type_cast_map=attr_get_type_cast_map)
+
+
+@pytest.fixture
+def note():
+    return _note()
 
 
 def _setup_note_values(note_cls_name: str):
@@ -215,48 +220,59 @@ def test_csound_note_to_str(start, duration, amplitude, pitch):
 
     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)} {func_table}' == \
         str(note)
-#
-#
-# @pytest.mark.parametrize('pitch', PITCHES)
-# @pytest.mark.parametrize('amplitude', AMPS)
-# @pytest.mark.parametrize('duration', DURS)
-# @pytest.mark.parametrize('start', STARTS)
-# def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
-#     some_other_val = 100.0
-#     attr_vals = array([float(INSTRUMENT), some_other_val, some_other_val, some_other_val, some_other_val])
-#     attr_name_idx_map = {'i': 0, 'instrument': 0,
-#                          's': 1, 'start': 1,
-#                          'd': 2, 'dur': 2, 'duration': 2,
-#                          'a': 3, 'amp': 3, 'amplitude': 3,
-#                          'p': 4, 'pitch': 4}
-#     note = CSoundNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, seq_idx=NOTE_SEQUENCE_IDX)
-#     note.I(INSTRUMENT).S(start).D(duration).A(amplitude).P(pitch)
-#
-#     assert note.instrument == INSTRUMENT
-#     assert note.start == note.s == start
-#     assert note.duration == note.dur == note.d == duration
-#     assert note.amplitude == note.amp == note.a == amplitude
-#     assert note.pitch == note.p == pitch
-#     assert f'i {INSTRUMENT} {start:.5f} {duration:.5f} {round(amplitude, 2)} {round(pitch, 2)}' == \
-#            str(note)
-#
-#
-# def test_csound_note_pitch_precision():
-#     attr_vals = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
-#     attr_name_idx_map = {'i': 0, 'instrument': 0,
-#                          's': 1, 'start': 1,
-#                          'd': 2, 'dur': 2, 'duration': 2,
-#                          'a': 3, 'amp': 3, 'amplitude': 3,
-#                          'p': 4, 'pitch': 4}
-#     note = CSoundNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, seq_idx=NOTE_SEQUENCE_IDX)
-#     assert note.pitch_precision == CSoundNote.SCALE_PITCH_PRECISION  # == 2
-#     assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {round(AMP, 2)} {round(PITCH, 2)}' == str(note)
-#
-#     note.set_scale_pitch_precision()
-#     assert note.pitch_precision == CSoundNote.DEFAULT_PITCH_PRECISION  # == 5
-#     assert f'i {INSTRUMENT} {START:.5f} {DUR:.5f} {round(AMP, 5)} {round(PITCH, 5)}' == str(note)
-#
-#
+
+
+@pytest.mark.parametrize('pitch', PITCHES)
+@pytest.mark.parametrize('amplitude', AMPS)
+@pytest.mark.parametrize('duration', DURS)
+@pytest.mark.parametrize('start', STARTS)
+def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
+    # Add an additional non-core dynamically added attribute to verify correct ordering of attrs and str()
+    func_table = 100
+    # Add multiple aliased property names for note attributes
+    attr_name_idx_map = {'i': 0, 'instrument': 0,
+                         's': 1, 'start': 1,
+                         'd': 2, 'dur': 2, 'duration': 2,
+                         'a': 3, 'amp': 3, 'amplitude': 3,
+                         'p': 4, 'pitch': 4,
+                         'func_table': 5}
+    # Test using a custom cast function for an attribute, a custom attribute
+    attr_get_type_cast_map = {'func_table': int}
+    # Set the note value to not equal the values passed in to the test
+    attr_vals_defaults_map = {
+        'instrument': float(INSTRUMENT + 1),
+        'start': 0.0,
+        'duration': 0.0,
+        'amplitude': 0.0,
+        'pitch': 0.0,
+        'func_table': float(func_table),
+    }
+    # Don't pass in attr_vals_defaults_map, so not creating a Note with the values passed in to each test
+    note = _note(attr_name_idx_map=attr_name_idx_map,
+                 attr_get_type_cast_map=attr_get_type_cast_map,
+                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 num_attributes=len(attr_vals_defaults_map))
+
+    # Assert the note does not have the expected attr values
+    assert note.start == note.s != start
+    assert note.duration == note.dur == note.d != duration
+    assert note.amplitude == note.amp == note.a != amplitude
+    assert note.pitch == note.p != pitch
+    # Then use the fluent accessors with chained syntax to assign the values passed in to this test
+    note.I(INSTRUMENT).S(start).D(duration).A(amplitude).P(pitch)
+    # Assert the note now has the expected attr values
+    assert note.start == note.s == start
+    assert note.duration == note.dur == note.d == duration
+    assert note.amplitude == note.amp == note.a == amplitude
+    assert note.pitch == note.p == pitch
+
+
+def test_csound_note_pitch_precision(note):
+    assert note.pitch_precision == csound_note.DEFAULT_PITCH_PRECISION  # == 5
+    note.set_scale_pitch_precision()
+    assert note.pitch_precision == csound_note.SCALE_PITCH_PRECISION  # == 2
+
+
 # @pytest.mark.parametrize('degree', PITCHES)
 # @pytest.mark.parametrize('amp', AMPS)
 # @pytest.mark.parametrize('dur', DURS)

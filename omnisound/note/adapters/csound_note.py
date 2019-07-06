@@ -105,11 +105,9 @@ def s_pitch_precision():
     return _s_pitch_precision
 
 
-def set_scale_pitch_precision():
-    def _set_scale_pitch_precision(self) -> None:
-        self.pitch_precision = SCALE_PITCH_PRECISION
-        self.attr_to_str_formatter_map['pitch'] = pitch_to_str(self.pitch_precision)
-    return _set_scale_pitch_precision
+def set_scale_pitch_precision(self):
+    self.pitch_precision = SCALE_PITCH_PRECISION
+    self.attr_to_str_formatter_map['pitch'] = pitch_to_str(self.pitch_precision)
 
 
 def set_attr_str_formatter(self, attr_name: str, formatter: Any):
@@ -117,6 +115,45 @@ def set_attr_str_formatter(self, attr_name: str, formatter: Any):
     self.attr_to_str_formatter_map[attr_name] = formatter
 
 
+# Fluent getters setters for core core note attributes
+# noinspection PyPep8Naming
+def I(self, attr_val: int):
+    validate_type('attr_val', attr_val, int)
+    self.note_attr_vals[self.attr_name_idx_map['instrument']] = attr_val
+    return self
+
+
+# noinspection PyPep8Naming
+def S(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['start']] = attr_val
+    return self
+
+
+# noinspection PyPep8Naming
+def D(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['duration']] = attr_val
+    return self
+
+
+# noinspection PyPep8Naming
+def A(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['amplitude']] = attr_val
+    return self
+
+
+# noinspection PyPep8Naming
+def P(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['pitch']] = attr_val
+    return self
+
+
+# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
+# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
+# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
 # Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
 # created when the class is constructed for the Note.
 def getter(attr_name: str):
@@ -195,6 +232,7 @@ class CSoundNoteMeta(type):
 def _make_cls(attr_name_idx_map):
     cls_bases = ()
     methods = {}
+    # Create dynamically getters and setters for the note attributes for this instantiation of a CSoundNote class
     for attr_name in attr_name_idx_map.keys():
         get_func = getter(attr_name)
         methods[f'g_{attr_name}'] = get_func
@@ -205,6 +243,11 @@ def _make_cls(attr_name_idx_map):
     methods['pitch_precision'] = property(g_pitch_precision, s_pitch_precision)
     methods['set_scale_pitch_precision'] = set_scale_pitch_precision
     methods['set_attr_str_formatter'] = set_attr_str_formatter
+    methods['I'] = I
+    methods['S'] = S
+    methods['D'] = D
+    methods['A'] = A
+    methods['P'] = P
     methods['transpose'] = transpose
     methods['__eq__'] = eq
     methods['__str__'] = to_str
