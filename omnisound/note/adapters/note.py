@@ -44,7 +44,6 @@ def setter(attr_name: str):
     return _setter
 
 
-# TODO UNIT TEST
 class NoteValues(object):
     """Convenience class to dynamically create, manipulate and retrieve collections of note attributes."""
     def __init__(self, attr_names):
@@ -62,12 +61,10 @@ class NoteValues(object):
         return array(self.as_list())
 
 
-# TODO UNIT TEST
-def as_list(self) -> List[float]:
-    return [self.note_attr_vals[i] for i in range(self.note_attr_vals.shape[0])]
+def as_list(note) -> List[float]:
+    return [note.note_attr_vals[i] for i in range(note.note_attr_vals.shape[0])]
 
 
-# TODO UNIT TEST
-def as_dict(self) -> Dict[str, float]:
-    attr_names = self.attr_name_idx_map.keys()
-    return {attr_names[i]: self.note_attr_vals[i] for i in range(self.note_attr_vals.shape[0])}
+def as_dict(note) -> Dict[str, float]:
+    attr_names = list(note.attr_name_idx_map.keys())
+    return {attr_names[i]: note.note_attr_vals[i] for i in range(note.note_attr_vals.shape[0])}
