@@ -29,12 +29,12 @@ ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
                           'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 
+# TODO TEST PERFORMANCE ATTRS
 PERFORMANCE_ATTRS = PerformanceAttrs()
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100
 ATTR_TYPE = int
 
-SCALE = 'chromatic'
 OCTAVE = 4
 
 NOTE_CLS_NAME = csound_note.CLASS_NAME
@@ -78,6 +78,7 @@ def note():
     return _note()
 
 
+# TODO TEST NOTE VALUES
 def _setup_note_values():
     note_values = NoteValues(csound_note.ATTR_NAMES)
     note_values.instrument = INSTRUMENT

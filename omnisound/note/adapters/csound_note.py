@@ -73,21 +73,20 @@ def pitch_to_str(pitch_prec):
 
 
 # TODO MODIFY AS MATRIX TRANSFORM GENERIC
-def transpose():
-    def _transpose(self, interval: int):
-        validate_type('interval', interval, int)
-        # Get current pitch as an integer in the range 1..11
-        cur_pitch_str = str(self.pitch)
-        cur_octave, cur_pitch = cur_pitch_str.split('.')
-        # Calculate the new_pitch by incrementing it and modding into the number of intervals in an octave
-        # Then divide by 100 and add the octave to convert this back to CSound syntax
-        #  which is the {octave}.{pitch in range 1..12}
-        # Handle the case where the interval moves the pitch into the next octave
-        if int(cur_pitch) + interval > NUM_INTERVALS_IN_OCTAVE:
-            cur_octave = int(cur_octave) + 1
-        # noinspection PyAttributeOutsideInit
-        self.pitch = float(cur_octave) + (((int(cur_pitch) + interval) % NUM_INTERVALS_IN_OCTAVE) / 100)
-    return _transpose
+# TODO TEST COVERAGE
+def transpose(self, interval: int):
+    validate_type('interval', interval, int)
+    # Get current pitch as an integer in the range 1..11
+    cur_pitch_str = str(self.pitch)
+    cur_octave, cur_pitch = cur_pitch_str.split('.')
+    # Calculate the new_pitch by incrementing it and modding into the number of intervals in an octave
+    # Then divide by 100 and add the octave to convert this back to CSound syntax
+    #  which is the {octave}.{pitch in range 1..12}
+    # Handle the case where the interval moves the pitch into the next octave
+    if int(cur_pitch) + interval > NUM_INTERVALS_IN_OCTAVE:
+        cur_octave = int(cur_octave) + 1
+    # noinspection PyAttributeOutsideInit
+    self.pitch = float(cur_octave) + (((int(cur_pitch) + interval) % NUM_INTERVALS_IN_OCTAVE) / 100)
 
 
 # Prototypes/Implementations of CSound-specific accessors
@@ -151,9 +150,6 @@ def P(self, attr_val: float):
     return self
 
 
-# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
-# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
-# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
 # Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
 # created when the class is constructed for the Note.
 def getter(attr_name: str):
@@ -220,10 +216,10 @@ class CSoundNoteMeta(type):
         cls.note_attr_vals = None
         cls.attr_name_idx_map = None
         cls.attr_get_type_cast_map = None
-        cls.pitch_precision = DEFAULT_PITCH_PRECISION
         cls.performance_attrs = None
 
-        # Attributes always present and assigned internally in init
+        # Custom CSound attributes
+        cls.pitch_precision = DEFAULT_PITCH_PRECISION
         cls.attr_to_str_formatter_map = {}
 
         return cls
@@ -239,18 +235,21 @@ def _make_cls(attr_name_idx_map):
         set_func = setter(attr_name)
         methods[f's_{attr_name}'] = set_func
         methods[attr_name] = property(get_func, set_func)
-    # noinspection PyTypeChecker
-    methods['pitch_precision'] = property(g_pitch_precision, s_pitch_precision)
-    methods['set_scale_pitch_precision'] = set_scale_pitch_precision
-    methods['set_attr_str_formatter'] = set_attr_str_formatter
+    # Standard Note methods
     methods['I'] = I
     methods['S'] = S
     methods['D'] = D
     methods['A'] = A
     methods['P'] = P
     methods['transpose'] = transpose
+    # Supported dunder methods
     methods['__eq__'] = eq
     methods['__str__'] = to_str
+    # Custom CSound methods
+    # noinspection PyTypeChecker
+    methods['pitch_precision'] = property(g_pitch_precision, s_pitch_precision)
+    methods['set_scale_pitch_precision'] = set_scale_pitch_precision
+    methods['set_attr_str_formatter'] = set_attr_str_formatter
 
     cls = CSoundNoteMeta(CLASS_NAME, cls_bases, methods)
     return cls
