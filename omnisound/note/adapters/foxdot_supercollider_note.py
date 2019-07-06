@@ -1,179 +1,273 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, Union
+from typing import Any, Mapping, Union
 
-from numpy import array
-from omnisound.note.adapters.note import Note
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
+from numpy import ndarray
+
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_types, validate_type)
+from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
+                                   validate_sequence_of_type, validate_type, validate_type_choice)
 
 
-# noinspection PyAttributeOutsideInit,PyPropertyDefinition,PyProtectedMember
-class FoxDotSupercolliderNote(Note):
+CLASS_NAME = 'FoxdotSupercolliderNote'
 
-    ATTR_NAMES = ('delay', 'dur', 'amp', 'degree', 'octave')
-    ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(ATTR_NAMES)}
+ATTR_NAMES = ('delay', 'dur', 'amp', 'degree', 'octave')
+ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(ATTR_NAMES)}
 
-    SCALES = {'aeolian', 'chinese', 'chromatic', 'custom', 'default', 'diminished', 'dorian', 'dorian2',
-              'egyptian', 'freq', 'harmonicMajor', 'harmonicMinor', 'indian', 'justMajor', 'justMinor',
-              'locrian', 'locrianMajor', 'lydian', 'lydianMinor', 'major', 'majorPentatonic', 'melodicMajor',
-              'melodicMinor', 'minor', 'minorPentatonic', 'mixolydian', 'phrygian', 'prometheus',
-              'romanianMinor', 'yu', 'zhi'}
+SCALES = {'aeolian', 'chinese', 'chromatic', 'custom', 'default', 'diminished', 'dorian', 'dorian2',
+          'egyptian', 'freq', 'harmonicMajor', 'harmonicMinor', 'indian', 'justMajor', 'justMinor',
+          'locrian', 'locrianMajor', 'lydian', 'lydianMinor', 'major', 'majorPentatonic', 'melodicMajor',
+          'melodicMinor', 'minor', 'minorPentatonic', 'mixolydian', 'phrygian', 'prometheus',
+          'romanianMinor', 'yu', 'zhi'}
 
-    PITCH_MAP = {
-        MajorKey.C: 0,
-        MajorKey.C_s: 1,
-        MajorKey.D_f: 1,
-        MajorKey.D: 2,
-        MajorKey.E_f: 3,
-        MajorKey.E: 4,
-        MajorKey.F: 5,
-        MajorKey.F_s: 6,
-        MajorKey.G_f: 6,
-        MajorKey.G: 7,
-        MajorKey.A_f: 8,
-        MajorKey.A: 9,
-        MajorKey.B_f: 10,
-        MajorKey.B: 11,
-        MajorKey.C_f: 11,
+PITCH_MAP = {
+    MajorKey.C: 0,
+    MajorKey.C_s: 1,
+    MajorKey.D_f: 1,
+    MajorKey.D: 2,
+    MajorKey.E_f: 3,
+    MajorKey.E: 4,
+    MajorKey.F: 5,
+    MajorKey.F_s: 6,
+    MajorKey.G_f: 6,
+    MajorKey.G: 7,
+    MajorKey.A_f: 8,
+    MajorKey.A: 9,
+    MajorKey.B_f: 10,
+    MajorKey.B: 11,
+    MajorKey.C_f: 11,
 
-        MinorKey.C: 0,
-        MinorKey.C_S: 1,
-        MinorKey.D: 1,
-        MinorKey.D_S: 2,
-        MinorKey.E_F: 3,
-        MinorKey.E: 4,
-        MinorKey.E_S: 5,
-        MinorKey.F: 6,
-        MinorKey.F_S: 6,
-        MinorKey.G: 7,
-        MinorKey.A_F: 8,
-        MinorKey.A: 9,
-        MinorKey.A_S: 10,
-        MinorKey.B_F: 10,
-        MinorKey.B: 11
-    }
+    MinorKey.C: 0,
+    MinorKey.C_S: 1,
+    MinorKey.D: 1,
+    MinorKey.D_S: 2,
+    MinorKey.E_F: 3,
+    MinorKey.E: 4,
+    MinorKey.E_S: 5,
+    MinorKey.F: 6,
+    MinorKey.F_S: 6,
+    MinorKey.G: 7,
+    MinorKey.A_F: 8,
+    MinorKey.A: 9,
+    MinorKey.A_S: 10,
+    MinorKey.B_F: 10,
+    MinorKey.B: 11
+}
 
-    def __init__(self,
-                 attr_vals: array = None,
-                 attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_defaults_map: Dict[str, float] = None,
-                 attr_get_type_cast_map: Dict[str, Any] = None,
-                 seq_idx: int = None,
-                 synth_def: Any = None,
-                 scale: str = None,
-                 performance_attrs: PerformanceAttrs = None):
-        validate_optional_types(('scale', scale, str),
-                                ('performance_attrs', performance_attrs, PerformanceAttrs))
-        if scale and scale not in FoxDotSupercolliderNote.SCALES:
-            raise ValueError(f'arg `scale` must be None or a string in FoxDotSuperColliderNote.SCALES, scale: {scale}')
 
-        # Handle case of a custom function for type casting getattr return value, for a non-standard attr
-        attr_get_type_cast_map = attr_get_type_cast_map or {}
-        # Append a default getattr() type cast mappings to int for instrument, velocity and pitch
-        attr_get_type_cast_map['start'] = int
-        attr_get_type_cast_map['delay'] = int
-        attr_get_type_cast_map['octave'] = int
-        super(FoxDotSupercolliderNote, self).__init__(
-            attr_vals=attr_vals,
-            attr_name_idx_map=attr_name_idx_map,
-            attr_vals_defaults_map=attr_vals_defaults_map,
-            attr_get_type_cast_map=attr_get_type_cast_map,
-            seq_idx=seq_idx)
+def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
+    return cls.PITCH_MAP[key]
 
-        # Attributes that are not representable as float must be managed at this level in this class and
-        # not be created as attributes of the base class
-        self.__dict__['_synth_def'] = synth_def
-        self.__dict__['_scale'] = scale
-        # Add aliased attributes that map to existing base Note attributes
-        # Name underlying property with _<prop> because it is wrapped in this class as a @property to handle
-        #  type casting from float to int or allowing return of Union[float, int]
-        # -1 because FoxDot doesn't store instrument in index 0, because it's not a numeric type for this note type
-        # so all the attributes are shifted left one position
 
-        self.__dict__['performance_attrs'] = performance_attrs
+def transpose(self, interval: int):
+    """Foxdot pitches as ints are in range 1..12
+    """
+    validate_type('interval', interval, int)
+    self.degree = int((self.degree + interval) % NUM_INTERVALS_IN_OCTAVE)
 
-    # Only define explicit properties on this level that diverge from behavior of underlying Note properties
-    # - override an existing underlying property (instrument) with different behavior only available at this level
-    # - provide accessors only available at this level
-    # - provide accessors that have different type behavior than base class attribute
-    @property
-    def instrument(self) -> Any:
-        return self.__dict__['_synth_def']
 
-    @instrument.setter
-    def instrument(self, instrument: Any):
-        self.__dict__['_synth_def'] = instrument
+def g_synth_def():
+    def _g_synth_def(self) -> Any:
+        return self.synth_def
+    return _g_synth_def
 
-    @property
-    def i(self) -> Union['FoxDotSupercolliderNote', Any]:
-        return self.__dict__['_synth_def']
 
-    @i.setter
-    def i(self, instrument: Any = None) -> None:
-        self.__dict['_synth_def'] = instrument
+def s_synth_def():
+    def _s_synth_def(self, synth_def: Any) -> None:
+        self.synth_def = synth_def
+    return _s_synth_def
 
-    @property
-    def synth_def(self) -> Any:
-        return self.__dict__['_synth_def']
 
-    @synth_def.setter
-    def synth_def(self, synth_def: Any):
-        self.__dict['_synth_def'] = synth_def
+def g_instrument():
+    def _g_instrument(self) -> Any:
+        return self.synth_def
+    return _g_instrument
 
-    @property
-    def scale(self) -> str:
-        return self.__dict__['_scale']
 
-    @scale.setter
-    def scale(self, scale: str):
+def s_instrument():
+    def _s_instrument(self, synth_def: Any) -> None:
+        self.synth_def = synth_def
+    return _s_instrument
+
+
+def g_scale():
+    def _g_scale(self) -> str:
+        return self.scale
+    return _g_scale
+
+
+def s_scale():
+    def _s_scale(self, scale: str) -> None:
         validate_type('scale', scale, str)
-        self.__dict__['_scale'] = scale
+        self.scale = scale
+    return _s_scale
 
-    def transpose(self, interval: int):
-        """Foxdot pitches as ints are in range 1..12
-        """
-        validate_type('interval', interval, int)
-        super(FoxDotSupercolliderNote, self)._degree = \
-            (int(super(FoxDotSupercolliderNote, self).degree) + interval) % NUM_INTERVALS_IN_OCTAVE
 
-    @property
-    def performance_attrs(self) -> PerformanceAttrs:
-        return self.__dict__['_performance_attrs']
+# Fluent getters setters for core core note attributes
+# noinspection PyPep8Naming
+# Fluent getters setters for core core note attributes
+# noinspection PyPep8Naming
+def S(self, attr_val: int):
+    validate_type('attr_val', attr_val, int)
+    self.note_attr_vals[self.attr_name_idx_map['instrument']] = attr_val
+    return self
 
-    @performance_attrs.setter
-    def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self.__dict__['_performance_attrs'] = performance_attrs
 
-    @property
-    def pa(self) -> PerformanceAttrs:
-        return self.__dict__['_performance_attrs']
+# noinspection PyPep8Naming
+def DE(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['delay']] = attr_val
+    return self
 
-    @pa.setter
-    def pa(self, performance_attrs: PerformanceAttrs):
-        self.__dict__['_performance_attrs'] = performance_attrs
 
-    @classmethod
-    def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
-        return cls.PITCH_MAP[key]
+# noinspection PyPep8Naming
+def DU(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['dur']] = attr_val
+    return self
 
-    def __eq__(self, other: 'FoxDotSupercolliderNote') -> bool:
-        # noinspection PyProtectedMember
-        return (self.octave is None and other.octave is None or self.octave == other.octave) and \
-            (self.scale is None and other.scale is None or self.scale == other.scale) and \
-            self._synth_def == other._synth_def and self.delay == other.delay and self.dur == other.dur and \
-            self.amp == other.amp and self.degree == other.degree
 
-    def __str__(self):
-        attr_strs = [
-            f'delay: {self.delay}',
-            f'dur: {self.dur}',
-            f'amp: {self.amp}',
-            f'degree: {self.degree}']
-        if hasattr(self, 'octave'):
-            attr_strs.append(f'octave: {self.octave}')
-        if hasattr(self, 'scale'):
-            attr_strs.append(f'scale: {self.scale}')
-        return ' '.join(attr_strs)
+# noinspection PyPep8Naming
+def A(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['amp']] = attr_val
+    return self
+
+
+# noinspection PyPep8Naming
+def DG(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['degree']] = attr_val
+    return self
+
+
+# noinspection PyPep8Naming
+def O(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['octave']] = attr_val
+    return self
+
+
+# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
+# created when the class is constructed for the Note.
+def getter(attr_name: str):
+    def _getter(self) -> Any:
+        return self.attr_get_type_cast_map[attr_name](self.note_attr_vals[self.attr_name_idx_map[attr_name]])
+    return _getter
+
+
+def setter(attr_name: str):
+    def _setter(self, attr_val) -> None:
+        if attr_name in self.attr_name_idx_map:
+            validate_type('attr_name', attr_name, str)
+            validate_type_choice('attr_val', attr_val, (float, int))
+            self.note_attr_vals[self.attr_name_idx_map[attr_name]] = attr_val
+        else:
+            setattr(self, attr_name, attr_val)
+    return _setter
+
+
+def eq(self, other: Any) -> bool:
+    # noinspection PyProtectedMember
+    return (self.octave is None and other.octave is None or
+            self.octave == other.octave) and \
+           (self.scale is None and other.scale is None or
+            self.scale == other.scale) and \
+           self._synth_def == other._synth_def and \
+           self.delay == other.delay and \
+           self.dur == other.dur and \
+           self.amp == other.amp and \
+           self.degree == other.degree
+
+
+def to_str(self):
+    attr_strs = [
+        f'delay: {self.delay}',
+        f'dur: {self.dur}',
+        f'amp: {self.amp}',
+        f'degree: {self.degree}']
+    if hasattr(self, 'octave'):
+        attr_strs.append(f'octave: {self.octave}')
+    if hasattr(self, 'scale'):
+        attr_strs.append(f'scale: {self.scale}')
+    return ' '.join(attr_strs)
+
+
+class FoxdotSupercolliderNoteMeta(type):
+    def __new__(mcs, name, bases, dct):
+        cls = super().__new__(mcs, name, bases, dct)
+
+        # Attributes assigned by the caller
+        cls.note_attr_vals = None
+        cls.attr_name_idx_map = None
+        cls.attr_get_type_cast_map = None
+        cls.performance_attrs = None
+
+        # Custom CSound attributes
+        cls.synth_def = None
+        cls.scale = None
+
+        return cls
+
+
+def _make_cls(attr_name_idx_map):
+    cls_bases = ()
+    methods = {}
+    # Create dynamically getters and setters for the note attributes for this instantiation of a CSoundNote class
+    for attr_name in attr_name_idx_map.keys():
+        get_func = getter(attr_name)
+        methods[f'g_{attr_name}'] = get_func
+        set_func = setter(attr_name)
+        methods[f's_{attr_name}'] = set_func
+        methods[attr_name] = property(get_func, set_func)
+    # Standard Note methods
+    methods['S'] = S
+    methods['DE'] = DE
+    methods['DU'] = DU
+    methods['A'] = A
+    methods['DG'] = DG
+    methods['O'] = O
+    methods['transpose'] = transpose
+    # Supported dunder methods
+    methods['__eq__'] = eq
+    methods['__str__'] = to_str
+    # Custom CSound methods
+    # noinspection PyTypeChecker
+    methods['synth_def'] = property(g_synth_def, s_synth_def)
+    # noinspection PyTypeChecker
+    methods['instrument'] = property(g_instrument, s_instrument)
+    # noinspection PyTypeChecker
+    methods['scale'] = property(g_scale, s_scale)
+
+    cls = FoxdotSupercolliderNoteMeta(CLASS_NAME, cls_bases, methods)
+    return cls
+
+
+def make_note(note_attr_vals: ndarray,
+              attr_name_idx_map: Mapping[str, int],
+              attr_get_type_cast_map: Mapping[str, Any] = None):
+    validate_type('note_attr_vals', note_attr_vals, ndarray)
+    validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
+    validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
+    validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
+    if attr_get_type_cast_map:
+        validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
+
+    cls = _make_cls(attr_name_idx_map)
+    note = cls()
+
+    # Assign core attributes
+    note.note_attr_vals = note_attr_vals
+    note.attr_name_idx_map = attr_name_idx_map
+
+    # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
+    note.attr_get_type_cast_map = attr_get_type_cast_map or {}
+    for attr_name in note.attr_name_idx_map:
+        if attr_name not in note.attr_get_type_cast_map:
+            note.attr_get_type_cast_map[attr_name] = lambda x: x
+
+    # Instrument is always returned as an int
+    note.attr_get_type_cast_map['octave'] = int
+
+    return note

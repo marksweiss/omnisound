@@ -1,4 +1,4 @@
-# Copyright 2018 Mark S. Weiss
+# Copyright 2019 Mark S. Weiss
 
 from copy import deepcopy
 from typing import List
