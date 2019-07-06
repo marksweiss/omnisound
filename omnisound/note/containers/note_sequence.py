@@ -162,6 +162,7 @@ class NoteSequence(object):
         self.index += 1
         return note
 
+    # TODO UNIT TEST COVERAGE
     # noinspection PyCallingNonCallable
     def make_notes(self) -> Sequence[Any]:
         # Get the notes from this sequence

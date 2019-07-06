@@ -4,6 +4,7 @@ from typing import Any, Mapping, Union
 
 from numpy import ndarray
 
+from omnisound.note.adapters.note import getter, setter
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
                                    validate_sequence_of_type, validate_type, validate_type_choice)
@@ -148,25 +149,6 @@ def P(self, attr_val: float):
     validate_type('attr_val', attr_val, float)
     self.note_attr_vals[self.attr_name_idx_map['pitch']] = attr_val
     return self
-
-
-# Prototypes of generic Note-attribute accessors. These are parameterized by attr_name and dynamically
-# created when the class is constructed for the Note.
-def getter(attr_name: str):
-    def _getter(self) -> Any:
-        return self.attr_get_type_cast_map[attr_name](self.note_attr_vals[self.attr_name_idx_map[attr_name]])
-    return _getter
-
-
-def setter(attr_name: str):
-    def _setter(self, attr_val) -> None:
-        if attr_name in self.attr_name_idx_map:
-            validate_type('attr_name', attr_name, str)
-            validate_type_choice('attr_val', attr_val, (float, int))
-            self.note_attr_vals[self.attr_name_idx_map[attr_name]] = attr_val
-        else:
-            setattr(self, attr_name, attr_val)
-    return _setter
 
 
 # Method implementations for dunder magic methods so the object supports `__eq__` and `__str__`, etc.

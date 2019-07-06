@@ -46,7 +46,7 @@ NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
     attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes  or NUM_ATTRIBUTES
+    num_attributes = num_attributes or NUM_ATTRIBUTES
     note_sequence = NoteSequence(make_note=csound_note.make_note,
                                  num_notes=NUM_NOTES,
                                  num_attributes=num_attributes,
