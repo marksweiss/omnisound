@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from copy import deepcopy
-from typing import Any, List
+from typing import List
 
 from numpy import array
 import pytest
@@ -86,29 +86,13 @@ def note():
     return _note()
 
 
-def _setup_note_values(note_cls_name: str):
-    note_values = None
-    if note_cls_name == 'CSoundNote':
-        note_values = NoteValues(csound_note.ATTR_NAMES)
-        note_values.instrument = INSTRUMENT
-        note_values.start = START
-        note_values.duration = DUR
-        note_values.amplitude = AMP
-        note_values.pitch = PITCH
-    if note_cls_name == 'MidiNote':
-        note_values = NoteValues(MidiNote.ATTR_NAMES)
-        note_values.instrument = MIDI_INSTRUMENT.value
-        note_values.time = START
-        note_values.duration = DUR
-        note_values.velocity = AMP
-        note_values.pitch = PITCH
-    if note_cls_name == 'FoxDotSupercolliderNote':
-        note_values = NoteValues(FoxDotSupercolliderNote.ATTR_NAMES)
-        note_values.delay = INT_START
-        note_values.dur = DUR
-        note_values.amp = AMP
-        note_values.degree = PITCH
-        note_values.octave = float(OCTAVE)
+def _setup_note_values():
+    note_values = NoteValues(MidiNote.ATTR_NAMES)
+    note_values.instrument = MIDI_INSTRUMENT.value
+    note_values.time = START
+    note_values.duration = DUR
+    note_values.velocity = AMP
+    note_values.pitch = PITCH
     return note_values
 
 
@@ -267,60 +251,6 @@ def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
     assert note.pitch == note.p == pitch
 
 
-def test_csound_note_pitch_precision(note):
-    assert note.pitch_precision == csound_note.DEFAULT_PITCH_PRECISION  # == 5
-    note.set_scale_pitch_precision()
-    assert note.pitch_precision == csound_note.SCALE_PITCH_PRECISION  # == 2
-
-
-# @pytest.mark.parametrize('degree', PITCHES)
-# @pytest.mark.parametrize('amp', AMPS)
-# @pytest.mark.parametrize('dur', DURS)
-# @pytest.mark.parametrize('delay', INT_STARTS)
-# def test_foxdot_supercollider_note_attrs(delay, dur, amp, degree):
-#     synth_def = fd_sc_synth
-#     octave = OCTAVE
-#     scale = SCALE
-#     attr_vals = array([delay, dur, amp, degree, OCTAVE])
-#     attr_name_idx_map = {'start': 0, 'delay': 0,
-#                          'dur': 1,
-#                          'amp': 2,
-#                          'pitch': 3, 'degree': 3,
-#                          'octave': 4}
-#     note = FoxDotSupercolliderNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, seq_idx=NOTE_SEQUENCE_IDX,
-#                                    synth_def=synth_def, scale=SCALE)
-#
-#     assert note.delay == note.start == delay
-#     assert type(note.delay) == int
-#     assert type(note.start) == int
-#     assert note.dur == dur
-#     assert note.amp == amp
-#     assert note.degree == note.pitch == degree
-#     assert note.octave == octave
-#     assert type(note.octave) == int
-#     assert note.synth_def == synth_def
-#     assert note.scale == scale
-#     assert f'delay: {delay} dur: {dur} amp: {float(amp)} degree: {degree} octave: {octave} scale: {scale}' \
-#            == str(note)
-#
-#     with pytest.raises(ValueError):
-#         scale = 'NOT_A_VALID_SCALE'
-#         _ = FoxDotSupercolliderNote(attr_vals=attr_vals, attr_name_idx_map=attr_name_idx_map, seq_idx=NOTE_SEQUENCE_IDX,
-#                                     synth_def=synth_def, scale=scale)
-#
-#     note.delay += 1.0
-#     assert note.delay == int(delay + 1.0)
-#     assert type(note.delay) == int
-#     assert note.start == int(delay + 1.0)
-#     assert type(note.start) == int
-#     note.dur += 1.0
-#     assert note.dur == dur + 1.0
-#     note.amp += 1.0
-#     assert note.amp == amp + 1.0
-#     note.degree += 1.0
-#     assert note.degree == degree + 1.0
-#
-#
 # @pytest.mark.parametrize('pitch', PITCHES)
 # @pytest.mark.parametrize('velocity', AMPS)
 # @pytest.mark.parametrize('duration', DURS)

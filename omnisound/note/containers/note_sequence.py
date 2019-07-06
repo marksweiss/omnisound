@@ -66,6 +66,7 @@ class NoteSequence(object):
         self._num_attributes = self.note_attr_vals.shape[1]
 
         self.attr_name_idx_map = attr_name_idx_map
+        self.attr_vals_defaults_map = attr_vals_defaults_map
         if attr_vals_defaults_map:
             assert set(attr_vals_defaults_map.keys()) <= set(attr_name_idx_map.keys())
             self.attr_vals_defaults_map = attr_vals_defaults_map
