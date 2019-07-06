@@ -168,6 +168,7 @@ def test_foxdot_note_to_str(start, duration, amplitude, pitch):
     note = _note(attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
                  num_attributes=len(attr_vals_defaults_map))
+    note.scale = SCALE
 
     assert f'delay: {start} dur: {duration} amp: {float(amplitude)} degree: {pitch} octave: {OCTAVE} scale: {SCALE}' \
         == str(note)
@@ -202,7 +203,7 @@ def test_foxdot_note_attrs_fluent(start, duration, amplitude, pitch):
     assert note.degree != pitch
     assert note.octave != OCTAVE
 
-    note.DE(start).DU(duration).A(amplitude).DG(pitch).O(OCTAVE)
+    note.DE(start).DU(duration).A(amplitude).DG(pitch).O(float(OCTAVE))
 
     assert note.delay == start
     assert note.duration == note.dur == note.d == duration
