@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, Iterator, Sequence, Tuple
+from typing import Any, Mapping, Iterator, Sequence, Tuple
 
 import numpy as np
 
@@ -41,9 +41,9 @@ class NoteSequence(object):
     def __init__(self, make_note: Any = None,
                  num_notes: int = None,
                  num_attributes: int = None,
-                 attr_name_idx_map: Dict[str, int] = None,
-                 attr_vals_defaults_map: Dict[str, float] = None,
-                 attr_get_type_cast_map: Dict[str, Any] = None,
+                 attr_name_idx_map: Mapping[str, int] = None,
+                 attr_vals_defaults_map: Mapping[str, float] = None,
+                 attr_get_type_cast_map: Mapping[str, Any] = None,
                  child_sequences: Sequence['NoteSequence'] = None):
         validate_types(('num_notes', num_notes, int), ('num_attributes', num_attributes, int),
                        ('attr_name_idx_map', attr_name_idx_map, dict))

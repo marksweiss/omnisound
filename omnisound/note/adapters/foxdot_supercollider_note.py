@@ -57,15 +57,15 @@ PITCH_MAP = {
 }
 
 
-def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
-    return cls.PITCH_MAP[key]
-
-
 def transpose(self, interval: int):
     """Foxdot pitches as ints are in range 1..12
     """
     validate_type('interval', interval, int)
     self.degree = int((self.degree + interval) % NUM_INTERVALS_IN_OCTAVE)
+
+
+def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
+    return PITCH_MAP[key]
 
 
 def g_synth_def():
@@ -203,13 +203,14 @@ def _make_cls(attr_name_idx_map):
         set_func = setter(attr_name)
         methods[f's_{attr_name}'] = set_func
         methods[attr_name] = property(get_func, set_func)
-    # Standard Note methods
+    # Standard Note fluent accessor methods
     methods['S'] = S
     methods['DE'] = DE
     methods['DU'] = DU
     methods['A'] = A
     methods['DG'] = DG
     methods['O'] = O
+    # Standard Note API
     methods['transpose'] = transpose
     # Supported dunder methods
     methods['__eq__'] = eq

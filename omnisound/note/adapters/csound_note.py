@@ -55,16 +55,6 @@ MAX_OCTAVE = 12
 DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
 
-# Module free functions
-def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
-    validate_type_choice('key', key, (MajorKey, MinorKey))
-    validate_type('octave', octave, int)
-    if not (MIN_OCTAVE < octave < MAX_OCTAVE):
-        raise ValueError((f'Arg `octave` must be in range '
-                          f'{MIN_OCTAVE} <= octave <= {MAX_OCTAVE}'))
-    return PITCH_MAP[key] + (float(octave) - 1.0)
-
-
 # Return a function that binds the pitch_precision to a function that returns a string that
 # formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
 def pitch_to_str(pitch_prec):
@@ -88,6 +78,15 @@ def transpose(self, interval: int):
         cur_octave = int(cur_octave) + 1
     # noinspection PyAttributeOutsideInit
     self.pitch = float(cur_octave) + (((int(cur_pitch) + interval) % NUM_INTERVALS_IN_OCTAVE) / 100)
+
+
+def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
+    validate_type_choice('key', key, (MajorKey, MinorKey))
+    validate_type('octave', octave, int)
+    if not (MIN_OCTAVE < octave < MAX_OCTAVE):
+        raise ValueError((f'Arg `octave` must be in range '
+                          f'{MIN_OCTAVE} <= octave <= {MAX_OCTAVE}'))
+    return PITCH_MAP[key] + (float(octave) - 1.0)
 
 
 # Prototypes/Implementations of CSound-specific accessors
@@ -217,12 +216,13 @@ def _make_cls(attr_name_idx_map):
         set_func = setter(attr_name)
         methods[f's_{attr_name}'] = set_func
         methods[attr_name] = property(get_func, set_func)
-    # Standard Note methods
+    # Standard Note accessor methods
     methods['I'] = I
     methods['S'] = S
     methods['D'] = D
     methods['A'] = A
     methods['P'] = P
+    # Standard Note API
     methods['transpose'] = transpose
     # Supported dunder methods
     methods['__eq__'] = eq

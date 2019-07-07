@@ -2,17 +2,12 @@
 
 from typing import Any, Mapping, Union
 
-from omnisound.note.adapters.csound_note import CSoundNote
-from omnisound.note.adapters.foxdot_supercollider_note import \
-    FoxDotSupercolliderNote
-from omnisound.note.adapters.midi_note import MidiNote
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
 from omnisound.utils.mingus_utils import set_notes_pitches_to_mingus_keys
 from omnisound.utils.utils import (validate_type_choice,
-                                   validate_type_reference_choice,
                                    validate_types)
 from mingus.core.chords import first_inversion as m_first_inversion
 from mingus.core.chords import second_inversion as m_second_inversion
@@ -28,14 +23,15 @@ class Chord(NoteSequence):
     """
     def __init__(self,
                  harmonic_chord: Any = None,
-                 note_cls: Any = None,
+                 octave: int = None,
+                 key: Union[MajorKey, MinorKey] = None,
+                 get_pitch_for_key: Any = None,
+                 make_note: Any = None,
                  num_attributes: int = None,
                  attr_name_idx_map: Mapping[str, int] = None,
                  attr_vals_defaults_map: Mapping[str, float] = None,
-                 octave: int = None,
-                 key: Union[MajorKey, MinorKey] = None):
+                 attr_get_type_cast_map: Mapping[str, Any] = None):
         validate_types(('harmonic_chord', harmonic_chord, HarmonicChord), ('octave', octave, int))
-        validate_type_reference_choice('note_cls', note_cls, (CSoundNote, FoxDotSupercolliderNote, MidiNote))
 
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
@@ -53,25 +49,20 @@ class Chord(NoteSequence):
         # Assign attrs before completing validation because it's more convenient to check for required
         # attrs by using getattr(attr_name) after they have been assigned
         self.harmonic_chord = harmonic_chord
-        self.note_type = note_cls
         self.octave = octave
-        self.key = key
-
+        self.get_pitch_for_key = get_pitch_for_key
+        self.num_attributes = num_attributes
         # Get the list of keys in the chord as string names from mingus
+        self.key = key
         self.mingus_chord = harmonic_chord.value(self.key.name)
-        # Caller can supply a custom number of attributes and attr_idx_map f they are constructing a Chord of
-        # Notes that have additional attributes beyond those always present in the `note_cls`. If not provided
-        # a default Note of type `note_cls` is constructed. Likewise the caller can provide optional
-        # attribute values for the notes constructed
-        num_attributes = num_attributes or len(note_cls.ATTR_NAMES)
-        attr_name_idx_map = attr_name_idx_map or note_cls.ATTR_NAME_IDX_MAP
-        attr_vals_defaults_map = attr_vals_defaults_map or {}
+
         # Construct the sequence of notes for the chord in the NoteSequence base class
-        super(Chord, self).__init__(note_cls=note_cls,
+        super(Chord, self).__init__(make_note=make_note,
                                     num_notes=len(self.mingus_chord),
                                     num_attributes=num_attributes,
                                     attr_name_idx_map=attr_name_idx_map,
-                                    attr_vals_defaults_map=attr_vals_defaults_map)
+                                    attr_vals_defaults_map=attr_vals_defaults_map,
+                                    attr_get_type_cast_map=attr_get_type_cast_map)
 
         # Convert to Notes for this chord's note_type with pitch assigned for the key in the chord
         self._mingus_key_to_key_enum_mapping = Scale.KEY_MAPS[self.matched_key_type.__name__]
@@ -79,7 +70,7 @@ class Chord(NoteSequence):
                                          self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.note_type,
+                                         self.get_pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -90,7 +81,7 @@ class Chord(NoteSequence):
                                          self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.note_type,
+                                         self.get_pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -101,7 +92,7 @@ class Chord(NoteSequence):
                                          self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.note_type,
+                                         self.get_pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -112,7 +103,7 @@ class Chord(NoteSequence):
                                          self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.note_type,
+                                         self.get_pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -127,7 +118,7 @@ class Chord(NoteSequence):
                                          m_first_inversion(source_chord.mingus_chord),
                                          source_chord._mingus_key_to_key_enum_mapping,
                                          chord,
-                                         source_chord.note_type,
+                                         source_chord.get_pitch_for_key,
                                          source_chord.octave,
                                          validate=False)
         return chord
@@ -143,7 +134,7 @@ class Chord(NoteSequence):
                                          m_second_inversion(source_chord.mingus_chord),
                                          source_chord._mingus_key_to_key_enum_mapping,
                                          chord,
-                                         source_chord.note_type,
+                                         source_chord.get_pitch_for_key,
                                          source_chord.octave,
                                          validate=False)
         return chord
@@ -159,7 +150,7 @@ class Chord(NoteSequence):
                                          m_third_inversion(source_chord.mingus_chord),
                                          source_chord._mingus_key_to_key_enum_mapping,
                                          chord,
-                                         source_chord.note_type,
+                                         source_chord.get_pitch_for_key,
                                          source_chord.octave,
                                          validate=False)
         return chord
@@ -211,6 +202,12 @@ class Chord(NoteSequence):
     @staticmethod
     def copy(source_chord: 'Chord') -> 'Chord':
         return Chord(harmonic_chord=source_chord.harmonic_chord,
-                     note_cls=source_chord.note_type,
                      octave=source_chord.octave,
-                     key=source_chord.key)
+                     key=source_chord.key,
+                     get_pitch_for_key=source_chord.get_pitch_for_key,
+                     make_note=source_chord.make_note,
+                     num_attributes=source_chord.num_attributes,
+                     attr_name_idx_map=source_chord.attr_name_idx_map,
+                     attr_vals_defaults_map=source_chord.attr_vals_defaults_map,
+                     attr_get_type_cast_map=source_chord.attr_get_type_cast_map)
+

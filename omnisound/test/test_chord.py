@@ -1,36 +1,74 @@
 # Copyright 2018 Mark S. Weiss
 
-from numpy import array, copy as np_copy
+from typing import List
+
 import pytest
 
-from omnisound.note.adapters.csound_note import CSoundNote
+from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.chord import Chord
 from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.scale import Scale
-from omnisound.note.generators.scale_globals import MajorKey
+import omnisound.note.adapters.csound_note as csound_note
 
 INSTRUMENT = 1
-START = 0.0
-DUR = 1.0
-AMP = 100.0
-PITCH = 1.01
+STARTS: List[float] = [1.0, 0.5, 1.5]
+INT_STARTS: List[int] = [1, 5, 10]
+START = STARTS[0]
+INT_START = INT_STARTS[0]
+DURS: List[float] = [1.0, 2.0, 2.5]
+DUR = DURS[0]
+AMPS: List[float] = [1.0, 2.0, 3.0]
+AMP = AMPS[0]
+PITCHES: List[float] = [1.0, 1.5, 2.0]
+PITCH = PITCHES[0]
 
-HARMONIC_CHORD = HarmonicChord.MajorTriad
+ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
+                          'start': START,
+                          'duration': DUR,
+                          'amplitude': AMP,
+                          'pitch': PITCH}
+NOTE_SEQUENCE_IDX = 0
 
-NOTE_CLS = CSoundNote
-ATTR_NAME_IDX_MAP = NOTE_CLS.ATTR_NAME_IDX_MAP
-ATTR_VALS = array([float(INSTRUMENT), START, DUR, AMP, PITCH])
-NOTE_SEQUENCE_NUM = 0
-OCTAVE = 4
-KEY = MajorKey.C
+NOTE_CLS_NAME = csound_note.CLASS_NAME
+ATTR_NAMES = csound_note.ATTR_NAMES
+ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
+NUM_NOTES = 2
+NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
+
+
+def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(make_note=csound_note.make_note,
+                                 num_notes=NUM_NOTES,
+                                 num_attributes=num_attributes,
+                                 attr_name_idx_map=attr_name_idx_map,
+                                 attr_vals_defaults_map=attr_vals_defaults_map)
+    return note_sequence
+
+
+@pytest.fixture
+def note_sequence():
+    return _note_sequence()
+
+
+def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
+          attr_get_type_cast_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    return csound_note.make_note(
+            _note_sequence(
+                    attr_name_idx_map=attr_name_idx_map,
+                    attr_vals_defaults_map=attr_vals_defaults_map,
+                    num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
+            attr_name_idx_map,
+            attr_get_type_cast_map=attr_get_type_cast_map)
 
 
 @pytest.fixture
 def note():
-    # Must construct each test Note with a new instance of underlying storage to avoid aliasing bugs
-    attr_vals = np_copy(ATTR_VALS)
-    return CSoundNote(attr_vals=attr_vals, attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                      seq_idx=NOTE_SEQUENCE_NUM)
+    return _note()
 
 
 @pytest.fixture(scope='function')

@@ -371,12 +371,13 @@ def _make_cls(attr_name_idx_map):
         set_func = setter(attr_name)
         methods[f's_{attr_name}'] = set_func
         methods[attr_name] = property(get_func, set_func)
-    # Standard Note methods
+    # Standard Note fluent accessor methods
     methods['I'] = I
     methods['T'] = T
     methods['D'] = D
     methods['V'] = V
     methods['P'] = P
+    # Standard Note API
     methods['transpose'] = transpose
     # Supported dunder methods
     methods['__eq__'] = eq
