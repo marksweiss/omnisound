@@ -22,10 +22,6 @@ class MeasureSwingNotEnabledException(Exception):
     pass
 
 
-class MeasureBeatInvalidPositionException(Exception):
-    pass
-
-
 class Measure(NoteSequence):
     """Represents a musical measure in a musical Score. As such it includes a NoteSequence
        and attributes that affect the performance of all Notes in that NoteSequence.

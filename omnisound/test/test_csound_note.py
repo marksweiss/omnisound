@@ -10,6 +10,8 @@ from omnisound.note.adapters.note import AMP_I, DUR_I, NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 
+# TODO TEST TRANSPOSE
+
 INSTRUMENT = 1
 STARTS: List[float] = [1.0, 0.5, 1.5]
 INT_STARTS: List[int] = [1, 5, 10]

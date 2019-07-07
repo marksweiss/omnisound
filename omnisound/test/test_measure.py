@@ -87,7 +87,7 @@ def _measure(meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None
 
 @pytest.fixture
 def measure(meter, swing):
-    return _measure(meter, swing)
+    return _measure(meter=meter, swing=swing)
 
 
 @pytest.fixture
@@ -176,7 +176,7 @@ def test_apply_phrasing(measure, meter, swing):
 
     # Swing is None by default. Test that operations on swing raise if Swing object not provided to __init__()
     no_swing = None
-    measure_no_swing = _measure(meter, no_swing)
+    measure_no_swing = _measure(meter=meter, swing=no_swing)
     with pytest.raises(MeasureSwingNotEnabledException):
         measure_no_swing.apply_phrasing()
 
@@ -219,7 +219,7 @@ def test_quantize(measure, meter, swing):
     measure[2].start = (DUR * 2)
     measure[3].start = (DUR * 3)
 
-    quantized_measure = _measure(meter, swing)
+    quantized_measure = _measure(meter=meter, swing=swing)
     for note in quantized_measure:
         note.duration *= 2
     quantized_measure[0].start = 0.0
@@ -252,14 +252,14 @@ def test_quantize(measure, meter, swing):
 
 def test_quantize_to_beat(measure, meter):
     # Test: Note durations not on the beat, quantization required
-    note_list_with_offset_start_times = [_note() for _ in range(len(measure))]
-    for note in note_list_with_offset_start_times:
-        note.start = note.start + 0.05
-    note_list_with_offset_start_times[1].start += DUR
-    note_list_with_offset_start_times[2].start += (DUR * 2)
-    note_list_with_offset_start_times[3].start += (DUR * 3)
+    no_swing = None
+    quantized_measure = _measure(meter=meter, swing=no_swing)
+    for note in quantized_measure:
+        note.start += 0.05
+    quantized_measure[1].start = DUR
+    quantized_measure[2].start = (DUR * 2)
+    quantized_measure[3].start = (DUR * 3)
     # Quantize and assert the start times match the original start_times, which are on the beat
-    quantized_measure = _measure()
     quantized_measure.quantize_to_beat()
     for i, note in enumerate(quantized_measure):
         assert note.start == pytest.approx(measure[i].start)
@@ -512,32 +512,25 @@ def test_beat(measure):
 #     assert len(measure) == 0
 
 
-def test_set_notes_attr(measure):
-    expected_amp = 100
-    expected_dur = NoteDur.EIGHTH.value
-
-    for note in measure:
-        assert note.amp != expected_amp
-    for note in measure:
-        assert note.dur != expected_dur
-
-    measure.set_attr('amp', expected_amp)
-    measure.set_attr('dur', expected_dur)
-    for note in measure:
-        assert note.amp == expected_amp
-    for note in measure:
-        assert note.dur == expected_dur
-
-
-def test_get_notes_attr(measure):
-    assert measure.get_attr('start') == [0.0, 0.25, 0.5, 0.75]
-
-
+# TODO ALSO TEST IN CSOUND NOTE TEST, AND FOR MIDI AN FOXDOT
 def test_transpose(measure):
-    expected_pitch = 10.02
-    measure.transpose(interval=1)
+    interval = 1
+    expected_pitch = 9.02
+    measure.transpose(interval=interval)
     for note in measure:
-        assert note.pitch == expected_pitch
+        assert note.pitch == pytest.approx(expected_pitch)
+
+    interval = 12
+    expected_pitch = 10.03
+    measure.transpose(interval=interval)
+    for note in measure:
+        assert note.pitch == pytest.approx(expected_pitch)
+
+    interval = -14
+    expected_pitch = 8.11
+    measure.transpose(interval=interval)
+    for note in measure:
+        assert note.pitch == pytest.approx(expected_pitch)
 
 
 if __name__ == '__main__':

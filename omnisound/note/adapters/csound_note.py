@@ -66,18 +66,40 @@ def pitch_to_str(pitch_prec):
 # TODO MODIFY AS MATRIX TRANSFORM GENERIC
 # TODO TEST COVERAGE
 def transpose(self, interval: int):
+    """NOTE: This is only valid to call with pitches in the CSound octave.western_scale style, e.g. 4.01 for C4."""
+
     validate_type('interval', interval, int)
+
     # Get current pitch as an integer in the range 1..11
-    cur_pitch_str = str(self.pitch)
-    cur_octave, cur_pitch = cur_pitch_str.split('.')
+    cur_octave, cur_pitch = str(round(self.pitch, 2)).split('.')
+    cur_octave = int(cur_octave)
+    cur_pitch = int(cur_pitch)
     # Calculate the new_pitch by incrementing it and modding into the number of intervals in an octave
     # Then divide by 100 and add the octave to convert this back to CSound syntax
     #  which is the {octave}.{pitch in range 1..12}
     # Handle the case where the interval moves the pitch into the next octave
-    if int(cur_pitch) + interval > NUM_INTERVALS_IN_OCTAVE:
-        cur_octave = int(cur_octave) + 1
+    octave_incr, pitch_incr = divmod(interval, NUM_INTERVALS_IN_OCTAVE)
+    octave_incr = int(octave_incr)
+    pitch_incr = int(pitch_incr)
+    # Incrementing to higher pitch
+    if interval > 0:
+        new_octave = cur_octave + octave_incr
+        if (cur_pitch + pitch_incr) > NUM_INTERVALS_IN_OCTAVE:
+            new_octave += 1
+        if new_octave > MAX_OCTAVE:
+            raise ValueError(f'transpose() for interval {interval} results in octave > {MAX_OCTAVE}')
+        new_pitch = (cur_pitch + pitch_incr) % NUM_INTERVALS_IN_OCTAVE
+    # Incrementing to lower pitch
+    else:
+        # octave_incr is negative, because divmod divisor is negative
+        new_octave = cur_octave + octave_incr
+        if (cur_pitch + pitch_incr) > NUM_INTERVALS_IN_OCTAVE:
+            new_octave -= 1
+        if new_octave < MIN_OCTAVE:
+            raise ValueError(f'transpose() for interval {interval} results in octave < {MIN_OCTAVE}')
+        new_pitch = NUM_INTERVALS_IN_OCTAVE - ((cur_pitch + pitch_incr) % NUM_INTERVALS_IN_OCTAVE)
     # noinspection PyAttributeOutsideInit
-    self.pitch = float(cur_octave) + (((int(cur_pitch) + interval) % NUM_INTERVALS_IN_OCTAVE) / 100)
+    self.pitch = float(new_octave) + round((new_pitch / 100.0), 2)
 
 
 def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
