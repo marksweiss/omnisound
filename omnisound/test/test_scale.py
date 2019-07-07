@@ -1,6 +1,4 @@
 
-from typing import Any, Mapping
-
 import pytest
 
 from omnisound.note.containers.note_sequence import NoteSequence
