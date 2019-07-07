@@ -182,11 +182,11 @@ class Section(object):
             measure.transpose(interval)
 
     def get_notes_attr(self, name: str) -> List[Any]:
-        return list(chain.from_iterable([measure.get_notes_attr(name) for measure in self.measure_list]))
+        return list(chain.from_iterable([measure.get_attr(name) for measure in self.measure_list]))
 
     def set_notes_attr(self, name: str, val: Any):
         for measure in self.measure_list:
-            measure.set_notes_attr(name, val)
+            measure.set_attr(name, val)
     # Getters and setters for all core note properties, get from all notes, apply to all notes
 
     # Measure list management

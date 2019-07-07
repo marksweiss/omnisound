@@ -52,13 +52,12 @@ class Scale(NoteSequence):
         self.harmonic_scale = harmonic_scale
         self.get_pitch_for_key = get_pitch_for_key
 
-        # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
-
         # TODO MINGUS SCALES DO NOT MATCH, note names are 'C#' and 'Bb" etc. Need to map
         #  with a wrapper function in scale_globals so all the HarmonicScales are the notes in the scale
         #  from Mingus but in omnisound Enums or Enum Strings
         # TODO Then fix mingus_utils and re-pass tests
 
+        # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
         mingus_keys = harmonic_scale.value(key.name).ascending()
         # Trim the last element because mingus returns the first note in the next octave along with all the
         # notes in the scale of the octave requested. This behavior is observed and not exhaustively tested

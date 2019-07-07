@@ -92,5 +92,18 @@ def test_make_rest_note(note):
     assert note.amplitude == 0.0
 
 
+def test_add_base_attr_name_indexes(note):
+    expected_attr_name_idx_map = {
+        'instrument': 0,
+        'start': 1,
+        'duration': 2,
+        'dur': 2,
+        'amplitude': 3,
+        'amp': 3,
+        'pitch': 4,
+    }
+    assert csound_note.ATTR_NAME_IDX_MAP == expected_attr_name_idx_map
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])

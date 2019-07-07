@@ -385,14 +385,14 @@ def test_set_notes_attr(section):
         for note in measure:
             assert note.amp != expected_amp
 
-    section.set_notes_attr('amp', expected_amp)
+    section.set_attr('amp', expected_amp)
     for measure in section.measure_list:
         for note in measure:
             assert note.amp == expected_amp
 
 
 def test_get_notes_attr(section):
-    assert section.get_notes_attr('start') == [0.0, 0.25, 0.5, 0.75] + [0.0, 0.25, 0.5, 0.75]
+    assert section.get_attr('start') == [0.0, 0.25, 0.5, 0.75] + [0.0, 0.25, 0.5, 0.75]
 
 
 def test_transpose(section):

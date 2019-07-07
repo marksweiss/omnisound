@@ -140,7 +140,7 @@ class MidiPlayer(Player):
             for measure in track.measure_list:
                 # TODO Support Midi Performance Attrs
                 # if op == PLAY_ALL
-                #     measure_performance_attrs = measure.performance_attrsj
+                #     performance_attrs = measure.performance_attrsj
                 # Build an ordered event list of the notes in the measure
                 # NOTE: Assumes first note start on 0.0, because the first note of every measure is 0 offset
                 #       i.e. it assumes it will occur exactly after the last note of the last measure
@@ -157,7 +157,7 @@ class MidiPlayer(Player):
                     # note_performance_attrs = note.performance_attrs
                     # if op == PLAY_ALL:
                     #     self._apply_performance_attrs(note, song_performance_attrs, track_performance_attrs,
-                    #                                   measure_performance_attrs, note_performance_attrs)
+                    #                                   performance_attrs, note_performance_attrs)
                     # else:
                     #     self._apply_performance_attrs(note, note_performance_attrs)
                     message = Message(event.event_type.value, time=event.tick_delta, velocity=event.note.amp,

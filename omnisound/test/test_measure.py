@@ -4,53 +4,84 @@ from typing import List, Tuple
 
 import pytest
 
-from omnisound.note.adapters.csound_note import CSoundNote
+from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.measure import (Measure,
                                                MeasureSwingNotEnabledException,
                                                Meter, NoteDur,
                                                Swing)
-
-INSTRUMENT = 1.0
-START = 0.0
-DUR = float(NoteDur.QUARTER.value)
-AMP = 1.0
-PITCH = 10.1
-
-NOTE_CLS = CSoundNote
-ATTR_NAME_IDX_MAP = NOTE_CLS.ATTR_NAME_IDX_MAP
-ATTR_VALS_DEFAULTS_MAP = {'instrument': INSTRUMENT,
-                          'start': START,
-                          'duration': DUR,
-                          'amplitude': AMP,
-                          'pitch': PITCH}
-NUM_NOTES = 4
-NUM_ATTRIBUTES = len(ATTR_NAME_IDX_MAP)
-NOTE_SEQUENCE_NUM = 0
+import omnisound.note.adapters.csound_note as csound_note
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
 TEMPO_QPM = 240
-
 SWING_FACTOR = 0.5
 
+INSTRUMENT = 1
+START = 0.0
+DUR = float(NoteDur.QUARTER.value)
+AMP = 100.0
+PITCH = 9.01
 
-def _measure(meter, swing, attr_vals_defaults_map=None):
-    measure = Measure(note_cls=NOTE_CLS,
-                      num_notes=NUM_NOTES,
+ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
+                          'start': START,
+                          'duration': DUR,
+                          'amplitude': AMP,
+                          'pitch': PITCH}
+NOTE_SEQUENCE_IDX = 0
+ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
+NUM_NOTES = 4
+NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
+
+
+def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(make_note=csound_note.make_note,
+                                 num_notes=NUM_NOTES,
+                                 num_attributes=num_attributes,
+                                 attr_name_idx_map=attr_name_idx_map,
+                                 attr_vals_defaults_map=attr_vals_defaults_map)
+    return note_sequence
+
+
+@pytest.fixture
+def note_sequence():
+    return _note_sequence()
+
+
+def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
+          attr_get_type_cast_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    return csound_note.make_note(
+            _note_sequence(
+                    attr_name_idx_map=attr_name_idx_map,
+                    attr_vals_defaults_map=attr_vals_defaults_map,
+                    num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
+            attr_name_idx_map,
+            attr_get_type_cast_map=attr_get_type_cast_map)
+
+
+@pytest.fixture
+def note():
+    return _note()
+
+
+def _measure(meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None):
+    num_notes = num_notes or NUM_NOTES
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    measure = Measure(meter=meter,
+                      swing=swing,
+                      make_note=csound_note.make_note,
+                      num_notes=num_notes,
                       num_attributes=NUM_ATTRIBUTES,
                       attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                      attr_vals_defaults_map=attr_vals_defaults_map,
-                      meter=meter,
-                      swing=swing)
-    measure[1].start += DUR
-    measure[2].start += (DUR * 2)
-    measure[3].start += (DUR * 3)
-
-    # TEMP DEBUG
-    import pdb; pdb.set_trace()
-
-    assert measure[1].start == DUR
-
+                      attr_vals_defaults_map=attr_vals_defaults_map)
+    if len(measure) == 4:
+        measure[1].start += DUR
+        measure[2].start += (DUR * 2)
+        measure[3].start += (DUR * 3)
     return measure
 
 
@@ -118,7 +149,7 @@ def test_swing_on_off_apply_swing(measure, meter, swing):
 
     # Construct a Measure with no Swing and verify expected exceptions are raised
     no_swing = None
-    measure_2 = _measure(meter, no_swing)
+    measure_2 = _measure(meter=meter, swing=no_swing)
     with pytest.raises(MeasureSwingNotEnabledException):
         measure_2.swing_on()
     with pytest.raises(MeasureSwingNotEnabledException):
@@ -138,13 +169,7 @@ def test_apply_phrasing(measure, meter, swing):
     assert measure[-1].start == expected_phrasing_note_starts[-1]
 
     # If there is only one note in the measure, phrasing is a no-op
-    num_notes = 1
-    short_measure = Measure(note_cls=NOTE_CLS,
-                            num_notes=num_notes,
-                            num_attributes=NUM_ATTRIBUTES,
-                            attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                            meter=meter,
-                            swing=swing)
+    short_measure = _measure(meter=meter, swing=swing, num_notes=1)
     expected_phrasing_note_starts = [short_measure[0].start]
     short_measure.apply_phrasing()
     assert short_measure[0].start == expected_phrasing_note_starts[0]
@@ -170,7 +195,7 @@ def test_quantizing_on_off(measure):
     assert not measure.is_quantizing()
 
 
-def test_quantize(note_list, measure):
+def test_quantize(measure, meter, swing):
     # BEFORE
     # measure ------------------------*
     # 0    0.25    0.50    0.75    1.00     1.25
@@ -187,21 +212,22 @@ def test_quantize(note_list, measure):
     #           n2**********
     #                   n3************
 
-    note_list_with_longer_durations = [_note() for _ in range(len(note_list))]
-    for note in note_list_with_longer_durations:
-        note.dur = note.dur * 2
-    note_list_with_longer_durations[1].start += DUR
-    note_list_with_longer_durations[2].start += (DUR * 2)
-    note_list_with_longer_durations[3].start += (DUR * 3)
-    measure_note_list = [_note() for _ in range(len(note_list))]
-    for note in measure_note_list:
-        note.dur = note.dur * 2
-    measure_note_list[1].start += DUR
-    measure_note_list[2].start += (DUR * 2)
-    measure_note_list[3].start += (DUR * 3)
-    measure.note_list = measure_note_list
+    for note in measure:
+        note.duration *= 2
+    measure[0].start = 0.0
+    measure[1].start = DUR
+    measure[2].start = (DUR * 2)
+    measure[3].start = (DUR * 3)
 
-    measure.quantize()
+    quantized_measure = _measure(meter, swing)
+    for note in quantized_measure:
+        note.duration *= 2
+    quantized_measure[0].start = 0.0
+    quantized_measure[1].start = DUR
+    quantized_measure[2].start = (DUR * 2)
+    quantized_measure[3].start = (DUR * 3)
+
+    quantized_measure.quantize()
 
     # Test dur adjustments
     # Assert that after quantization the durations are adjusted
@@ -210,8 +236,8 @@ def test_quantize(note_list, measure):
     # - measure_duration is 1.0
     # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
     expected_dur_adjustment = 0.125
-    for i, note in enumerate(measure):
-        assert note.dur == pytest.approx(note_list_with_longer_durations[i].dur - expected_dur_adjustment)
+    for i, note in enumerate(quantized_measure):
+        assert note.dur == pytest.approx(measure[i].dur - expected_dur_adjustment)
 
     # Test start adjustments
     # Expected start adjustments
@@ -220,23 +246,23 @@ def test_quantize(note_list, measure):
     # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
     # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
     expected_starts = [0.0, 0.125, 0.375, 0.625]
-    for i, note in enumerate(measure.note_list):
+    for i, note in enumerate(quantized_measure):
         assert note.start == pytest.approx(expected_starts[i])
 
 
-def test_quantize_to_beat(note_list, meter):
+def test_quantize_to_beat(measure, meter):
     # Test: Note durations not on the beat, quantization required
-    note_list_with_offset_start_times = [_note() for _ in range(len(note_list))]
+    note_list_with_offset_start_times = [_note() for _ in range(len(measure))]
     for note in note_list_with_offset_start_times:
         note.start = note.start + 0.05
     note_list_with_offset_start_times[1].start += DUR
     note_list_with_offset_start_times[2].start += (DUR * 2)
     note_list_with_offset_start_times[3].start += (DUR * 3)
     # Quantize and assert the start times match the original start_times, which are on the beat
-    measure = Measure(to_add=note_list, meter=meter)
-    measure.quantize_to_beat()
-    for i, note in enumerate(note_list):
-        assert note.start == pytest.approx(measure.note_list[i].start)
+    quantized_measure = _measure()
+    quantized_measure.quantize_to_beat()
+    for i, note in enumerate(quantized_measure):
+        assert note.start == pytest.approx(measure[i].start)
 
 
 def test_beat(measure):
@@ -486,68 +512,6 @@ def test_beat(measure):
 #     assert len(measure) == 0
 
 
-def test_set_get_instrument(meter, swing):
-    measure = _measure(meter, swing, attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP)
-
-    # assert measure.instrument == [1.0, 1.0, 1.0, 1.0]
-    # assert measure.i == [1.0, 1.0, 1.0, 1.0]
-    from datetime import datetime
-    measure[0].instrument = datetime.now().timestamp()
-    measure[1].instrument = datetime.now().timestamp()
-    measure[2].instrument = datetime.now().timestamp()
-    measure[3].instrument = datetime.now().timestamp()
-    measure.set_instrument(2.0)
-    assert measure.get_instrument() == [2.0, 2.0, 2.0, 2.0]
-    # assert measure.i == [2, 2, 2, 2]
-    # measure.i = 3
-    # assert measure.instrument == [3, 3, 3, 3]
-    # assert measure.i == [3, 3, 3, 3]
-
-
-def test_set_get_start(measure):
-    assert measure.start == [0.0, 0.25, 0.5, 0.75]
-    assert measure.s == [0.0, 0.25, 0.5, 0.75]
-    measure.start = 1.0
-    assert measure.start == [1.0, 1.0, 1.0, 1.0]
-    assert measure.s == [1.0, 1.0, 1.0, 1.0]
-    measure.s = 2.0
-    assert measure.start == [2.0, 2.0, 2.0, 2.0]
-    assert measure.s == [2.0, 2.0, 2.0, 2.0]
-
-
-def test_set_get_dur(measure):
-    assert measure.dur == [0.25, 0.25, 0.25, 0.25]
-    assert measure.d == [0.25, 0.25, 0.25, 0.25]
-    measure.dur = 1.0
-    assert measure.dur == [1.0, 1.0, 1.0, 1.0]
-    assert measure.d == [1.0, 1.0, 1.0, 1.0]
-    measure.d = 2.0
-    assert measure.dur == [2.0, 2.0, 2.0, 2.0]
-    assert measure.d == [2.0, 2.0, 2.0, 2.0]
-
-
-def test_set_get_amp(measure):
-    assert measure.amp == [1, 1, 1, 1]
-    assert measure.a == [1, 1, 1, 1]
-    measure.amp = 2
-    assert measure.amp == [2, 2, 2, 2]
-    assert measure.a == [2, 2, 2, 2]
-    measure.a = 3
-    assert measure.amp == [3, 3, 3, 3]
-    assert measure.a == [3, 3, 3, 3]
-
-
-def test_set_get_pitch(measure):
-    assert measure.pitch == [10.1, 10.1, 10.1, 10.1]
-    assert measure.p == [10.1, 10.1, 10.1, 10.1]
-    measure.pitch = 10.08
-    assert measure.pitch == [10.08, 10.08, 10.08, 10.08]
-    assert measure.p == [10.08, 10.08, 10.08, 10.08]
-    measure.p = 10.09
-    assert measure.pitch == [10.09, 10.09, 10.09, 10.09]
-    assert measure.p == [10.09, 10.09, 10.09, 10.09]
-
-
 def test_set_notes_attr(measure):
     expected_amp = 100
     expected_dur = NoteDur.EIGHTH.value
@@ -557,8 +521,8 @@ def test_set_notes_attr(measure):
     for note in measure:
         assert note.dur != expected_dur
 
-    measure.set_notes_attr('amp', expected_amp)
-    measure.set_notes_attr('dur', expected_dur)
+    measure.set_attr('amp', expected_amp)
+    measure.set_attr('dur', expected_dur)
     for note in measure:
         assert note.amp == expected_amp
     for note in measure:
@@ -566,7 +530,7 @@ def test_set_notes_attr(measure):
 
 
 def test_get_notes_attr(measure):
-    assert measure.get_notes_attr('start') == [0.0, 0.25, 0.5, 0.75]
+    assert measure.get_attr('start') == [0.0, 0.25, 0.5, 0.75]
 
 
 def test_transpose(measure):

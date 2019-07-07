@@ -159,14 +159,14 @@ class Meter(object):
         validate_type('note_sequence', note_sequence, NoteSequence)
 
         if self.quantizing:
-            notes_dur = max([note.start + note.dur for note in note_sequence])
+            notes_dur = max([note.start + note.duration for note in note_sequence])
             if notes_dur == self.measure_dur_secs:
                 return
 
             total_adjustment = self.measure_dur_secs - notes_dur
-            if abs(total_adjustment) >= 1.0:
-                raise InvalidQuantizationDurationException((f'quantization adjustment value of {total_adjustment} ' 
-                                                            '>= than maximum allowed adjustment of 1.0'))
+            # if abs(total_adjustment) > 1.0:
+            #     raise InvalidQuantizationDurationException((f'quantization adjustment value of {total_adjustment} '
+            #                                                 '> than maximum allowed adjustment of 1.0'))
             for note in note_sequence:
                 dur_adjustment = note.dur * total_adjustment
                 note.dur += dur_adjustment
@@ -192,7 +192,7 @@ class Meter(object):
 
             # Append measure end time to beat_start_times as a sentinel value for bisect()
             beat_start_times = self.beat_start_times_secs + [self.measure_dur_secs]
-            for note in note_sequence.note_list:
+            for note in note_sequence:
                 i = bisect_left(beat_start_times, note.start)
                 # Note maps to 0th beat
                 if i == 0:

@@ -4,17 +4,19 @@ from typing import Any, Mapping, Union
 
 from numpy import ndarray
 
-from omnisound.note.adapters.note import getter, setter
+from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
                                    validate_sequence_of_type, validate_type)
 
 
+# TODO FIX TO USE DUMMY 0th INDEX FOR INSTRUMENT, SO CORE ATTRS ARE AT SAME INDEX`
+
 CLASS_NAME = 'FoxdotSupercolliderNote'
 
 ATTR_NAMES = ('delay', 'dur', 'amp', 'degree', 'octave')
-ATTR_NAME_IDX_MAP = {attr_name: i for i, attr_name in enumerate(ATTR_NAMES)}
+ATTR_NAME_IDX_MAP = add_base_attr_name_indexes({attr_name: i for i, attr_name in enumerate(ATTR_NAMES)})
 
 SCALES = {'aeolian', 'chinese', 'chromatic', 'custom', 'default', 'diminished', 'dorian', 'dorian2',
           'egyptian', 'freq', 'harmonicMajor', 'harmonicMinor', 'indian', 'justMajor', 'justMinor',

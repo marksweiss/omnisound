@@ -1,8 +1,9 @@
 # Copyright 2018 Mark S. Weiss
 
+from typing import Any
+
 from enum import Enum
 
-from omnisound.note.adapters.note import Note
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.utils.utils import (sign, validate_optional_type,
                                    validate_optional_types, validate_type,
@@ -57,8 +58,8 @@ class Swing(object):
             for note in note_sequence:
                 note.start += self.calculate_swing_adj(note, swing_direction)
 
-    def calculate_swing_adj(self, note: Note = None,  swing_direction: SwingDirection = None):
-        validate_types(('note', note, Note), ('swing_direction', swing_direction, Swing.SwingDirection))
+    def calculate_swing_adj(self, note: Any = None,  swing_direction: SwingDirection = None):
+        validate_types(('swing_direction', swing_direction, Swing.SwingDirection))
 
         swing_adj = note.start * self.swing_factor
         if swing_direction == Swing.SwingDirection.Forward:

@@ -13,6 +13,7 @@ DUR_I = 2
 AMP_I = 3
 PITCH_I = 4
 
+# TODO ALL NOTES MUST INCLUDE THIS 'BASE CLASS' SET OF NOTE ATTRIBUTE NAMES AND INDEXES
 BASE_ATTR_NAME_IDX_MAP = {
     'instrument': INSTRUMENT_I,
     'start': START_I,
@@ -23,6 +24,12 @@ BASE_ATTR_NAME_IDX_MAP = {
 BASE_ATTR_NAMES = tuple(BASE_ATTR_NAME_IDX_MAP.keys())
 
 DEFAULT_VAL = 0.0
+
+
+def add_base_attr_name_indexes(attr_name_idx_map: Dict[str, int]):
+    base_attr_names_to_add = set(BASE_ATTR_NAMES) - set(attr_name_idx_map.keys())
+    attr_name_idx_map.update({attr_name: BASE_ATTR_NAME_IDX_MAP[attr_name] for attr_name in base_attr_names_to_add})
+    return attr_name_idx_map
 
 
 def getter(attr_name: str):
