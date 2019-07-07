@@ -8,7 +8,13 @@ from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.chord import Chord
 from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.scale import Scale
+from omnisound.note.generators.scale_globals import HarmonicScale, MajorKey
 import omnisound.note.adapters.csound_note as csound_note
+
+KEY = MajorKey.C
+OCTAVE = 4
+HARMONIC_SCALE = HarmonicScale.Major
+HARMONIC_CHORD = HarmonicChord.MajorTriad
 
 INSTRUMENT = 1
 STARTS: List[float] = [1.0, 0.5, 1.5]
@@ -29,7 +35,7 @@ ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
                           'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 
-NOTE_CLS_NAME = csound_note.CLASS_NAME
+NOTE_CLS = csound_note
 ATTR_NAMES = csound_note.ATTR_NAMES
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
 NUM_NOTES = 2
@@ -40,7 +46,7 @@ def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attr
     attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
     num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=csound_note.make_note,
+    note_sequence = NoteSequence(make_note=NOTE_CLS.make_note,
                                  num_notes=NUM_NOTES,
                                  num_attributes=num_attributes,
                                  attr_name_idx_map=attr_name_idx_map,
@@ -57,7 +63,7 @@ def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
           attr_get_type_cast_map=None, num_attributes=None):
     attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    return csound_note.make_note(
+    return NOTE_CLS.make_note(
             _note_sequence(
                     attr_name_idx_map=attr_name_idx_map,
                     attr_vals_defaults_map=attr_vals_defaults_map,
@@ -75,11 +81,12 @@ def note():
 def chord():
     harmonic_chord = HarmonicChord.MajorTriad
     return Chord(harmonic_chord=harmonic_chord,
-                 note_cls=NOTE_CLS,
-                 num_attributes=len(NOTE_CLS.ATTR_NAMES),
-                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
                  octave=OCTAVE,
-                 key=KEY)
+                 key=KEY,
+                 get_pitch_for_key=NOTE_CLS.get_pitch_for_key,
+                 make_note=NOTE_CLS.make_note,
+                 num_attributes=len(NOTE_CLS.ATTR_NAMES),
+                 attr_name_idx_map=ATTR_NAME_IDX_MAP)
 
 
 def _assert_expected_pitches(chord_for_test, expected_pitches):
@@ -89,7 +96,6 @@ def _assert_expected_pitches(chord_for_test, expected_pitches):
 
 def test_chord(chord):
     assert chord.harmonic_chord == HARMONIC_CHORD
-    assert chord.note_type is NOTE_CLS
     assert chord.octave == OCTAVE
     # noinspection PyCallingNonCallable
     # Assert the number of notes in the sequence constructed is the number of notes in the underlying mingus chord
