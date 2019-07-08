@@ -73,7 +73,7 @@ class Track(Section):
         else:
             self.track_instrument = Track.DEFAULT_INSTRUMENT
 
-        super(Track, self).__init__(measure_list=measure_list,
+        super(Track, self).__init__(measures=measure_list,
                                     meter=meter,
                                     swing=swing,
                                     name=name,

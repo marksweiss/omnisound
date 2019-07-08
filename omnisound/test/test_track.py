@@ -76,7 +76,7 @@ def measure_list(measure):
 
 @pytest.fixture
 def section(measure_list, performance_attrs):
-    return Section(measure_list=measure_list, performance_attrs=performance_attrs)
+    return Section(measures=measure_list, performance_attrs=performance_attrs)
 
 
 @pytest.fixture
@@ -242,7 +242,7 @@ def test_section_insert_remove_getitem(measure, measure_list, section, track):
     new_instrument = INSTRUMENT + 1
     measure_2.instrument = new_instrument
     measure_list = [measure_1, measure_2]
-    section = Section(measure_list=measure_list)
+    section = Section(measures=measure_list)
     track.insert(0, section)
     assert track[0].instrument == [INSTRUMENT, INSTRUMENT, INSTRUMENT, INSTRUMENT]
     assert track[1].instrument == [new_instrument, new_instrument, new_instrument, new_instrument]

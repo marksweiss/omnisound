@@ -1,5 +1,9 @@
 # Copyright 2018 Mark S. Weiss
 
+# TODO ADD OPTIONALs TO ALL SIGNATURES
+# TODO EQUALITY TESTS EVERYWHERE
+# TOOD COPY TESTS
+
 from typing import Any, Mapping, Iterator, Sequence, Tuple
 
 import numpy as np

@@ -79,7 +79,7 @@ def measure_list(measure):
 
 @pytest.fixture
 def section(measure_list, performance_attrs):
-    return Section(measure_list=measure_list, performance_attrs=performance_attrs)
+    return Section(measures=measure_list, performance_attrs=performance_attrs)
 
 
 @pytest.fixture
