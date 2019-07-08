@@ -99,9 +99,12 @@ class Measure(NoteSequence):
         If increment_beat == True the measure_beat is also incremented, after the insertion. So this method
         is a convenience method for inserting multiple notes in sequence on the beat.
         """
-        validate_types(('increment_beat', increment_beat, bool))
+        validate_type('increment_beat', increment_beat, bool)
+        if len(self) + 1 > self.meter.beats_per_measure:
+            raise ValueError(f'Attempt to add a note to a measure greater than the the number of beats per measure')
 
         note.start = self.meter.beat_start_times_secs[self.beat]
+
         self.append(note)
         # Maintain the invariant that notes are sorted ascending by start
         self._sort_notes_by_start_time()
@@ -119,17 +122,17 @@ class Measure(NoteSequence):
            NOTE: This *replaces* all notes in the Measure with this sequence of notes on the beat
         """
         validate_types(('to_add', to_add, NoteSequence))
-        # Otherwise the note_list is the NoteSequence or List[Note] passed in. Retrieve it and validate
-        # that it doesn't have more notes than there are beats per measure.
         if len(to_add) > self.meter.beats_per_measure:
             raise ValueError(f'Sequence `to_add` must have a number of notes <= to the number of beats per measure')
 
         # Now iterate the beats per measure and assign each note in note_list to the next start time on the beat
         for i, beat_start_time in enumerate(self.meter.beat_start_times_secs):
-            # There might be fewer notes than beats per measure, because `to_add` is a sequence
-            if i == len(self):
+            # There might be fewer notes being added than beats per measure
+            if i == len(to_add):
                 break
-            self[i].start = beat_start_time
+            to_add[i].start = beat_start_time
+
+        self.extend(to_add)
 
         # Maintain the invariant that notes are sorted ascending by start
         self._sort_notes_by_start_time()

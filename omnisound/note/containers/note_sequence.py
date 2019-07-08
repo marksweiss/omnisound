@@ -62,8 +62,9 @@ class NoteSequence(object):
         # Construct empty 2D numpy array of the specified dimensions. Each row stores a Note's values.
         rows = [[0.0] * num_attributes for _ in range(num_notes)]
         self.note_attr_vals = np.array(rows)
-        # THIS MUST NOT BE ALTERED
-        self._num_attributes = self.note_attr_vals.shape[1]
+        if num_notes > 0:
+            # THIS MUST NOT BE ALTERED
+            self._num_attributes = self.note_attr_vals.shape[1]
 
         self.attr_name_idx_map = attr_name_idx_map
         self.attr_vals_defaults_map = attr_vals_defaults_map
@@ -188,12 +189,15 @@ class NoteSequence(object):
     def append(self, note: Any) -> 'NoteSequence':
         """NOTE: This only supports appending notes to this NoteSequence, not any of its children.
         """
-        if self.note_attr_vals[0].shape != note.note_attr_vals.shape:
+        # Handle case of adding note to a currently empty sequence
+        if len(self.note_attr_vals) and self.note_attr_vals[0].shape != note.note_attr_vals.shape:
             raise NoteSequenceInvalidAppendException(
                     'Note added to a NoteSequence must have the same number of attributes')
+        # Either this is the first note in the sequence, or it's not and we validated its shape conforms
+        num_attributes = note.note_attr_vals.shape[0]
         new_note_idx = len(self.note_attr_vals)
         # noinspection PyTypeChecker
-        self.note_attr_vals.resize(new_note_idx + 1, self._num_attributes)
+        self.note_attr_vals.resize(new_note_idx + 1, num_attributes)
         np.copyto(self.note_attr_vals[new_note_idx], note.note_attr_vals)
         self.update_range_map()
         return self
@@ -208,10 +212,16 @@ class NoteSequence(object):
 
     def extend(self, note_sequence: 'NoteSequence') -> 'NoteSequence':
         validate_type('note_sequence', note_sequence, NoteSequence)
-        if self.note_attr_vals[0].shape != note_sequence.note_attr_vals[0].shape:
+        if len(self.note_attr_vals) and self.note_attr_vals[0].shape != note_sequence.note_attr_vals[0].shape:
             raise NoteSequenceInvalidAppendException(
                 'NoteSequence extended to a NoteSequence must have the same number of attributes')
-        self.note_attr_vals = np.concatenate((self.note_attr_vals, note_sequence.note_attr_vals))
+        # Either this is the first note in the sequence, or it's not
+        # If it is, make this sequence the note_attr_vals of this sequence. If it is not, append these notes
+        # to the existing sequence -- we have already confirmed the shapes conform if  existing sequence is not empty.
+        if len(self.note_attr_vals):
+            self.note_attr_vals = np.concatenate((self.note_attr_vals, note_sequence.note_attr_vals))
+        else:
+            self.note_attr_vals = np.copy(note_sequence.note_attr_vals)
         self.update_range_map()
         return self
 
@@ -227,8 +237,28 @@ class NoteSequence(object):
 
     def insert(self, index: int, to_add: Any) -> 'NoteSequence':
         validate_type('index', index, int)
+
         new_notes = to_add.note_attr_vals
-        self.note_attr_vals = np.insert(self.note_attr_vals, index, new_notes, axis=0)
+        if len(new_notes.shape) == 1:
+            new_notes_num_attributes = new_notes.shape[0]
+        else:
+            new_notes_num_attributes = new_notes.shape[1]
+        if len(self.note_attr_vals):
+            num_attributes = self.note_attr_vals.shape[1]
+        else:
+            num_attributes = 0
+        if num_attributes and num_attributes != new_notes_num_attributes:
+            raise NoteSequenceInvalidAppendException(
+                    'NoteSequence inserted into a NoteSequence must have the same number of attributes')
+
+        if len(self.note_attr_vals):
+            self.note_attr_vals = np.insert(self.note_attr_vals, index, new_notes, axis=0)
+        else:
+            # Must copy the list of the underlying note array to initialize storage for a NoteSequence
+            # because NoteSequence arrays are 2D
+            if len(new_notes.shape) == 1:
+                new_notes = [new_notes]
+            self.note_attr_vals = np.copy(new_notes)
 
         self.update_range_map()
         return self

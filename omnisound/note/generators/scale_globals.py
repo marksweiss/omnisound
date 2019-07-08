@@ -6,6 +6,7 @@ import mingus.core.scales as m_scales
 from mingus.core.keys import major_keys, minor_keys
 
 NUM_NOTES_IN_OCTAVE = 11
+NUM_INTERVALS_IN_OCTAVE = 12
 
 
 class MajorKey(Enum):
