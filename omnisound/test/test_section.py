@@ -17,6 +17,7 @@ DUR = 1.0
 AMP = 100.0
 PITCH = 9.01
 
+PERF_ATTRS_NAME = 'perf_attrs'
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100
 ATTR_TYPE = int
@@ -68,6 +69,16 @@ def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
             attr_get_type_cast_map=attr_get_type_cast_map)
 
 
+@pytest.fixture
+def meter():
+    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
+
+
+@pytest.fixture
+def swing():
+    return Swing(swing_factor=SWING_FACTOR)
+
+
 def _measure(meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None):
     if num_notes is None:
         num_notes = NUM_NOTES
@@ -92,13 +103,23 @@ def measure(meter, swing):
 
 
 @pytest.fixture
-def meter():
-    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
+def measure_list(meter, swing):
+    return [_measure(meter=meter, swing=swing), _measure(meter=meter, swing=swing)]
+
+
+def _section(measure_list, meter, swing):
+    return Section(measures=measure_list, name=SECTION_NAME, meter=meter, swing=swing)
 
 
 @pytest.fixture
-def swing():
-    return Swing(swing_factor=SWING_FACTOR)
+def section(measure_list, meter, swing):
+    return _section(measure_list, meter, swing)
+
+
+@pytest.fixture
+def performance_attrs():
+    ret = PerformanceAttrs(name=PERF_ATTRS_NAME)
+    ret.add_attr(ATTR_NAME, ATTR_VAL, ATTR_TYPE)
 
 
 def _apply_swing_and_get_note_starts(measure) -> List[float]:
