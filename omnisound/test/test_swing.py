@@ -2,30 +2,45 @@
 
 import pytest
 
-from omnisound.note.adapters.csound_note import CSoundNote
 from omnisound.note.containers.measure import NoteDur, Swing
 from omnisound.note.containers.note_sequence import NoteSequence
+import omnisound.note.adapters.csound_note as csound_note
+
 
 INSTRUMENT = 1
 START = 0.0
 DUR = float(NoteDur.QUARTER.value)
-AMP = 1.0
-PITCH = 10.1
+AMP = 100.0
+PITCH = 9.01
+
 SWING_FACTOR = 0.5
+
+ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
+                          'start': START,
+                          'duration': DUR,
+                          'amplitude': AMP,
+                          'pitch': PITCH}
+NOTE_SEQUENCE_IDX = 0
+ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
+NUM_NOTES = 4
+NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
+
+
+def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(make_note=csound_note.make_note,
+                                 num_notes=NUM_NOTES,
+                                 num_attributes=num_attributes,
+                                 attr_name_idx_map=attr_name_idx_map,
+                                 attr_vals_defaults_map=attr_vals_defaults_map)
+    return note_sequence
 
 
 @pytest.fixture
 def note_sequence():
-    note = CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
-    note_1 = CSoundNote.copy(note)
-    note_2 = CSoundNote.copy(note)
-    note_2.start += DUR
-    note_3 = CSoundNote.copy(note)
-    note_3.start += (DUR * 2)
-    note_4 = CSoundNote.copy(note)
-    note_4.start += (DUR * 3)
-    note_list = [note_1, note_2, note_3, note_4]
-    return NoteSequence(note_list)
+    return _note_sequence()
 
 
 @pytest.fixture
@@ -47,6 +62,9 @@ def test_swing_on_off(swing):
 
 
 def test_swing_forward(note_sequence, swing):
+    note_sequence[1].start += DUR
+    note_sequence[2].start += (2 * DUR)
+    note_sequence[3].start += (3 * DUR)
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
     swing.swing_on().apply_swing(note_sequence, Swing.SwingDirection.Forward)
     actual_note_starts = [note.start for note in note_sequence]
@@ -54,6 +72,9 @@ def test_swing_forward(note_sequence, swing):
 
 
 def test_swing_reverse(note_sequence, swing):
+    note_sequence[1].start += DUR
+    note_sequence[2].start += (2 * DUR)
+    note_sequence[3].start += (3 * DUR)
     expected_swing_note_starts = [0.0, .125, 0.25, 0.375]
     swing.swing_on().apply_swing(note_sequence, Swing.SwingDirection.Reverse)
     actual_note_starts = [note.start for note in note_sequence]
@@ -61,6 +82,9 @@ def test_swing_reverse(note_sequence, swing):
 
 
 def test_swing_both(note_sequence, swing):
+    note_sequence[1].start += DUR
+    note_sequence[2].start += (2 * DUR)
+    note_sequence[3].start += (3 * DUR)
     expected_swing_note_starts = [(0.0, 0.0), (0.125, 0.375), (0.25, 0.75), (0.375, 1.125)]
     swing.swing_on().apply_swing(note_sequence, Swing.SwingDirection.Both)
     actual_note_starts = [note.start for note in note_sequence]
