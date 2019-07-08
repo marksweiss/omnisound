@@ -10,7 +10,6 @@ from omnisound.note.adapters.note import AMP_I, DUR_I, NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 
-# TODO TEST TRANSPOSE
 
 INSTRUMENT = 1
 STARTS: List[float] = [1.0, 0.5, 1.5]
@@ -260,6 +259,48 @@ def test_note_values():
     assert note.amplitude == AMP
     assert note.duration == DUR
     assert note.pitch == PITCH
+
+
+def test_transpose(note):
+    note.pitch = 9.01
+    interval = 1
+    expected_pitch = 9.02
+    note.transpose(interval=interval)
+    assert note.pitch == pytest.approx(expected_pitch)
+
+    note.pitch = 9.01
+    interval = 5
+    expected_pitch = 9.06
+    note.transpose(interval=interval)
+    assert note.pitch == pytest.approx(expected_pitch)
+
+    note = _note()
+    note.pitch = 9.01
+    interval = 12
+    expected_pitch = 10.02
+    note.transpose(interval=interval)
+    assert note.pitch == pytest.approx(expected_pitch)
+
+    note = _note()
+    note.pitch = 9.01
+    interval = -1
+    expected_pitch = 8.11
+    note.transpose(interval=interval)
+    assert note.pitch == pytest.approx(expected_pitch)
+
+    note = _note()
+    note.pitch = 9.01
+    interval = -12
+    expected_pitch = 7.11
+    note.transpose(interval=interval)
+    assert note.pitch == pytest.approx(expected_pitch)
+
+    note = _note()
+    note.pitch = 9.01
+    interval = -13
+    expected_pitch = 7.10
+    note.transpose(interval=interval)
+    assert note.pitch == pytest.approx(expected_pitch)
 
 
 if __name__ == '__main__':

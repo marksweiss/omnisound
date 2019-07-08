@@ -512,22 +512,52 @@ def test_beat(measure):
 #     assert len(measure) == 0
 
 
-# TODO ALSO TEST IN CSOUND NOTE TEST, AND FOR MIDI AN FOXDOT
+# TODO ALSO TEST FOR MIDI AN FOXDOT
 def test_transpose(measure):
+    for note in measure:
+        note.pitch = 9.01
     interval = 1
     expected_pitch = 9.02
     measure.transpose(interval=interval)
     for note in measure:
         assert note.pitch == pytest.approx(expected_pitch)
 
-    interval = 12
-    expected_pitch = 10.03
+    for note in measure:
+        note.pitch = 9.01
+    interval = 5
+    expected_pitch = 9.06
     measure.transpose(interval=interval)
     for note in measure:
         assert note.pitch == pytest.approx(expected_pitch)
 
-    interval = -14
+    for note in measure:
+        note.pitch = 9.01
+    interval = 12
+    expected_pitch = 10.02
+    measure.transpose(interval=interval)
+    for note in measure:
+        assert note.pitch == pytest.approx(expected_pitch)
+
+    for note in measure:
+        note.pitch = 9.01
+    interval = -1
     expected_pitch = 8.11
+    measure.transpose(interval=interval)
+    for note in measure:
+        assert note.pitch == pytest.approx(expected_pitch)
+
+    for note in measure:
+        note.pitch = 9.01
+    interval = -12
+    expected_pitch = 7.11
+    measure.transpose(interval=interval)
+    for note in measure:
+        assert note.pitch == pytest.approx(expected_pitch)
+
+    for note in measure:
+        note.pitch = 9.01
+    interval = -13
+    expected_pitch = 7.10
     measure.transpose(interval=interval)
     for note in measure:
         assert note.pitch == pytest.approx(expected_pitch)

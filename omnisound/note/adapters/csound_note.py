@@ -5,7 +5,7 @@ from typing import Any, Mapping, Union
 from numpy import ndarray
 
 from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
-from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE, MajorKey, MinorKey)
+from omnisound.note.generators.scale_globals import (NUM_NOTES_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
                                    validate_sequence_of_type, validate_type, validate_type_choice)
 
@@ -55,6 +55,10 @@ MAX_OCTAVE = 12
 DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
 
+class CSoundInvalidTransposeError(Exception):
+    pass
+
+
 # Return a function that binds the pitch_precision to a function that returns a string that
 # formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
 def pitch_to_str(pitch_prec):
@@ -64,42 +68,44 @@ def pitch_to_str(pitch_prec):
 
 
 # TODO MODIFY AS MATRIX TRANSFORM GENERIC
-# TODO TEST COVERAGE
 def transpose(self, interval: int):
-    """NOTE: This is only valid to call with pitches in the CSound octave.western_scale style, e.g. 4.01 for C4."""
+    """NOTE: This is only valid to call with pitches in the CSound octave.western_scale style, e.g. 4.01 for C4.
 
+    Algorithm:
+    There are 11 notes in each octave, so project each note in octave.pitch notation into 0-based vector space with
+    11 slots per octave. e.g. C4 == 4.01 = 44.
+
+    The formula to convert a note into this space is:
+      (octave * 11) + (pitch - 1), e.g. 4.01 = (4 * 11) + (1 - 1) == 44
+    The formula to convert a note from this space back SCALE PITCH PRECISION is the complement:
+       (value % 11) + (remainder + 1)
+
+    Examples:
+        5.01 + interval 1 = 55 + 1 = 56, converted 56 % 11 + 1 + 1 = 5.02
+        5.01 + interval 11 = 54 + 11 = 65, converted 65 % 11 + 10 + 1 = 5.11
+        5.01 + interval 12 == 54 + 12 = 66, converted 66 % 11 + 0 + 1 = 6.01
+        5.10 + interval 23 == 54 + 23 = 77, converted 77 % 11 + 0 + 1 = 7.01
+        5.01 - interval 1 = 55 - 1 - 54, converted 54 % 11 + 10 + 1 = 4.11
+        5.01 - interval 11 = 55 - 11 = 44, converted 44 % 11 + 0 + 1 = 4.01
+        5.01 - interval 12 = 55 - 12 = 43, converted 43 % 11 + 10 + 1 = 3.11
+        5.01 - interval 23 = 55 - 23 = 32, converted 32 % 11 + 10 + 1 = 2.11
+    """
+    if self.pitch_precision != SCALE_PITCH_PRECISION:
+        raise CSoundInvalidTransposeError(('CSound pitch_precision must be SCALE_PITCH_PRECISION, '
+                                           'which is `octave.pitch` notation like 4.01 for C4, to transpose'))
     validate_type('interval', interval, int)
 
-    # Get current pitch as an integer in the range 1..11
+    # Get current pitch as an integer in the range 1..11, == 1..NUM_NOTES_IN_OCTAVE
     cur_octave, cur_pitch = str(round(self.pitch, 2)).split('.')
     cur_octave = int(cur_octave)
     cur_pitch = int(cur_pitch)
-    # Calculate the new_pitch by incrementing it and modding into the number of intervals in an octave
-    # Then divide by 100 and add the octave to convert this back to CSound syntax
-    #  which is the {octave}.{pitch in range 1..12}
-    # Handle the case where the interval moves the pitch into the next octave
-    octave_incr, pitch_incr = divmod(interval, NUM_INTERVALS_IN_OCTAVE)
-    octave_incr = int(octave_incr)
-    pitch_incr = int(pitch_incr)
-    # Incrementing to higher pitch
-    if interval > 0:
-        new_octave = cur_octave + octave_incr
-        if (cur_pitch + pitch_incr) > NUM_INTERVALS_IN_OCTAVE:
-            new_octave += 1
-        if new_octave > MAX_OCTAVE:
-            raise ValueError(f'transpose() for interval {interval} results in octave > {MAX_OCTAVE}')
-        new_pitch = (cur_pitch + pitch_incr) % NUM_INTERVALS_IN_OCTAVE
-    # Incrementing to lower pitch
-    else:
-        # octave_incr is negative, because divmod divisor is negative
-        new_octave = cur_octave + octave_incr
-        if (cur_pitch + pitch_incr) > NUM_INTERVALS_IN_OCTAVE:
-            new_octave -= 1
-        if new_octave < MIN_OCTAVE:
-            raise ValueError(f'transpose() for interval {interval} results in octave < {MIN_OCTAVE}')
-        new_pitch = NUM_INTERVALS_IN_OCTAVE - ((cur_pitch + pitch_incr) % NUM_INTERVALS_IN_OCTAVE)
-    # noinspection PyAttributeOutsideInit
-    self.pitch = float(new_octave) + round((new_pitch / 100.0), 2)
+    # -1 to adjust for 1-based values in CSound scale notation
+    int_scale_pitch = (cur_octave * NUM_NOTES_IN_OCTAVE) + (cur_pitch - 1)
+    int_scale_pitch += interval
+    new_octave, new_pitch = divmod(int_scale_pitch, NUM_NOTES_IN_OCTAVE)
+    # +1 to adjust for 1-based values in CSound scale notation
+    new_pitch += 1
+    self.pitch = round(new_octave + (new_pitch / 100.0), 2)
 
 
 def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
