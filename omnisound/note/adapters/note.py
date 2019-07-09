@@ -81,3 +81,14 @@ def as_dict(note) -> Dict[str, float]:
 
 def make_rest_note(note, amplitude_attr_name):
     setattr(note, amplitude_attr_name, 0.0)
+
+
+# TODO USE THIS IN NOTE SEQUENCE RATHER THAN THE MULTIPLE CHECKS AGAINST ARRAY DIRECTLY
+def get_num_attributes(n):
+    """Handles numpy semantics to return number of columns in the underlying ndarray for both individual Note
+       which is one-dimensional and NoteSequence which is two-dimensional.
+    """
+    if len(n.note_attr_vals.shape) == 1:
+        return n.note_attr_vals.shape[0]
+    else:
+        return n.note_attr_vals.shape[1]

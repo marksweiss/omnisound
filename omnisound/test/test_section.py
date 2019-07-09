@@ -173,16 +173,36 @@ def test_section(meter, swing, performance_attrs, measure_list):
 #     assert isinstance(pa_dict[ATTR_NAME], ATTR_TYPE)
 #
 #
-# def test_swing_on_apply_swing(section):
+def test_swing_on_apply_swing(section):
+    expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
+
+    section.swing_on()
+    for measure in section.measure_list:
+        actual_note_starts = _apply_swing_and_get_note_starts(measure)
+        assert expected_swing_note_starts == pytest.approx(actual_note_starts)
+
+
+# def test_swing_on_off_apply_swing(measure, meter, swing):
+#     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
+#        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
+#     """
 #     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 #
+#     swing.swing_direction = Swing.SwingDirection.Forward
+#     measure.swing = swing
 #     # Does not adjust notes if swing is off
-#     section.swing_on()
-#     for measure in section.measure_list:
-#         actual_note_starts = _apply_swing_and_get_note_starts(measure)
-#         assert expected_swing_note_starts == pytest.approx(actual_note_starts)
+#     measure.swing_off()
+#     assert not measure.is_swing_on()
+#     actual_note_starts = _apply_swing_and_get_note_starts(measure)
+#     assert expected_swing_note_starts != actual_note_starts
 #
-#
+#     # Does adjust notes if swing is on
+#     measure.swing_on()
+#     assert measure.is_swing_on()
+#     actual_note_starts = _apply_swing_and_get_note_starts(measure)
+#     assert expected_swing_note_starts == actual_note_starts
+
+
 # def test_swing_off_apply_swing(section):
 #     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 #

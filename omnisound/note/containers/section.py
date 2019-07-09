@@ -1,25 +1,24 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Sequence, List, Optional, Tuple, Union
+from typing import Sequence, Optional
 
+from omnisound.note.adapters.note import get_num_attributes
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.measure import Measure
+from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.modifiers.meter import Meter
 from omnisound.note.modifiers.swing import Swing
 from omnisound.utils.utils import (validate_optional_sequence_of_type,
-                                   validate_optional_types,
-                                   validate_sequence_of_type, validate_type)
+                                   validate_optional_types, validate_type)
 
 
-class Section(object):
+class Section(NoteSequence):
     """A Section is a container of Measures that supports adding, removing and modifying Measures.
        Sections support all of the same Note attributes as Measures as setters. If these are set
        they will be applied to all Measures in the Track, which will apply them to all Notes in the Measure.
        Getters also behave like Measures, retrieving all values for an attribute for all Notes in all Measures
        flattened into a list.
 
-       NOTE: This can't derive from NoteSequence because it is a collection of potentially heterogeneous
-       NoteSequences, each with different Notes with different attributes, etc.
     """
 
     DEFAULT_NAME = 'section'
@@ -32,180 +31,139 @@ class Section(object):
         validate_optional_types(('performance_attrs', performance_attrs, PerformanceAttrs),
                                 ('meter', meter, Meter), ('swing', swing, Swing),
                                 ('name', name, str))
-
         validate_optional_sequence_of_type('measures', measures, Measure)
-        self.measure_list = measures or []
+        if not len(measures):
+            raise ValueError('Must provide non-empty list of Measures to create a Section')
+
         self.name = name or Section.DEFAULT_NAME
-        self.section_performance_attrs = performance_attrs
+        self.performance_attrs = performance_attrs
+        self.meter = meter
+        self.swing = swing
 
-        self.section_meter = meter
+        # Call NoteSequence base class init, using the first Measure in MeasureList to be the "primary" sequence
+        # in the NoteSequence, and then adding each subsequent Measure as a child sequence. NoteSequence supports
+        # managing a "parent" sequence and an arbitrary list of arbitrarily nested child sequences. Notes can be
+        # accessed in a flattened manner as one sequence, and each individual child sequence is also its own
+        # NoteSequence and can be accessed individually. This supports Section semantics: we add each measure
+        # as a child sequence, all siblings on the same level, effectively creating a sequence of measures we can
+        # traverse and manage globally from here by applying meter and swing to all of them, but also each measure
+        # can be its own note type with its own attributes.
+        first_measure = measures[0]
+        super(Section, self).__init__(make_note=first_measure.make_note,
+                                      num_notes=len(first_measure),
+                                      num_attributes=get_num_attributes(first_measure),
+                                      attr_name_idx_map=first_measure.attr_name_idx_map,
+                                      attr_vals_defaults_map=first_measure.attr_vals_defaults_map,
+                                      attr_get_type_cast_map=first_measure.attr_get_type_cast_map)
+        # Now add each additional measure as a "sibling" of the first, a child_sequence all on one level
+        for measure in measures[1:]:
+            self.append_child_sequence(measure)
+        # Store first measure in reference to support copy()
+        # NOTE: This means calling copy() and then deleting first_measure is a possible bug. Caveat emptor.
+        self.first_measure = first_measure
+
         if meter:
-            for measure in self.measure_list:
+            for measure in self:
                 measure.meter = meter
-        self.section_swing = swing
         if swing:
-            for measure in self.measure_list:
+            for measure in self:
                 measure.swing = swing
-        self.index = 0
-
-        if self.section_performance_attrs:
-            for measure in self.measure_list:
-                measure.performance_attrs = self.section_performance_attrs
+        if self.performance_attrs:
+            for measure in self:
+                measure.performance_attrs = self.performance_attrs
 
     # Quantizing for all Measures in the Section
     @property
     def meter(self):
-        return self.section_meter
+        return self.meter
 
     @meter.setter
     def meter(self, meter: Meter):
         validate_type('meter', meter, Meter)
-        self.section_meter = meter
-        for measure in self.measure_list:
+        self.meter = meter
+        for measure in self:
             measure.meter = meter
 
     def quantizing_on(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.quantizing_on()
 
     def quantizing_off(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.quantizing_off()
 
     def quantize(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.quantize()
 
     def quantize_to_beat(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.quantize_to_beat()
     # /Quantizing for all Measures in the Section
 
     # Swing for all Measures in the Section
     @property
     def swing(self):
-        return self.section_swing
+        return self.swing
 
     @swing.setter
     def swing(self, swing: Swing):
         validate_type('swing', swing, Swing)
-        self.section_swing = swing
-        for measure in self.measure_list:
+        self.swing = swing
+        for measure in self:
             measure.swing = swing
 
     def swing_on(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.swing_on()
 
     def swing_off(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.swing_off()
 
     def apply_swing(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.apply_swing()
 
     def apply_phrasing(self):
-        for measure in self.measure_list:
+        for measure in self:
             measure.apply_phrasing()
     # /Swing for all Measures in the Section
 
     @property
     def performance_attrs(self):
-        return self.section_performance_attrs
+        return self.performance_attrs
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self.section_performance_attrs = performance_attrs
-        for measure in self.measure_list:
+        self.performance_attrs = performance_attrs
+        for measure in self:
             measure.performance_attrs = performance_attrs
 
     # Measure list management
     def append(self, measure: Measure) -> 'Section':
-        validate_type('measure', measure, Measure)
-        self.measure_list.append(measure)
-        return self
+        raise NotImplementedError(('Section does not allow the `NoteSequence.append()` operation '
+                                   'as this expects an individual Note and Section only allows adding Measures. '
+                                   'Measures are NoteSequences and can be added to a Section by calling `extend()`.'))
 
-    def extend(self, to_add: Union[Measure, Sequence[Measure]]) -> 'Section':
-        try:
-            validate_type('to_add', to_add, Measure)
-            self.measure_list.append(to_add)
-            return self
-        except ValueError:
-            pass
-
-        validate_sequence_of_type('to_add', to_add, Measure)
-        self.measure_list.extend(to_add)
-
-        return self
-
-    def __add__(self, to_add: Union[Measure, Sequence[Measure]]) -> 'Section':
+    def __add__(self, to_add: Measure) -> 'Section':
+        if not isinstance(to_add, Measure):
+            raise NotImplementedError('Section only allows `NoteSequence.__add__()` for arguments of type Measure')
         return self.extend(to_add)
 
-    def __lshift__(self, to_add: Union[Measure, Sequence[Measure]]) -> 'Section':
+    def __lshift__(self, to_add: Measure) -> 'Section':
+        if not isinstance(to_add, Measure):
+            raise NotImplementedError('Section only allows `NoteSequence.__lshift__()` for arguments of type Measure')
         return self.extend(to_add)
 
-    def insert(self, index: int, to_add: Union[Measure, List[Measure]]) -> 'Section':
-        validate_type('index', index, int)
-
-        try:
-            validate_type('to_add', to_add, Measure)
-            self.measure_list.insert(index, to_add)
-            return self
-        except ValueError:
-            pass
-
-        validate_sequence_of_type('to_add', to_add, Measure)
-        for measure in to_add:
-            self.measure_list.insert(index, measure)
-            index += 1
-
-        return self
-
-    def remove(self, to_remove: Tuple[int, int]) -> 'Section':
-        validate_type('to_remove', to_remove, int)
-        start_range = to_remove[0]
-        end_range = to_remove[1]
-        if start_range < 0 or end_range < 0 or end_range >= len(self.measure_list):
-            raise ValueError((f'range for remove() is out of range, start_range: {start_range} '
-                              f'end_range: {end_range} len: {len(self.measure_list)}'))
-        del self.measure_list[to_remove[0]:to_remove[1]]
-        return self
-    # /Measure list management
-
-    # Iter / slice support
-    def __len__(self) -> int:
-        return len(self.measure_list)
-
-    def __getitem__(self, index: int) -> Measure:
-        validate_type('index', index, int)
-        if abs(index) >= len(self.measure_list):
-            raise ValueError(f'`index` out of range index: {index} len(measure_list): {len(self.measure_list)}')
-        return self.measure_list[index]
-
-    def __iter__(self) -> 'Section':
-        self.index = 0
-        return self
-
-    def __next__(self) -> Measure:
-        if self.index == len(self.measure_list):
-            raise StopIteration
-        measure = self.measure_list[self.index]
-        self.index += 1
-        return measure
-
-    def __eq__(self, other: 'Section') -> bool:
-        if not other or len(self) != len(other):
-            return False
-        return all([self.measure_list[i] == other.measure_list[i] for i in range(len(self.measure_list))])
-    # /Iter / slice support
+    def insert(self, index: int, to_add: Measure) -> 'Section':
+        if not isinstance(to_add, Measure):
+            raise NotImplementedError('Section only allows `NoteSequence.__lshift__()` for arguments of type Measure')
+        return self.insert(index, to_add)
 
     @staticmethod
-    def copy(source_section: 'Section') -> 'Section':
-        measure_list = None
-        if source_section.measure_list:
-            measure_list = [Measure.copy(measure) for measure in source_section.measure_list]
-
-        new_section = Section(measures=measure_list, meter=source_section.meter, swing=source_section.swing,
-                              name=source_section.name, performance_attrs=source_section.performance_attrs)
-        return new_section
+    def copy(source: 'Section') -> 'Section':
+        measure_list = [source.first_measure]
+        measure_list.extend(source.child_sequences)
+        return  Section(measures=measure_list, meter=source.meter, swing=source.swing,
+                        name=source.name, performance_attrs=source.performance_attrs)
