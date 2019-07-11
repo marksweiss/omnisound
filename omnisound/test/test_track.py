@@ -91,18 +91,18 @@ def test_track(performance_attrs, measure_list, meter, swing, section):
     assert track.measure_list == measure_list
     assert track.name == TRACK_NAME
     assert track.track_instrument == Track.DEFAULT_INSTRUMENT
-    assert track.meter is None
-    assert track.swing is None
-    assert track.performance_attrs is None
+    assert track._meter is None
+    assert track._swing is None
+    assert track._performance_attrs is None
 
     # Test: Section and no instrument or performance_attrs
     # Expect a Track with measures, no track_instrument, no pa and Notes not having reassigned instrument or pa
     track = Track(to_add=section)
     assert track.measure_list == section.measure_list
     assert track.track_instrument == Track.DEFAULT_INSTRUMENT
-    assert track.meter is None
-    assert track.swing is None
-    assert track.performance_attrs is None
+    assert track._meter is None
+    assert track._swing is None
+    assert track._performance_attrs is None
 
     # Test: List[Measure] with instrument, meter, swing and performance_attrs
     # Expect a Track with measures and all other attributes
@@ -110,9 +110,9 @@ def test_track(performance_attrs, measure_list, meter, swing, section):
                   performance_attrs=performance_attrs)
     assert track.measure_list == measure_list
     assert track.track_instrument == INSTRUMENT
-    assert track.meter == meter
-    assert track.swing == swing
-    assert track.performance_attrs == performance_attrs
+    assert track._meter == meter
+    assert track._swing == swing
+    assert track._performance_attrs == performance_attrs
 
     # Test: List[Measure] with instrument, meter, swing and performance_attrs
     # Expect a Track with measures and all other attributes
@@ -120,9 +120,9 @@ def test_track(performance_attrs, measure_list, meter, swing, section):
                   performance_attrs=performance_attrs)
     assert track.measure_list == section.measure_list
     assert track.track_instrument == INSTRUMENT
-    assert track.meter == meter
-    assert track.swing == swing
-    assert track.performance_attrs == performance_attrs
+    assert track._meter == meter
+    assert track._swing == swing
+    assert track._performance_attrs == performance_attrs
 
 
 def test_track_section_map(section):

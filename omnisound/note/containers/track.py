@@ -222,9 +222,9 @@ class Track(Section):
         new_track = Track(to_add=measure_list,
                           name=source_track.name,
                           instrument=source_track.track_instrument,
-                          meter=source_track.meter,
-                          swing=source_track.swing,
-                          performance_attrs=source_track.performance_attrs)
+                          meter=source_track._meter,
+                          swing=source_track._swing,
+                          performance_attrs=source_track._performance_attrs)
         return new_track
 
 

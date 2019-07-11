@@ -103,17 +103,17 @@ def measure(meter, swing):
 
 
 @pytest.fixture
-def measure_list(meter, swing):
+def measures(meter, swing):
     return [_measure(meter=meter, swing=swing), _measure(meter=meter, swing=swing)]
 
 
-def _section(measure_list, meter, swing):
-    return Section(measures=measure_list, name=SECTION_NAME, meter=meter, swing=swing)
+def _section(measures, meter, swing):
+    return Section(measures=measures, name=SECTION_NAME, meter=meter, swing=swing)
 
 
 @pytest.fixture
-def section(measure_list, meter, swing):
-    return _section(measure_list, meter, swing)
+def section(measures, meter, swing):
+    return _section(measures, meter, swing)
 
 
 @pytest.fixture
@@ -128,29 +128,31 @@ def _apply_swing_and_get_note_starts(measure) -> List[float]:
     return actual_note_starts
 
 
-def test_section(meter, swing, performance_attrs, measure_list):
+def test_section(meter, swing, performance_attrs, measures):
     # Test: List[Measure] and no instrument or performance_attrs
     # Expect a Section with measures, no track_instrument, no pa and Notes not having reassigned instrument or pa
-    section = Section(measures=measure_list, name=SECTION_NAME, meter=meter, swing=swing)
-    assert section.measure_list == measure_list
+    section = Section(measures=measures, name=SECTION_NAME, meter=meter, swing=swing)
+    measure_list = list(measure for measure in section)
+    assert measure_list == measures
     assert section.name == SECTION_NAME
-    assert section.meter == meter
-    assert section.swing == swing
-    assert section.performance_attrs is None
+    assert section._meter == meter
+    assert section._swing == swing
+    assert section._performance_attrs is None
     for measure in section:
-        assert measure.meter == meter
-        assert measure.swing == swing
+        assert measure._meter == meter
+        assert measure._swing == swing
 
     # Test: List[Measure] with instrument and performance_attrs
     # Expect a Section with measures, track_instrument, pa and Notes having reassigned instrument and pa
-    section = Section(measures=measure_list, performance_attrs=performance_attrs)
-    assert section.measure_list == measure_list
-    assert section.performance_attrs == performance_attrs
+    section = Section(measures=measures, performance_attrs=performance_attrs)
+    measure_list = list(measure for measure in section)
+    assert measure_list == measures
+    assert section._performance_attrs == performance_attrs
 
 
 # # TODO COPY THIS EVERYWHERE`
-# def test_performance_attrs(performance_attrs, measure_list):
-#     section = Section(measures=measure_list, performance_attrs=performance_attrs)
+# def test_performance_attrs(performance_attrs, measures):
+#     section = Section(measures=measures, performance_attrs=performance_attrs)
 #     assert section.performance_attrs == performance_attrs
 #     pa_dict = section.performance_attrs.as_dict()
 #     assert pa_dict[ATTR_NAME] == ATTR_VAL
@@ -177,7 +179,7 @@ def test_swing_on_apply_swing(section):
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 
     section.swing_on()
-    for measure in section.measure_list:
+    for measure in section.measures:
         actual_note_starts = _apply_swing_and_get_note_starts(measure)
         assert expected_swing_note_starts == pytest.approx(actual_note_starts)
 
@@ -208,7 +210,7 @@ def test_swing_on_apply_swing(section):
 #
 #     # Does adjust notes if swing is on
 #     section.swing_off()
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         actual_note_starts = _apply_swing_and_get_note_starts(measure)
 #         assert expected_swing_note_starts != pytest.approx(actual_note_starts)
 #
@@ -223,7 +225,7 @@ def test_swing_on_apply_swing(section):
 #     section.swing = swing
 #     assert section.swing == swing
 #     section.swing_on()
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         actual_note_starts = _apply_swing_and_get_note_starts(measure)
 #         assert expected_swing_note_starts == pytest.approx(actual_note_starts)
 #
@@ -235,7 +237,7 @@ def test_swing_on_apply_swing(section):
 #     expected_phrasing_note_starts = [0.0, 0.375]
 #     section.swing_on()
 #     section.apply_phrasing()
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         assert measure[0].start == expected_phrasing_note_starts[0]
 #         assert measure[-1].start == expected_phrasing_note_starts[-1]
 #
@@ -243,16 +245,16 @@ def test_swing_on_apply_swing(section):
 #     expected_phrasing_note_starts = [note_list[1].start]
 #     short_measure = Measure([note_list[1]], meter=measure.meter, swing=measure.swing)
 #     short_measure_2 = Measure.copy(short_measure)
-#     measure_list = [short_measure, short_measure_2]
-#     section = Section(measures=measure_list)
+#     measures = [short_measure, short_measure_2]
+#     section = Section(measures=measures)
 #     section.apply_phrasing()
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         assert measure[0].start == expected_phrasing_note_starts[0]
 #
 #
 # def test_quantizing_on_off(section):
 #     # Default is quantizing on
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         assert measure.meter.is_quantizing()
 #     # Can override default
 #     meter_2 = Meter(beat_note_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
@@ -311,7 +313,7 @@ def test_swing_on_apply_swing(section):
 #     # - measure_duration is 1.0
 #     # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
 #     expected_dur_adjustment = 0.125
-#     for i, measure in enumerate(section.measure_list):
+#     for i, measure in enumerate(section.measures):
 #         for j, note in enumerate(measure.note_list):
 #             assert note.dur == pytest.approx(before_quantize_note_lists[i][j].dur - expected_dur_adjustment)
 #
@@ -322,7 +324,7 @@ def test_swing_on_apply_swing(section):
 #     # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
 #     # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
 #     expected_starts = [0.0, 0.125, 0.375, 0.625]
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         for i, note in enumerate(measure.note_list):
 #             assert note.start == pytest.approx(expected_starts[i])
 #
@@ -332,18 +334,18 @@ def test_swing_on_apply_swing(section):
 #     note_list_with_offset_start_times = [CSoundNote.copy(note) for note in note_list]
 #     for note in note_list_with_offset_start_times:
 #         note.start = note.start + 0.05
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         measure.note_list = note_list_with_offset_start_times
 #
 #     section.quantize_to_beat()
 #     # Assert the start times match the original start_times, which are on the beat
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         for i, note in enumerate(note_list):
 #             assert note.start == pytest.approx(measure.note_list[i].start)
 #
 #
-# def test_section_add_lshift_extend(measure, measure_list, section):
-#     expected_len = len(measure_list)
+# def test_section_add_lshift_extend(measure, measures, section):
+#     expected_len = len(measures)
 #     assert len(section) == expected_len
 #     # Append/Add and check len again
 #     expected_len += 1
@@ -369,9 +371,9 @@ def test_swing_on_apply_swing(section):
 #     assert len(section) == expected_len
 #
 #
-# def test_section_insert_remove_getitem(measure, measure_list, section):
-#     empty_measure_list = []
-#     section = Section(measures=empty_measure_list)
+# def test_section_insert_remove_getitem(measure, measures, section):
+#     empty_measures = []
+#     section = Section(measures=empty_measures)
 #     assert len(section) == 0
 #
 #     # Insert a single measure at the front of the list
@@ -380,15 +382,15 @@ def test_swing_on_apply_swing(section):
 #     assert measure_front == measure
 #
 #     # Insert a list of 2 measures at the front of the section
-#     empty_measure_list = []
-#     section = Section(measures=empty_measure_list)
+#     empty_measures = []
+#     section = Section(measures=empty_measures)
 #     measure_1 = Measure.copy(measure)
 #     measure_1.instrument = INSTRUMENT
 #     measure_2 = Measure.copy(measure)
 #     new_instrument = INSTRUMENT + 1
 #     measure_2.instrument = new_instrument
-#     measure_list = [measure_1, measure_2]
-#     section.insert(0, measure_list)
+#     measures = [measure_1, measure_2]
+#     section.insert(0, measures)
 #     assert section[0].instrument == [INSTRUMENT, INSTRUMENT, INSTRUMENT, INSTRUMENT]
 #     assert section[1].instrument == [new_instrument, new_instrument, new_instrument, new_instrument]
 #
@@ -443,12 +445,12 @@ def test_swing_on_apply_swing(section):
 # def test_set_notes_attr(section):
 #     expected_amp = 100
 #
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         for note in measure:
 #             assert note.amp != expected_amp
 #
 #     section.set_attr('amp', expected_amp)
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         for note in measure:
 #             assert note.amp == expected_amp
 #
@@ -460,7 +462,7 @@ def test_swing_on_apply_swing(section):
 # def test_transpose(section):
 #     expected_pitch = 10.02
 #     section.transpose(interval=1)
-#     for measure in section.measure_list:
+#     for measure in section.measures:
 #         for note in measure:
 #             assert note.pitch == expected_pitch
 

@@ -36,53 +36,57 @@ class Section(NoteSequence):
             raise ValueError('Must provide non-empty list of Measures to create a Section')
 
         self.name = name or Section.DEFAULT_NAME
-        self.performance_attrs = performance_attrs
-        self.meter = meter
-        self.swing = swing
+        self._performance_attrs = performance_attrs
+        self._meter = meter
+        self._swing = swing
 
         # Call NoteSequence base class init, using the first Measure in MeasureList to be the "primary" sequence
         # in the NoteSequence, and then adding each subsequent Measure as a child sequence. NoteSequence supports
-        # managing a "parent" sequence and an arbitrary list of arbitrarily nested child sequences. Notes can be
+        # managing a sequence of notes and an arbitrary list of arbitrarily nested child sequences. Notes can be
         # accessed in a flattened manner as one sequence, and each individual child sequence is also its own
         # NoteSequence and can be accessed individually. This supports Section semantics: we add each measure
         # as a child sequence, all siblings on the same level, effectively creating a sequence of measures we can
         # traverse and manage globally from here by applying meter and swing to all of them, but also each measure
         # can be its own note type with its own attributes.
-        first_measure = measures[0]
-        super(Section, self).__init__(make_note=first_measure.make_note,
-                                      num_notes=len(first_measure),
-                                      num_attributes=get_num_attributes(first_measure),
-                                      attr_name_idx_map=first_measure.attr_name_idx_map,
-                                      attr_vals_defaults_map=first_measure.attr_vals_defaults_map,
-                                      attr_get_type_cast_map=first_measure.attr_get_type_cast_map)
-        # Now add each additional measure as a "sibling" of the first, a child_sequence all on one level
-        for measure in measures[1:]:
-            self.append_child_sequence(measure)
-        # Store first measure in reference to support copy()
-        # NOTE: This means calling copy() and then deleting first_measure is a possible bug. Caveat emptor.
-        self.first_measure = first_measure
+        # TODO EXPLAIN FIRST MEASURE
+        self.first_measure = measures[0]
 
+        # TEMP DEBUG
+        import pdb; pdb.set_trace()
+
+        super(Section, self).__init__(make_note=self.first_measure.make_note,
+                                      num_notes=len(self.first_measure),
+                                      num_attributes=get_num_attributes(self.first_measure),
+                                      attr_name_idx_map=self.first_measure.attr_name_idx_map,
+                                      attr_vals_defaults_map=self.first_measure.attr_vals_defaults_map,
+                                      attr_get_type_cast_map=self.first_measure.attr_get_type_cast_map,
+                                      child_sequences=measures[1:])
+        self.measures = [self.first_measure] + [measure for measure in self][1:]
+        # TODO GET RID OF THIS
+        # Now add each additional measure as a "sibling" of the first, a child_sequence all on one level
+        # for measure in measures[1:]:
+        #     self.append_child_sequence(measure)
         if meter:
-            for measure in self:
+            for measure in self.measures:
                 measure.meter = meter
         if swing:
-            for measure in self:
+            for measure in self.measures:
                 measure.swing = swing
-        if self.performance_attrs:
-            for measure in self:
-                measure.performance_attrs = self.performance_attrs
+        if self._performance_attrs:
+            for measure in self.measures:
+                measure._performance_attrs = performance_attrs
 
     # Quantizing for all Measures in the Section
     @property
     def meter(self):
-        return self.meter
+        return self._meter
 
     @meter.setter
     def meter(self, meter: Meter):
         validate_type('meter', meter, Meter)
-        self.meter = meter
+        self._meter = meter
         for measure in self:
-            measure.meter = meter
+            measure._meter = meter
 
     def quantizing_on(self):
         for measure in self:
@@ -104,14 +108,14 @@ class Section(NoteSequence):
     # Swing for all Measures in the Section
     @property
     def swing(self):
-        return self.swing
+        return self._swing
 
     @swing.setter
     def swing(self, swing: Swing):
         validate_type('swing', swing, Swing)
-        self.swing = swing
+        self._swing = swing
         for measure in self:
-            measure.swing = swing
+            measure._swing = swing
 
     def swing_on(self):
         for measure in self:
@@ -132,15 +136,19 @@ class Section(NoteSequence):
 
     @property
     def performance_attrs(self):
-        return self.performance_attrs
+        return self._performance_attrs
 
     @performance_attrs.setter
     def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self.performance_attrs = performance_attrs
+        self._performance_attrs = performance_attrs
         for measure in self:
-            measure.performance_attrs = performance_attrs
+            measure._performance_attrs = performance_attrs
 
     # Measure list management
+    # TODO ONLY ALLOW APPENDING CHILD SEQUENCES OR OVERLOAD IMPLEMENTATION TO JUST DO THAT AND PRESENT
+    # AS SEQUENCE OF MEASURES AND SEQUENCE OF NOTES
+    # TODO IS THIS WORTH IT? BACK TO JUST WRITING QA LIST WRAPPER AND DON'T DERIVE FROM NOTE SEQU
+    # MAYBE ANOTHER SIMPLE SEQUENCE BASE
     def append(self, measure: Measure) -> 'Section':
         raise NotImplementedError(('Section does not allow the `NoteSequence.append()` operation '
                                    'as this expects an individual Note and Section only allows adding Measures. '
@@ -165,5 +173,5 @@ class Section(NoteSequence):
     def copy(source: 'Section') -> 'Section':
         measure_list = [source.first_measure]
         measure_list.extend(source.child_sequences)
-        return  Section(measures=measure_list, meter=source.meter, swing=source.swing,
-                        name=source.name, performance_attrs=source.performance_attrs)
+        return  Section(measures=measure_list, meter=source._meter, swing=source._swing,
+                        name=source.name, performance_attrs=source._performance_attrs)

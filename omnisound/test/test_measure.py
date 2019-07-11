@@ -102,12 +102,12 @@ def swing():
 
 
 def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, Measure]:
-    measure.swing.swing_direction = swing_direction
+    measure._swing.swing_direction = swing_direction
     if swing_on:
-        measure.swing.swing_on()
+        measure._swing.swing_on()
     else:
-        measure.swing.swing_off()
-    return measure.swing, measure
+        measure._swing.swing_off()
+    return measure._swing, measure
 
 
 def _apply_swing_and_get_note_starts(measure) -> List[float]:
@@ -123,9 +123,9 @@ def test_measure(measure, meter, swing):
     # Verify attribute assignments
     assert measure.beat == 0
     assert measure.next_note_start == 0.0
-    assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_note_dur.value
-    assert measure.meter == meter
-    assert measure.swing == swing
+    assert measure.max_duration == measure._meter.beats_per_measure * measure._meter.beat_note_dur.value
+    assert measure._meter == meter
+    assert measure._swing == swing
 
 
 def test_swing_on_off_apply_swing(measure, meter, swing):
@@ -135,7 +135,7 @@ def test_swing_on_off_apply_swing(measure, meter, swing):
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 
     swing.swing_direction = Swing.SwingDirection.Forward
-    measure.swing = swing
+    measure._swing = swing
     # Does not adjust notes if swing is off
     measure.swing_off()
     assert not measure.is_swing_on()
@@ -187,7 +187,7 @@ def test_quantizing_on_off(measure):
     assert measure.is_quantizing()
     # Can override default
     meter_2 = Meter(beat_note_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
-    measure.meter = meter_2
+    measure._meter = meter_2
     assert not measure.is_quantizing()
     # Can toggle with methods
     measure.quantizing_on()
@@ -282,8 +282,8 @@ def test_beat(measure):
     assert measure.beat == 0
     measure.decrement_beat()
     assert measure.beat == 0
-    for i in range(measure.meter.beats_per_measure + 10):
-        assert measure.beat <= measure.meter.beats_per_measure
+    for i in range(measure._meter.beats_per_measure + 10):
+        assert measure.beat <= measure._meter.beats_per_measure
 
 
 def test_add_note_on_beat(meter, swing):

@@ -55,15 +55,15 @@ class Song(object):
         self.meter = meter
         if meter:
             for track in self.track_list:
-                track.meter = meter
+                track._meter = meter
         self.swing = swing
         if swing:
             for track in self.track_list:
-                track.swing = swing
+                track._swing = swing
         self.performance_attrs = performance_attrs
         if performance_attrs:
             for track in self.track_list:
-                track.performance_attrs = performance_attrs
+                track._performance_attrs = performance_attrs
 
     # Track list management
     def append(self, track: Track) -> 'Song':

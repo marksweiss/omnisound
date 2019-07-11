@@ -108,9 +108,9 @@ def test_song(meter, swing, performance_attrs, track_list):
     assert song.name == SONG_NAME
     # Assert Tracks in Song inherited Swing, Meter and PerformanceAttrs
     for track in track_list:
-        assert track.meter == meter
-        assert track.swing == swing
-        assert track.performance_attrs == performance_attrs
+        assert track._meter == meter
+        assert track._swing == swing
+        assert track._performance_attrs == performance_attrs
     # Assert track_list and track_map
     assert len(song.track_list) == 2
     assert song.track_list[0].name == track_1_name
@@ -126,9 +126,9 @@ def test_song(meter, swing, performance_attrs, track_list):
     assert song.swing == swing
     assert song.performance_attrs == performance_attrs
     assert song.name == SONG_NAME
-    assert song.track_list[0].meter == meter
-    assert song.track_list[0].swing == swing
-    assert song.track_list[0].performance_attrs == performance_attrs
+    assert song.track_list[0]._meter == meter
+    assert song.track_list[0]._swing == swing
+    assert song.track_list[0]._performance_attrs == performance_attrs
     assert song.track_map[track_1_name] == track
 
     # Test with Track without name
