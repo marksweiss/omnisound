@@ -127,6 +127,11 @@ def _section(measure_list, meter, swing):
     return Section(measure_list=measure_list, meter=meter, swing=swing, name=SECTION_NAME)
 
 
+@pytest.fixture
+def section(measure_list, meter, swing):
+    return _section(measure_list, meter, swing)
+
+
 def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, Measure]:
     measure.swing.swing_direction = swing_direction
     if swing_on:
@@ -162,6 +167,7 @@ def test_section(meter, swing, performance_attrs, measure_list):
     assert section.performance_attrs == performance_attrs
 
 
+# TODO MOVE THIS TO GENERAL PERF ATTRS TEST
 def test_performance_attrs(performance_attrs, measure_list):
     section = Section(measure_list=measure_list, performance_attrs=performance_attrs)
     assert section.performance_attrs == performance_attrs
@@ -189,17 +195,19 @@ def test_performance_attrs(performance_attrs, measure_list):
 def test_swing_on_apply_swing(section):
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 
-    # Does not adjust notes if swing is off
+    # Does adjust notes if swing is off
     section.swing_on()
-    for measure in section.measure_list:
-        actual_note_starts = _apply_swing_and_get_note_starts(measure)
-        assert expected_swing_note_starts == pytest.approx(actual_note_starts)
+    section.apply_swing()
+    # for measure in section.measure_list:
+    #     actual_note_starts = _apply_swing_and_get_note_starts(measure)
+    actual_swing_note_starts = section.get_start()
+    assert expected_swing_note_starts == pytest.approx(actual_swing_note_starts)
 
 
 def test_swing_off_apply_swing(section):
     expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
 
-    # Does adjust notes if swing is on
+    # Does not adjust notes if swing is on
     section.swing_off()
     for measure in section.measure_list:
         actual_note_starts = _apply_swing_and_get_note_starts(measure)
