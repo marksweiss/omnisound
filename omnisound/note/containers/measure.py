@@ -206,15 +206,15 @@ class Measure(NoteSequence):
     # /Quantize notes
 
     # Apply Swing and Phrasing to notes
-    def swing_on(self):
+    def set_swing_on(self):
         if self.swing:
-            self.swing.swing_on()
+            self.swing.set_swing_on()
         else:
             raise MeasureSwingNotEnabledException('Measure.swing_on() called but swing is None in Measure')
 
-    def swing_off(self):
+    def set_swing_off(self):
         if self.swing:
-            self.swing.swing_off()
+            self.swing.set_swing_off()
         else:
             raise MeasureSwingNotEnabledException('Measure.swing_off() called but swing is None in Measure')
 
@@ -236,13 +236,18 @@ class Measure(NoteSequence):
         """Moves the first note in Measure forward and the last back by self.swing.swing.swing_factor.
            The idea is to slightly accentuate the metric phrasing of each measure. Handles boundary condition
            of having 0 or 1 notes. If there is only 1 note no adjustment is made.
+
+           NOTE: At this time this only supports a fixed adjustment. Swing can support a random adjustment
+           within a swing_range if measure would also set swing_jitter_type to Swing.SwingJitterType.Random
         """
         if self.swing:
             if len(self) > 1:
                 self[0].start += \
-                    self.swing.calculate_swing_adj(self[0], Swing.SwingDirection.Forward)
-                self[-1].start += \
-                    self.swing.calculate_swing_adj(self[-1], Swing.SwingDirection.Reverse)
+                    self.swing.calculate_swing_adjust(swing_direction=Swing.SwingDirection.Forward,
+                                                      swing_jitter_type=Swing.SwingJitterType.Fixed)
+                self[-1].start -= \
+                    self.swing.calculate_swing_adjust(swing_direction=Swing.SwingDirection.Forward,
+                                                      swing_jitter_type=Swing.SwingJitterType.Fixed)
         else:
             raise MeasureSwingNotEnabledException('Measure.apply_phrasing() called but swing is None in Measure')
     # /Apply Swing and Phrasing to notes

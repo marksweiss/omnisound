@@ -66,15 +66,19 @@ class Swing(object):
            is provided. In that case the swing_direction arg overrides self.swing_direction and is applied.
         """
         validate_type('note_sequence', note_sequence, NoteSequence)
+        if self.swing_on:
+            for note in note_sequence:
+                note.start += self.calculate_swing_adjust(swing_direction, swing_jitter_type)
+
+    # This is also called from Measure directly, so it validates the swing_direction and swing_jitter_type args
+    def calculate_swing_adjust(self,
+                               swing_direction: SwingDirection = None,
+                               swing_jitter_type: SwingJitterType = None):
         validate_optional_types(('swing_direction', swing_direction, Swing.SwingDirection),
                                 ('swing_jitter_type', swing_jitter_type, Swing.SwingJitterType))
         swing_direction = swing_direction or self.swing_direction
         swing_jitter_type = swing_jitter_type or self.swing_jitter_type
-        if self.swing_on:
-            for note in note_sequence:
-                note.start += self._calculate_swing_adjust(swing_direction, swing_jitter_type)
 
-    def _calculate_swing_adjust(self, swing_direction: SwingDirection, swing_jitter_type: SwingJitterType):
         swing_adjust = self.swing_range
         if swing_jitter_type == Swing.SwingJitterType.Random:
             swing_adjust *= random()

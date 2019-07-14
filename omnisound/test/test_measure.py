@@ -14,7 +14,7 @@ import omnisound.note.adapters.csound_note as csound_note
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
 TEMPO_QPM = 240
-SWING_FACTOR = 0.5
+SWING_RANGE = 0.1
 
 INSTRUMENT = 1
 START = 0.0
@@ -98,16 +98,16 @@ def meter():
 
 @pytest.fixture
 def swing():
-    return Swing(swing_factor=SWING_FACTOR)
+    return Swing(swing_range=SWING_RANGE)
 
 
 def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, Measure]:
-    measure._swing.swing_direction = swing_direction
+    measure.swing.swing_direction = swing_direction
     if swing_on:
-        measure._swing.swing_on()
+        measure.swing.set_swing_on()
     else:
-        measure._swing.swing_off()
-    return measure._swing, measure
+        measure.swing.set_swing_off()
+    return measure.swing, measure
 
 
 def _apply_swing_and_get_note_starts(measure) -> List[float]:
@@ -123,27 +123,31 @@ def test_measure(measure, meter, swing):
     # Verify attribute assignments
     assert measure.beat == 0
     assert measure.next_note_start == 0.0
-    assert measure.max_duration == measure._meter.beats_per_measure * measure._meter.beat_note_dur.value
-    assert measure._meter == meter
-    assert measure._swing == swing
+    assert measure.max_duration == measure.meter.beats_per_measure * measure.meter.beat_note_dur.value
+    assert measure.meter == meter
+    assert measure.swing == swing
 
 
 def test_swing_on_off_apply_swing(measure, meter, swing):
     """Integration test of behavior of Measure based on its use of Swing as a helper attribute.
        Assumes Swing is tested, and verifies that Measure behaves as expected when using Swing.
     """
-    expected_swing_note_starts = [0.0, 0.375, 0.75, 1.125]
-
     swing.swing_direction = Swing.SwingDirection.Forward
-    measure._swing = swing
+    swing.swing_jitter_type = Swing.SwingJitterType.Fixed
+    expected_swing_note_starts = [measure[0].start + SWING_RANGE,
+                                  measure[1].start + SWING_RANGE,
+                                  measure[2].start + SWING_RANGE,
+                                  measure[3].start + SWING_RANGE]
+    measure.swing = swing
+
     # Does not adjust notes if swing is off
-    measure.swing_off()
+    measure.set_swing_off()
     assert not measure.is_swing_on()
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
     assert expected_swing_note_starts != actual_note_starts
 
     # Does adjust notes if swing is on
-    measure.swing_on()
+    measure.set_swing_on()
     assert measure.is_swing_on()
     actual_note_starts = _apply_swing_and_get_note_starts(measure)
     assert expected_swing_note_starts == actual_note_starts
@@ -152,22 +156,22 @@ def test_swing_on_off_apply_swing(measure, meter, swing):
     no_swing = None
     measure_2 = _measure(meter=meter, swing=no_swing)
     with pytest.raises(MeasureSwingNotEnabledException):
-        measure_2.swing_on()
+        measure_2.set_swing_on()
     with pytest.raises(MeasureSwingNotEnabledException):
-        measure_2.swing_off()
+        measure_2.set_swing_off()
 
 
 def test_apply_phrasing(measure, meter, swing):
     """If there are at least 2 notes, first and last will be adjusted as though first as swing forward
        and last has swing reverse. This class tests use of Swing class by Measure class.
     """
-    expected_phrasing_note_starts = [0.0, 0.375]
+    expected_phrasing_note_starts = [measure[0].start + SWING_RANGE, measure[-1].start - SWING_RANGE]
 
-    measure.swing_on()
+    measure.set_swing_on()
     # If there are two or more noes, first note adjusted down, last note adjusted up
     measure.apply_phrasing()
-    assert measure[0].start == expected_phrasing_note_starts[0]
-    assert measure[-1].start == expected_phrasing_note_starts[-1]
+    assert measure[0].start == pytest.approx(expected_phrasing_note_starts[0])
+    assert measure[-1].start == pytest.approx(expected_phrasing_note_starts[1])
 
     # If there is only one note in the measure, phrasing is a no-op
     short_measure = _measure(meter=meter, swing=swing, num_notes=1)
@@ -187,7 +191,7 @@ def test_quantizing_on_off(measure):
     assert measure.is_quantizing()
     # Can override default
     meter_2 = Meter(beat_note_dur=BEAT_DUR, beats_per_measure=BEATS_PER_MEASURE, quantizing=False)
-    measure._meter = meter_2
+    measure.meter = meter_2
     assert not measure.is_quantizing()
     # Can toggle with methods
     measure.quantizing_on()
@@ -282,8 +286,8 @@ def test_beat(measure):
     assert measure.beat == 0
     measure.decrement_beat()
     assert measure.beat == 0
-    for i in range(measure._meter.beats_per_measure + 10):
-        assert measure.beat <= measure._meter.beats_per_measure
+    for i in range(measure.meter.beats_per_measure + 10):
+        assert measure.beat <= measure.meter.beats_per_measure
 
 
 def test_add_note_on_beat(meter, swing):
