@@ -1,19 +1,21 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any
-
 from enum import Enum
+from random import random
+
+import pytest
 
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.utils.utils import (sign, validate_optional_type,
                                    validate_optional_types, validate_type,
                                    validate_types)
 
-
+# TODO THIS LOGIC IS ALL WRONG. SHOULD NOT USE A FACTOR PROPORTIONAL TO START!! SHOULD USE JITTER RANGE
+#  and either fixed or randomly jitter (start +- swing) within that range, without moving start time more than that.
 class Swing(object):
 
     DEFAULT_SWING_ON = False
-    DEFAULT_SWING_FACTOR = 0.01
+    DEFAULT_SWING_RANGE = 0.01
 
     class SwingDirection(Enum):
         Forward = 'Forward'
@@ -22,54 +24,70 @@ class Swing(object):
 
     DEFAULT_SWING_DIRECTION = SwingDirection.Both
 
-    def __init__(self, swing_on: bool = None, swing_factor: float = None, swing_direction: SwingDirection = None):
-        validate_optional_types(('swing_on', swing_on, bool), ('swing_factor', swing_factor, float),
-                                ('swing_direction', swing_direction, Swing.SwingDirection))
+    class SwingJitterType(Enum):
+        Fixed = 'Fixed'
+        Random = 'Random'
+
+    DEFAULT_SWING_JITTER_TYPE = SwingJitterType.Fixed
+
+    def __init__(self, swing_on: bool = None,
+                 swing_range: float = None,
+                 swing_direction: SwingDirection = None,
+                 swing_jitter_type: SwingJitterType = None):
+        validate_optional_types(('swing_on', swing_on, bool), ('swing_range', swing_range, float),
+                                ('swing_direction', swing_direction, Swing.SwingDirection),
+                                ('swing_jitter_type', swing_jitter_type, Swing.SwingJitterType))
 
         if swing_on is None:
             swing_on = Swing.DEFAULT_SWING_ON
-        self.swinging = swing_on
-        if swing_factor is None:
-            swing_factor = Swing.DEFAULT_SWING_FACTOR
-        self.swing_factor = swing_factor
+        self.swing_on = swing_on
+        if swing_range is None:
+            self.swing_range = Swing.DEFAULT_SWING_RANGE
+        else:
+            self.swing_range = swing_range
         self.swing_direction = swing_direction or Swing.DEFAULT_SWING_DIRECTION
+        self.swing_jitter_type = swing_jitter_type or Swing.DEFAULT_SWING_JITTER_TYPE
 
     def is_swing_on(self):
-        return self.swinging
+        return self.swing_on
 
-    def swing_on(self) -> 'Swing':
-        self.swinging = True
+    def set_swing_on(self) -> 'Swing':
+        self.swing_on = True
         return self
 
-    def swing_off(self) -> 'Swing':
-        self.swinging = False
+    def set_swing_off(self) -> 'Swing':
+        self.swing_on = False
         return self
 
-    def apply_swing(self, note_sequence: NoteSequence, swing_direction: SwingDirection = None):
+    def apply_swing(self, note_sequence: NoteSequence,
+                    swing_direction: SwingDirection = None,
+                    swing_jitter_type: SwingJitterType = None):
         """Applies swing to all notes in note_sequence, using current object settings, unless swing_direction
            is provided. In that case the swing_direction arg overrides self.swing_direction and is applied.
         """
         validate_type('note_sequence', note_sequence, NoteSequence)
-        validate_optional_type('swing_direction', swing_direction, Swing.SwingDirection)
-        if not self.swinging:
-            return
-        else:
-            swing_direction = swing_direction or self.swing_direction
+        validate_optional_types(('swing_direction', swing_direction, Swing.SwingDirection),
+                                ('swing_jitter_type', swing_jitter_type, Swing.SwingJitterType))
+        swing_direction = swing_direction or self.swing_direction
+        swing_jitter_type = swing_jitter_type or self.swing_jitter_type
+        if self.swing_on:
             for note in note_sequence:
-                note.start += self.calculate_swing_adj(note, swing_direction)
+                note.start += self._calculate_swing_adjust(swing_direction, swing_jitter_type)
 
-    def calculate_swing_adj(self, note: Any = None,  swing_direction: SwingDirection = None):
-        validate_types(('swing_direction', swing_direction, Swing.SwingDirection))
+    def _calculate_swing_adjust(self, swing_direction: SwingDirection, swing_jitter_type: SwingJitterType):
+        swing_adjust = self.swing_range
+        if swing_jitter_type == Swing.SwingJitterType.Random:
+            swing_adjust *= random()
 
-        swing_adj = note.start * self.swing_factor
         if swing_direction == Swing.SwingDirection.Forward:
-            return swing_adj
+            return swing_adjust
         elif swing_direction == Swing.SwingDirection.Reverse:
-            return -swing_adj
-        else:
-            return sign() * swing_adj
+            return -swing_adjust
+        elif swing_direction == Swing.SwingDirection.Both:
+            return sign() * swing_adjust
 
     def __eq__(self, other: 'Swing') -> bool:
-        return self.swinging == other.swinging and \
-            self.swing_factor == other.swing_factor and \
-            self.swing_direction == other.swing_direction
+        return self.swing_on == other.swing_on and \
+               self.swing_range == pytest.approx(other.swing_range) and \
+               self.swing_direction == other.swing_direction and \
+               self.swing_jitter_type == other.swing_jitter_type
