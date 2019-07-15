@@ -123,7 +123,7 @@ class NoteSequence(object):
         """Factory method to construct a Note over a stored Note value at an index in the underlying array"""
         validate_type('index', index, int)
         if index >= len(self):
-            raise ValueError(f'`index` out of range index: {index} max_index: {len(self)}')
+            raise IndexError(f'`index` out of range index: {index} max_index: {len(self)}')
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
             return self.make_note(self.note_attr_vals[index],

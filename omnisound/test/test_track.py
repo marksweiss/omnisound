@@ -1,7 +1,5 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import List, Tuple
-
 import pytest
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
