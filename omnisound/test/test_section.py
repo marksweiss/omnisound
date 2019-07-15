@@ -363,19 +363,6 @@ def test_quantize_to_beat(measure, meter, swing):
             note = measure[i]
             assert quantized_note.start == pytest.approx(note.start)
 
-    # Test: Note durations not on the beat, quantization required
-    # note_list_with_offset_start_times = [CSoundNote.copy(note) for note in note_list]
-    # for note in note_list_with_offset_start_times:
-    #     note.start = note.start + 0.05
-    # for measure in section.measure_list:
-    #     measure.note_list = note_list_with_offset_start_times
-    #
-    # section.quantize_to_beat()
-    # # Assert the start times match the original start_times, which are on the beat
-    # for measure in section.measure_list:
-    #     for i, note in enumerate(note_list):
-    #         assert note.start == pytest.approx(measure.note_list[i].start)
-
 
 def test_set_attr(section):
     expected_amp = 100.1
