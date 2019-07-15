@@ -58,7 +58,7 @@ if __name__ == '__main__':
     dur_val: float = dur.value
     notes_per_measure = int((1 / BEAT_DUR_VAL) * ((1 / dur_val) / (1 / BEAT_DUR_VAL)))
     swing_factor = 0.01
-    swing = Swing(swing_on=True, swing_factor=swing_factor, swing_direction=Swing.SwingDirection.Both)
+    swing = Swing(swing_on=True, swing_range=swing_factor, swing_direction=Swing.SwingDirection.Both)
 
     for _ in range(NUM_MEASURES):
         ostinato_notes = NoteSequence([])
