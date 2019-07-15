@@ -1,7 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from itertools import chain
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.measure import Measure
@@ -10,6 +9,7 @@ from omnisound.note.modifiers.meter import Meter
 from omnisound.note.modifiers.swing import Swing
 from omnisound.utils.utils import (validate_optional_sequence_of_type,
                                    validate_optional_type,
+                                   validate_optional_type_choice,
                                    validate_optional_types,
                                    validate_sequence_of_type, validate_type)
 
@@ -38,17 +38,15 @@ class Track(Section):
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
                  name: str = None,
-                 instrument: Optional[int] = None,
+                 instrument: Optional[Union[float, int]] = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
         validate_optional_types(('meter', meter, Meter),
                                 ('swing', swing, Swing),
-                                ('instrument', instrument, int),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-
-        self.name = name
-        self._section_map = {}
+        validate_optional_type_choice('instrument', instrument, (float, int))
 
         # Get the measure_list from either List[Measure] or Section
+        self._section_map = {}
         measure_list = []
         if to_add:
             try:
@@ -61,44 +59,38 @@ class Track(Section):
                 measure_list = to_add.measure_list
                 if to_add.name:
                     self._section_map[to_add.name] = to_add
-
-        self.index = 0
-
-        # Set the instrument stored at the Track level. Also if an `instrument` was passed in,
-        # modify all Measures, which will in turn modify all of their Notes
-        if instrument:
-            for measure in measure_list:
-                measure.instrument = instrument
-            self.track_instrument = instrument
-        else:
-            self.track_instrument = Track.DEFAULT_INSTRUMENT
-
         super(Track, self).__init__(measure_list=measure_list,
                                     meter=meter,
                                     swing=swing,
                                     name=name,
                                     performance_attrs=performance_attrs)
 
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
-    def get_instrument(self) -> List[int]:
-        return list(chain.from_iterable([measure.instrument for measure in self.measure_list]))
+        self.name = name
+        self._instrument = instrument
+        self.index = 0
 
-    def set_instrument(self, instrument: int):
-        validate_type('instrument', instrument, int)
-        self.track_instrument = instrument
-        for measure in self.measure_list:
-            measure.instrument = instrument
+        # Set the instrument stored at the Track level. Also if an `instrument` was passed in,
+        # modify all Measures, which will in turn modify all of their Notes
+        if instrument:
+            for measure in measure_list:
+                measure.set_attr('instrument', instrument)
+            self.instrument = instrument
+        else:
+            self.instrument = Track.DEFAULT_INSTRUMENT
 
-    instrument = property(get_instrument, set_instrument)
-    i = property(get_instrument, set_instrument)
-    # Getters and setters for all core note properties, get from all notes, apply to all notes
-
-    # Section accessor. Read only
     def get_section_map(self) -> Dict[str, Section]:
         return self._section_map
-
     section_map = property(get_section_map, None)
-    # /Section accessor. Read only
+
+    @property
+    def instrument(self):
+        return self._instrument
+
+    @instrument.setter
+    def instrument(self, instrument: Union[float, int]):
+        for measure in self.measure_list:
+            measure.set_attr('instrument', instrument)
+        self._instrument = instrument
 
     # Measure list management
     def append(self, measure: Measure) -> 'Track':
@@ -106,35 +98,20 @@ class Track(Section):
         self.measure_list.append(measure)
         return self
 
-    def extend(self, to_add: Union[Measure, List[Measure], Section]) -> 'Track':
-        try:
-            validate_type('to_add', to_add, Measure)
-            self.measure_list.append(to_add)
-            return self
-        except ValueError:
-            pass
-
-        try:
-            validate_type('to_add', to_add, Section)
-            self.measure_list.extend(to_add.measure_list)
-            if to_add.name:
-                self._section_map[to_add.name] = to_add
-            return self
-        except ValueError:
-            pass
-
-        validate_sequence_of_type('to_add', to_add, Measure)
-        self.measure_list.extend(to_add)
-
+    def extend(self, to_add: Section) -> 'Track':
+        validate_type('to_add', to_add, Section)
+        self.measure_list.extend(to_add.measure_list)
+        if to_add.name:
+            self._section_map[to_add.name] = to_add
         return self
 
-    def __add__(self, to_add: Union[Measure, List[Measure], Section]) -> 'Track':
-        return self.extend(to_add)
+    def __add__(self, to_add: Measure) -> 'Track':
+        return self.append(to_add)
 
-    def __lshift__(self, to_add: Union[Measure, List[Measure], Section]) -> 'Track':
-        return self.extend(to_add)
+    def __lshift__(self, to_add: Measure) -> 'Track':
+        return self.append(to_add)
 
-    def insert(self, index: int, to_add: Union[Measure, List[Measure], Section]) -> 'Track':
+    def insert(self, index: int, to_add: Union[Measure, Section]) -> 'Track':
         validate_type('index', index, int)
 
         try:
@@ -144,87 +121,31 @@ class Track(Section):
         except ValueError:
             pass
 
-        try:
-            validate_type('to_add', to_add, Section)
-            for measure in to_add.measure_list:
-                self.measure_list.insert(index, measure)
-                index += 1
-            self._section_map[to_add.name] = to_add
-            return self
-        except ValueError:
-            pass
-
-        validate_sequence_of_type('to_add', to_add, Measure)
-        for measure in to_add:
+        validate_type('to_add', to_add, Section)
+        for measure in to_add.measure_list:
             self.measure_list.insert(index, measure)
             index += 1
-
+        self._section_map[to_add.name] = to_add
         return self
 
-    def remove(self, to_remove: Union[Measure, List[Measure], Section]) -> 'Track':
-        try:
-            validate_type('to_remove', to_remove, Measure)
-            self.measure_list.remove(to_remove)
-            return self
-        except ValueError:
-            pass
-
-        try:
-            validate_type('to_remove', to_remove, Section)
-            for measure in to_remove.measure_list:
-                self.measure_list.remove(measure)
-            if to_remove.name:
-                del self._section_map[to_remove.name]
-            return self
-        except ValueError:
-            pass
-
-        validate_sequence_of_type('to_remove', to_remove, Measure)
-        for measure in to_remove:
-            self.measure_list.remove(measure)
-
+    def remove(self, to_remove: Tuple[int, int]) -> 'Track':
+        assert len(to_remove) == 2
+        validate_sequence_of_type('to_remove', to_remove, int)
+        del self.measure_list[to_remove[0]:to_remove[1]]
         return self
     # /Measure list management
-
-    # Iter / slice support
-    def __len__(self) -> int:
-        return len(self.measure_list)
-
-    def __getitem__(self, index: int) -> Measure:
-        validate_type('index', index, int)
-        if abs(index) >= len(self.measure_list):
-            raise ValueError(f'`index` out of range index: {index} len(measure_list): {len(self.measure_list)}')
-        return self.measure_list[index]
-
-    def __iter__(self) -> 'Track':
-        self.index = 0
-        return self
-
-    def __next__(self) -> Measure:
-        if self.index == len(self.measure_list):
-            raise StopIteration
-        measure = self.measure_list[self.index]
-        self.index += 1
-        return measure
-
-    def __eq__(self, other: 'Track') -> bool:
-        if not other or len(self) != len(other):
-            return False
-        return all([self.measure_list[i] == other.measure_list[i] for i in range(len(self.measure_list))])
-    # /Iter / slice support
 
     @staticmethod
     def copy(source_track: 'Track') -> 'Track':
         measure_list = None
         if source_track.measure_list:
             measure_list = [Measure.copy(measure) for measure in source_track.measure_list]
-
         new_track = Track(to_add=measure_list,
                           name=source_track.name,
-                          instrument=source_track.track_instrument,
-                          meter=source_track.meter,
-                          swing=source_track.swing,
-                          performance_attrs=source_track.performance_attrs)
+                          instrument=source_track.instrument,
+                          meter=source_track._meter,
+                          swing=source_track._swing,
+                          performance_attrs=source_track._performance_attrs)
         return new_track
 
 

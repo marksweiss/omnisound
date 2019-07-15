@@ -1,7 +1,7 @@
 # Copyright 2019 Mark S. Weiss
 
-from omnisound.note.adapters.midi_note import FIELDS, MidiInstrument, MidiNote
-from omnisound.note.adapters.note import NoteConfig
+from omnisound.note.adapters.midi_note import ATTR_NAMES, MidiInstrument, MidiNote
+from omnisound.note.adapters.note import NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.measure import Measure, Meter
 from omnisound.note.containers.song import Song
@@ -58,12 +58,12 @@ if __name__ == '__main__':
     dur_val: float = dur.value
     notes_per_measure = int((1 / BEAT_DUR_VAL) * ((1 / dur_val) / (1 / BEAT_DUR_VAL)))
     swing_factor = 0.01
-    swing = Swing(swing_on=True, swing_factor=swing_factor, swing_direction=Swing.SwingDirection.Both)
+    swing = Swing(swing_on=True, swing_range=swing_factor, swing_direction=Swing.SwingDirection.Both)
 
     for _ in range(NUM_MEASURES):
         ostinato_notes = NoteSequence([])
         for i in range(notes_per_measure):
-            note_config = NoteConfig(FIELDS)
+            note_config = NoteValues(ATTR_NAMES)
             note_config.time = (i % notes_per_measure) * dur_val
             note_config.duration = dur_val
             note_config.velocity = int(BASE_VELOCITY - ((i % notes_per_measure) / VELOCITY_FACTOR))
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     for _ in range(NUM_MEASURES):
         chords_notes = NoteSequence([])
         for i in range(notes_per_measure):
-            note_config = NoteConfig(FIELDS)
+            note_config = NoteValues(ATTR_NAMES)
             note_config.time = 0.0
             note_config.duration = dur_val
             note_config.velocity = BASE_VELOCITY - 20

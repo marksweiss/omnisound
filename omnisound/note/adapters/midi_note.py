@@ -1,18 +1,21 @@
 # Copyright 2018 Mark S. Weiss
 
 from enum import Enum
-from typing import Union
+from typing import Any, Mapping, Union
 
-from omnisound.note.adapters.note import Note
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
+from numpy import ndarray
+
+from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_types,
-                                   validate_optional_type_choice,
-                                   validate_type, validate_type_choice,
-                                   validate_types)
+from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
+                                   validate_sequence_of_type, validate_type, validate_type_choice)
 
-FIELDS = ('instrument', 'time', 'duration', 'velocity', 'pitch', 'name', 'channel')
+
+CLASS_NAME = 'MidiNote'
+
+ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
+ATTR_NAME_IDX_MAP = add_base_attr_name_indexes({attr_name: i for i, attr_name in enumerate(ATTR_NAMES)})
 
 
 class MidiInstrument(Enum):
@@ -194,270 +197,226 @@ class MidiInstrument(Enum):
     Open_Triangle = 81
 
 
-class MidiNote(Note):
-    """Models a note with attributes aliased to and specific to MIDI
-       and with a str() that prints MIDI formatted output.
+PITCH_MAP = {
+    MajorKey.C: 24,
+    MajorKey.C_s: 25,
+    MajorKey.D_f: 25,
+    MajorKey.D: 26,
+    MajorKey.D_s: 27,
+    MajorKey.E_f: 27,
+    MajorKey.E: 28,
+    MajorKey.F: 29,
+    MajorKey.F_s: 30,
+    MajorKey.G_f: 30,
+    MajorKey.G: 31,
+    MajorKey.G_s: 32,
+    MajorKey.A_f: 32,
+    MajorKey.A: 33,
+    MajorKey.A_s: 34,
+    MajorKey.B_f: 34,
+    MajorKey.B: 35,
+    MajorKey.C_f: 35,
+
+    MinorKey.C: 24,
+    MinorKey.C_S: 25,
+    MinorKey.D: 26,
+    MinorKey.D_S: 27,
+    MinorKey.E_F: 27,
+    MinorKey.E: 28,
+    MinorKey.E_S: 29,
+    MinorKey.F: 29,
+    MinorKey.F_S: 30,
+    MinorKey.G: 31,
+    MinorKey.A_F: 32,
+    MinorKey.A: 33,
+    MinorKey.A_S: 34,
+    MinorKey.B_F: 34,
+    MinorKey.B: 35
+}
+
+MIN_OCTAVE = 0
+MAX_OCTAVE = 7
+KEYS_IN_MIN_OCTAVE = frozenset([MajorKey.A, MajorKey.B_f, MajorKey.B,
+                                MinorKey.A, MinorKey.B_F, MinorKey.B])
+MIN_PITCH = 21
+MAX_PITCH = 108
+DEFAULT_CHANNEL = 1
+
+
+def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
+    """MIDI pitches sequence from 21 A0 to 127, the 3 highest notes below C1 to the last note of C7.
+       The algorithm is that we store the values for C1-12 as ints in the PITCH_MAP
+       and thus increment by + 12 for every octave > 1, handle the special case for the 3 notes < C1 and
+       validate that the (key, octave) combination is a valid MIDI pitch.
     """
+    validate_type_choice('key', key, (MajorKey, MinorKey))
+    validate_type('octave', octave, int)
+    if not (MIN_OCTAVE < octave < MAX_OCTAVE):
+        raise ValueError(f'Arg `octave` must be in range {MIN_OCTAVE} <= octave <= {MAX_OCTAVE}')
 
-    PITCH_MAP = {
-        MajorKey.C: 24,
-        MajorKey.C_s: 25,
-        MajorKey.D_f: 25,
-        MajorKey.D: 26,
-        MajorKey.D_s: 27,
-        MajorKey.E_f: 27,
-        MajorKey.E: 28,
-        MajorKey.F: 29,
-        MajorKey.F_s: 30,
-        MajorKey.G_f: 30,
-        MajorKey.G: 31,
-        MajorKey.G_s: 32,
-        MajorKey.A_f: 32,
-        MajorKey.A: 33,
-        MajorKey.A_s: 34,
-        MajorKey.B_f: 34,
-        MajorKey.B: 35,
-        MajorKey.C_f: 35,
+    if octave == MIN_OCTAVE:
+        # Handle edge case of only 3 notes being valid when `octave` == 0
+        if key not in KEYS_IN_MIN_OCTAVE:
+            raise ValueError(('If arg `octave` == 0 then `key` must be in '
+                              f'{KEYS_IN_MIN_OCTAVE}'))
+        return PITCH_MAP[key] - NUM_INTERVALS_IN_OCTAVE
+    else:
+        interval_offset = (octave - 1) * NUM_INTERVALS_IN_OCTAVE
+        return PITCH_MAP[key] + interval_offset
 
-        MinorKey.C: 24,
-        MinorKey.C_S: 25,
-        MinorKey.D: 26,
-        MinorKey.D_S: 27,
-        MinorKey.E_F: 27,
-        MinorKey.E: 28,
-        MinorKey.E_S: 29,
-        MinorKey.F: 29,
-        MinorKey.F_S: 30,
-        MinorKey.G: 31,
-        MinorKey.A_F: 32,
-        MinorKey.A: 33,
-        MinorKey.A_S: 34,
-        MinorKey.B_F: 34,
-        MinorKey.B: 35
-    }
 
-    MIN_OCTAVE = 0
-    MAX_OCTAVE = 7
-    KEYS_IN_MIN_OCTAVE = frozenset([MajorKey.A, MajorKey.B_f, MajorKey.B,
-                                    MinorKey.A, MinorKey.B_F, MinorKey.B])
-    MIN_PITCH = 21
-    MAX_PITCH = 108
-    DEFAULT_CHANNEL = 1
+# TODO MODIFY AS MATRIX TRANSFORM GENERIC
+# TODO TEST COVERAGE
+def transpose(self, interval: int):
+    """Midi pitches are ints in the range MIN_PITCH..MAX_PITCH"""
+    validate_type('interval', interval, int)
+    new_pitch = self.pitch + interval
+    if new_pitch < MIN_PITCH or new_pitch > MAX_PITCH:
+        raise ValueError(f'Arg `interval` creates invalid pitch value: {new_pitch}')
+    self.pitch = new_pitch
 
-    def __init__(self, instrument: Union[int, MidiInstrument] = None,
-                 time: float = None, duration: float = None, velocity: int = None, pitch: int = None,
-                 name: str = None,
-                 channel: int = None,
-                 performance_attrs: PerformanceAttrs = None):
-        validate_types(('start', time, float), ('duration', duration, float), ('velocity', velocity, int),
-                       ('pitch', pitch, int))
-        validate_optional_types(('channel', channel, int), ('name', name, str),
-                                ('performance_attrs', performance_attrs, PerformanceAttrs))
-        validate_optional_type_choice('instrument', instrument, (int, MidiInstrument))
-        super(MidiNote, self).__init__(name=name)
-        self._instrument = instrument
-        if instrument in MidiInstrument:
-            self._instrument = instrument.value
-        self._time = time
-        self._duration = duration
-        self._velocity = velocity
-        self._pitch = pitch
-        self._performance_attrs = performance_attrs
-        self._channel = channel or MidiNote.DEFAULT_CHANNEL
 
-    # Custom Interface
-    def program_change(self, instrument: int):
-        validate_type('instrument', instrument, int)
-        self._instrument = instrument
+def program_change(self, instrument: int):
+    validate_type('instrument', instrument, int)
+    self.instrument = float(instrument)
 
-    @property
-    def channel(self) -> int:
-        return self._channel
 
-    @channel.setter
-    def channel(self, channel: int):
+def g_channel():
+    def _g_channel(self) -> int:
+        return self.channel
+    return _g_channel
+
+
+def s_channel():
+    def _s_channel(self, channel: int) -> None:
         validate_type('channel', channel, int)
-        self._channel = channel
+        self.channel = channel
+    return _s_channel
 
-    # Base Note Interface
-    @property
-    def instrument(self) -> int:
-        return self._instrument
 
-    @instrument.setter
-    def instrument(self, instrument: int):
-        validate_type('instrument', instrument, int)
-        self._instrument = instrument
+# Fluent getters setters for core core note attributes
+# noinspection PyPep8Naming
+def I(self, attr_val: int):
+    validate_type('attr_val', attr_val, int)
+    self.note_attr_vals[self.attr_name_idx_map['instrument']] = attr_val
+    return self
 
-    def i(self, instrument: int = None) -> Union['MidiNote', int]:
-        if instrument is not None:
-            validate_type('instrument', instrument, int)
-            self._instrument = instrument
-            return self
-        else:
-            return self._instrument
 
-    @property
-    def start(self) -> float:
-        return self._time
+# noinspection PyPep8Naming
+def T(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['time']] = attr_val
+    return self
 
-    @start.setter
-    def start(self, start: float):
-        validate_type('start', start, float)
-        self._time = start
 
-    def s(self, start: float = None) -> Union['MidiNote', float]:
-        if start is not None:
-            validate_type('start', start, float)
-            self._time = start
-            return self
-        else:
-            return self._time
+# noinspection PyPep8Naming
+def D(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['duration']] = attr_val
+    return self
 
-    @property
-    def time(self) -> float:
-        return self._time
 
-    @time.setter
-    def time(self, time: float):
-        validate_type('time', time, float)
-        self._time = time
+# noinspection PyPep8Naming
+def V(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['velocity']] = attr_val
+    return self
 
-    @property
-    def dur(self) -> float:
-        return self._duration
 
-    @dur.setter
-    def dur(self, dur: float):
-        validate_type('dur', dur, float)
-        self._duration = dur
+# noinspection PyPep8Naming
+def P(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['pitch']] = attr_val
+    return self
 
-    def d(self, dur: float = None) -> Union['MidiNote', float]:
-        if dur is not None:
-            validate_type('dur', dur, float)
-            self._duration = dur
-            return self
-        else:
-            return self._duration
 
-    @property
-    def duration(self) -> float:
-        return self._duration
+# Method implementations for dunder magic methods so the object supports `__eq__` and `__str__`, etc.
+def eq(self, other) -> bool:
+    return self._instrument == other.instrument and \
+           self._time == other.time and \
+           self._duration == other.duration and \
+           self._velocity == other.velocity and \
+           self._pitch == other.pitch and \
+           self._channel == other.channel
 
-    @duration.setter
-    def duration(self, duration: float):
-        validate_type('duration', duration, float)
-        self._duration = duration
 
-    @property
-    def amp(self) -> int:
-        return self._velocity
+def to_str(self):
+    return (f'instrument: {self.instrument} time: {self.time} '
+            f'duration: {self.duration} velocity: {self.velocity} pitch: {self.pitch} channel: {self.channel}')
 
-    @amp.setter
-    def amp(self, amp: int):
-        validate_type('amp', amp, int)
-        self._velocity = amp
 
-    def a(self, amp: int = None) -> Union['MidiNote', int]:
-        if amp is not None:
-            validate_type('amp', amp, int)
-            self._velocity = amp
-            return self
-        else:
-            return self._velocity
+class MidiNoteMeta(type):
+    def __new__(mcs, name, bases, dct):
+        cls = super().__new__(mcs, name, bases, dct)
 
-    @property
-    def velocity(self) -> int:
-        return self._velocity
+        # Attributes assigned by the caller
+        cls.note_attr_vals = None
+        cls.attr_name_idx_map = None
+        cls.attr_get_type_cast_map = None
+        cls.performance_attrs = None
 
-    @velocity.setter
-    def velocity(self, velocity: int):
-        validate_type('velocity', velocity, int)
-        self._velocity = velocity
+        # Custom Midi attributes
+        cls.channel = DEFAULT_CHANNEL
 
-    @property
-    def pitch(self) -> int:
-        return self._pitch
+        return cls
 
-    @pitch.setter
-    def pitch(self, pitch: int):
-        validate_type('pitch', pitch, int)
-        self._pitch = pitch
 
-    def transpose(self, interval: int):
-        """Midi pitches are ints in the range MIN
-        """
-        validate_type('interval', interval, int)
-        new_pitch = self.pitch + interval
-        if new_pitch < MidiNote.MIN_PITCH or new_pitch > MidiNote.MAX_PITCH:
-            raise ValueError(f'Arg `interval` creates invalid pitch value: {new_pitch}')
-        self._pitch = new_pitch
+def _make_cls(attr_name_idx_map):
+    cls_bases = ()
+    methods = {}
+    # Create dynamically getters and setters for the note attributes for this instantiation of a CSoundNote class
+    for attr_name in attr_name_idx_map.keys():
+        get_func = getter(attr_name)
+        methods[f'g_{attr_name}'] = get_func
+        set_func = setter(attr_name)
+        methods[f's_{attr_name}'] = set_func
+        methods[attr_name] = property(get_func, set_func)
+    # Standard Note fluent accessor methods
+    methods['I'] = I
+    methods['T'] = T
+    methods['D'] = D
+    methods['V'] = V
+    methods['P'] = P
+    # Standard Note API
+    methods['transpose'] = transpose
+    # Supported dunder methods
+    methods['__eq__'] = eq
+    methods['__str__'] = to_str
+    # Custom MidiNote methods
+    methods['program_change'] = program_change
+    # noinspection PyTypeChecker
+    methods['channel'] = property(g_channel, s_channel)
 
-    def p(self, pitch: int = None) -> Union['MidiNote', int]:
-        if pitch is not None:
-            validate_type('pitch', pitch, int)
-            self._pitch = pitch
-            return self
-        else:
-            return self._pitch
+    cls = MidiNoteMeta(CLASS_NAME, cls_bases, methods)
+    return cls
 
-    @property
-    def performance_attrs(self) -> PerformanceAttrs:
-        return self._performance_attrs
 
-    @performance_attrs.setter
-    def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        validate_type('performance_attrs', performance_attrs, int)
-        self._performance_attrs = performance_attrs
+def make_note(note_attr_vals: ndarray,
+              attr_name_idx_map: Mapping[str, int],
+              attr_get_type_cast_map: Mapping[str, Any] = None):
+    validate_type('note_attr_vals', note_attr_vals, ndarray)
+    validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
+    validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
+    validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
+    if attr_get_type_cast_map:
+        validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
 
-    @property
-    def pa(self) -> PerformanceAttrs:
-        return self._performance_attrs
+    cls = _make_cls(attr_name_idx_map)
+    note = cls()
 
-    @pa.setter
-    def pa(self, performance_attrs: PerformanceAttrs):
-        validate_type('performance_attrs', performance_attrs, int)
-        self._performance_attrs = performance_attrs
+    # Assign core attributes
+    note.note_attr_vals = note_attr_vals
+    note.attr_name_idx_map = attr_name_idx_map
 
-    @classmethod
-    def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> int:
-        """MIDI pitches sequence from 21 A0 to 127, the 3 highest notes below C1 to the last note of C7.
-           The algorithm is that we store the values for C1-12 as ints in the PITCH_MAP
-           and thus increment by + 12 for every octave > 1, handle the special case for the 3 notes < C1 and
-           validate that the (key, octave) combination is a valid MIDI pitch.
-        """
-        validate_type_choice('key', key, (MajorKey, MinorKey))
-        validate_type('octave', octave, int)
-        if not (cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE):
-            raise ValueError(f'Arg `octave` must be in range {cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}')
+    # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
+    note.attr_get_type_cast_map = attr_get_type_cast_map or {}
+    for attr_name in note.attr_name_idx_map:
+        if attr_name not in note.attr_get_type_cast_map:
+            note.attr_get_type_cast_map[attr_name] = lambda x: x
+    # These are always returned as an int
+    note.attr_get_type_cast_map['instrument'] = int
+    note.attr_get_type_cast_map['velocity'] = int
+    note.attr_get_type_cast_map['pitch'] = int
+    note.attr_get_type_cast_map['channel'] = int
 
-        if octave == cls.MIN_OCTAVE:
-            # Handle edge case of only 3 notes being valid when `octave` == 0
-            if key not in cls.KEYS_IN_MIN_OCTAVE:
-                raise ValueError(('If arg `octave` == 0 then `key` must be in '
-                                  f'{cls.KEYS_IN_MIN_OCTAVE}'))
-            return cls.PITCH_MAP[key] - NUM_INTERVALS_IN_OCTAVE
-        else:
-            interval_offset = (octave - 1) * NUM_INTERVALS_IN_OCTAVE
-            return cls.PITCH_MAP[key] + interval_offset
-
-    @staticmethod
-    def copy(source_note: 'MidiNote') -> 'MidiNote':
-        return MidiNote(instrument=source_note._instrument,
-                        time=source_note._time, duration=source_note._duration,
-                        velocity=source_note._velocity, pitch=source_note._pitch,
-                        name=source_note._name,
-                        channel=source_note._channel,
-                        performance_attrs=source_note._performance_attrs)
-
-    def __eq__(self, other: 'MidiNote') -> bool:
-        """NOTE: Equality ignores Note.name and Note.peformance_attrs. Two CSountNotes are considered equal
-           if they have the same note attributes.
-        """
-        return self._instrument == other._instrument and self._time == other._time and \
-            self._duration == other.duration and self._velocity == other._velocity and \
-            self._pitch == other._pitch and self._channel == other._channel
-
-    def __str__(self):
-        return (f'name: {self.name} instrument: {self.instrument} time: {self.time} '
-                f'duration: {self.duration} velocity: {self.velocity} pitch: {self.pitch} channel: {self.channel}')
+    return note

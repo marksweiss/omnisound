@@ -4,6 +4,8 @@ from bisect import bisect_left
 from enum import Enum
 from typing import Union
 
+import pytest
+
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.utils.utils import validate_optional_types, validate_type
 
@@ -115,7 +117,7 @@ class Meter(object):
 
     def quantize(self, note_sequence: NoteSequence):
         """
-        Algo for the degree of quantization is this ratio:
+        Also for the degree of quantization is this ratio:
         - `notes_duration` = `max(note.start + note.dur) for note in note_sequence`
         -- if the notes_duration matches the measure duration, then no quantization needed, return
         -- if notes run too long they must be shortened and have their start times made earlier
@@ -125,7 +127,7 @@ class Meter(object):
         -- negative adjustment if notes_duration too long, positive adjustment if notes_duration not long enough
         -- total_adjustment must be < a whole note, i.e. < 1.0
 
-        - Duration adjustmnet
+        - Duration adjustment
         -- Each note.dur adjusted by `note.dur += (note.dur * total_adjustment)`
 
         - Start adjustment
@@ -133,7 +135,7 @@ class Meter(object):
         -- `for i, note in enumerate(note_sequence):
                note.start += start_adjustment * i`
 
-        Example: Notes run longer than the duation of the measure
+        Example: Notes run longer than the duration of the measure
 
         measure ------------------------*
         0    0.25    0.50    0.75    1.00     1.25
@@ -144,7 +146,7 @@ class Meter(object):
         total_adjustment = 1.0 - 1.25 = -0.25
         start_adjustment = -0.25 / 2 = -0.125
 
-        n0.dur += (0.25 * -0.25) = 0.25 -= 0.125 = 0.125
+        n0.dur += (0.25 * -0.25) = 0.25 -= 0.0625 = 0.1875
         n1.dur += (0.50 * -0.25) = 0.50 -= 0.125  = 0.375
 
         n0 index = 0, n0.start += 0.0
@@ -153,26 +155,35 @@ class Meter(object):
         measure ------------------------*
         0    0.25    0.50    0.75    1.00     1.25
         ****               **************
-        (0.0, 0.125)       (0.625, 0.375)
+        (0.0, 0.1875)       (0.625, 0.375)
         n0                   n1
         """
         validate_type('note_sequence', note_sequence, NoteSequence)
 
         if self.quantizing:
-            notes_dur = max([note.start + note.dur for note in note_sequence])
+            notes_dur = max([note.start + note.duration for note in note_sequence])
             if notes_dur == self.measure_dur_secs:
                 return
 
             total_adjustment = self.measure_dur_secs - notes_dur
-            if abs(total_adjustment) >= 1.0:
-                raise InvalidQuantizationDurationException((f'quantization adjustment value of {total_adjustment} ' 
-                                                            '>= than maximum allowed adjustment of 1.0'))
+            # if abs(total_adjustment) > 1.0:
+            #     raise InvalidQuantizationDurationException((f'quantization adjustment value of {total_adjustment} '
+            #                                                 '> than maximum allowed adjustment of 1.0'))
             for note in note_sequence:
                 dur_adjustment = note.dur * total_adjustment
+                # Normalize duration adjustment by duration of note, because whole note == 1 and that is the entire
+                # duration of a measure and the max adjustment, so every note adjusts as a ratio of its duration
+                # to the total adjustment needed
                 note.dur += dur_adjustment
+                # Each note that doesn't start at 0 exactly adjusts forward/back by the amount its duration adjusted
                 start_adjustment = total_adjustment - dur_adjustment
                 if round(note.start, 1) > 0.0:
                     note.start += start_adjustment
+                    # Note can't adjust to < 0.0 or > 1.0
+                    if round(note.start, 1) == pytest.approx(0.0):
+                        note.start = 0.0
+                    elif round(note.start, 1) == pytest.approx(1.0):
+                        note.start = 1.0 - note.dur
 
     def quantize_to_beat(self, note_sequence: NoteSequence):
         """Adjusts each note start_time to the closest beat time, so that each note will start on a beat.
@@ -192,7 +203,7 @@ class Meter(object):
 
             # Append measure end time to beat_start_times as a sentinel value for bisect()
             beat_start_times = self.beat_start_times_secs + [self.measure_dur_secs]
-            for note in note_sequence.note_list:
+            for note in note_sequence:
                 i = bisect_left(beat_start_times, note.start)
                 # Note maps to 0th beat
                 if i == 0:

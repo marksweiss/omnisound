@@ -16,8 +16,6 @@ class PerformanceAttrs(object):
 
        Different instruments on different platforms expose different parameters, so this class has no
        fixed attributes. So instead it is just an API for adding attributes in a type-safe way.
-       The API lets the caller add an attribute by name and type, and dynamically adds the attribute
-       and a validator for it.
 
        Usage:
        - call add_attr(name, type) for each attribute you want to add

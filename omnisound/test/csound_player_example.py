@@ -1,7 +1,7 @@
 # Copyright 2019 Mark S. Weiss
 
 from omnisound.note.adapters.csound_note import CSoundNote, FIELDS
-from omnisound.note.adapters.note import NoteConfig
+from omnisound.note.adapters.note import NoteValues
 from omnisound.note.containers.measure import Measure
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
@@ -30,14 +30,14 @@ if __name__ == '__main__':
 
     notes = NoteSequence([])
     for i in range(NUM_NOTES):
-        note_config = NoteConfig(FIELDS)
+        note_config = NoteValues(FIELDS)
         note_config.instrument = INSTRUMENT_1
         note_config.start = (i % NUM_NOTES) * DUR
         note_config.duration = DUR
         note_config.amplitude = BASE_AMP
         note_config.pitch = PITCH
         note_1 = CSoundNote(**note_config.as_dict())
-        note_1.add_attr('func_table', FUNC_TABLE)
+        note_1.set_to_str_for_attr ('func_table')
         notes.append(note_1)
         note_2 = CSoundNote.copy(note_1)
         note_2.instrument = INSTRUMENT_2

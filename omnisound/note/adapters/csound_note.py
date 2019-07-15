@@ -1,33 +1,65 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Union
+from typing import Any, Mapping, Union
 
-from collections import OrderedDict
+from numpy import ndarray
 
-from omnisound.note.adapters.note import Note
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
-                                                     MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_not_none, validate_optional_types, validate_type,
-                                   validate_type_choice, validate_types)
-
-FIELDS = ('instrument', 'start', 'duration', 'amplitude', 'pitch', 'name')
+from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
+from omnisound.note.generators.scale_globals import (NUM_NOTES_IN_OCTAVE, MajorKey, MinorKey)
+from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
+                                   validate_sequence_of_type, validate_type, validate_type_choice)
 
 
-class ToStrValWrapper(object):
-    def __init__(self, attr_val: Any, to_str: Any = None):
-        self.val = attr_val
-        self.to_str = to_str or self._to_str
+CLASS_NAME = 'CSoundNote'
 
-    @staticmethod
-    def _to_str(x):
-        return str(x)
+ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
+ATTR_NAME_IDX_MAP = add_base_attr_name_indexes({attr_name: i for i, attr_name in enumerate(ATTR_NAMES)})
 
-    def __eq__(self, other):
-        return self.val == other.val
+PITCH_MAP = {
+    MajorKey.C: 1.01,
+    MajorKey.C_s: 1.02,
+    MajorKey.D_f: 1.02,
+    MajorKey.D: 1.03,
+    MajorKey.E_f: 1.04,
+    MajorKey.E: 1.05,
+    MajorKey.F: 1.06,
+    MajorKey.F_s: 1.07,
+    MajorKey.G_f: 1.07,
+    MajorKey.G: 1.08,
+    MajorKey.A_f: 1.09,
+    MajorKey.A: 1.10,
+    MajorKey.B_f: 1.11,
+    MajorKey.B: 1.12,
+    MajorKey.C_f: 1.12,
+
+    MinorKey.C: 1.01,
+    MinorKey.C_S: 1.02,
+    MinorKey.D: 1.03,
+    MinorKey.D_S: 1.04,
+    MinorKey.E_F: 1.04,
+    MinorKey.E: 1.05,
+    MinorKey.E_S: 1.06,
+    MinorKey.F: 1.06,
+    MinorKey.F_S: 1.07,
+    MinorKey.G: 1.08,
+    MinorKey.A_F: 1.09,
+    MinorKey.A: 1.10,
+    MinorKey.A_S: 1.11,
+    MinorKey.B_F: 1.11,
+    MinorKey.B: 1.12,
+}
+
+MIN_OCTAVE = 1
+MAX_OCTAVE = 12
+
+DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
 
-# Return a function that binds the pitch_precision to a function that returns an fstring that
+class CSoundInvalidTransposeError(Exception):
+    pass
+
+
+# Return a function that binds the pitch_precision to a function that returns a string that
 # formats the value passed to it (the current value of pitch in the ToStrValWrapper in the OrderedAttr)
 def pitch_to_str(pitch_prec):
     def _pitch_to_str(p):
@@ -35,281 +67,239 @@ def pitch_to_str(pitch_prec):
     return _pitch_to_str
 
 
-class CSoundNote(Note):
-    """Models a note with attributes aliased to and specific to CSound
-       and with a str() that prints CSound formatted output.
+# TODO MODIFY AS MATRIX TRANSFORM GENERIC
+def transpose(self, interval: int):
+    """NOTE: This is only valid to call with pitches in the CSound octave.western_scale style, e.g. 4.01 for C4.
+
+    Algorithm:
+    There are 11 notes in each octave, so project each note in octave.pitch notation into 0-based vector space with
+    11 slots per octave. e.g. C4 == 4.01 = 44.
+
+    The formula to convert a note into this space is:
+      (octave * 11) + (pitch - 1), e.g. 4.01 = (4 * 11) + (1 - 1) == 44
+    The formula to convert a note from this space back SCALE PITCH PRECISION is the complement:
+       (value % 11) + (remainder + 1)
+
+    Examples:
+        5.01 + interval 1 = 55 + 1 = 56, converted 56 % 11 + 1 + 1 = 5.02
+        5.01 + interval 11 = 54 + 11 = 65, converted 65 % 11 + 10 + 1 = 5.11
+        5.01 + interval 12 == 54 + 12 = 66, converted 66 % 11 + 0 + 1 = 6.01
+        5.10 + interval 23 == 54 + 23 = 77, converted 77 % 11 + 0 + 1 = 7.01
+        5.01 - interval 1 = 55 - 1 - 54, converted 54 % 11 + 10 + 1 = 4.11
+        5.01 - interval 11 = 55 - 11 = 44, converted 44 % 11 + 0 + 1 = 4.01
+        5.01 - interval 12 = 55 - 12 = 43, converted 43 % 11 + 10 + 1 = 3.11
+        5.01 - interval 23 = 55 - 23 = 32, converted 32 % 11 + 10 + 1 = 2.11
     """
+    if self.pitch_precision != SCALE_PITCH_PRECISION:
+        raise CSoundInvalidTransposeError(('CSound pitch_precision must be SCALE_PITCH_PRECISION, '
+                                           'which is `octave.pitch` notation like 4.01 for C4, to transpose'))
+    validate_type('interval', interval, int)
 
-    PITCH_MAP = {
-        MajorKey.C: 1.01,
-        MajorKey.C_s: 1.02,
-        MajorKey.D_f: 1.02,
-        MajorKey.D: 1.03,
-        MajorKey.E_f: 1.04,
-        MajorKey.E: 1.05,
-        MajorKey.F: 1.06,
-        MajorKey.F_s: 1.07,
-        MajorKey.G_f: 1.07,
-        MajorKey.G: 1.08,
-        MajorKey.A_f: 1.09,
-        MajorKey.A: 1.10,
-        MajorKey.B_f: 1.11,
-        MajorKey.B: 1.12,
-        MajorKey.C_f: 1.12,
+    # Get current pitch as an integer in the range 1..11, == 1..NUM_NOTES_IN_OCTAVE
+    cur_octave, cur_pitch = str(round(self.pitch, 2)).split('.')
+    cur_octave = int(cur_octave)
+    cur_pitch = int(cur_pitch)
+    # -1 to adjust for 1-based values in CSound scale notation
+    int_scale_pitch = (cur_octave * NUM_NOTES_IN_OCTAVE) + (cur_pitch - 1)
+    int_scale_pitch += interval
+    new_octave, new_pitch = divmod(int_scale_pitch, NUM_NOTES_IN_OCTAVE)
+    # +1 to adjust for 1-based values in CSound scale notation
+    new_pitch += 1
+    self.pitch = round(new_octave + (new_pitch / 100.0), 2)
 
-        MinorKey.C: 1.01,
-        MinorKey.C_S: 1.02,
-        MinorKey.D: 1.03,
-        MinorKey.D_S: 1.04,
-        MinorKey.E_F: 1.04,
-        MinorKey.E: 1.05,
-        MinorKey.E_S: 1.06,
-        MinorKey.F: 1.06,
-        MinorKey.F_S: 1.07,
-        MinorKey.G: 1.08,
-        MinorKey.A_F: 1.09,
-        MinorKey.A: 1.10,
-        MinorKey.A_S: 1.11,
-        MinorKey.B_F: 1.11,
-        MinorKey.B: 1.12,
-    }
 
-    MIN_OCTAVE = 1
-    MAX_OCTAVE = 12
+def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
+    validate_type_choice('key', key, (MajorKey, MinorKey))
+    validate_type('octave', octave, int)
+    if not (MIN_OCTAVE < octave < MAX_OCTAVE):
+        raise ValueError((f'Arg `octave` must be in range '
+                          f'{MIN_OCTAVE} <= octave <= {MAX_OCTAVE}'))
+    return PITCH_MAP[key] + (float(octave) - 1.0)
 
-    DEFAULT_PITCH_PRECISION = SCALE_PITCH_PRECISION = 2
 
-    def __init__(self, instrument: int = None,
-                 start: float = None, duration: float = None, amplitude: int = None, pitch: float = None,
-                 name: str = None,
-                 pitch_precision: int = None,
-                 performance_attrs: PerformanceAttrs = None):
-        validate_types(('instrument', instrument, int), ('start', start, float),
-                       ('duration', duration, float), ('amplitude', amplitude, int),
-                       ('pitch', pitch, float))
-        validate_optional_types(('name', name, str), ('pitch_precision', pitch_precision, int),
-                                ('performance_attrs', performance_attrs, PerformanceAttrs))
-        super(CSoundNote, self).__init__(name=name)
-        self._instrument = instrument
-        self._start = start
-        self._duration = duration
-        self._amplitude = amplitude
-        self._pitch = pitch
-        self._performance_attrs = performance_attrs
+# Prototypes/Implementations of CSound-specific accessors
+def g_pitch_precision():
+    def _g_pitch_precision(self) -> int:
+        return self.pitch_precision
+    return _g_pitch_precision
 
-        # Handle case that pitch is a float and will have rounding but that sometimes we want
-        # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
-        # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
-        # and for the latter case we default to .5f precision but allow any precision.
-        self._pitch_precision = pitch_precision or CSoundNote.DEFAULT_PITCH_PRECISION
 
-        self._to_str_val_wrappers = OrderedDict()
-        self._to_str_val_wrappers['instrument'] = ToStrValWrapper(self._instrument)
-        self._to_str_val_wrappers['start'] = ToStrValWrapper(self._start, lambda x: f'{x:.5f}')
-        self._to_str_val_wrappers['duration'] = ToStrValWrapper(self._duration, lambda x: f'{x:.5f}')
-        self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(self._amplitude)
-        # self._to_str_val_wrappers['pitch'] = ToStrValWrapper(self.pitch, pitch_to_str(self._pitch_precision))
-        self._to_str_val_wrappers['pitch'] = ToStrValWrapper(self.pitch, pitch_to_str(self._pitch_precision))
-
-    # Custom Interface
-    def add_attr(self, attr_name: str, attr_val: Any, to_str: Any = None):
-        validate_type('attr_name', attr_name, str)
-        validate_not_none('attr_name', attr_val)
-        setattr(self, attr_name, attr_val)
-        self._to_str_val_wrappers[attr_name] = ToStrValWrapper(attr_val, to_str)
-
-    @property
-    def pitch_precision(self) -> int:
-        return self._pitch_precision
-
-    @pitch_precision.setter
-    def pitch_precision(self, pitch_precision: int):
+def s_pitch_precision():
+    def _s_pitch_precision(self, pitch_precision: int) -> None:
         validate_type('pitch_precision', pitch_precision, int)
-        self._pitch_precision = pitch_precision
+        self.pitch_precision = pitch_precision
+        self.attr_to_str_formatter_map['pitch'] = pitch_to_str(self.pitch_precision)
+    return _s_pitch_precision
 
-    def set_scale_pitch_precision(self):
-        self._pitch_precision = CSoundNote.SCALE_PITCH_PRECISION
 
-    # Base Note Interface
-    @property
-    def instrument(self) -> int:
-        return self._instrument
+def set_scale_pitch_precision(self):
+    self.pitch_precision = SCALE_PITCH_PRECISION
+    self.attr_to_str_formatter_map['pitch'] = pitch_to_str(self.pitch_precision)
 
-    @instrument.setter
-    def instrument(self, instrument: int):
-        validate_type('instrument', instrument, int)
-        self._instrument = instrument
-        self._to_str_val_wrappers['instrument'] = ToStrValWrapper(instrument)
 
-    def i(self, instrument: int = None) -> Union['CSoundNote', int]:
-        if instrument is not None:
-            validate_type('instrument', instrument, int)
-            self._instrument = instrument
-            self._to_str_val_wrappers['instrument'] = ToStrValWrapper(instrument)
-            return self
-        else:
-            return self._instrument
+def set_attr_str_formatter(self, attr_name: str, formatter: Any):
+    validate_type('attr_name', attr_name, str)
+    self.attr_to_str_formatter_map[attr_name] = formatter
 
-    @property
-    def start(self) -> float:
-        return self._start
 
-    @start.setter
-    def start(self, start: float):
-        validate_type('start', start, float)
-        self._start = start
-        self._to_str_val_wrappers['start'] = ToStrValWrapper(start, lambda x: f'{x:.5f}')
+# Fluent getters setters for core core note attributes
+# noinspection PyPep8Naming
+def I(self, attr_val: int):
+    validate_type('attr_val', attr_val, int)
+    self.note_attr_vals[self.attr_name_idx_map['instrument']] = attr_val
+    return self
 
-    def s(self, start: float = None) -> Union['CSoundNote', float]:
-        if start is not None:
-            validate_type('start', start, float)
-            self._start = start
-            self._to_str_val_wrappers['start'] = ToStrValWrapper(start, lambda x: f'{x:.5f}')
-            return self
-        else:
-            return self._start
 
-    @property
-    def dur(self) -> float:
-        return self._duration
+# noinspection PyPep8Naming
+def S(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['start']] = attr_val
+    return self
 
-    @dur.setter
-    def dur(self, duration: float):
-        validate_type('duration', duration, float)
-        self._duration = duration
-        self._to_str_val_wrappers['duration'] = ToStrValWrapper(duration, lambda x: f'{x:.5f}')
 
-    def d(self, duration: float = None) -> Union['CSoundNote', float]:
-        if duration is not None:
-            validate_type('duration', duration, float)
-            self._duration = duration
-            self._to_str_val_wrappers['duration'] = ToStrValWrapper(duration, lambda x: f'{x:.5f}')
-            return self
-        else:
-            return self._duration
+# noinspection PyPep8Naming
+def D(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['duration']] = attr_val
+    return self
 
-    @property
-    def duration(self) -> float:
-        return self._duration
 
-    @duration.setter
-    def duration(self, duration: float):
-        validate_type('duration', duration, float)
-        self._duration = duration
-        self._to_str_val_wrappers['duration'] = ToStrValWrapper(duration, lambda x: f'{x:.5f}')
+# noinspection PyPep8Naming
+def A(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['amplitude']] = attr_val
+    return self
 
-    @property
-    def amp(self) -> int:
-        return self._amplitude
 
-    @amp.setter
-    def amp(self, amplitude: int):
-        validate_type('amplitude', amplitude, int)
-        self._amplitude = amplitude
-        self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(amplitude)
+# noinspection PyPep8Naming
+def P(self, attr_val: float):
+    validate_type('attr_val', attr_val, float)
+    self.note_attr_vals[self.attr_name_idx_map['pitch']] = attr_val
+    return self
 
-    def a(self, amplitude: int = None) -> Union['CSoundNote', int]:
-        if amplitude is not None:
-            validate_type('amplitude', amplitude, int)
-            self._amplitude = amplitude
-            self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(amplitude)
-            return self
-        else:
-            return self._amplitude
 
-    @property
-    def amplitude(self) -> int:
-        return self._amplitude
+# Method implementations for dunder magic methods so the object supports `__eq__` and `__str__`, etc.
+def eq(self, other) -> bool:
+    return self.instrument == other.instrument and \
+        self.start == other.start and \
+        self.duration == other.duration and \
+        self.amplitude == other.amplitude and \
+        self.pitch == other.pitch
 
-    @amplitude.setter
-    def amplitude(self, amplitude: int):
-        validate_type('amplitude', amplitude, int)
-        self._amplitude = amplitude
-        self._to_str_val_wrappers['amplitude'] = ToStrValWrapper(amplitude)
 
-    @property
-    def pitch(self) -> float:
-        return self._pitch
+def to_str(self) -> str:
+    """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
+       formatting for pitch to enforce two places for scale pitch syntax, e.g. Middle C == 4.01, and to also
+       allow arbitrary precision for floating point values in Hz.
 
-    @pitch.setter
-    def pitch(self, pitch: float):
-        validate_type('pitch', pitch, float)
-        self._to_str_val_wrappers['pitch'] = ToStrValWrapper(pitch, pitch_to_str(self._pitch_precision))
-        self._pitch = pitch
+       Note also that we defer all string handling to the ToStrValWrapper class. The class sets up the to_str
+       for the core attributes of the object correctly.
+       Attributes are either integers, which require no special handling, floats other than pitch,
+       which require precision handling, or pitch, which requires precision handling but is a special case
+       because CSound overloads float syntax to express Western 12-tone scale values using float notation.
+    """
+    attr_strs = [f'i {self.attr_to_str_formatter_map["instrument"](self.instrument)}',
+                 f'{self.attr_to_str_formatter_map["start"](self.start)}',
+                 f'{self.attr_to_str_formatter_map["duration"](self.duration)}',
+                 f'{self.attr_to_str_formatter_map["amplitude"](self.amplitude)}',
+                 f'{self.attr_to_str_formatter_map["pitch"](self.pitch)}']
+    for attr_name in self.attr_name_idx_map.keys():
+        if attr_name not in ATTR_NAMES:
+            attr_strs.append(f'{self.attr_to_str_formatter_map[attr_name](getattr(self, attr_name))}')
 
-    def p(self, pitch: float = None) -> Union['CSoundNote', float]:
-        if pitch is not None:
-            validate_type('pitch', pitch, float)
-            self._pitch = pitch
-            self._to_str_val_wrappers['pitch'] = ToStrValWrapper(pitch, pitch_to_str(self._pitch_precision))
-            return self
-        else:
-            return self._pitch
+    return ' '.join(attr_strs)
 
-    def transpose(self, interval: int):
-        validate_type('interval', interval, int)
-        # Get current pitch as an integer in the range 1..11
-        cur_pitch_str = str(self._pitch)
-        cur_octave, cur_pitch = cur_pitch_str.split('.')
-        # Calculate the new_pitch by incrementing it and modding into the number of intervals in an octave
-        # Then divide by 100 and add the octave to convert this back to CSound syntax
-        #  which is the {octave}.{pitch in range 1..12}
-        # Handle the case where the interval moves the pitch into the next octave
-        if int(cur_pitch) + interval > NUM_INTERVALS_IN_OCTAVE:
-            cur_octave = int(cur_octave) + 1
-        self._pitch = float(cur_octave) + (((int(cur_pitch) + interval) % NUM_INTERVALS_IN_OCTAVE) / 100)
 
-    @property
-    def performance_attrs(self) -> PerformanceAttrs:
-        return self._performance_attrs
+# Meta class for dynamically creating a CSoundNote class with property accessors for an arbitrary list
+# of note attributes. Accessors are dynamically created in `_make_cls()`. This is the mechanism for overloading
+# class creation and passing that dynamically created list of methods in to Python `type` class, which is the
+# meta class that creates classes. Methods are passed in argument named `dct` by common convention.
+# NOTE: Through experimentation found that by creating attributes here in the `cls` object, we can refer to them
+#  in the `getter()` and `setter()` wrappers through `self`, if we create them in overloaded `__new__()`. This
+#  did no work with overloaded `__init__()`.
+class CSoundNoteMeta(type):
+    def __new__(mcs, name, bases, dct):
+        cls = super().__new__(mcs, name, bases, dct)
 
-    @performance_attrs.setter
-    def performance_attrs(self, performance_attrs: PerformanceAttrs):
-        self._performance_attrs = performance_attrs
+        # Attributes assigned by the caller
+        cls.note_attr_vals = None
+        cls.attr_name_idx_map = None
+        cls.attr_get_type_cast_map = None
+        cls.performance_attrs = None
 
-    @property
-    def pa(self) -> PerformanceAttrs:
-        return self._performance_attrs
+        # Custom CSound attributes
+        cls.pitch_precision = DEFAULT_PITCH_PRECISION
+        cls.attr_to_str_formatter_map = {}
 
-    @pa.setter
-    def pa(self, performance_attrs: PerformanceAttrs):
-        self._performance_attrs = performance_attrs
+        return cls
 
-    @classmethod
-    def get_pitch_for_key(cls, key: Union[MajorKey, MinorKey], octave: int) -> float:
-        validate_type_choice('key', key, (MajorKey, MinorKey))
-        validate_type('octave', octave, int)
-        if not (cls.MIN_OCTAVE < octave < cls.MAX_OCTAVE):
-            raise ValueError((f'Arg `octave` must be in range '
-                              f'{cls.MIN_OCTAVE} <= octave <= {cls.MAX_OCTAVE}'))
-        return cls.PITCH_MAP[key] + (float(octave) - 1.0)
 
-    @staticmethod
-    def copy(source_note: 'CSoundNote') -> 'CSoundNote':
-        return CSoundNote(instrument=source_note.instrument,
-                          start=source_note.start, duration=source_note.dur,
-                          amplitude=source_note.amp, pitch=source_note.pitch,
-                          name=source_note.name,
-                          performance_attrs=source_note.performance_attrs)
+def _make_cls(attr_name_idx_map):
+    cls_bases = ()
+    methods = {}
+    # Create dynamically getters and setters for the note attributes for this instantiation of a CSoundNote class
+    for attr_name in attr_name_idx_map.keys():
+        get_func = getter(attr_name)
+        methods[f'g_{attr_name}'] = get_func
+        set_func = setter(attr_name)
+        methods[f's_{attr_name}'] = set_func
+        methods[attr_name] = property(get_func, set_func)
+    # Standard Note accessor methods
+    methods['I'] = I
+    methods['S'] = S
+    methods['D'] = D
+    methods['A'] = A
+    methods['P'] = P
+    # Standard Note API
+    methods['transpose'] = transpose
+    # Supported dunder methods
+    methods['__eq__'] = eq
+    methods['__str__'] = to_str
+    # Custom CSound methods
+    # noinspection PyTypeChecker
+    methods['pitch_precision'] = property(g_pitch_precision, s_pitch_precision)
+    methods['set_scale_pitch_precision'] = set_scale_pitch_precision
+    methods['set_attr_str_formatter'] = set_attr_str_formatter
 
-    def __eq__(self, other: 'CSoundNote') -> bool:
-        """NOTE: Equality ignores Note.name and Note.performance_attrs. Two CSoundNotes are considered equal
-           if they have the same note attributes.
-        """
-        return self._instrument == other._instrument and self._start == other._start and \
-               self._duration == other.duration and self._amplitude == other._amplitude and \
-               self._pitch == other._pitch and self._to_str_val_wrappers == other._to_str_val_wrappers
+    cls = CSoundNoteMeta(CLASS_NAME, cls_bases, methods)
+    return cls
 
-    def __str__(self):
-        """Note the intricate nested f-string for pitch. This lets the user control the precision of the string
-           formatting for pitch to enforce two places for scale pitch syntax, e.g. Middle C == 4.01, and to also
-           allow arbitrary precision for floating point values in Hz.
 
-           Note also that we defer all string handling to the ToStrValWrapper class. The class sets up the to_str
-           for the core attributes of the object correctly. And we expect that any calls to add_attr() to add
-           new attributes also correctly set up to_str for that attribute and it's type. Attributes are either
-           integers, which require no special handling, floats other than pitch, which require precision handling,
-           or pitch, which requires precision handling but is a special case because CSound overloads float syntax
-           to express Western 12-tone scale values using float notation.
-        """
-        return 'i ' + ' '.join([f'{v.to_str(v.val)}' for v in self._to_str_val_wrappers.values()])
+def make_note(note_attr_vals: ndarray,
+              attr_name_idx_map: Mapping[str, int],
+              attr_get_type_cast_map: Mapping[str, Any] = None):
+    validate_type('note_attr_vals', note_attr_vals, ndarray)
+    validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
+    validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
+    validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
+    if attr_get_type_cast_map:
+        validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
+
+    cls = _make_cls(attr_name_idx_map)
+    note = cls()
+
+    # Assign core attributes
+    note.note_attr_vals = note_attr_vals
+    note.attr_name_idx_map = attr_name_idx_map
+
+    # Set string formatters for note attributes, this is specific to CSound per the comments
+    note.set_attr_str_formatter('instrument', lambda x: str(x))
+    note.set_attr_str_formatter('start', lambda x:  f'{x:.5f}')
+    note.set_attr_str_formatter('duration', lambda x:  f'{x:.5f}')
+    note.set_attr_str_formatter('amplitude', lambda x: str(x))
+    # Handle case that pitch is a float and will have rounding but that sometimes we want
+    # to use it to represent fixed pitches in Western scale, e.g. 4.01 == Middle C, and other times
+    # we want to use to represent arbitrary floats in Hz. The former case requires .2f precision,
+    # and for the latter case we default to .5f precision but allow any precision.
+    # This is DEFAULT_PITCH_PRECISION to start with. User can call setter to update the value.
+    note.set_attr_str_formatter('pitch', pitch_to_str(note.pitch_precision))
+
+    # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
+    note.attr_get_type_cast_map = attr_get_type_cast_map or {}
+    for attr_name in note.attr_name_idx_map:
+        if attr_name not in note.attr_get_type_cast_map:
+            note.attr_get_type_cast_map[attr_name] = lambda x: x
+    # Instrument is always returned as an int
+    note.attr_get_type_cast_map['instrument'] = int
+
+    return note

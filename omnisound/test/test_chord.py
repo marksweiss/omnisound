@@ -1,114 +1,159 @@
 # Copyright 2018 Mark S. Weiss
 
+from typing import List
+
 import pytest
 
-from omnisound.note.adapters.csound_note import CSoundNote
+from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.chord import Chord
 from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.scale_globals import MajorKey
+from omnisound.note.generators.scale import Scale
+from omnisound.note.generators.scale_globals import HarmonicScale, MajorKey
+import omnisound.note.adapters.csound_note as csound_note
+
+KEY = MajorKey.C
+OCTAVE = 4
+HARMONIC_SCALE = HarmonicScale.Major
+HARMONIC_CHORD = HarmonicChord.MajorTriad
 
 INSTRUMENT = 1
-START = 0.0
-DUR = 1.0
-AMP = 100
-PITCH = 1.01
+STARTS: List[float] = [1.0, 0.5, 1.5]
+INT_STARTS: List[int] = [1, 5, 10]
+START = STARTS[0]
+INT_START = INT_STARTS[0]
+DURS: List[float] = [1.0, 2.0, 2.5]
+DUR = DURS[0]
+AMPS: List[float] = [1.0, 2.0, 3.0]
+AMP = AMPS[0]
+PITCHES: List[float] = [1.0, 1.5, 2.0]
+PITCH = PITCHES[0]
 
-NOTE_CLS = CSoundNote
-OCTAVE = 4
-KEY = MajorKey.C
+ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
+                          'start': START,
+                          'duration': DUR,
+                          'amplitude': AMP,
+                          'pitch': PITCH}
+NOTE_SEQUENCE_IDX = 0
+
+NOTE_CLS = csound_note
+ATTR_NAMES = csound_note.ATTR_NAMES
+ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
+NUM_NOTES = 2
+NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
+
+
+def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(make_note=NOTE_CLS.make_note,
+                                 num_notes=NUM_NOTES,
+                                 num_attributes=num_attributes,
+                                 attr_name_idx_map=attr_name_idx_map,
+                                 attr_vals_defaults_map=attr_vals_defaults_map)
+    return note_sequence
+
+
+@pytest.fixture
+def note_sequence():
+    return _note_sequence()
+
+
+def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
+          attr_get_type_cast_map=None, num_attributes=None):
+    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    return NOTE_CLS.make_note(
+            _note_sequence(
+                    attr_name_idx_map=attr_name_idx_map,
+                    attr_vals_defaults_map=attr_vals_defaults_map,
+                    num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
+            attr_name_idx_map,
+            attr_get_type_cast_map=attr_get_type_cast_map)
 
 
 @pytest.fixture
 def note():
-    return CSoundNote(instrument=INSTRUMENT, start=START, duration=DUR, amplitude=AMP, pitch=PITCH)
+    return _note()
 
 
-def test_chord(note):
+@pytest.fixture(scope='function')
+def chord():
     harmonic_chord = HarmonicChord.MajorTriad
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
-    assert chord.harmonic_chord == harmonic_chord
-    assert chord.note_prototype == note
-    assert chord.note_type is NOTE_CLS
-    assert chord.octave == OCTAVE
+    return Chord(harmonic_chord=harmonic_chord,
+                 octave=OCTAVE,
+                 key=KEY,
+                 get_pitch_for_key=NOTE_CLS.get_pitch_for_key,
+                 make_note=NOTE_CLS.make_note,
+                 num_attributes=len(NOTE_CLS.ATTR_NAMES),
+                 attr_name_idx_map=ATTR_NAME_IDX_MAP)
 
 
-def test_chord_expected_pitches(note):
-    harmonic_chord = HarmonicChord.MajorTriad
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
-    expected_pitches = [4.01, 4.05, 4.08]
-    assert len(chord)
-    for i, note in enumerate(chord):
+def _assert_expected_pitches(chord_for_test, expected_pitches):
+    for i, note in enumerate(chord_for_test):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
 
-def test_chord_mod_inversion(note):
-    harmonic_chord = HarmonicChord.MajorTriad
+def test_chord(chord):
+    assert chord.harmonic_chord == HARMONIC_CHORD
+    assert chord.octave == OCTAVE
+    # noinspection PyCallingNonCallable
+    # Assert the number of notes in the sequence constructed is the number of notes in the underlying mingus chord
+    assert len(chord) == len(HARMONIC_CHORD.value(KEY.name))
+    for i, note in enumerate(chord):
+        chord_key = Scale.MAJOR_KEY_REVERSE_MAP[chord.mingus_chord[i]]
+        assert note.pitch == pytest.approx(NOTE_CLS.get_pitch_for_key(chord_key, OCTAVE))
 
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+
+def test_chord_mod_first_inversion(chord):
     chord.mod_first_inversion()
     expected_pitches = [4.05, 4.08, 4.01]
-    for i, note in enumerate(chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(chord, expected_pitches)
 
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+
+def test_chord_mod_second_inversion(chord):
     chord.mod_second_inversion()
     expected_pitches = [4.08, 4.01, 4.05]
-    for i, note in enumerate(chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(chord, expected_pitches)
 
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+
+def test_chord_mod_third_inversion(chord):
     chord.mod_third_inversion()
     expected_pitches = [4.01, 4.05, 4.08]
-    for i, note in enumerate(chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(chord, expected_pitches)
 
 
-def test_chord_copy_inversion(note):
-    harmonic_chord = HarmonicChord.MajorTriad
-
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+def test_chord_copy_first_inversion(chord):
     inverted_chord = Chord.copy_first_inversion(chord)
     expected_pitches = [4.05, 4.08, 4.01]
-    for i, note in enumerate(inverted_chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(inverted_chord, expected_pitches)
 
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+
+def test_chord_copy_second_inversion(chord):
     inverted_chord = Chord.copy_second_inversion(chord)
     expected_pitches = [4.08, 4.01, 4.05]
-    for i, note in enumerate(inverted_chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(inverted_chord, expected_pitches)
 
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+
+def test_chord_copy_third_inversion(chord):
     inverted_chord = Chord.copy_third_inversion(chord)
     expected_pitches = [4.01, 4.05, 4.08]
-    for i, note in enumerate(inverted_chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(inverted_chord, expected_pitches)
 
 
-def test_mod_transpose(note):
-    harmonic_chord = HarmonicChord.MajorTriad
-
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+def test_mod_transpose(chord):
     expected_pitches = [4.02, 4.06, 4.09]
     chord.mod_transpose(interval=1)
-    for i, note in enumerate(chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(chord, expected_pitches)
 
 
-def test_copy_transpose(note):
-    harmonic_chord = HarmonicChord.MajorTriad
-
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+def test_copy_transpose(chord):
     transposed_chord = Chord.copy_transpose(chord, interval=1)
     expected_pitches = [4.02, 4.06, 4.09]
-    for i, note in enumerate(transposed_chord):
-        assert expected_pitches[i] == pytest.approx(note.pitch)
+    _assert_expected_pitches(transposed_chord, expected_pitches)
 
 
-def test_mod_ostinato(note):
-    harmonic_chord = HarmonicChord.MajorTriad
-
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+def test_mod_ostinato(chord):
     init_start_time = 0.0
     start_time_interval = 0.1
     chord.mod_ostinato(init_start_time=init_start_time, start_time_interval=start_time_interval)
@@ -117,10 +162,7 @@ def test_mod_ostinato(note):
         assert expected_start_times[i] == pytest.approx(note.start)
 
 
-def test_copy_ostinato(note):
-    harmonic_chord = HarmonicChord.MajorTriad
-
-    chord = Chord(harmonic_chord=harmonic_chord, note_prototype=note, note_cls=NOTE_CLS, octave=OCTAVE, key=KEY)
+def test_copy_ostinato(chord):
     init_start_time = 0.0
     start_time_interval = 0.1
     ostinato_chord = Chord.copy_ostinato(chord, init_start_time=init_start_time,
