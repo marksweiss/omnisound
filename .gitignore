@@ -6,6 +6,7 @@ ruby_src/
 test_foxdot.py
 *.pyc
 ext/python-mingus
+ext/supriya
 *.DS_Store
 aleatoric/.DS_Store
 aleatoric/*/.DS_Store
