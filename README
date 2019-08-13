@@ -1,11 +1,14 @@
+Omnisound
+==========
+
 Installation
+---------------------
 
 git clone omnisound
 git submodule update --init
 
 pip install mido
-pip install supriya
-pip install python-mingus from this submodule
+./install_dependencies
 
-install supercollider
-install csound
+install [supercollider](https://supercollider.github.io/download)
+install [csound](https://csound.com/download.html)

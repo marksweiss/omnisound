@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+declare -r DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+for d in $DIR/ext/*; do
+  echo "INSTALLING $d"
+  sudo pip install -e $d
+done

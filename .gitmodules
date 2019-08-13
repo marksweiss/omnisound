@@ -2,3 +2,7 @@
 	path = ext/python-mingus
 	url = https://github.com/marksweiss/python-mingus
 	ignore = dirty
+[submodule "ext/supriya"]
+	path = ext/supriya
+	url = https://github.com/josiah-wolf-oberholtzer/supriya.git
+	ignore = dirty
