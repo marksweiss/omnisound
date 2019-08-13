@@ -8,9 +8,9 @@ test_foxdot.py
 ext/python-mingus
 ext/supriya
 *.DS_Store
-aleatoric/.DS_Store
-aleatoric/*/.DS_Store
-aleatoric/test/*.mid
+omnisound/.DS_Store
+omnisound/*/.DS_Store
+omnisound/test/*.mid
 *.mid
 omnisound/test/*.wav
 omnisound/test/*.wav
