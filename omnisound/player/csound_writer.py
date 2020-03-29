@@ -7,7 +7,7 @@ from omnisound.player.player import Player
 from omnisound.utils.utils import validate_optional_type, validate_types
 
 
-class CSoundPlayer(Player):
+class CSoundWriter(Player):
     CSOUND_OSX_PATH = '/usr/local/bin/csound'
     # PLAY_ALL = 'play_all'
     # PLAY_EACH = 'play_each'
@@ -19,14 +19,14 @@ class CSoundPlayer(Player):
                        ('score_file_path', score_file_path, str), ('orchestra_file_path', orchestra_file_path, str),
                        ('verbose', verbose, bool))
         validate_optional_type('csound_path', csound_path, str)
-        super(CSoundPlayer, self).__init__()
+        super(CSoundWriter, self).__init__()
 
         self.song = song
         self.out_file_path = out_file_path
         self.score_file_path = score_file_path
         self.orchestra_file_path = orchestra_file_path
         # TODO MAKE MORE PLATFORM-NEUTRAL
-        self.csound_path = csound_path or CSoundPlayer.CSOUND_OSX_PATH
+        self.csound_path = csound_path or CSoundWriter.CSOUND_OSX_PATH
         self.verbose = verbose
         self._include_file_names = []
 
@@ -56,7 +56,7 @@ class CSoundPlayer(Player):
             # -s - short int sound samples
             # -W - .wav output file format
             # -o - rendered output file name
-            cmd = (f'{CSoundPlayer.CSOUND_OSX_PATH} -m7 -s -W -o{self.out_file_path} '
+            cmd = (f'{CSoundWriter.CSOUND_OSX_PATH} -m7 -s -W -o{self.out_file_path} '
                    f'{self.orchestra_file_path} {self.score_file_path}')
             print(f'{cmd}')
 

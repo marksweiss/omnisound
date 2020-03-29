@@ -7,7 +7,7 @@ from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
-from omnisound.player.csound_player import CSoundPlayer
+from omnisound.player.csound_writer import CSoundWriter
 
 SONG_NAME = 'Your Song'
 INSTRUMENT_1 = 1
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     measure = Measure(notes)
     track = Track(to_add=[measure], name='ostinato', instrument=INSTRUMENT_1)
     song = Song(to_add=[track], name=SONG_NAME)
-    player = CSoundPlayer(song=song, out_file_path=OUT_FILE_PATH,
+    player = CSoundWriter(song=song, out_file_path=OUT_FILE_PATH,
                           score_file_path=SCORE_FILE_PATH, orchestra_file_path=ORCHESTRA_FILE_PATH)
     player.add_score_include_file(SCORE_INCLUDE_FILE_PATH)
     player.play_all()
