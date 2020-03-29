@@ -109,8 +109,6 @@ def s_scale():
 
 # Fluent getters setters for core core note attributes
 # noinspection PyPep8Naming
-# Fluent getters setters for core core note attributes
-# noinspection PyPep8Naming
 def S(self, attr_val: int):
     validate_type('attr_val', attr_val, int)
     self.note_attr_vals[self.attr_name_idx_map['instrument']] = attr_val
@@ -198,7 +196,7 @@ class FoxdotSupercolliderNoteMeta(type):
 def _make_cls(attr_name_idx_map):
     cls_bases = ()
     methods = {}
-    # Create dynamically getters and setters for the note attributes for this instantiation of a CSoundNote class
+    # Create dynamically getters and setters for the note attributes for this instantiation of FoxdotSupercollider class
     for attr_name in attr_name_idx_map.keys():
         get_func = getter(attr_name)
         methods[f'g_{attr_name}'] = get_func
@@ -252,7 +250,7 @@ def make_note(note_attr_vals: ndarray,
         if attr_name not in note.attr_get_type_cast_map:
             note.attr_get_type_cast_map[attr_name] = lambda x: x
 
-    # Instrument is always returned as an int
+    # Octave is always returned as an int
     note.attr_get_type_cast_map['octave'] = int
 
     return note
