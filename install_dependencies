@@ -6,3 +6,5 @@ for d in $DIR/ext/*; do
   echo "INSTALLING $d"
   sudo pip install -e $d
 done
+
+pip install -r requirements.txt

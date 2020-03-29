@@ -1,0 +1,3 @@
+ctcsound
+numpy
+pytest
