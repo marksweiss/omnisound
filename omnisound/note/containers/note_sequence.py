@@ -2,7 +2,7 @@
 
 # TODO ADD OPTIONALs TO ALL SIGNATURES
 # TODO EQUALITY TESTS EVERYWHERE
-# TOOD COPY TESTS
+# TODO COPY TESTS
 
 from typing import Any, Mapping, Iterator, Sequence, Tuple
 
@@ -37,7 +37,7 @@ class NoteSequence(object):
        row in the matrix and just an interface to read and write values for a single note, rather than manipulating
        all values at once.
 
-       NOTE: Appending to a a child must be done directly and it also invalidates the range_map in any
+       NOTE: Appending to a child must be done directly and it also invalidates the range_map in any
        sequence that the child is a child_sequence of. If you want to modify a Sequence B that is in A.child_sequences,
        you must 1) modify B, and then 2) call A.update_range_map().
     """
@@ -145,8 +145,6 @@ class NoteSequence(object):
                     return self.make_note(note_attrs[adjusted_index],
                                           self.attr_name_idx_map,
                                           attr_get_type_cast_map=self.attr_get_type_cast_map)
-                    # noinspection PyUnreachableCode
-                    break
                 index_range_sum += index_range
 
     def __getitem__(self, index: int) -> Any:
