@@ -1,4 +1,12 @@
-#include "/Users/markweiss/Documents/projects/omnisound/omnisound/test/csound_player_example_ftables.txt"
+; Function 1
+; GEN10 Parameters:
+;	- str1, str2, str3 ... where str is a fixed harmonic partial
+;		- the value of str# is the relative strength of the partial in the final mixed timbre
+;		- partials to be skipped are given value 0
+;
+; Func # 	Loadtm 	TblSize GEN   Parameters ...
+; First partial variations
+f 1		    0		    8193		10		1
 
 i 1 0.00000 0.10000 10000 6.07 1
 i 1 0.00000 0.10000 10000 6.07
