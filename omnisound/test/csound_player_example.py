@@ -49,7 +49,7 @@ INSTRUMENT_1 = f'''instr {INSTRUMENT_1_ID}
     iNumOuts = 2
     ; Other note params
     iPitch = cpspch(p5)  ; Convert from std. Western notation to frequency
-    iFuncNum = p6
+    iFuncNum = 1 
 
     ; Envelope
     ;     Opcode    Amplitude   Rise      Duration    Decay
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         measure[i].amplitude = BASE_AMP
         measure[i].pitch = PITCH
     measure.apply_swing()
-    track = Track(to_add=[measure], name='ostinato')
+    track = Track(to_add=[measure], name='ostinato', instrument=INSTRUMENT_1_ID)
     song = Song(to_add=[track], name=SONG_NAME)
 
     orchestra = CSoundOrchestra(instruments=INSTRUMENTS,
