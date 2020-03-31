@@ -17,8 +17,8 @@ PITCH_I = 4
 BASE_ATTR_NAME_IDX_MAP = {
     'instrument': INSTRUMENT_I,
     'start': START_I,
-    'dur': DUR_I,
-    'amp': AMP_I,
+    'duration': DUR_I,
+    'amplitude': AMP_I,
     'pitch': PITCH_I,
 }
 BASE_ATTR_NAMES = tuple(BASE_ATTR_NAME_IDX_MAP.keys())

@@ -66,7 +66,7 @@ INSTRUMENT_1 = f'''instr {INSTRUMENT_1_ID}
 endin'''
 INSTRUMENTS = [INSTRUMENT_1]
 #
-SCORE_HEADER_LINES = '''; Function 1
+SCORE_HEADER = '''; Function 1
 ; GEN10 Parameters: 
 ;	- str1, str2, str3 ... where str is a fixed harmonic partial
 ;		- the value of str# is the relative strength of the partial in the final mixed timbre
@@ -75,6 +75,7 @@ SCORE_HEADER_LINES = '''; Function 1
 ; Func # 	Loadtm 	TblSize GEN   Parameters ...
 ; First partial variations
 f 1		    0		    8193		10		1'''
+SCORE_HEADER_LINES = [SCORE_HEADER]
 
 
 if __name__ == '__main__':

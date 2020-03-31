@@ -91,7 +91,7 @@ class CSD:
     def render(self):
         return CSD.TEMPLATE.format(
             DEFAULT_FLAGS=CSD.DEFAULT_FLAGS,
-            GLOBAL_VARS='\n'.join('{} = {}'.format(k, v) for k, v in self.csound_orchestra.global_vars),
+            GLOBAL_VARS='\n'.join(f'{k} = {v}' for k, v in self.csound_orchestra.global_vars.items()),
             INSTRUMENTS='\n'.join(str(instrument) for instrument in self.csound_orchestra.instruments),
             SCORE_LINES='\n'.join(str(score_line) for score_line in self.csound_score.score_lines)
         )
@@ -123,7 +123,7 @@ class CSoundPlayer(Player):
             self._cs.perform()
             self._cs.reset()
         else:
-            raise InvalidScoreError('ctcsound.compileCsdTest() failed for rendered_script {}'.format(rendered_script))
+            raise InvalidScoreError('ctcsound.jcompileCsdTest() failed for rendered_script {}'.format(rendered_script))
 
     def improvise(self):
         raise NotImplementedError('CsoundPlayer does not support improvising')
