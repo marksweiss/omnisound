@@ -1,9 +1,10 @@
 # Copyright 2020 Mark S. Weiss
 
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import ctcsound
 
+from omnisound.note.adapters.note import as_list
 from omnisound.player.player import Player
 from omnisound.utils.utils import (validate_types, validate_optional_type, validate_optional_types,
                                    validate_optional_sequence_of_type, validate_sequence_of_type)
@@ -97,13 +98,13 @@ class CSD:
         )
 
 
-class CSoundPlayer(Player):
+class CSoundCSDPlayer(Player):
     def __init__(self,
                  csound_orchestra: CSoundOrchestra = None,
                  csound_score: CSoundScore = None):
         validate_types(('csound_orchestra', csound_orchestra, CSoundOrchestra),
                        ('csound_score', csound_score, CSoundScore))
-        super(CSoundPlayer, self).__init__()
+        super(CSoundCSDPlayer, self).__init__()
 
         self._csd = CSD(csound_orchestra, csound_score)
         self._cs = ctcsound.Csound()
@@ -127,3 +128,40 @@ class CSoundPlayer(Player):
 
     def improvise(self):
         raise NotImplementedError('CsoundPlayer does not support improvising')
+
+
+# TODO Can't derive from Play because signature for play_each needs to take a Note
+class CSoundInteractivePlayer:
+
+    def __init__(self):
+        super(CSoundInteractivePlayer, self).__init__()
+        self._cs = ctcsound.Csound()
+        self._cs.setOption('odac')
+        self._cs.start()
+        self._notes = []
+
+    # TODO FIX THIS HELPER FUNC
+    # TODO THIS API MAKES NO SENSE
+    def play_all(self, notes: Sequence[Any] = None):
+        # TODO Enums for different score events
+        # TODO Helper for playing note
+        if not notes:
+            notes = self._notes
+        for note in notes:
+            self._cs.scoreEvent('i', as_list(note))
+        self._cs.perform()
+        self._cs.reset()
+
+    def add_note(self, note: Any):
+        self._notes.append(note)
+
+    # TODO FIX THIS HELPER FUNC TO YIELD OR USE PERFORMANCE THREAD PER CTCSOUND EXAMPLES
+    def play_each(self, note: Any):
+        # TODO Enums for different score events
+        # TODO Helper for playing note
+        self._cs.scoreEvent('i', as_list(note))
+        self._cs.perform()
+        self._cs.reset()
+
+    def __del__(self):
+        self._cs.cleanup()

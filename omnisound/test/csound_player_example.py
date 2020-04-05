@@ -5,7 +5,7 @@ from omnisound.note.containers.measure import (Measure,
                                                Swing)
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
-from omnisound.player.csound_player import CSoundOrchestra, CSoundPlayer, CSoundScore
+from omnisound.player.csound_player import CSoundOrchestra, CSoundCSDPlayer, CSoundInteractivePlayer, CSoundScore
 import omnisound.note.adapters.csound_note as csound_note
 
 # Song Params
@@ -99,11 +99,18 @@ if __name__ == '__main__':
 
     orchestra = CSoundOrchestra(instruments=INSTRUMENTS,
                                 sampling_rate=SR, ksmps=KSMPS, num_channels=NCHNLS)
+    # TODO REMOVE THIS TEST COMMENT
     note_lines = []
     for track in song:
         for measure in track.measure_list:
             for note in measure:
                 note_lines.append(f'{str (note)}')
     score = CSoundScore(header_lines=SCORE_HEADER_LINES, note_lines=note_lines)
-    player = CSoundPlayer(csound_orchestra=orchestra, csound_score=score)
+    player = CSoundCSDPlayer(csound_orchestra=orchestra, csound_score=score)
     player.play_all()
+
+    player = CSoundInteractivePlayer()
+    for track in song:
+        for measure in track.measure_list:
+            for note in measure:
+                player.play_each(note)
