@@ -6,8 +6,9 @@ import ctcsound
 
 from omnisound.note.adapters.note import as_list
 from omnisound.player.player import Player
-from omnisound.utils.utils import (validate_types, validate_optional_type, validate_optional_types,
+from omnisound.utils.utils import (validate_types, validate_optional_types,
                                    validate_optional_sequence_of_type, validate_sequence_of_type)
+
 
 class InvalidScoreError(Exception):
     pass

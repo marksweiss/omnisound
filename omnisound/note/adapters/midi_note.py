@@ -3,6 +3,7 @@
 from enum import Enum
 from typing import Any, Mapping, Union
 
+# TODO SHOULD THIS BE numpy.array? THAT IS USED IN note.py
 from numpy import ndarray
 
 from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
