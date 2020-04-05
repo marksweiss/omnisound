@@ -1,4 +1,6 @@
 __pycache__/
+bin/
+lib/
 venv/
 ruby_src/
 .idea/
