@@ -14,6 +14,10 @@ class InvalidScoreError(Exception):
     pass
 
 
+class CSoundPerformanceError(Exception):
+    pass
+
+
 # TODO MOVE TO OWN SOURCE FILE
 class CSoundScore:
     def __init__(self, note_lines: Sequence[str] = None,
@@ -108,7 +112,6 @@ class CSoundCSDPlayer(Player):
         super(CSoundCSDPlayer, self).__init__()
 
         self._csd = CSD(csound_orchestra, csound_score)
-        self._cs = ctcsound.Csound()
 
     # TODO FIX THIS HELPER FUNC
     def play_all(self):
@@ -119,13 +122,18 @@ class CSoundCSDPlayer(Player):
         self._play()
 
     def _play(self):
+        cs = ctcsound.Csound()
         rendered_script = self._csd.render()
-        if self._cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
-            self._cs.start()
-            self._cs.perform()
-            self._cs.reset()
+        if cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
+            cs.start()
+            cs.perform()
+            result: int = cs.cleanup()
+            cs.reset()
+            del cs
+            if result != 0:
+                raise CSoundPerformanceError(f'ctcsound.csound.cleanup() returned failure error code {result}')
         else:
-            raise InvalidScoreError('ctcsound.jcompileCsdTest() failed for rendered_script {}'.format(rendered_script))
+            raise InvalidScoreError('ctcsound.compileCsdTest() failed for rendered_script {}'.format(rendered_script))
 
     def improvise(self):
         raise NotImplementedError('CsoundPlayer does not support improvising')

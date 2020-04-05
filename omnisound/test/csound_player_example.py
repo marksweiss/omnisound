@@ -109,8 +109,8 @@ if __name__ == '__main__':
     player = CSoundCSDPlayer(csound_orchestra=orchestra, csound_score=score)
     player.play_all()
 
-    player = CSoundInteractivePlayer()
-    for track in song:
-        for measure in track.measure_list:
-            for note in measure:
-                player.play_each(note)
+    # player = CSoundInteractivePlayer()
+    # for track in song:
+    #     for measure in track.measure_list:
+    #         for note in measure:
+    #             player.play_each(note)
