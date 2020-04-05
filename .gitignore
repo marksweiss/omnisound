@@ -13,4 +13,4 @@ omnisound/*/.DS_Store
 omnisound/test/*.mid
 *.mid
 omnisound/test/*.wav
-omnisound/test/*.wav
+omnisound/test/*.aif
