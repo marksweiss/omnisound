@@ -7,6 +7,8 @@ Installation
 git clone omnisound
 git submodule update --init
 
+ln -s /path/to/omnisound/ext/python_mingus/mingus /path/to/omnisound/mingus
+
 pip install mido
 ./install_dependencies
 

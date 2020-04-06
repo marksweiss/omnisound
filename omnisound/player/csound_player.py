@@ -136,7 +136,7 @@ class CSoundCSDPlayer(Player):
             raise InvalidScoreError('ctcsound.compileCsdTest() failed for rendered_script {}'.format(rendered_script))
 
     def improvise(self):
-        raise NotImplementedError('CsoundPlayer does not support improvising')
+        raise NotImplementedError('CSoundCSDPlayer does not support improvising')
 
 
 # TODO Can't derive from Play because signature for play_each needs to take a Note
@@ -154,15 +154,17 @@ class CSoundInteractivePlayer:
     def play_all(self, notes: Sequence[Any] = None):
         # TODO Enums for different score events
         # TODO Helper for playing note
-        if not notes:
-            notes = self._notes
-        for note in notes:
-            self._cs.scoreEvent('i', as_list(note))
         self._cs.perform()
+        result: int = self._cs.cleanup()
         self._cs.reset()
+        del self._cs
+        if result != 0:
+            raise CSoundPerformanceError(f'ctcsound.csound.cleanup() returned failure error code {result}')
+        self._cs = ctcsound.Csound()
+        self._cs.setOption('odac')
 
     def add_note(self, note: Any):
-        self._notes.append(note)
+        self._cs.scoreEvent ('i', as_list (note))
 
     # TODO FIX THIS HELPER FUNC TO YIELD OR USE PERFORMANCE THREAD PER CTCSOUND EXAMPLES
     def play_each(self, note: Any):
@@ -170,7 +172,13 @@ class CSoundInteractivePlayer:
         # TODO Helper for playing note
         self._cs.scoreEvent('i', as_list(note))
         self._cs.perform()
+        result: int = self._cs.cleanup()
         self._cs.reset()
+        del self._cs
+        if result != 0:
+            raise CSoundPerformanceError(f'ctcsound.csound.cleanup() returned failure error code {result}')
+        self._cs = ctcsound.Csound()
+        self._cs.setOption('odac')
 
-    def __del__(self):
-        self._cs.cleanup()
+    def improvise(self):
+        raise NotImplementedError('CSoundInteractivePlayer does not support improvising')
