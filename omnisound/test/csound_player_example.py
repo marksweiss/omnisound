@@ -7,7 +7,8 @@ from omnisound.note.containers.measure import (Measure,
                                                Swing)
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
-from omnisound.player.csound_player import CSoundOrchestra, CSoundCSDPlayer, CSoundInteractivePlayer, CSoundScore
+from omnisound.player.csound_player import (CSoundCSDPlayer, CSoundEventType, CSoundInteractivePlayer, CSoundOrchestra,
+                                            CSoundScore, CSoundScoreEvent)
 import omnisound.note.adapters.csound_note as csound_note
 
 # Song Params
@@ -101,7 +102,7 @@ if __name__ == '__main__':
 
     orchestra = CSoundOrchestra(instruments=INSTRUMENTS,
                                 sampling_rate=SR, ksmps=KSMPS, num_channels=NCHNLS)
-    # TODO REMOVE THIS TEST COMMENT
+
     note_lines = []
     for track in song:
         for measure in track.measure_list:
@@ -111,11 +112,20 @@ if __name__ == '__main__':
     player = CSoundCSDPlayer(csound_orchestra=orchestra, csound_score=score)
     ret = player.play_all()
 
-    player = CSoundInteractivePlayer()
+    # Create the player
+    player = CSoundInteractivePlayer(csound_orchestra=orchestra)
+    # Add a function table with 0th arg == 1, this defines data referred to by 'instrument 1'
+    # in the Orchestra bound to the Player
+    player.add_score_event(CSoundScoreEvent(event_type=CSoundEventType.FunctionTable,
+                                            event_data=(1, 0, 8193, 10, 1)))
+    # Now add score events of type 'i', these are instrument events, that play the instrument with
+    # start_time, amplitude and pitch
     for track in song:
         for measure in track.measure_list:
-            for note in measure:
-                player.add_note(note)
+            player.add_score_events([CSoundScoreEvent.note_to_score_event(note) for note in measure])
+    # Now add an end event event of type 'e' that stops the performance and closes writing the output
+    player.add_end_score_event(beats_to_wait=10)
+    # Perform the score events on the Orchestra bound to the Player
     ret = player.play_all()
     # NOTE: Must explicitly call sys.exit or CSound interactive Py API doesn't close the file handle on the file it's
     # writing and just leaks by writing more and more to the file until you manually kill the parent process.

@@ -1,17 +1,47 @@
 # Copyright 2020 Mark S. Weiss
 
-from typing import Any, Optional, Sequence
+from enum import Enum
+from typing import Any, Optional, Sequence, Union
 
 import ctcsound
 
 from omnisound.note.adapters.note import as_list
 from omnisound.player.player import Player
-from omnisound.utils.utils import (validate_types, validate_optional_types,
-                                   validate_optional_sequence_of_type, validate_sequence_of_type)
+from omnisound.utils.utils import (validate_type, validate_types, validate_optional_types,
+                                   validate_optional_sequence_of_type, validate_sequence_of_type,
+                                   validate_sequence_of_type_choice)
 
 
 class InvalidScoreError(Exception):
     pass
+
+
+class CSoundEventType(Enum):
+    AdvanceScorePointer = 0
+    EndScore = 1
+    Instrument = 2
+    FunctionTable = 3
+    Quiet = 4
+
+
+class CSoundScoreEvent:
+    EVENT_TYPE_CODES: dict = {
+        CSoundEventType.AdvanceScorePointer.name: 'a',
+        CSoundEventType.EndScore.name: 'e',
+        CSoundEventType.Instrument.name: 'i',
+        CSoundEventType.FunctionTable.name: 'f',
+        CSoundEventType.Quiet.name: 'q',
+    }
+
+    def __init__(self, event_type: CSoundEventType = None, event_data: Sequence[Union[float, int]] = None):
+        validate_type('event_type', event_type, CSoundEventType)
+        validate_sequence_of_type_choice('event_data', event_data, (float, int))
+        self.event_type = event_type
+        self.event_data = event_data
+
+    @staticmethod
+    def note_to_score_event(note: Any):
+        return CSoundScoreEvent(CSoundEventType.Instrument, as_list(note))
 
 
 # TODO MOVE TO OWN SOURCE FILE
@@ -50,7 +80,7 @@ class CSoundOrchestra:
             'sr': sampling_rate,
             # Ratio of output sampling rate to control rate (actual samples per control period)
             'ksmps': ksmps,
-            # Number output channels (mono, stereo, quadrophonic)
+            # Number output channels (mono, stereo, quadraphonic)
             'nchnls': num_channels,
             # Value of 0 decibels, 1 means don't alert amp of output and is most compatible with plugins
             # Must be written as '0dbfs' in CSound output, but Py vars can't start with a number
@@ -58,6 +88,12 @@ class CSoundOrchestra:
         }
 
         self.instruments = instruments
+
+    def __str__(self):
+        return '''{GLOBAL_VARS}
+        {INSTRUMENT}'''.format(
+            GLOBAL_VARS='\n'.join(f'{k} = {v}' for k, v in self.global_vars.items()),
+            INSTRUMENT='\n'.join(str(instrument) for instrument in self.instruments))
 
 
 # TODO MOVE TO OWN SOURCE FILE?
@@ -109,15 +145,7 @@ class CSoundCSDPlayer(Player):
 
         self._csd = CSD(csound_orchestra, csound_score)
 
-    # TODO FIX THIS HELPER FUNC
-    def play_all(self):
-        self._play()
-
-    # TODO FIX THIS HELPER FUNC TO YIELD OR USE PERFORMANCE THREAD PER CTCSOUND EXAMPLES
-    def play_each(self):
-        self._play()
-
-    def _play(self) -> int:
+    def play_all(self) -> int:
         cs = ctcsound.Csound()
         rendered_script = self._csd.render()
         if cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
@@ -132,27 +160,29 @@ class CSoundCSDPlayer(Player):
         else:
             raise InvalidScoreError('ctcsound.compileCsdTest() failed for rendered_script {}'.format(rendered_script))
 
+    def play_each(self):
+        raise NotImplementedError('CSoundCSDPlayer does not support play_each()')
+
     def improvise(self):
         raise NotImplementedError('CSoundCSDPlayer does not support improvising')
 
 
-# TODO Can't derive from Play because signature for play_each needs to take a Note
 class CSoundInteractivePlayer:
-
-    def __init__(self):
+    def __init__(self, csound_orchestra: CSoundOrchestra = None):
+        validate_type('csound_orchestra', csound_orchestra, CSoundOrchestra)
         super(CSoundInteractivePlayer, self).__init__()
-        self._notes = []
+        self.orchestra = csound_orchestra
+        self._events = []
 
-    # TODO FIX THIS HELPER FUNC
-    # TODO THIS API MAKES NO SENSE
-    def play_all(self, notes: Sequence[Any] = None) -> int:
-        # TODO Enums for different score events
-        # TODO Helper for playing note
+    def play_all(self) -> int:
         cs = ctcsound.Csound()
-        cs.setOption('odac')
+        cs.setOption('-d')
+        cs.setOption('-odac')
+        cs.setOption('-m0')
         cs.start()
-        for note in self._notes:
-            cs.scoreEvent ('i', as_list (note))
+        cs.compileOrc(str(self.orchestra))
+        for event in self._events:
+            cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[event.event_type.name], event.event_data)
         cs.perform()
         # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
         # holding the file handle open and leaking by continuing to write to that file.
@@ -161,10 +191,20 @@ class CSoundInteractivePlayer:
         del cs
         return result
 
-    def add_note(self, note: Any):
-        self._notes.append(note)
+    def add_score_event(self, event: CSoundScoreEvent):
+        self._events.append(event)
 
-    # TODO FIX THIS HELPER FUNC TO YIELD OR USE PERFORMANCE THREAD PER CTCSOUND EXAMPLES
+    def add_score_events(self, events: Sequence[CSoundScoreEvent]):
+        self._events.extend(events)
+
+    def add_end_score_event(self, beats_to_wait: int = 0):
+        if beats_to_wait:
+            self._events.append(CSoundScoreEvent(event_type=CSoundEventType.EndScore,
+                                                 event_data=(0, beats_to_wait)))
+        else:
+            self._events.append(CSoundScoreEvent(event_type=CSoundEventType.EndScore,
+                                                 event_data=()))
+
     def play_each(self, note: Any):
         raise NotImplementedError('CSoundCSDPlayer does not support improvising')
 

@@ -82,6 +82,14 @@ def validate_sequence_of_type(arg_name, seq_val, val_type) -> bool:
     return True
 
 
+def validate_sequence_of_type_choice(arg_name, seq_val, val_types) -> bool:
+    """Must be a valid collection type. Can be empty. If there are values they must match val_type."""
+    validate_type_choice(arg_name, seq_val, (KeysView, ValuesView, list, tuple, set))
+    for val in seq_val:
+        validate_type_choice(arg_name, val, val_types)
+    return True
+
+
 def validate_optional_sequence_of_type(arg_name, seq_val, val_type) -> bool:
     """Can be None or an empty collection and return True. Else if not empty each value must match val_type."""
     if not seq_val:

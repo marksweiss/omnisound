@@ -66,12 +66,30 @@ def test_validate_sequence_of_types():
 
     # Case: non-empty sequence in which all elements are of type val_type returns True
     seq_val = [1, 2, 3]
-    assert validate_optional_sequence_of_type(arg_name, seq_val, val_type)
+    assert validate_sequence_of_type(arg_name, seq_val, val_type)
 
     # Case: non-empty sequence in which not all elements are of type val_type raises
     seq_val = [1, 2, 3.0]
     with pytest.raises(ValueError):
-        validate_optional_sequence_of_type(arg_name, seq_val, val_type)
+        validate_sequence_of_type(arg_name, seq_val, val_type)
+
+
+def test_validate_sequence_of_type_choice():
+    arg_name = 'arg'
+    val_type = int
+
+    # Case: non-empty sequence in which all elements are of either type returns True
+    seq_val = [1, 2, 3]
+    assert validate_sequence_of_type_choice(arg_name, seq_val, val_type)
+    seq_val = [1.0, 2.0, 3.0]
+    assert validate_sequence_of_type_choice(arg_name, seq_val, val_type)
+    seq_val = [1, 2, 3.0]
+    assert validate_sequence_of_type_choice(arg_name, seq_val, val_type)
+
+    # Case: non-empty sequence in which not all elements are of ether type val_type raises
+    seq_val = [1, 2, True]
+    with pytest.raises(ValueError):
+        validate_sequence_of_type_choice(arg_name, seq_val, val_type)
 
 
 def test_validate_optional_type():
