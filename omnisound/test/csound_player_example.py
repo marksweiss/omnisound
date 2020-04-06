@@ -106,8 +106,8 @@ if __name__ == '__main__':
             for note in measure:
                 note_lines.append(f'{str (note)}')
     score = CSoundScore(header_lines=SCORE_HEADER_LINES, note_lines=note_lines)
-    # player = CSoundCSDPlayer(csound_orchestra=orchestra, csound_score=score)
-    # player.play_all()
+    player = CSoundCSDPlayer(csound_orchestra=orchestra, csound_score=score)
+    player.play_all()
 
     player = CSoundInteractivePlayer()
     for track in song:
