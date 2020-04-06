@@ -14,10 +14,6 @@ class InvalidScoreError(Exception):
     pass
 
 
-class CSoundPerformanceError(Exception):
-    pass
-
-
 # TODO MOVE TO OWN SOURCE FILE
 class CSoundScore:
     def __init__(self, note_lines: Sequence[str] = None,
@@ -121,17 +117,18 @@ class CSoundCSDPlayer(Player):
     def play_each(self):
         self._play()
 
-    def _play(self):
+    def _play(self) -> int:
         cs = ctcsound.Csound()
         rendered_script = self._csd.render()
         if cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
             cs.start()
             cs.perform()
+            # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
+            # holding the file handle open and leaking by continuing to write to that file.
             result: int = cs.cleanup()
             cs.reset()
             del cs
-            if result != 0:
-                raise CSoundPerformanceError(f'ctcsound.csound.cleanup() returned failure error code {result}')
+            return result
         else:
             raise InvalidScoreError('ctcsound.compileCsdTest() failed for rendered_script {}'.format(rendered_script))
 
@@ -144,41 +141,32 @@ class CSoundInteractivePlayer:
 
     def __init__(self):
         super(CSoundInteractivePlayer, self).__init__()
-        self._cs = ctcsound.Csound()
-        self._cs.setOption('odac')
-        self._cs.start()
         self._notes = []
 
     # TODO FIX THIS HELPER FUNC
     # TODO THIS API MAKES NO SENSE
-    def play_all(self, notes: Sequence[Any] = None):
+    def play_all(self, notes: Sequence[Any] = None) -> int:
         # TODO Enums for different score events
         # TODO Helper for playing note
-        self._cs.perform()
-        result: int = self._cs.cleanup()
-        self._cs.reset()
-        del self._cs
-        if result != 0:
-            raise CSoundPerformanceError(f'ctcsound.csound.cleanup() returned failure error code {result}')
-        self._cs = ctcsound.Csound()
-        self._cs.setOption('odac')
+        cs = ctcsound.Csound()
+        cs.setOption('odac')
+        cs.start()
+        for note in self._notes:
+            cs.scoreEvent ('i', as_list (note))
+        cs.perform()
+        # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
+        # holding the file handle open and leaking by continuing to write to that file.
+        result: int = cs.cleanup()
+        cs.reset()
+        del cs
+        return result
 
     def add_note(self, note: Any):
-        self._cs.scoreEvent ('i', as_list (note))
+        self._notes.append(note)
 
     # TODO FIX THIS HELPER FUNC TO YIELD OR USE PERFORMANCE THREAD PER CTCSOUND EXAMPLES
     def play_each(self, note: Any):
-        # TODO Enums for different score events
-        # TODO Helper for playing note
-        self._cs.scoreEvent('i', as_list(note))
-        self._cs.perform()
-        result: int = self._cs.cleanup()
-        self._cs.reset()
-        del self._cs
-        if result != 0:
-            raise CSoundPerformanceError(f'ctcsound.csound.cleanup() returned failure error code {result}')
-        self._cs = ctcsound.Csound()
-        self._cs.setOption('odac')
+        raise NotImplementedError('CSoundCSDPlayer does not support improvising')
 
     def improvise(self):
         raise NotImplementedError('CSoundInteractivePlayer does not support improvising')

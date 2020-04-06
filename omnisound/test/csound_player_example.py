@@ -1,5 +1,7 @@
 # Copyright 2019 Mark S. Weiss
 
+import sys
+
 from omnisound.note.containers.measure import (Measure,
                                                Meter, NoteDur,
                                                Swing)
@@ -107,11 +109,14 @@ if __name__ == '__main__':
                 note_lines.append(f'{str (note)}')
     score = CSoundScore(header_lines=SCORE_HEADER_LINES, note_lines=note_lines)
     player = CSoundCSDPlayer(csound_orchestra=orchestra, csound_score=score)
-    player.play_all()
+    ret = player.play_all()
 
     player = CSoundInteractivePlayer()
     for track in song:
         for measure in track.measure_list:
             for note in measure:
                 player.add_note(note)
-    player.play_all()
+    ret = player.play_all()
+    # NOTE: Must explicitly call sys.exit or CSound interactive Py API doesn't close the file handle on the file it's
+    # writing and just leaks by writing more and more to the file until you manually kill the parent process.
+    sys.exit(ret)
