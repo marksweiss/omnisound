@@ -16,6 +16,10 @@ class InvalidScoreError(Exception):
     pass
 
 
+class InvalidOrchestraError(Exception):
+    pass
+
+
 class CSoundEventType(Enum):
     AdvanceScorePointer = 0
     EndScore = 1
@@ -150,7 +154,8 @@ class CSoundCSDPlayer(Player):
         rendered_script = self._csd.render()
         if cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
             cs.start()
-            cs.perform()
+            while cs.performKsmps () == ctcsound.CSOUND_SUCCESS:
+                pass
             # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
             # holding the file handle open and leaking by continuing to write to that file.
             result: int = cs.cleanup()
@@ -179,17 +184,20 @@ class CSoundInteractivePlayer:
         cs.setOption('-d')
         cs.setOption('-odac')
         cs.setOption('-m0')
-        cs.start()
-        cs.compileOrc(str(self.orchestra))
-        for event in self._events:
-            cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[event.event_type.name], event.event_data)
-        cs.perform()
-        # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
-        # holding the file handle open and leaking by continuing to write to that file.
-        result: int = cs.cleanup()
-        cs.reset()
-        del cs
-        return result
+        if cs.compileOrc(str(self.orchestra)) == ctcsound.CSOUND_SUCCESS:
+            for event in self._events:
+                cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[event.event_type.name], event.event_data)
+            cs.start()
+            while cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
+                pass
+            # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
+            # holding the file handle open and leaking by continuing to write to that file.
+            result: int = cs.cleanup()
+            cs.reset()
+            del cs
+            return result
+        else:
+            raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self.orchestra))
 
     def add_score_event(self, event: CSoundScoreEvent):
         self._events.append(event)
