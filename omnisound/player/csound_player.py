@@ -172,46 +172,57 @@ class CSoundCSDPlayer(Player):
         raise NotImplementedError('CSoundCSDPlayer does not support improvising')
 
 
+# TODO Design that supports adding "cached" notes that persist and can be replayed
+#  as well as the current design, which supports adding notes with no copy overhead and playing them once.
+# TODO add a copy() method so that we can add an notes and then copy the object and change the orchestra
+#  in the copy and thus play the same pattern on different instruments
 class CSoundInteractivePlayer:
     def __init__(self, csound_orchestra: CSoundOrchestra = None):
         validate_type('csound_orchestra', csound_orchestra, CSoundOrchestra)
         super(CSoundInteractivePlayer, self).__init__()
-        self.orchestra = csound_orchestra
-        self._events = []
+        self._orchestra = csound_orchestra
+        self._cs = ctcsound.Csound()
+        self._cs.setOption('-d')
+        self._cs.setOption('-odac')
+        self._cs.setOption('-m0')
+        if self._cs.compileOrc(str(self._orchestra)) != ctcsound.CSOUND_SUCCESS:
+            raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
 
     def play_all(self) -> int:
-        cs = ctcsound.Csound()
-        cs.setOption('-d')
-        cs.setOption('-odac')
-        cs.setOption('-m0')
-        if cs.compileOrc(str(self.orchestra)) == ctcsound.CSOUND_SUCCESS:
-            for event in self._events:
-                cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[event.event_type.name], event.event_data)
-            cs.start()
-            while cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
-                pass
-            # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
-            # holding the file handle open and leaking by continuing to write to that file.
-            result: int = cs.cleanup()
-            cs.reset()
-            del cs
-            return result
-        else:
-            raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self.orchestra))
+        self._cs.start()
+        while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
+            pass
+        # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
+        # holding the file handle open and leaking by continuing to write to that file.
+        result: int = self._cs.cleanup()
+        self._cs.reset()
+        return result
+
+    def __del__(self):
+        del self._cs
+
+    @property
+    def orchestra(self):
+        return self._orchestra
+
+    @orchestra.setter
+    def orchestra(self, csound_orchestra: CSoundOrchestra):
+        self._orchestra = csound_orchestra
+        if self._cs.compileOrc(str(self._orchestra)) != ctcsound.CSOUND_SUCCESS:
+            raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
 
     def add_score_event(self, event: CSoundScoreEvent):
-        self._events.append(event)
+        self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[event.event_type.name], event.event_data)
 
     def add_score_events(self, events: Sequence[CSoundScoreEvent]):
-        self._events.extend(events)
+        for event in events:
+            self.add_score_event(event)
 
     def add_end_score_event(self, beats_to_wait: int = 0):
         if beats_to_wait:
-            self._events.append(CSoundScoreEvent(event_type=CSoundEventType.EndScore,
-                                                 event_data=(0, beats_to_wait)))
+            self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], (0, beats_to_wait))
         else:
-            self._events.append(CSoundScoreEvent(event_type=CSoundEventType.EndScore,
-                                                 event_data=()))
+            self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], ())
 
     def play_each(self, note: Any):
         raise NotImplementedError('CSoundCSDPlayer does not support improvising')
