@@ -242,7 +242,7 @@ def test_quantize(measure, meter, swing):
     # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
     expected_dur_adjustment = 0.125
     for i, note in enumerate(quantized_measure):
-        assert note.dur == pytest.approx(measure[i].dur - expected_dur_adjustment)
+        assert note.duration == pytest.approx(measure[i].duration - expected_dur_adjustment)
 
     # Test start adjustments
     # Expected start adjustments

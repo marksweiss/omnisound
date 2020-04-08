@@ -108,14 +108,14 @@ def test_quantizing_on_off(meter):
 def _setup_test_quantize(meter, quantize_on=True):
     sequence_before_quantize = _note_sequence()
     for note in sequence_before_quantize:
-        note.dur *= 2
+        note.duration *= 2
     sequence_before_quantize[1].start += DUR
     sequence_before_quantize[2].start += (DUR * 2)
     sequence_before_quantize[3].start += (DUR * 3)
 
     sequence_after_quantize = _note_sequence()
     for note in sequence_after_quantize:
-        note.dur *= 2
+        note.duration *= 2
     sequence_after_quantize[1].start += DUR
     sequence_after_quantize[2].start += (DUR * 2)
     sequence_after_quantize[3].start += (DUR * 3)
@@ -151,21 +151,20 @@ def test_quantize_on_off(note_sequence, meter):
     note_list_before_quantize, note_list_after_quantize = _setup_test_quantize(meter, quantize_on=True)
 
     # Test dur adjustments
-    # Assert that after quantization the durations are adjusted
     # Expected adjustment is -0.125 because:
-    # - max adjusted start + duration is 1.25
+    # - max adjusted start +/duration is 1.25
     # - measure_duration is 1.0
     # - adjustment is note_dur *= (1.0 - 1.25), so after adjustment its 0.5 + (0.5 * -0.25) == 0.375
     expected_dur_adjustment = 0.125
     for i, note in enumerate(note_list_after_quantize):
-        assert note.dur == pytest.approx(note_list_before_quantize[i].dur - expected_dur_adjustment)
+        assert note.duration == pytest.approx(note_list_before_quantize[i].duration - expected_dur_adjustment)
 
     # Test start adjustments
     # Expected start adjustments
     # - First note starts at 0.0, no adjustment
-    # - Second note is 0.25 - (note.dur * total_adjustment) = 0.125
-    # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
-    # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
+    # - Second note is 0.25 - (note.duration * total_adjustment) = 0.125
+    # - Third note is 0.5 - (note.duration * total_adjustment) = 0.375
+    # - Third note is 0.75 - (note.duration * total_adjustment) = 0.625
     expected_starts = [0.0, 0.125, 0.375, 0.625]
     for i, note in enumerate(note_list_after_quantize):
         assert note.start == pytest.approx(expected_starts[i])
@@ -175,7 +174,7 @@ def test_quantize_on_off(note_sequence, meter):
 
     expected_dur_adjustment = 0.125
     for i, note in enumerate(note_list_after_quantize):
-        assert note.dur != pytest.approx(note_list_before_quantize[i].dur - expected_dur_adjustment)
+        assert note.duration != pytest.approx(note_list_before_quantize[i].duration - expected_dur_adjustment)
 
     expected_starts = [0.0, 0.125, 0.375, 0.625]
     for i, note in enumerate(note_list_after_quantize):
@@ -191,10 +190,10 @@ def test_quantize_to_beat(note_sequence, meter):
     note_sequence[3].start += (DUR * 3)
 
     note_starts_before_quantize = [note.start for note in note_sequence]
-    note_durations_before_quantize = [note.dur for note in note_sequence]
+    note_durations_before_quantize = [note.duration for note in note_sequence]
     meter.quantize_to_beat(note_sequence)
     note_starts_after_quantize = [note.start for note in note_sequence]
-    note_durations_after_quantize = [note.dur for note in note_sequence]
+    note_durations_after_quantize = [note.duration for note in note_sequence]
     assert note_starts_before_quantize == note_starts_after_quantize and \
         note_durations_before_quantize == note_durations_after_quantize
 

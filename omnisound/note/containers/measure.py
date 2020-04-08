@@ -148,7 +148,7 @@ class Measure(NoteSequence):
         """
         validate_types(('increment_start', increment_start, bool))
 
-        if self.next_note_start + note.dur > self.max_duration:
+        if self.next_note_start + note.duration > self.max_duration:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
 
@@ -158,7 +158,7 @@ class Measure(NoteSequence):
         self._sort_notes_by_start_time()
 
         if increment_start:
-            self.next_note_start += note.dur
+            self.next_note_start += note.duration
 
         return self
 
@@ -172,7 +172,7 @@ class Measure(NoteSequence):
         validate_types(('to_add', to_add, NoteSequence))
 
         # TODO DO THIS IN NUMPY NATIVE WAY
-        sum_of_durations = sum([note.dur for note in to_add])
+        sum_of_durations = sum([note.duration for note in to_add])
         if self.next_note_start + sum_of_durations > self.max_duration:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + '
                               f'sum of note.durations {sum_of_durations} > '
@@ -181,7 +181,7 @@ class Measure(NoteSequence):
         for note in to_add:
             note.start = self.next_note_start
             self.append(note)
-            self.next_note_start += note.dur
+            self.next_note_start += note.duration
 
         # Maintain the invariant that notes are sorted ascending by start
         self._sort_notes_by_start_time()

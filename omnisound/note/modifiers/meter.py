@@ -170,11 +170,11 @@ class Meter(object):
             #     raise InvalidQuantizationDurationException((f'quantization adjustment value of {total_adjustment} '
             #                                                 '> than maximum allowed adjustment of 1.0'))
             for note in note_sequence:
-                dur_adjustment = note.dur * total_adjustment
+                dur_adjustment = note.duration * total_adjustment
                 # Normalize duration adjustment by duration of note, because whole note == 1 and that is the entire
                 # duration of a measure and the max adjustment, so every note adjusts as a ratio of its duration
                 # to the total adjustment needed
-                note.dur += dur_adjustment
+                note.duration += dur_adjustment
                 # Each note that doesn't start at 0 exactly adjusts forward/back by the amount its duration adjusted
                 start_adjustment = total_adjustment - dur_adjustment
                 if round(note.start, 1) > 0.0:
@@ -183,7 +183,7 @@ class Meter(object):
                     if round(note.start, 1) == pytest.approx(0.0):
                         note.start = 0.0
                     elif round(note.start, 1) == pytest.approx(1.0):
-                        note.start = 1.0 - note.dur
+                        note.start = 1.0 - note.duration
 
     def quantize_to_beat(self, note_sequence: NoteSequence):
         """Adjusts each note start_time to the closest beat time, so that each note will start on a beat.
@@ -228,8 +228,9 @@ class Meter(object):
         return (f'beats_per_measure: {self.beats_per_measure} beat_dur: {self.beat_note_dur} '
                 f'quantizing: {self.quantizing}')
 
+    # noinspection PyTypeChecker
     def __repr__(self):
-        dur: float = self.beat_note_dur.value
+        dur = self.beat_note_dur.value
         return f'{self.beats_per_measure} / {int(1 / dur)}'
 
     def __eq__(self, other: 'Meter') -> bool:

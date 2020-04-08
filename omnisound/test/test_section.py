@@ -330,14 +330,14 @@ def test_quantize(section, measure_list, swing, meter):
         measure = section[i]
         for j, quantized_note in enumerate(quantized_measure):
             note = measure[j]
-            assert quantized_note.dur == pytest.approx(note.dur - expected_dur_adjustment)
+            assert quantized_note.duration == pytest.approx(note.duration - expected_dur_adjustment)
 
     # Test start adjustments
     # Expected start adjustments
     # - First note starts at 0.0, no adjustment
-    # - Second note is 0.25 - (note.dur * total_adjustment) = 0.125
-    # - Third note is 0.5 - (note.dur * total_adjustment) = 0.375
-    # - Third note is 0.75 - (note.dur * total_adjustment) = 0.625
+    # - Second note is 0.25 - (note.duration * total_adjustment) = 0.125
+    # - Third note is 0.5 - (note.duration * total_adjustment) = 0.375
+    # - Third note is 0.75 - (note.duration * total_adjustment) = 0.625
     expected_starts = [0.0, 0.125, 0.375, 0.625]
     for quantized_measure in quantized_section:
         for i, note in enumerate(quantized_measure):
@@ -369,12 +369,12 @@ def test_set_attr(section):
 
     for measure in section.measure_list:
         for note in measure:
-            assert note.amp != pytest.approx(expected_amp)
+            assert note.amplitude != pytest.approx(expected_amp)
 
     section.set_attr('amp', expected_amp)
     for measure in section.measure_list:
         for note in measure:
-            assert note.amp == pytest.approx(expected_amp)
+            assert note.amplitude == pytest.approx(expected_amp)
 
 
 def test_get_attr(section):
