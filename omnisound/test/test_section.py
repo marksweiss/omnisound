@@ -371,7 +371,7 @@ def test_set_attr(section):
         for note in measure:
             assert note.amplitude != pytest.approx(expected_amp)
 
-    section.set_attr('amp', expected_amp)
+    section.set_attr('amplitude', expected_amp)
     for measure in section.measure_list:
         for note in measure:
             assert note.amplitude == pytest.approx(expected_amp)

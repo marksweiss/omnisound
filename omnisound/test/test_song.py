@@ -290,3 +290,7 @@ def test_song_insert_remove_getitem(track):
     assert len(song) == 0
     assert not song.track_list
     assert not song.track_map
+
+
+if __name__ == '__main__':
+    pytest.main(['-xrf'])
