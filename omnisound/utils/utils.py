@@ -83,7 +83,7 @@ def validate_sequence_of_type(arg_name, seq_val, val_type) -> bool:
 
 
 def validate_sequence_of_type_choice(arg_name, seq_val, val_types) -> bool:
-    """Must be a valid collection type. Can be empty. If there are values they must match val_type."""
+    """Must be a valid collection type. Can be empty. If there ave values all must be in val_types."""
     validate_type_choice(arg_name, seq_val, (KeysView, ValuesView, list, tuple, set))
     for val in seq_val:
         validate_type_choice(arg_name, val, val_types)
