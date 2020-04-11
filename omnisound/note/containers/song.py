@@ -12,7 +12,7 @@ from omnisound.utils.utils import (validate_optional_sequence_of_type,
                                    validate_sequence_of_type, validate_type)
 
 
-class Song(object):
+class Song:
     """A song represents a final composition/performance. It consists of a collection of Tracks. Songs are
        passed to Players, which are responsible for using the Song API to retrieve the Notes and PerformanceAttrs
        from the Song and rendering it into a final performance, such as a MIDI file, *.wav file, live performance
@@ -193,7 +193,7 @@ class Song(object):
                 del self.track_map[track.name]
         del self.track_list[start_range:end_range]
         return self
-    # /Measure list management
+    # /Track list management
 
     # Iter / slice support
     def __len__(self) -> int:
