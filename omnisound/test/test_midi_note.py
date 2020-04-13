@@ -98,7 +98,7 @@ def test_note():
     attr_name_idx_map['dur'] = DUR_I
     note = _note(attr_name_idx_map=attr_name_idx_map)
 
-    # note.instrument is returned cast to int, even though all s are stored
+    # note.instrument is returned cast to int, even though all are stored
     # in the note.attrs as float64, because CSoundNote configures the underlying note to cast the return of getattr()
     assert note.instrument == MIDI_INSTRUMENT.value
     assert type(note.instrument) == type(MIDI_INSTRUMENT.value) == int

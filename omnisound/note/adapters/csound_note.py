@@ -216,7 +216,7 @@ def to_str(self) -> str:
 # meta class that creates classes. Methods are passed in argument named `dct` by common convention.
 # NOTE: Through experimentation found that by creating attributes here in the `cls` object, we can refer to them
 #  in the `getter()` and `setter()` wrappers through `self`, if we create them in overloaded `__new__()`. This
-#  did no work with overloaded `__init__()`.
+#  did not work with overloaded `__init__()`.
 class CSoundNoteMeta(type):
     def __new__(mcs, name, bases, dct):
         cls = super().__new__(mcs, name, bases, dct)

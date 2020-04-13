@@ -210,4 +210,3 @@ class Chord(NoteSequence):
                      attr_name_idx_map=source_chord.attr_name_idx_map,
                      attr_vals_defaults_map=source_chord.attr_vals_defaults_map,
                      attr_get_type_cast_map=source_chord.attr_get_type_cast_map)
-

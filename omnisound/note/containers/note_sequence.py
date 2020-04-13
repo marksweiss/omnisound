@@ -25,7 +25,7 @@ class NoteSequence(object):
        pre-allocate by providing a value for the `num_notes` argument. If note_attr_vals are added exceeding the size
        of the array it is resized.
 
-       Note that in this model a sequence of Notes exist upon the construction of a NoteSequence, even though
+       Note that in this model a sequence of Notes exists upon the construction of a NoteSequence, even though
        no individual Note "objects" have been allocated. Each column in the array represents an attribute of a note.
        The first five columns always represent the attributes `instrument`, `start`, `duration`,
        `amplitude` and `pitch`. Additional attributes can be added through an OO interface, which causes the underlying
@@ -88,7 +88,7 @@ class NoteSequence(object):
         self.index = 0
         self.range_map = {0: self}
 
-    def note(self, index):
+    def note(self, index: int):
         return self._get_note_for_index(index)
 
     def update_range_map(self):
@@ -164,6 +164,19 @@ class NoteSequence(object):
         note = self._get_note_for_index(self.index)
         self.index += 1
         return note
+
+    @staticmethod
+    def make_note(make_note: Any = None,
+                  num_attributes: int = None,
+                  attr_name_idx_map: Mapping[str, int] = None,
+                  attr_vals_defaults_map: Mapping[str, float] = None):
+        """Factory method to construct a single note with underlying storage so it can be appended to another
+        NoteSequence like a Measure."""
+        note_sequence = NoteSequence(make_note=make_note,
+                                     num_attributes=num_attributes,
+                                     attr_name_idx_map=attr_name_idx_map,
+                                     attr_vals_defaults_map=attr_vals_defaults_map)
+        return note_sequence.note(0)
 
     # noinspection PyCallingNonCallable
     def make_notes(self) -> Sequence[Any]:

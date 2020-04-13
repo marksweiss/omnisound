@@ -33,6 +33,7 @@ NUM_NOTES = 4
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
+# TODO REPLACE ALL TESTS USING THIS PATTERN WITH A NOTE_FACTORY
 def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
     attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP

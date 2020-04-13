@@ -39,7 +39,7 @@ class InvalidQuantizationDurationException(Exception):
 
 
 # TODO THIS NEEDS A NOTION OF TEMPO TO MAKE beat_start_times and quantizing valid
-class Meter(object):
+class Meter:
     """Class to represent and manage Meter in a musical Measure/Bar. Offers facilities for representing and
        calculating meter using traditional units or floating point values. Can also apply quantizing to a
        NoteSequence to either fit the notes with the same ration of separation between them but scaled to the
@@ -51,13 +51,13 @@ class Meter(object):
 
        For example: 4
                     4
-       - `beats_per_mesure` is an integer, 4
+       - `beats_per_measure` is an integer, 4
        - `beat_duration` argument is the duration of a beat in the measure, NoteDur.QUARTER
        In 4/4, there are 4 beats per measure and each beat is a quarter note.
 
        For example: 6
                     8
-       - `beats_per_mesure` is an integer, 6 - `beat_duration` argument is a NoteDuration, e.g NoteDur.EIGHTH
+       - `beats_per_measure` is an integer, 6 - `beat_duration` argument is a NoteDuration, e.g NoteDur.EIGHTH
        In 6/8, there are 6 beats per measure and each beat is an eighth note
     """
 

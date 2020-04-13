@@ -16,7 +16,7 @@ from omnisound.utils.utils import (validate_optional_sequence_of_type,
 class Section(NoteSequenceSequence):
     """A Section is a container of Measures that supports adding, removing and modifying Measures.
        Sections support all of the same Note attributes as Measures as setters. If these are set
-       they will be applied to all Measures in the Track, which will apply them to all Notes in the Measure.
+       they will be applied to all Measures in the Section, which will apply them to all Notes in the Measure.
        Getters also behave like Measures, retrieving all values for an attribute for all Notes in all Measures
        flattened into a list.
     """

@@ -4,6 +4,8 @@ from enum import Enum
 
 import mingus.core.chords as m_chords
 
+from omnisound.utils.utils import enum_to_dict
+
 
 class Caller(object):
     """Hack function wrapper required because of Python behavior with Enum. If you assign an Enum name
@@ -79,3 +81,6 @@ class HarmonicChord(Enum):
     LydianDominantSeventh = Caller(m_chords.lydian_dominant_seventh)
     Eleventh = Caller(m_chords.eleventh)
     HendrixChord = Caller(m_chords.hendrix_chord)
+
+
+HARMONIC_CHORD_DICT = enum_to_dict(HarmonicChord)
