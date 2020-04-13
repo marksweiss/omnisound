@@ -48,7 +48,7 @@ class CSoundScoreEvent:
         return CSoundScoreEvent(CSoundEventType.Instrument, as_list(note))
 
 
-# TODO MOVE TO OWN SOURCE FILE
+# TODO SUPPORT CHANNELS - IN PART TO TAKE MULTITRACK OUTPUT FROM SEQUENCER
 class CSoundScore:
     def __init__(self, note_lines: Sequence[str] = None,
                  include_lines: Optional[Sequence[str]] = None,
@@ -154,7 +154,7 @@ class CSoundCSDPlayer(Player):
         rendered_script = self._csd.render()
         if cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
             cs.start()
-            while cs.performKsmps () == ctcsound.CSOUND_SUCCESS:
+            while cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
                 pass
             # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
             # holding the file handle open and leaking by continuing to write to that file.

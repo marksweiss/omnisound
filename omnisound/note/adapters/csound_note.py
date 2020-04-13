@@ -14,6 +14,14 @@ CLASS_NAME = 'CSoundNote'
 
 ATTR_NAMES = ('instrument', 'start', 'duration', 'amplitude', 'pitch')
 ATTR_NAME_IDX_MAP = add_base_attr_name_indexes({attr_name: i for i, attr_name in enumerate(ATTR_NAMES)})
+ATTR_GET_TYPE_CAST_MAP = {
+    'instrument': int,
+    'start': float,
+    'duration': float,
+    'amplitude': float,
+    'pitch': float,
+}
+NUM_ATTRIBUTES = len(ATTR_NAMES)
 
 PITCH_MAP = {
     MajorKey.C: 1.01,

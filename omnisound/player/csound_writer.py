@@ -1,12 +1,11 @@
 # Copyright 2019 Mark S. Weiss
 
-import subprocess
-
 from omnisound.note.containers.song import Song
 from omnisound.player.player import Player
 from omnisound.utils.utils import validate_optional_type, validate_types
 
 
+# TODO SUPPORT CHANNELS - IN PART TO TAKE MULTITRACK OUTPUT FROM SEQUENCER
 class CSoundWriter(Player):
     CSOUND_OSX_PATH = '/usr/local/bin/csound'
     # PLAY_ALL = 'play_all'
