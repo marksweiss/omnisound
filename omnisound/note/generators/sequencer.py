@@ -90,36 +90,41 @@ class Sequencer(Song):
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
         self._next_track = 0
+        self._track_name_idx_map = {}
 
-    def add_track(self) -> int:
-        track = Track(meter=self.meter, swing=self.swing, name=str(self._next_track))
+    def add_track(self, track_name: str = None) -> str:
+        track_name = track_name or str(self._next_track)
+        track = Track(meter=self.meter, swing=self.swing, name=track_name)
         self.append(track)
         self.num_tracks += 1
-        track_id = self._next_track
+        self._track_name_idx_map[track_name] = self._next_track
         self._next_track += 1
-        return track_id
+        return track_name
 
     def set_track_pattern(self,
-                          track_id: int = None,
+                          track_name: str = None,
                           pattern: str = None,
-                          quantize: bool = False,
-                          apply_swing: bool = False) -> None:
+                          quantize: Optional[bool] = False,
+                          apply_swing: Optional[bool] = False) -> None:
         """Sets the pattern, a section of measures in the track at `track_id` index in self.track_list.
         If the track already has a pattern, it is replaced. If the track is empty, its pattern is set to `pattern`.
         """
-        track = self.track_list[track_id]
+        track = self.track_list[self._track_name_idx_map[track_name]]
         if track.measure_list:
             track.remove((0, self.num_measures))
         track.extend(to_add=self._parse_pattern_to_section(pattern=pattern,
                                                            quantize=quantize,
                                                            apply_swing=apply_swing))
 
-    def add_pattern_as_track(self, pattern: str, quantize: bool = False, apply_swing: bool = False) -> int:
+    def add_pattern_as_track(self,
+                             pattern: str = None,
+                             track_name: Optional[str] = None,
+                             quantize: Optional[bool] = False,
+                             apply_swing: Optional[bool] = False) -> str:
         """
         Adds the pattern as a new track of measures constructed from the pattern. Increments the internal count
-        of tracks.
+        of tracks. Names the track with the default name of its track number or with `track_name` if provided.
         """
-        track_id = self.add_track()
         section = self._parse_pattern_to_section(pattern=pattern,
                                                  quantize=quantize,
                                                  apply_swing=apply_swing)
@@ -132,10 +137,15 @@ class Sequencer(Song):
             section.append(section_copy[0:measures_to_fill])
             measures_to_fill = self.num_measures - len(section)
 
-        self.track_list[track_id].extend(to_add=section)
+        track_name = track_name or str(self._next_track)
+        self._track_name_idx_map[track_name] = self._next_track
+        self.track_list[self._next_track].extend(to_add=section)
         self.num_tracks += 1
         self._next_track += 1
-        return track_id
+        return track_name
+
+    def track_names(self):
+        return '\n'.join(self._track_name_idx_map.keys())
 
     # TODO MORE SOPHISTICATED PARSING IF WE EXTEND THE PATTERN LANGUAGE
     def _parse_pattern_to_section(self, pattern: str, quantize: bool = False, apply_swing: bool = False) -> Section:
