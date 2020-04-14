@@ -13,7 +13,7 @@ from omnisound.note.generators.chord_globals import HARMONIC_CHORD_DICT
 from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
-from omnisound.utils.utils import validate_optional_types, validate_type
+from omnisound.utils.utils import validate_optional_types, validate_type, validate_types
 
 
 class InvalidPatternException(Exception):
@@ -60,7 +60,7 @@ class Sequencer(Song):
                  attr_name_idx_map: Mapping[str, int] = None,
                  attr_vals_defaults_map: Optional[Mapping[str, float]] = None,
                  attr_get_type_cast_map: Mapping[str, Any] = None,
-                 pitch_for_key_cb: Any = None,
+                 get_pitch_for_key: Any = None,
                  swing: Optional[Swing] = None):
         validate_optional_types(('name', name, str),
                                 ('swing', swing, Swing),
@@ -73,7 +73,7 @@ class Sequencer(Song):
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
         self.make_note = make_note
-        self.pitch_for_key_cb = pitch_for_key_cb
+        self.get_pitch_for_key = get_pitch_for_key
         self.num_attributes = num_attributes
         self.attr_name_idx_map = attr_name_idx_map
         self.attr_vals_defaults_map = attr_vals_defaults_map
@@ -104,51 +104,88 @@ class Sequencer(Song):
     def set_track_pattern(self,
                           track_name: str = None,
                           pattern: str = None,
+                          meter: Optional[Meter] = None,
+                          swing: Optional[Swing] = None,
                           quantize: Optional[bool] = False,
                           apply_swing: Optional[bool] = False) -> None:
-        """Sets the pattern, a section of measures in the track at `track_id` index in self.track_list.
-        If the track already has a pattern, it is replaced. If the track is empty, its pattern is set to `pattern`.
         """
+        - Sets the pattern, a section of measures in the track named `track_name`.
+        - If the track already has a pattern, it is replaced. If the track is empty, its pattern is set to `pattern`.
+        - If `meter` arg is supplied, then the track will be quantized using it
+        - If `swing` is arg is supplied, then the track will have swing applied using it
+        - If `quantize` arg is True and the class has `self.meter` then the class meter object will be used to quantize
+        - If the `apply_swing` arg is True and the class has `self.swing` then the class swing
+          object will be used to apply swing
+        """
+        validate_types(('track_name', track_name, str), ('pattern', pattern, str))
+        validate_optional_types(('meter', meter, Meter), ('swing', swing, Swing),
+                                ('quantize', quantize, bool), ('apply_swing', apply_swing, bool))
+
         track = self.track_list[self._track_name_idx_map[track_name]]
         if track.measure_list:
             track.remove((0, self.num_measures))
-        track.extend(to_add=self._parse_pattern_to_section(pattern=pattern,
-                                                           quantize=quantize,
-                                                           apply_swing=apply_swing))
+        track.extend(to_add=self._parse_pattern_to_section(pattern=pattern))
+        meter = meter or self.meter
+        swing = swing or self.swing
+        if meter or self.meter and quantize:
+            track.quantize()
+        if swing or self.swing and apply_swing:
+            track.apply_swing()
 
     def add_pattern_as_track(self,
-                             pattern: str = None,
                              track_name: Optional[str] = None,
+                             pattern: str = None,
+                             meter: Optional[Meter] = None,
+                             swing: Optional[Swing] = None,
                              quantize: Optional[bool] = False,
                              apply_swing: Optional[bool] = False) -> str:
         """
-        Adds the pattern as a new track of measures constructed from the pattern. Increments the internal count
-        of tracks. Names the track with the default name of its track number or with `track_name` if provided.
+        - Sets the pattern, a section of measures in a new track named `track_name` or if no name is provided
+          in a track with a default name of its track number.
+        - If `meter` arg is supplied, then the track will be quantized using it
+        - If `swing` is arg is supplied, then the track will have swing applied using it
+        - If `quantize` arg is True and the class has `self.meter` then the class meter object will be used to quantize
+        - If the `apply_swing` arg is True and the class has `self.swing` then the class swing
         """
-        section = self._parse_pattern_to_section(pattern=pattern,
-                                                 quantize=quantize,
-                                                 apply_swing=apply_swing)
+        validate_type('pattern', pattern, str)
+        validate_optional_types(('track_name', track_name, str),
+                                ('meter', meter, Meter), ('swing', swing, Swing),
+                                ('quantize', quantize, bool), ('apply_swing', apply_swing, bool))
 
+        # Set the measures in the section to add to the track
+        section = self._parse_pattern_to_section(pattern=pattern)
         # If pattern was shorter than number of measures in Track then repeat the pattern until the Track is filled
         measures_to_fill = self.num_measures - len(section)
         while measures_to_fill:
             section_copy = Section.copy(section)
-            # TODO REFACTOR TO EXTEND
-            section.append(section_copy[0:measures_to_fill])
+            # TODO REFACTOR TO RENAME EXTEND()
+            section.append(section_copy[0:min(measures_to_fill, len(section))])
             measures_to_fill = self.num_measures - len(section)
 
+        # Create the track, add the section to it, apply quantize and swing according to the logic in the docstring
         track_name = track_name or str(self._next_track)
         self._track_name_idx_map[track_name] = self._next_track
-        self.track_list[self._next_track].extend(to_add=section)
+        meter = meter or self.meter
+        swing = swing or self.swing
+        track = Track(name=track_name, meter=meter, swing=swing)
+        track.extend(to_add=section)
+        if meter or self.meter and quantize:
+            track.quantize()
+        if swing or self.swing and apply_swing:
+            track.apply_swing()
+
+        # Add the track to the sequencer, update bookkeeping
+        self.append(track)
         self.num_tracks += 1
         self._next_track += 1
+
         return track_name
 
     def track_names(self):
         return '\n'.join(self._track_name_idx_map.keys())
 
     # TODO MORE SOPHISTICATED PARSING IF WE EXTEND THE PATTERN LANGUAGE
-    def _parse_pattern_to_section(self, pattern: str, quantize: bool = False, apply_swing: bool = False) -> Section:
+    def _parse_pattern_to_section(self, pattern: str) -> Section:
         section = Section([])
 
         measure_tokens = [t.strip() for t in pattern.split(Sequencer.MEASURE_TOKEN)]
@@ -198,7 +235,7 @@ class Sequencer(Song):
                         chord = Chord(harmonic_chord=harmonic_chord,
                                       octave=octave,
                                       key=key,
-                                      get_pitch_for_key=self.pitch_for_key_cb,
+                                      get_pitch_for_key=self.get_pitch_for_key,
                                       make_note=self.make_note,
                                       num_attributes=self.num_attributes,
                                       attr_name_idx_map=self.attr_name_idx_map,
@@ -210,7 +247,7 @@ class Sequencer(Song):
                         note_vals.start = start
                         note_vals.duration = duration
                         note_vals.amplitude = amplitude
-                        note_vals.pitch = self.pitch_for_key_cb(key, octave)
+                        note_vals.pitch = self.get_pitch_for_key(key, octave)
                         note = NoteSequence.make_note(make_note=self.make_note,
                                                       num_attributes=self.num_attributes,
                                                       attr_name_idx_map=self.attr_name_idx_map,
@@ -220,13 +257,6 @@ class Sequencer(Song):
             next_start += self.pattern_resolution.value
             section.append(measure)
 
-        # The API of this class maps patterns to Sections of Tracks or Tracks which are a single section.
-        # So we apply quantization and swing to the entire section, that is the to the entire pattern, evenly here
-        #  rather than applying it to each measure
-        if quantize:
-            section.quantize()
-        if apply_swing:
-            section.apply_swing()
         return section
 
     @property
@@ -235,6 +265,7 @@ class Sequencer(Song):
 
     @tempo.setter
     def tempo(self, tempo: int) -> None:
+        validate_type('tempo', tempo, int)
         self.meter = Meter(beat_note_dur=self.meter.beat_note_dur,
                            beats_per_measure=self.meter.beats_per_measure,
                            tempo=tempo)
