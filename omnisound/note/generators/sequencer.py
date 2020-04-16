@@ -265,7 +265,52 @@ class Sequencer(Song):
 
     @tempo.setter
     def tempo(self, tempo: int) -> None:
+        """
+        Sets the meter.tempo_qpm to the tempo value provided. Also recursively traverses down to every measure
+        in every section in every track, rebuilding the measures notes to adjust their start times to use the
+        new meter with the new tempo.
+        """
         validate_type('tempo', tempo, int)
+
+        # Make a new meter object set to the new tempo and assign it to the sequencer
         self.meter = Meter(beat_note_dur=self.meter.beat_note_dur,
                            beats_per_measure=self.meter.beats_per_measure,
                            tempo=tempo)
+
+        for track in self.track_list:
+            self._set_tempo_for_track(track)
+
+    def set_tempo_for_track(self, track_name: str = None, tempo: int = None):
+        validate_types(('track_name', track_name, str), ('tempo', tempo, int))
+        track = self.track_list[self._track_name_idx_map[track_name]]
+        self._set_tempo_for_track(track)
+
+    def _set_tempo_for_track(self, track: Track):
+        for i, section in enumerate(track):
+            new_section = section.copy(section)
+            for j, measure in enumerate(section):
+                # Make a shallow copy of the measure, with the new meter with the new tempo. This ctor will
+                # allocate storage for new notes, but they won't have values set.
+                new_measure = Measure(meter=self.meter,
+                                      swing=self.swing,
+                                      make_note=measure.make_note,
+                                      num_notes = measure.num_notes,
+                                      num_attributes=measure.num_attributes,
+                                      attr_name_idx_map=measure.attr_name_idx_map,
+                                      attr_vals_defaults_map=measure.attr_vals_defaults_map,
+                                      attr_get_type_cast_map=measure.attr_get_type_cast_map)
+
+                # For each note in the old measure, copy it to the new measure but let the Measure API
+                # manage adding it at the correct start time calculated with the new meter using the new tempo.
+                for k in range(len(measure)):
+                    # Automatically increments start time of each note added
+                    new_measure.add_notes_on_start(measure.note(k))
+
+                # Now replace the old measure with the new one in the section
+                # TODO Add swap() API to NoteSequence and it's children
+                section.remove((j, j + 1))
+                section.insert(j, new_measure)
+
+            # TODO Add swap() API to NoteSequence and it's children
+            track.remove((i, i + 1))
+            track.insert(i, section)

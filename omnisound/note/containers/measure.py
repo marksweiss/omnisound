@@ -5,7 +5,7 @@
 # TODO FEATURE ChordSequence, i.e. Progressions
 
 from copy import copy
-from typing import Any, List, Mapping
+from typing import Any, List, Mapping, Tuple
 
 import pytest
 
@@ -294,8 +294,8 @@ class Measure(NoteSequence):
         self._sort_notes_by_start_time()
         return self
 
-    def remove(self, to_remove: Any) -> 'Measure':
-        super(Measure, self).remove(to_remove)
+    def remove(self, range_to_remove: Tuple[int, int]) -> 'Measure':
+        super(Measure, self).remove(range_to_remove)
         self._sort_notes_by_start_time()
         return self
     # /NoteSequence note_list management
