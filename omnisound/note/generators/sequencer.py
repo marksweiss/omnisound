@@ -24,7 +24,6 @@ class InvalidAddPatternException(Exception):
     pass
 
 
-# TODO UNIT TESTS
 # TODO USE IT!
 # TODO TRANSPOSE SUPPORT
 class Sequencer(Song):
@@ -85,7 +84,7 @@ class Sequencer(Song):
         #  a quarter note. With no pattern resolution argument, patterns are 4 notes per measure. But if
         #  pattern_resolution is passed in as an eighth note, then the patterns would have 4 * (1/4 / 1/8) == 8 notes.
         self.pattern_resolution = pattern_resolution or Sequencer.DEFAULT_PATTERN_RESOLUTION
-        self.notes_per_measure = meter.beats_per_measure * (meter.beat_note_dur / self.pattern_resolution)
+        self.notes_per_measure = meter.beats_per_measure * (meter.beat_note_dur.value / self.pattern_resolution.value)
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
