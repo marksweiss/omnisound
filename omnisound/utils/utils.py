@@ -7,19 +7,10 @@ from os.path import dirname
 from random import random
 from typing import Any, Dict, Optional, Tuple
 
-# Have to import these even though they aren't directly referred to because
-# enum_to_dict() methods call eval() and are used with these enum types, and when eval() is called
-# if fails if these types are not in module scope
-# noinspection PyUnresolvedReferences
-from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-# Imported so test_utils test of enum_to_dict() will run
-# noinspection PyUnresolvedReferences
-from omnisound.test.test_globals import TestEnum
-
 
 def validate_type(arg_name, val, val_type) -> bool:
     if not isinstance(val, val_type):
-        raise ValueError(f'arg: `{arg_name}` has val: `{val}` but must be type: `{val_type}`')
+        raise ValueError(f'arg: `{arg_name}` has val: `{val}` and type: {type(val)} but must be type: `{val_type}`')
     return True
 
 
@@ -32,7 +23,8 @@ def validate_type_choice(arg_name, val, val_types) -> Tuple[bool, Optional[Any]]
             matched_type = val_type
             break
     if not matched:
-        raise ValueError(f'arg: `{arg_name}` has val: `{val}` but must be one of the following types: `{val_types}`')
+        raise ValueError((f'arg: `{arg_name}` has val: `{val}` and type: {type(val)} but '
+                          f'must be one of the following types: `{val_types}`'))
     return matched, matched_type
 
 
@@ -107,7 +99,8 @@ def validate_type_reference(arg_name, type_ref_val, val_type):
        of the variable that is a reference to a type, compared to either the type or its base class type, succeeds.
     """
     if not isinstance(type_ref_val.__call__(), val_type):
-        raise ValueError(f'arg: `{arg_name}` has val: `{type_ref_val}` but must be alias to type: `{val_type}`')
+        raise ValueError((f'arg: `{arg_name}` has val: `{type_ref_val}` and type: {type(type_ref_val.__call__())} '
+                          f'but must be alias to type: `{val_type}`'))
     return True
 
 
@@ -120,7 +113,7 @@ def validate_type_reference_choice(arg_name, type_ref_val, val_types) -> Tuple[b
             matched_type = val_type
             break
     if not matched:
-        raise ValueError((f'arg: `{arg_name}` has val: `{type_ref_val}` '
+        raise ValueError((f'arg: `{arg_name}` has val: `{type_ref_val}` and type: {type(type_ref_val.__call__())}'
                           f'but must be one of the following types: `{val_types}`'))
     return matched, matched_type
 
@@ -145,18 +138,9 @@ def sign() -> float:
     return copysign(1.0, random() - 0.5)
 
 
-def enum_to_dict(enum_class) -> Dict:
-    """Uses the fact that enum classes have a __members__
-       method that returns an iterable of string names of the fields in the enum. For each one we then
-       get a reference to the enum field itself with getattr() and get a reference to the value in the
-       enum mapped to that field with, unfortunately, an eval()
-    """
-    enum_class_name = enum_class.__name__
-    return {getattr(enum_class, enum_member): eval(f'{enum_class_name}.{enum_member}.value')
-            for enum_member in enum_class.__members__}
+def enum_to_dict(enum_cls: Any) -> Dict:
+    return {e: e.value for e in enum_cls}
 
 
-def enum_to_dict_reverse_mapping(enum_class) -> Dict:
-    enum_class_name = enum_class.__name__
-    return {eval(f'{enum_class_name}.{enum_member}.value'): getattr(enum_class, enum_member)
-            for enum_member in enum_class.__members__}
+def enum_to_dict_reverse_mapping(enum_cls) -> Dict:
+    return {e.value: e for e in enum_cls}
