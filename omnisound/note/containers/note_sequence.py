@@ -169,13 +169,16 @@ class NoteSequence(object):
     def make_note(make_note: Any = None,
                   num_attributes: int = None,
                   attr_name_idx_map: Mapping[str, int] = None,
-                  attr_vals_defaults_map: Mapping[str, float] = None):
+                  attr_vals_defaults_map: Mapping[str, float] = None,
+                  attr_get_type_cast_map: Mapping[str, Any] = None):
         """Factory method to construct a single note with underlying storage so it can be appended to another
         NoteSequence like a Measure."""
         note_sequence = NoteSequence(make_note=make_note,
+                                     num_notes=1,
                                      num_attributes=num_attributes,
                                      attr_name_idx_map=attr_name_idx_map,
-                                     attr_vals_defaults_map=attr_vals_defaults_map)
+                                     attr_vals_defaults_map=attr_vals_defaults_map,
+                                     attr_get_type_cast_map=attr_get_type_cast_map)
         return note_sequence.note(0)
 
     # noinspection PyCallingNonCallable
