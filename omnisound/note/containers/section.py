@@ -34,6 +34,7 @@ class Section(NoteSequenceSequence):
 
         measure_list = measure_list or []
         super(Section, self).__init__(measure_list)
+        # TODO REFACTOR NAME TO 'measures'
         self.measure_list = self.note_seq_seq
 
         self.name = name

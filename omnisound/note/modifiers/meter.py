@@ -78,8 +78,10 @@ class Meter:
         # Inverse of denominator of meter, e.g. 4/4 is quarter note is 1 beat
         self.beat_note_dur = beat_note_dur
         # Denominator of meter
-        beat_note_dur: float = self.beat_note_dur.value
+        # TODO REFACTOR NAME TO 'beat_note_base_dur' TO INDICATE THAT ACTUAL DUR IS ADJUSTED BY TEMPO
+        beat_note_dur = self.beat_note_dur.value
         # Meter in musical notation as a tuple, e.g. (4, 4)
+        # noinspection PyTypeChecker
         self.meter_notation = (self.beats_per_measure, int(1 / beat_note_dur))
 
         # Actual note duration

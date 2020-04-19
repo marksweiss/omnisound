@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
 
 from numpy import array
 
@@ -92,3 +92,12 @@ def get_num_attributes(n):
         return n.note_attr_vals.shape[0]
     else:
         return n.note_attr_vals.shape[1]
+
+
+def set_attr_vals_from_dict(note: Any, attr_vals: Mapping[str, Any]):
+    for attr, val in attr_vals.items():
+        setattr(note, attr, val)
+
+
+def set_attr_vals_from_note_values(note: Any, attr_vals: NoteValues):
+    set_attr_vals_from_dict(note, attr_vals.as_dict())
