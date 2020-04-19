@@ -4,7 +4,7 @@
 # TODO EQUALITY TESTS EVERYWHERE
 # TODO COPY TESTS
 
-from typing import Any, Mapping, Iterator, Sequence, Tuple
+from typing import Any, Mapping, Iterator, Sequence, Tuple, Union
 
 import numpy as np
 
@@ -147,8 +147,13 @@ class NoteSequence(object):
                                           attr_get_type_cast_map=self.attr_get_type_cast_map)
                 index_range_sum += index_range
 
-    def __getitem__(self, index: int) -> Any:
-        return self._get_note_for_index(index)
+    # TODO UNIT TEST SLICE
+    def __getitem__(self, index: Union[int, slice]) -> Any:
+        if isinstance(index, int):
+            return self._get_note_for_index(index)
+        # This amazing hack from here: https://stackoverflow.com/questions/2936863/implementing-slicing-in-getitem
+        if isinstance(index, slice):
+            return [self._get_note_for_index(i) for i in range(*index.indices(len(self)))]
 
     def __iter__(self) -> Iterator[Any]:
         """Reset iter position. This behavior complements __next__ to make the

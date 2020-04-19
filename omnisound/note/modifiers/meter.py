@@ -76,13 +76,11 @@ class Meter:
         # Numerator of meter
         self.beats_per_measure = beats_per_measure
         # Inverse of denominator of meter, e.g. 4/4 is quarter note is 1 beat
-        self.beat_note_dur = beat_note_dur
-        # Denominator of meter
         # TODO REFACTOR NAME TO 'beat_note_base_dur' TO INDICATE THAT ACTUAL DUR IS ADJUSTED BY TEMPO
-        beat_note_dur = self.beat_note_dur.value
+        self.beat_note_dur = beat_note_dur
         # Meter in musical notation as a tuple, e.g. (4, 4)
         # noinspection PyTypeChecker
-        self.meter_notation = (self.beats_per_measure, int(1 / beat_note_dur))
+        self.meter_notation = (self.beats_per_measure, int(1 / self.beat_note_dur.value))
 
         # Actual note duration
         # Map note durations from meter, which are unitless, to time, using tempo, which is a ratio of
@@ -92,7 +90,8 @@ class Meter:
         # Each note is some fraction of a quarter note. So for N / 4 meters, this ratio is 1.
         # For N / 8 meters, e.g. 6 / 8, this ration os 0.5. This ratio multiplied by the actual time duration
         # of a quarter note, derived from the tempo in qpm, is the duration of a note
-        self.quarter_notes_per_beat_note = beat_note_dur / Meter.QUARTER_NOTE_DUR
+        # noinspection PyTypeChecker
+        self.quarter_notes_per_beat_note = int(self.beat_note_dur.value / Meter.QUARTER_NOTE_DUR)
         self.note_dur_secs = self.quarter_notes_per_beat_note * self.quarter_note_dur_secs
         self.measure_dur_secs = self.note_dur_secs * self.beats_per_measure
         self.beat_start_times_secs = [self.note_dur_secs * i for i in range(self.beats_per_measure)]

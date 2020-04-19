@@ -47,6 +47,6 @@ def get_chord_pitches(mingus_keys: Sequence[str],
                       octave: int) -> Sequence[Any]:
     validate_types(('mingus_key_to_key_enum_mapping', mingus_key_to_key_enum_mapping, Mapping),
                    ('octave', octave, int))
-    validate_sequence_of_type(('mingus_keys', mingus_keys, str))
+    validate_sequence_of_type('mingus_keys', mingus_keys, str)
     return [get_pitch_for_key(mingus_key_to_key_enum_mapping[mingus_key.upper()], octave=octave)
             for mingus_key in mingus_keys]

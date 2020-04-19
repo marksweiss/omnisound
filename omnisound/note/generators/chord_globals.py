@@ -4,7 +4,7 @@ from enum import Enum
 
 import mingus.core.chords as m_chords
 
-from omnisound.utils.utils import enum_to_dict
+from omnisound.utils.utils import enum_to_str_key_dict
 
 
 class Caller(object):
@@ -83,4 +83,4 @@ class HarmonicChord(Enum):
     HendrixChord = Caller(m_chords.hendrix_chord)
 
 
-HARMONIC_CHORD_DICT = enum_to_dict(HarmonicChord)
+HARMONIC_CHORD_DICT = enum_to_str_key_dict(HarmonicChord)

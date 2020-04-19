@@ -143,6 +143,25 @@ def test_add_pattern_as_track(sequencer, meter, swing):
         assert expected_starts[i] < note.start
 
 
+def test_add_pattern_wth_chords_as_track(sequencer, meter, swing):
+    sequencer.add_track(track_name=TRACK_NAME)
+    chord_pattern = ('C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100|'
+                     'C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100|'
+                     'C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100|'
+                     'C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100')
+    sequencer.add_pattern_as_track(track_name=TRACK_NAME, pattern=chord_pattern)
+    first_measure = sequencer.track(TRACK_NAME).measure_list[0]
+    # Assert that there are notes in the measure for each single note and each note that is part of a chord
+    assert len(first_measure) == 8
+    # Assert that the second, third and fourth notes all have the same start time and are the three notes of C Major
+    first_chord_notes = first_measure[1:4]
+    # CSound C4, E4 and G4, all at the same start time
+    assert first_chord_notes[0].pitch == 4.01
+    assert first_chord_notes[1].pitch == 4.05
+    assert first_chord_notes[2].pitch == 4.08
+    assert first_chord_notes[0].start == first_chord_notes[1] == first_chord_notes[2]
+
+
 def test_pattern_resolution(meter, swing):
     new_pattern_resolution = NoteDur.EIGHTH
     sequencer = Sequencer(name=SEQUENCER_NAME,
