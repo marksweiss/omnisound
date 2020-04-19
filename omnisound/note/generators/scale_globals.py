@@ -5,7 +5,7 @@ from enum import Enum
 import ext.python_mingus.mingus.core.scales as m_scales
 from ext.python_mingus.mingus.core.keys import major_keys, minor_keys
 
-from omnisound.utils.utils import enum_to_dict
+from omnisound.utils.utils import enum_to_str_key_dict
 
 
 NUM_NOTES_IN_OCTAVE = 11
@@ -37,7 +37,7 @@ class MajorKey(Enum):
     C_f = major_keys[0].upper()
 
 
-MAJOR_KEY_DICT = enum_to_dict(MajorKey)
+MAJOR_KEY_DICT = enum_to_str_key_dict(MajorKey)
 
 
 class MinorKey(Enum):
@@ -59,7 +59,7 @@ class MinorKey(Enum):
     B = minor_keys[9].upper()
 
 
-MINOR_KEY_DICT = enum_to_dict(MinorKey)
+MINOR_KEY_DICT = enum_to_str_key_dict(MinorKey)
 
 
 class DiatonicWrapper(m_scales.Diatonic):
@@ -98,4 +98,4 @@ class HarmonicScale(Enum):
     WholeTone = m_scales.WholeTone
 
 
-HARMONIC_SCALE_DICT = enum_to_dict(HarmonicScale)
+HARMONIC_SCALE_DICT = enum_to_str_key_dict(HarmonicScale)

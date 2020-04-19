@@ -9,7 +9,7 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
   of Key => Pitch for each tuple (Key, Octave)
 """
 
-from typing import Any, Mapping
+from typing import Any, Mapping, Union
 
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.scale_globals import (HarmonicScale, MajorKey,
@@ -17,6 +17,7 @@ from omnisound.note.generators.scale_globals import (HarmonicScale, MajorKey,
 from omnisound.utils.mingus_utils import set_notes_pitches_to_mingus_keys
 from omnisound.utils.utils import (enum_to_dict_reverse_mapping,
                                    validate_type_choice,
+                                   validate_type_reference_choice,
                                    validate_types)
 
 
@@ -30,7 +31,7 @@ class Scale(NoteSequence):
     KEY_MAPS = {'MajorKey': MAJOR_KEY_REVERSE_MAP, 'MinorKey': MINOR_KEY_REVERSE_MAP}
 
     def __init__(self,
-                 key: Any = None,
+                 key: Union[MajorKey, MinorKey] = None,
                  octave: int = None,
                  harmonic_scale: HarmonicScale = None,
                  get_pitch_for_key: Any = None,
@@ -39,6 +40,7 @@ class Scale(NoteSequence):
                  attr_name_idx_map: Mapping[str, int] = None,
                  attr_vals_defaults_map: Mapping[str, float] = None,
                  attr_get_type_cast_map: Mapping[str, Any] = None):
+
         validate_types(('octave', octave, int), ('harmonic_scale', harmonic_scale, HarmonicScale))
 
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
@@ -51,11 +53,6 @@ class Scale(NoteSequence):
         self.octave = octave
         self.harmonic_scale = harmonic_scale
         self.get_pitch_for_key = get_pitch_for_key
-
-        # TODO MINGUS SCALES DO NOT MATCH, note names are 'C#' and 'Bb" etc. Need to map
-        #  with a wrapper function in scale_globals so all the HarmonicScales are the notes in the scale
-        #  from Mingus but in omnisound Enums or Enum Strings
-        # TODO Then fix mingus_utils and re-pass tests
 
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
         mingus_keys = harmonic_scale.value(key.name).ascending()
@@ -75,11 +72,15 @@ class Scale(NoteSequence):
                                     attr_vals_defaults_map=attr_vals_defaults_map,
                                     attr_get_type_cast_map=attr_get_type_cast_map)
 
-        set_notes_pitches_to_mingus_keys(matched_key_type,
-                                         mingus_keys,
+        set_notes_pitches_to_mingus_keys(mingus_keys,
                                          mingus_key_to_key_enum_mapping,
                                          self,
                                          get_pitch_for_key,
                                          self.octave,
                                          validate=False)
+
+    @staticmethod
+    def get_mingus_key_to_key_enum_mapping(key_type: Union[MajorKey, MinorKey]):
+        validate_type_reference_choice('key_type', key_type, (MajorKey, MinorKey))
+        return Scale.KEY_MAPS[key_type.__name__]
 

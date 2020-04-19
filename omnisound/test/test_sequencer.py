@@ -22,6 +22,7 @@ ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
                           'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
+ATTR_GET_TYPE_CAST_MAP = csound_note.ATTR_GET_TYPE_CAST_MAP
 NUM_NOTES = 4
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
@@ -34,6 +35,10 @@ SWING_RANGE = 0.1
 SEQUENCER_NAME = 'Sequencer'
 NUM_MEASURES = 4
 PATTERN_RESOLUTION = NoteDur.QUARTER
+
+TRACK_NAME = 'Track 1'
+PATTERN = ('C:4::100 D:4::100 E:4::100 F:4::100|C:4::100 D:4::100 E:4::100 F:4::100|'
+           'C:4::100 D:4::100 E:4::100 F:4::100|C:4::100 D:4::100 E:4::100 F:4::100')
 
 
 def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
@@ -90,6 +95,7 @@ def sequencer(meter, swing):
                      num_attributes=NUM_ATTRIBUTES,
                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
                      attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                     attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP,
                      get_pitch_for_key=csound_note.get_pitch_for_key,
                      swing=swing)
 
@@ -97,4 +103,19 @@ def sequencer(meter, swing):
 def test_init(sequencer):
     assert isinstance(sequencer, Sequencer)
 
+
+def test_add_track(sequencer):
+    ret = sequencer.add_track(track_name=TRACK_NAME)
+    assert ret == TRACK_NAME
+    assert len(sequencer) == 1
+
+
+def test_set_pattern_for_track_simple(sequencer):
+    """Tests setting a simple pattern, with no chords, no meter and no swing"""
+    # pattern = 'C:4:MajorSeventh:100|D:4:MajorSeventh:100|E:4:MajorSeventh:100|F:4:MajorSeventh:100|'
+    sequencer.add_track(track_name=TRACK_NAME)
+    sequencer.set_track_pattern(track_name=TRACK_NAME, pattern=PATTERN)
+    assert len(sequencer.track_list) == 1
+    assert sequencer.track_list[0].name == TRACK_NAME
+    assert len(sequencer.track_list[0].measure_list) == NUM_MEASURES
 

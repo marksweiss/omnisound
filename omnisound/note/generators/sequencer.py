@@ -4,15 +4,16 @@ from typing import Any, Mapping, Optional
 
 from omnisound.note.adapters.note import NoteValues
 from omnisound.note.containers.measure import Measure
-from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.section import Section
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
 from omnisound.note.generators.chord import Chord
 from omnisound.note.generators.chord_globals import HARMONIC_CHORD_DICT
+from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
+from omnisound.utils.mingus_utils import get_chord_pitches
 from omnisound.utils.utils import validate_optional_types, validate_type, validate_types
 
 
@@ -84,7 +85,8 @@ class Sequencer(Song):
         #  a quarter note. With no pattern resolution argument, patterns are 4 notes per measure. But if
         #  pattern_resolution is passed in as an eighth note, then the patterns would have 4 * (1/4 / 1/8) == 8 notes.
         self.pattern_resolution = pattern_resolution or Sequencer.DEFAULT_PATTERN_RESOLUTION
-        self.notes_per_measure = meter.beats_per_measure * (meter.beat_note_dur.value / self.pattern_resolution.value)
+        self.notes_per_measure = int(meter.beats_per_measure *
+                                     (meter.beat_note_dur.value / self.pattern_resolution.value))
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
@@ -152,7 +154,8 @@ class Sequencer(Song):
                                 ('quantize', quantize, bool), ('apply_swing', apply_swing, bool))
 
         # Set the measures in the section to add to the track
-        section = self._parse_pattern_to_section(pattern=pattern)
+        section = self._parse_pattern_to_section(pattern=pattern, meter=meter, swing=swing)
+
         # If pattern was shorter than number of measures in Track then repeat the pattern until the Track is filled
         measures_to_fill = self.num_measures - len(section)
         while measures_to_fill:
@@ -184,45 +187,50 @@ class Sequencer(Song):
         return '\n'.join(self._track_name_idx_map.keys())
 
     # TODO MORE SOPHISTICATED PARSING IF WE EXTEND THE PATTERN LANGUAGE
-    def _parse_pattern_to_section(self, pattern: str) -> Section:
+    def _parse_pattern_to_section(self, pattern: str = None, meter: Meter = None, swing: Swing = None) -> Section:
         section = Section([])
+        meter = meter or self.meter
+        swing = swing or self.swing
+
+        def _make_note_val(_start, _duration, _amplitude, _pitch):
+            _note_vals = NoteValues (self.attr_vals_defaults_map.keys ())
+            _note_vals.start = _start
+            _note_vals.duration = _duration
+            _note_vals.amplitude = _amplitude
+            _note_vals.pitch = _pitch
+            return _note_vals
 
         measure_tokens = [t.strip() for t in pattern.split(Sequencer.MEASURE_TOKEN)]
         for measure_token in measure_tokens:
-            note_tokens = [t.strip() for t in measure_token.split(' ')]
+            note_tokens = [t.strip() for t in measure_token.split()]
             if len(note_tokens) != self.notes_per_measure:
                 raise InvalidPatternException((f'Invalid pattern \'{pattern}\' has {len(note_tokens)} tokens '
                                                f'but notes_per_measure is {self.notes_per_measure}'))
-
-            measure = Measure(meter=self.meter, swing=self.swing)
 
             # Counter of actual number of notes to allocate for the Measure. This might be > than the number of
             #  note tokens because we support chords. Each chord adds 3-5 notes to the measure, not 1.
             next_start = 0
             duration = self.attr_get_type_cast_map['duration'](self.pattern_resolution.value)
+            note_vals_lst = []
             for i, note_token in enumerate(note_tokens):
                 start = self.attr_get_type_cast_map['start'](next_start)
 
                 # It's a single sounding note or rest
                 if note_token == Sequencer.REST_TOKEN:
-                    note_vals = NoteValues(self.attr_vals_defaults_map.keys())
-                    note_vals.start = start
-                    note_vals.duration = duration
-                    note_vals.amplitude = self.attr_get_type_cast_map['amplitude'](0)
-                    # Dummy pitch value
-                    note_vals.pitch = self.attr_get_type_cast_map['pitch'](1)
-                    note = NoteSequence.make_note(make_note=self.make_note,
-                                                  num_attributes=self.num_attributes,
-                                                  attr_name_idx_map=self.attr_name_idx_map,
-                                                  attr_vals_defaults_map=note_vals.as_dict())
-                    measure.append(note)
+                    # Dummy values
+                    amplitude = self.attr_get_type_cast_map['amplitude'](0)
+                    pitch = self.attr_get_type_cast_map['pitch'](1)
+                    note_vals = _make_note_val(start, duration, amplitude, pitch)
+                    note_vals_lst.append(note_vals)
                 # It's a sounding note or chord
                 else:
                     key, octave, chord, amplitude = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
+
                     # Only major or minor notes supported
                     key = MAJOR_KEY_DICT.get(key) or MINOR_KEY_DICT.get(key)
                     if not key:
                         raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid key {key} token')
+
                     octave = int(octave)
                     amplitude = self.attr_get_type_cast_map['amplitude'](amplitude)
 
@@ -231,30 +239,39 @@ class Sequencer(Song):
                         harmonic_chord = HARMONIC_CHORD_DICT.get(chord)
                         if not harmonic_chord:
                             raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid chord {chord} token')
-                        chord = Chord(harmonic_chord=harmonic_chord,
-                                      octave=octave,
-                                      key=key,
-                                      get_pitch_for_key=self.get_pitch_for_key,
-                                      make_note=self.make_note,
-                                      num_attributes=self.num_attributes,
-                                      attr_name_idx_map=self.attr_name_idx_map,
-                                      attr_vals_defaults_map=self.attr_vals_defaults_map,
-                                      attr_get_type_cast_map=self.attr_get_type_cast_map)
-                        measure.extend(to_add=chord)
+
+                        key_type = Chord.get_key_type(key, harmonic_chord)
+                        mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(key_type)
+                        mingus_chord = Chord.get_mingus_chord_for_harmonic_chord(key, harmonic_chord)
+                        chord_pitches = get_chord_pitches(mingus_keys=mingus_chord,
+                                                          mingus_key_to_key_enum_mapping=mingus_key_to_key_enum_mapping,
+                                                          get_pitch_for_key=self.get_pitch_for_key,
+                                                          octave=octave)
+                        for pitch in chord_pitches:
+                            note_vals = _make_note_val(start, duration, amplitude, pitch)
+                            note_vals_lst.append(note_vals)
                     else:
-                        note_vals = NoteValues(self.attr_vals_defaults_map.keys())
-                        note_vals.start = start
-                        note_vals.duration = duration
-                        note_vals.amplitude = amplitude
-                        note_vals.pitch = self.get_pitch_for_key(key, octave)
-                        note = NoteSequence.make_note(make_note=self.make_note,
-                                                      num_attributes=self.num_attributes,
-                                                      attr_name_idx_map=self.attr_name_idx_map,
-                                                      attr_vals_defaults_map=note_vals.as_dict())
-                        measure.append(note)
+                        pitch = self.get_pitch_for_key(key, octave)
+                        note_vals = _make_note_val(start, duration, amplitude, pitch)
+                        note_vals_lst.append(note_vals)
+
+            measure = Measure(attr_name_idx_map=self.attr_name_idx_map,
+                              attr_get_type_cast_map=self.attr_get_type_cast_map,
+                              make_note=self.make_note,
+                              num_notes=len(note_vals_lst),
+                              num_attributes=self.num_attributes,
+                              meter=meter,
+                              swing=swing)
+            for i, note_vals in enumerate(note_vals_lst):
+                note = measure.note(i)
+                note.start = note_vals.start
+                note.duration = note_vals.duration
+                note.amplitude = note_vals.amplitude
+                note.pitch = note_vals.pitch
+
+            section.append(measure)
 
             next_start += self.pattern_resolution.value
-            section.append(measure)
 
         return section
 

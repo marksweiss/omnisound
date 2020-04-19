@@ -31,9 +31,11 @@ class Section(NoteSequenceSequence):
                                 ('meter', meter, Meter), ('swing', swing, Swing),
                                 ('name', name, str))
         validate_optional_sequence_of_type('measure_list', measure_list, Measure)
-        super(Section, self).__init__(measure_list)
 
-        self.measure_list = measure_list or []
+        measure_list = measure_list or []
+        super(Section, self).__init__(measure_list)
+        self.measure_list = self.note_seq_seq
+
         self.name = name
         self._performance_attrs = performance_attrs
         self._meter = meter
