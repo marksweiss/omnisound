@@ -379,5 +379,46 @@ def test_get_attr(section):
     assert section.get_attr('start') == [0.0, 0.25, 0.5, 0.75] + [0.0, 0.25, 0.5, 0.75]
 
 
+def test_len_append(section, measure, meter, swing):
+    expected_len = len(_measure_list(meter, swing))
+    assert len(section) == expected_len
+    section.append(measure)
+    assert len(section) == expected_len + 1
+    expected_len += 1
+    section += measure
+    assert len(section) == expected_len + 1
+    expected_len += 1
+    section << measure
+    assert len(section) == expected_len + 1
+
+
+def test_getitem_insert_remove(section, measure, meter, swing):
+    expected_len = len(_measure_list(meter, swing))
+    assert len(section) == expected_len
+    old_first_measure = section[0]
+    old_first_note = old_first_measure[0]
+    old_first_note_amplitude = old_first_note.amplitude
+    insert_measure = Measure.copy(measure)
+    expected_new_first_note_amplitude = old_first_note_amplitude + 1
+    insert_measure[0].amplitude = expected_new_first_note_amplitude
+    section.insert(0, insert_measure)
+    assert len(section) == expected_len + 1
+    new_first_measure = section[0]
+    new_first_note = new_first_measure[0]
+    assert new_first_note.amplitude == expected_new_first_note_amplitude
+    assert new_first_note.amplitude != old_first_note_amplitude
+    section.remove((0, 1))
+    assert len(section) == expected_len
+    old_first_measure = section[0]
+    old_first_note = old_first_measure[0]
+    assert old_first_note.amplitude == old_first_note_amplitude
+
+
+def test_iter_next_eq(section, meter, swing):
+    comp_measure = _measure(meter=meter, swing=swing)
+    for measure in section:
+        assert measure == comp_measure
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])
