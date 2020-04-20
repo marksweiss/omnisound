@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
 
 from numpy import array
 
@@ -85,10 +85,19 @@ def make_rest_note(note, amplitude_attr_name):
 
 # TODO USE THIS IN NOTE SEQUENCE RATHER THAN THE MULTIPLE CHECKS AGAINST ARRAY DIRECTLY
 def get_num_attributes(n):
-    """Handles numpy semantics to return number of columns in the underlying ndarray for both individual Note
+    """Handles numpy semantics to return number of columns in the underlying numpy array for both individual Note
        which is one-dimensional and NoteSequence which is two-dimensional.
     """
     if len(n.note_attr_vals.shape) == 1:
         return n.note_attr_vals.shape[0]
     else:
         return n.note_attr_vals.shape[1]
+
+
+def set_attr_vals_from_dict(note: Any, attr_vals: Mapping[str, Any]):
+    for attr, val in attr_vals.items():
+        setattr(note, attr, val)
+
+
+def set_attr_vals_from_note_values(note: Any, attr_vals: NoteValues):
+    set_attr_vals_from_dict(note, attr_vals.as_dict())

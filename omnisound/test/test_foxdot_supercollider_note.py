@@ -61,16 +61,14 @@ def note_sequence():
 
 
 def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          attr_get_type_cast_map=None, num_attributes=None):
+          num_attributes=None):
     attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    return foxdot_note.make_note(
-            _note_sequence(
-                    attr_name_idx_map=attr_name_idx_map,
-                    attr_vals_defaults_map=attr_vals_defaults_map,
-                    num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
-            attr_name_idx_map,
-            attr_get_type_cast_map=attr_get_type_cast_map)
+    num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.make_note(make_note=foxdot_note.make_note,
+                                  num_attributes=num_attributes,
+                                  attr_name_idx_map=attr_name_idx_map,
+                                  attr_vals_defaults_map=attr_vals_defaults_map)
 
 
 @pytest.fixture

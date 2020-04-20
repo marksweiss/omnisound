@@ -65,13 +65,12 @@ def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
           attr_get_type_cast_map=None, num_attributes=None):
     attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    return midi_note.make_note(
-        _note_sequence(
-            attr_name_idx_map=attr_name_idx_map,
-            attr_vals_defaults_map=attr_vals_defaults_map,
-            num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
-        attr_name_idx_map,
-        attr_get_type_cast_map=attr_get_type_cast_map)
+    num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.make_note(make_note=midi_note.make_note,
+                                  num_attributes=num_attributes,
+                                  attr_name_idx_map=attr_name_idx_map,
+                                  attr_vals_defaults_map=attr_vals_defaults_map,
+                                  attr_get_type_cast_map=attr_get_type_cast_map)
 
 
 @pytest.fixture
@@ -98,7 +97,7 @@ def test_note():
     attr_name_idx_map['dur'] = DUR_I
     note = _note(attr_name_idx_map=attr_name_idx_map)
 
-    # note.instrument is returned cast to int, even though all s are stored
+    # note.instrument is returned cast to int, even though all are stored
     # in the note.attrs as float64, because CSoundNote configures the underlying note to cast the return of getattr()
     assert note.instrument == MIDI_INSTRUMENT.value
     assert type(note.instrument) == type(MIDI_INSTRUMENT.value) == int

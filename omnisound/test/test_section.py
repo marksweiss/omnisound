@@ -60,16 +60,14 @@ def note_sequence():
 
 
 def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          attr_get_type_cast_map=None, num_attributes=None):
+          num_attributes=None):
     attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    return csound_note.make_note(
-            _note_sequence(
-                    attr_name_idx_map=attr_name_idx_map,
-                    attr_vals_defaults_map=attr_vals_defaults_map,
-                    num_attributes=num_attributes).note_attr_vals[NOTE_SEQUENCE_IDX],
-            attr_name_idx_map,
-            attr_get_type_cast_map=attr_get_type_cast_map)
+    num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.make_note(make_note=csound_note.make_note,
+                                  num_attributes=num_attributes,
+                                  attr_name_idx_map=attr_name_idx_map,
+                                  attr_vals_defaults_map=attr_vals_defaults_map)
 
 
 @pytest.fixture
@@ -379,6 +377,47 @@ def test_set_attr(section):
 
 def test_get_attr(section):
     assert section.get_attr('start') == [0.0, 0.25, 0.5, 0.75] + [0.0, 0.25, 0.5, 0.75]
+
+
+def test_len_append(section, measure, meter, swing):
+    expected_len = len(_measure_list(meter, swing))
+    assert len(section) == expected_len
+    section.append(measure)
+    assert len(section) == expected_len + 1
+    expected_len += 1
+    section += measure
+    assert len(section) == expected_len + 1
+    expected_len += 1
+    section << measure
+    assert len(section) == expected_len + 1
+
+
+def test_getitem_insert_remove(section, measure, meter, swing):
+    expected_len = len(_measure_list(meter, swing))
+    assert len(section) == expected_len
+    old_first_measure = section[0]
+    old_first_note = old_first_measure[0]
+    old_first_note_amplitude = old_first_note.amplitude
+    insert_measure = Measure.copy(measure)
+    expected_new_first_note_amplitude = old_first_note_amplitude + 1
+    insert_measure[0].amplitude = expected_new_first_note_amplitude
+    section.insert(0, insert_measure)
+    assert len(section) == expected_len + 1
+    new_first_measure = section[0]
+    new_first_note = new_first_measure[0]
+    assert new_first_note.amplitude == expected_new_first_note_amplitude
+    assert new_first_note.amplitude != old_first_note_amplitude
+    section.remove((0, 1))
+    assert len(section) == expected_len
+    old_first_measure = section[0]
+    old_first_note = old_first_measure[0]
+    assert old_first_note.amplitude == old_first_note_amplitude
+
+
+def test_iter_next_eq(section, meter, swing):
+    comp_measure = _measure(meter=meter, swing=swing)
+    for measure in section:
+        assert measure == comp_measure
 
 
 if __name__ == '__main__':

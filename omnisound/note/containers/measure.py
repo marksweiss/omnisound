@@ -5,7 +5,7 @@
 # TODO FEATURE ChordSequence, i.e. Progressions
 
 from copy import copy
-from typing import Any, List, Mapping
+from typing import Any, List, Mapping, Tuple
 
 import pytest
 
@@ -106,8 +106,6 @@ class Measure(NoteSequence):
         note.start = self.meter.beat_start_times_secs[self.beat]
 
         self.append(note)
-        # Maintain the invariant that notes are sorted ascending by start
-        self._sort_notes_by_start_time()
 
         # Increment beat position if flag set and beat is not on last beat of the measure already
         if increment_beat:
@@ -134,8 +132,6 @@ class Measure(NoteSequence):
 
         self.extend(to_add)
 
-        # Maintain the invariant that notes are sorted ascending by start
-        self._sort_notes_by_start_time()
         return self
     # /Adding notes in sequence on the beat
 
@@ -154,8 +150,6 @@ class Measure(NoteSequence):
 
         note.start = self.next_note_start
         self.append(note)
-        # Maintain the invariant that notes are sorted ascending by start
-        self._sort_notes_by_start_time()
 
         if increment_start:
             self.next_note_start += note.duration
@@ -183,8 +177,6 @@ class Measure(NoteSequence):
             self.append(note)
             self.next_note_start += note.duration
 
-        # Maintain the invariant that notes are sorted ascending by start
-        self._sort_notes_by_start_time()
         return self
     # Adding notes in sequence from the current start time, one note immediately after another
 
@@ -294,8 +286,8 @@ class Measure(NoteSequence):
         self._sort_notes_by_start_time()
         return self
 
-    def remove(self, to_remove: Any) -> 'Measure':
-        super(Measure, self).remove(to_remove)
+    def remove(self, range_to_remove: Tuple[int, int]) -> 'Measure':
+        super(Measure, self).remove(range_to_remove)
         self._sort_notes_by_start_time()
         return self
     # /NoteSequence note_list management

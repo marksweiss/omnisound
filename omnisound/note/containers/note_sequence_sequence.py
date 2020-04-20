@@ -13,6 +13,7 @@ class NoteSequenceSequence(object):
         validate_optional_sequence_of_type('note_seq_seq', note_seq_seq, NoteSequence)
         self.note_seq_seq = note_seq_seq
 
+    # TODO REFACTOR TO EXTEND
     # Measure list management
     def append(self, seq: NoteSequence) -> 'NoteSequenceSequence':
         validate_type('seq', seq, NoteSequence)

@@ -4,13 +4,15 @@ Omnisound
 Installation
 ---------------------
 
-git clone omnisound
-git submodule update --init
-
-ln -s /path/to/omnisound/ext/python_mingus/mingus /path/to/omnisound/mingus
-
-pip install mido
-./install_dependencies
-
+#### Manually install binary dependencies on your platform
 install [supercollider](https://supercollider.github.io/download)
 install [csound](https://csound.com/download.html)
+
+./install_dependencies
+
+git clone omnisound
+git submodule update --init --recursive
+ln -s /path/to/omnisound/ext/python-mingus/mingus /path/to/omnisound/mingus
+
+Create a virtualenv rooted at the project directory using your method of choice
+pip install -r requirements.txt

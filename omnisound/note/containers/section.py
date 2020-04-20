@@ -16,7 +16,7 @@ from omnisound.utils.utils import (validate_optional_sequence_of_type,
 class Section(NoteSequenceSequence):
     """A Section is a container of Measures that supports adding, removing and modifying Measures.
        Sections support all of the same Note attributes as Measures as setters. If these are set
-       they will be applied to all Measures in the Track, which will apply them to all Notes in the Measure.
+       they will be applied to all Measures in the Section, which will apply them to all Notes in the Measure.
        Getters also behave like Measures, retrieving all values for an attribute for all Notes in all Measures
        flattened into a list.
     """
@@ -31,9 +31,12 @@ class Section(NoteSequenceSequence):
                                 ('meter', meter, Meter), ('swing', swing, Swing),
                                 ('name', name, str))
         validate_optional_sequence_of_type('measure_list', measure_list, Measure)
-        super(Section, self).__init__(measure_list)
 
-        self.measure_list = measure_list or []
+        measure_list = measure_list or []
+        super(Section, self).__init__(measure_list)
+        # TODO REFACTOR NAME TO 'measures'
+        self.measure_list = self.note_seq_seq
+
         self.name = name
         self._performance_attrs = performance_attrs
         self._meter = meter

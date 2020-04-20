@@ -39,7 +39,7 @@ class InvalidQuantizationDurationException(Exception):
 
 
 # TODO THIS NEEDS A NOTION OF TEMPO TO MAKE beat_start_times and quantizing valid
-class Meter(object):
+class Meter:
     """Class to represent and manage Meter in a musical Measure/Bar. Offers facilities for representing and
        calculating meter using traditional units or floating point values. Can also apply quantizing to a
        NoteSequence to either fit the notes with the same ration of separation between them but scaled to the
@@ -51,13 +51,13 @@ class Meter(object):
 
        For example: 4
                     4
-       - `beats_per_mesure` is an integer, 4
+       - `beats_per_measure` is an integer, 4
        - `beat_duration` argument is the duration of a beat in the measure, NoteDur.QUARTER
        In 4/4, there are 4 beats per measure and each beat is a quarter note.
 
        For example: 6
                     8
-       - `beats_per_mesure` is an integer, 6 - `beat_duration` argument is a NoteDuration, e.g NoteDur.EIGHTH
+       - `beats_per_measure` is an integer, 6 - `beat_duration` argument is a NoteDuration, e.g NoteDur.EIGHTH
        In 6/8, there are 6 beats per measure and each beat is an eighth note
     """
 
@@ -76,11 +76,11 @@ class Meter(object):
         # Numerator of meter
         self.beats_per_measure = beats_per_measure
         # Inverse of denominator of meter, e.g. 4/4 is quarter note is 1 beat
+        # TODO REFACTOR NAME TO 'beat_note_base_dur' TO INDICATE THAT ACTUAL DUR IS ADJUSTED BY TEMPO
         self.beat_note_dur = beat_note_dur
-        # Denominator of meter
-        beat_note_dur: float = self.beat_note_dur.value
         # Meter in musical notation as a tuple, e.g. (4, 4)
-        self.meter_notation = (self.beats_per_measure, int(1 / beat_note_dur))
+        # noinspection PyTypeChecker
+        self.meter_notation = (self.beats_per_measure, int(1 / self.beat_note_dur.value))
 
         # Actual note duration
         # Map note durations from meter, which are unitless, to time, using tempo, which is a ratio of
@@ -90,7 +90,8 @@ class Meter(object):
         # Each note is some fraction of a quarter note. So for N / 4 meters, this ratio is 1.
         # For N / 8 meters, e.g. 6 / 8, this ration os 0.5. This ratio multiplied by the actual time duration
         # of a quarter note, derived from the tempo in qpm, is the duration of a note
-        self.quarter_notes_per_beat_note = beat_note_dur / Meter.QUARTER_NOTE_DUR
+        # noinspection PyTypeChecker
+        self.quarter_notes_per_beat_note = int(self.beat_note_dur.value / Meter.QUARTER_NOTE_DUR)
         self.note_dur_secs = self.quarter_notes_per_beat_note * self.quarter_note_dur_secs
         self.measure_dur_secs = self.note_dur_secs * self.beats_per_measure
         self.beat_start_times_secs = [self.note_dur_secs * i for i in range(self.beats_per_measure)]
