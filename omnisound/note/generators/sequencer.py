@@ -1,6 +1,6 @@
 # Copyright 2020 Mark S. Weiss
 
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping, Optional, Union
 
 from omnisound.note.adapters.note import NoteValues, set_attr_vals_from_note_values
 from omnisound.note.containers.measure import Measure
@@ -14,7 +14,8 @@ from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DI
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
 from omnisound.utils.mingus_utils import get_chord_pitches
-from omnisound.utils.utils import validate_optional_type, validate_optional_types, validate_type, validate_types
+from omnisound.utils.utils import (validate_optional_type, validate_optional_type_choice, validate_optional_types,
+                                   validate_type, validate_type_choice, validate_types)
 
 
 class InvalidPatternException(Exception):
@@ -66,6 +67,7 @@ class Sequencer(Song):
                  attr_get_type_cast_map: Mapping[str, Any] = None,
                  get_pitch_for_key: Any = None,
                  swing: Optional[Swing] = None):
+
         validate_optional_types(('name', name, str),
                                 ('swing', swing, Swing),
                                 ('pattern_resolution', pattern_resolution, NoteDur))
@@ -99,9 +101,17 @@ class Sequencer(Song):
         self._next_track = 0
         self._track_name_idx_map = {}
 
-    def add_track(self, track_name: str = None) -> str:
+    # TODO Validate instrument is int, MidiInstrument enum or a class (Foxdot)
+    def add_track(self,
+                  track_name: str = None,
+                  instrument: Union[float, int] = None) -> str:
+        validate_type('track_name', track_name, str)
+        validate_type_choice('instrument', instrument, (float, int))
+
         track_name = track_name or str(self._next_track)
-        track = Track(meter=self.meter, swing=self.swing, name=track_name)
+        track = Track(meter=self.meter,
+                      swing=self.swing, name=track_name,
+                      instrument=instrument)
         self.append(track)
         self.num_tracks += 1
         self._track_name_idx_map[track_name] = self._next_track
@@ -111,43 +121,50 @@ class Sequencer(Song):
     def set_track_pattern(self,
                           track_name: str = None,
                           pattern: str = None,
+                          instrument: Optional[Union[float, int]] = None,
                           swing: Optional[Swing] = None):
         """
         - Sets the pattern, a section of measures in the track named `track_name`.
         - If the track already has a pattern, it is replaced. If the track is empty, its pattern is set to `pattern`.
-        - If `meter` arg is supplied, then the track will be quantized using it
         - If `swing` is arg is supplied, then the track will have swing applied using it
-        - If `quantize` arg is True and the class has `self.meter` then the class meter object will be used to quantize
+        - If the `instrument` arg is supplied, this instrument will be bound to the track, replacing whatever
+          instrument it previously was bound to
         - If the `apply_swing` arg is True and the class has `self.swing` then the class swing
           object will be used to apply swing
         """
         validate_types(('track_name', track_name, str), ('pattern', pattern, str))
+        validate_optional_type('swing', swing, Swing)
+        validate_optional_type_choice('instrument', instrument, (float, int))
 
+        # Will raise if track_name is not valid
         track = self.track_list[self._track_name_idx_map[track_name]]
         if track.measure_list:
             track.remove((0, self.num_measures))
-        track.extend(to_add=self._parse_pattern_to_section(pattern=pattern))
+        instrument = instrument or track.instrument
+        track.extend(to_add=self._parse_pattern_to_section(pattern=pattern, instrument=instrument))
         swing = swing or self.swing
         if swing and swing.is_swing_on():
             track.apply_swing()
 
-    def add_pattern_as_track(self,
-                             track_name: Optional[str] = None,
-                             pattern: str = None,
-                             swing: Optional[Swing] = None):
+    def add_pattern_as_new_track(self,
+                                 track_name: Optional[str] = None,
+                                 pattern: str = None,
+                                 instrument: Union[float, int] = None,
+                                 swing: Optional[Swing] = None):
         """
         - Sets the pattern, a section of measures in a new track named `track_name` or if no name is provided
           in a track with a default name of its track number.
-        - If `meter` arg is supplied and `is_quantizing()` is `True`, then the track will be quantized using it
+        - Track is bound to `instrument`
+        - If `track_name` is not supplied, a default name of `Track N`, where N is the index of the track, is assigned
         - If `swing` is arg is supplied and `is_swing_on()` is `True`, then the track will have swing applied using it
-        - If `self.meter` `is_quantizing()` is `True` then the class meter object will be used to quantize
         - If `self.swing` `is_swing_on()` is `True` then the track will have swing applied using it
         """
         validate_type('pattern', pattern, str)
-        validate_optional_type('track_name', track_name, str)
+        validate_optional_types(('track_name', track_name, str), ('swing', swing, Swing))
+        validate_type_choice('instrument', instrument, (float, int))
 
         # Set the measures in the section to add to the track
-        section = self._parse_pattern_to_section(pattern=pattern, meter=self.meter, swing=swing)
+        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument)
 
         # If pattern was shorter than number of measures in Track then repeat the pattern until the Track is filled
         measures_to_fill = self.num_measures - len(section)
@@ -179,14 +196,14 @@ class Sequencer(Song):
     # TODO MORE SOPHISTICATED PARSING IF WE EXTEND THE PATTERN LANGUAGE
     def _parse_pattern_to_section(self,
                                   pattern: str = None,
-                                  meter: Meter = None,
+                                  instrument: Union[float, int] = None,
                                   swing: Swing = None) -> Section:
         section = Section([])
-        meter = meter or self.meter
         swing = swing or self.swing
 
-        def _make_note_val(_start, _duration, _amplitude, _pitch):
+        def _make_note_val(_instrument, _start, _duration, _amplitude, _pitch):
             _note_vals = NoteValues(self.attr_vals_defaults_map.keys ())
+            _note_vals.instrument = _instrument
             _note_vals.start = _start
             _note_vals.duration = _duration
             _note_vals.amplitude = _amplitude
@@ -212,7 +229,7 @@ class Sequencer(Song):
                     # Dummy values
                     amplitude = self.attr_get_type_cast_map['amplitude'](0)
                     pitch = self.attr_get_type_cast_map['pitch'](1)
-                    note_vals = _make_note_val(start, self.note_duration, amplitude, pitch)
+                    note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
                 # It's a sounding note or chord
                 else:
@@ -240,11 +257,11 @@ class Sequencer(Song):
                                                           get_pitch_for_key=self.get_pitch_for_key,
                                                           octave=octave)
                         for pitch in chord_pitches:
-                            note_vals = _make_note_val(start, self.note_duration, amplitude, pitch)
+                            note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
                             note_vals_lst.append(note_vals)
                     else:
                         pitch = self.get_pitch_for_key(key, octave)
-                        note_vals = _make_note_val(start, self.note_duration, amplitude, pitch)
+                        note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
                         note_vals_lst.append(note_vals)
 
                 next_start += self.note_duration
@@ -254,7 +271,7 @@ class Sequencer(Song):
                               make_note=self.make_note,
                               num_notes=len(note_vals_lst),
                               num_attributes=self.num_attributes,
-                              meter=meter,
+                              meter=self.meter,
                               swing=swing)
             for i, note_vals in enumerate(note_vals_lst):
                 note = measure.note(i)

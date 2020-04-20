@@ -148,6 +148,7 @@ class NoteSequence(object):
                 index_range_sum += index_range
 
     # TODO UNIT TEST SLICE
+    # TODO CORRECT HANDLING FOR NEGATIVE INDEXES
     def __getitem__(self, index: Union[int, slice]) -> Any:
         if isinstance(index, int):
             return self._get_note_for_index(index)
