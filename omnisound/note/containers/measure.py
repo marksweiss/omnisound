@@ -5,11 +5,11 @@
 # TODO FEATURE ChordSequence, i.e. Progressions
 
 from copy import copy
-from typing import Any, List, Mapping, Tuple
+from typing import Any, List, Tuple
 
 import pytest
 
-from omnisound.note.adapters.note import START_I, as_list
+from omnisound.note.adapters.note import as_list, MakeNoteConfig, START_I
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.modifiers.meter import Meter, NoteDur
@@ -38,21 +38,13 @@ class Measure(NoteSequence):
     def __init__(self,
                  meter: Meter = None,
                  swing: Swing = None,
-                 make_note: Any = None,
                  num_notes: int = None,
-                 num_attributes: int = None,
-                 attr_name_idx_map: Mapping[str, int] = None,
-                 attr_vals_defaults_map: Mapping[str, float] = None,
-                 attr_get_type_cast_map: Mapping[str, Any] = None,
+                 mn: MakeNoteConfig = None,
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('meter', meter, Meter), ('swing', swing, Swing),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        super(Measure, self).__init__(make_note=make_note,
-                                      num_notes=num_notes,
-                                      num_attributes=num_attributes,
-                                      attr_name_idx_map=attr_name_idx_map,
-                                      attr_vals_defaults_map=attr_vals_defaults_map,
-                                      attr_get_type_cast_map=attr_get_type_cast_map)
+        super(Measure, self).__init__(num_notes=num_notes,
+                                      mn=mn)
 
         # Maintain the invariant that notes are sorted ascending by start
         self._sort_notes_by_start_time()
@@ -307,12 +299,8 @@ class Measure(NoteSequence):
     def copy(source: 'Measure') -> 'Measure':
         new_measure = Measure(meter=source.meter,
                               swing=source.swing,
-                              make_note=source.make_note,
                               num_notes=source.num_notes,
-                              num_attributes=source._num_attributes,
-                              attr_name_idx_map=source.attr_name_idx_map,
-                              attr_vals_defaults_map=source.attr_vals_defaults_map,
-                              attr_get_type_cast_map=source.attr_get_type_cast_map,
+                              mn=source.mn,
                               performance_attrs=source.performance_attrs)
         new_measure.beat = source.beat
         new_measure.next_note_start = source.next_note_start

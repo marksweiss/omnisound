@@ -1,9 +1,11 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, List, Mapping
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Mapping, Union
 
-from numpy import array
+from numpy import array as np_array
 
+from omnisound.note.generators.scale_globals import MajorKey, MinorKey
 from omnisound.utils.utils import validate_type, validate_type_choice
 
 
@@ -24,6 +26,30 @@ BASE_ATTR_NAME_IDX_MAP = {
 BASE_ATTR_NAMES = tuple(BASE_ATTR_NAME_IDX_MAP.keys())
 
 DEFAULT_VAL = 0.0
+
+
+@dataclass
+class MakeNoteConfig:
+    cls_name: str
+    num_attributes: int
+    make_note: Callable[[np_array,
+                         Mapping[str, int],
+                         Mapping[str, Callable[[Union[float, int]], Union[float, int]]]],
+                        Any]
+    get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]]
+    attr_name_idx_map: Mapping[str, int]
+    attr_vals_defaults_map: Mapping[str, Union[float, int]]
+    attr_get_type_cast_map: Mapping[str, Callable[[Union[float, int]], Union[float, int]]]
+
+    @staticmethod
+    def copy(source: 'MakeNoteConfig') -> 'MakeNoteConfig':
+        return MakeNoteConfig(cls_name=source.cls_name,
+                              num_attributes=source.num_attributes,
+                              make_note=source.make_note,
+                              get_pitch_for_key=source.get_pitch_for_key,
+                              attr_name_idx_map=source.attr_name_idx_map,
+                              attr_vals_defaults_map=source.attr_vals_defaults_map,
+                              attr_get_type_cast_map=source.attr_get_type_cast_map)
 
 
 def add_base_attr_name_indexes(attr_name_idx_map: Dict[str, int]):
@@ -66,8 +92,8 @@ class NoteValues(object):
     def as_list(self) -> List:
         return [getattr(self, field) for field in self._attr_names]
 
-    def as_array(self) -> array:
-        return array(self.as_list())
+    def as_array(self) -> np_array:
+        return np_array(self.as_list())
 
 
 def as_list(note) -> List[float]:

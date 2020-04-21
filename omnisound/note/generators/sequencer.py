@@ -1,8 +1,8 @@
 # Copyright 2020 Mark S. Weiss
 
-from typing import Any, Mapping, Optional, Union
+from typing import Optional, Union
 
-from omnisound.note.adapters.note import NoteValues, set_attr_vals_from_note_values
+from omnisound.note.adapters.note import MakeNoteConfig, NoteValues, set_attr_vals_from_note_values
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.section import Section
 from omnisound.note.containers.song import Song
@@ -60,14 +60,8 @@ class Sequencer(Song):
                  num_measures: int = None,
                  pattern_resolution: Optional[NoteDur] = None,
                  meter: Optional[Meter] = None,
-                 make_note: Any = None,
-                 num_attributes: int = None,
-                 attr_name_idx_map: Mapping[str, int] = None,
-                 attr_vals_defaults_map: Optional[Mapping[str, float]] = None,
-                 attr_get_type_cast_map: Mapping[str, Any] = None,
-                 get_pitch_for_key: Any = None,
-                 swing: Optional[Swing] = None):
-
+                 swing: Optional[Swing] = None,
+                 mn: MakeNoteConfig = None):
         validate_optional_types(('name', name, str),
                                 ('swing', swing, Swing),
                                 ('pattern_resolution', pattern_resolution, NoteDur))
@@ -78,12 +72,13 @@ class Sequencer(Song):
         meter = meter or Sequencer.DEFAULT_METER
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
-        self.make_note = make_note
-        self.get_pitch_for_key = get_pitch_for_key
-        self.num_attributes = num_attributes
-        self.attr_name_idx_map = attr_name_idx_map
-        self.attr_vals_defaults_map = attr_vals_defaults_map
-        self.attr_get_type_cast_map = attr_get_type_cast_map
+        # self.make_note = n.make_note
+        # self.get_pitch_for_key = n.get_pitch_for_key
+        # self.num_attributes = n.num_attributes
+        # self.attr_name_idx_map = n.attr_name_idx_map
+        # self.attr_vals_defaults_map = n.attr_vals_defaults_map
+        # self.attr_get_type_cast_map = n.attr_get_type_cast_map
+        self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
         # `pattern_resolution` allows creating patterns with more notes per measure than the meter.beats_per_measure
@@ -94,7 +89,7 @@ class Sequencer(Song):
         self.notes_per_measure = int(meter.beats_per_measure *
                                      (meter.beat_note_dur.value / self.pattern_resolution.value))
         self.note_duration = \
-            self.attr_get_type_cast_map['duration'](self.meter.measure_dur_secs / self.notes_per_measure)
+            self.mn.attr_get_type_cast_map['duration'](self.meter.measure_dur_secs / self.notes_per_measure)
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
@@ -214,7 +209,7 @@ class Sequencer(Song):
         swing = swing or self.swing
 
         def _make_note_val(_instrument, _start, _duration, _amplitude, _pitch):
-            _note_vals = NoteValues(self.attr_vals_defaults_map.keys ())
+            _note_vals = NoteValues(self.mn.attr_vals_defaults_map.keys ())
             _note_vals.instrument = _instrument
             _note_vals.start = _start
             _note_vals.duration = _duration
@@ -234,13 +229,13 @@ class Sequencer(Song):
             next_start = 0
             note_vals_lst = []
             for i, note_token in enumerate(note_tokens):
-                start = self.attr_get_type_cast_map['start'](next_start)
+                start = self.mn.attr_get_type_cast_map['start'](next_start)
 
                 # It's a single sounding note or rest
                 if note_token == Sequencer.REST_TOKEN:
                     # Dummy values
-                    amplitude = self.attr_get_type_cast_map['amplitude'](0)
-                    pitch = self.attr_get_type_cast_map['pitch'](1)
+                    amplitude = self.mn.attr_get_type_cast_map['amplitude'](0)
+                    pitch = self.mn.attr_get_type_cast_map['pitch'](1)
                     note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
                 # It's a sounding note or chord
@@ -253,7 +248,7 @@ class Sequencer(Song):
                         raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid key {key} token')
 
                     octave = int(octave)
-                    amplitude = self.attr_get_type_cast_map['amplitude'](amplitude)
+                    amplitude = self.mn.attr_get_type_cast_map['amplitude'](amplitude)
 
                     if chord:
                         # Chord can be empty, but if there is a token it must be valid
@@ -266,25 +261,22 @@ class Sequencer(Song):
                         mingus_chord = Chord.get_mingus_chord_for_harmonic_chord(key, harmonic_chord)
                         chord_pitches = get_chord_pitches(mingus_keys=mingus_chord,
                                                           mingus_key_to_key_enum_mapping=mingus_key_to_key_enum_mapping,
-                                                          get_pitch_for_key=self.get_pitch_for_key,
+                                                          get_pitch_for_key=self.mn.get_pitch_for_key,
                                                           octave=octave)
                         for pitch in chord_pitches:
                             note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
                             note_vals_lst.append(note_vals)
                     else:
-                        pitch = self.get_pitch_for_key(key, octave)
+                        pitch = self.mn.get_pitch_for_key(key, octave)
                         note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
                         note_vals_lst.append(note_vals)
 
                 next_start += self.note_duration
 
-            measure = Measure(attr_name_idx_map=self.attr_name_idx_map,
-                              attr_get_type_cast_map=self.attr_get_type_cast_map,
-                              make_note=self.make_note,
-                              num_notes=len(note_vals_lst),
-                              num_attributes=self.num_attributes,
+            measure = Measure(num_notes=len(note_vals_lst),
                               meter=self.meter,
-                              swing=swing)
+                              swing=swing,
+                              mn=self.mn)
             for i, note_vals in enumerate(note_vals_lst):
                 note = measure.note(i)
                 set_attr_vals_from_note_values(note, note_vals)
@@ -332,12 +324,8 @@ class Sequencer(Song):
                 # allocate storage for new notes, but they won't have values set.
                 new_measure = Measure(meter=self.meter,
                                       swing=self.swing,
-                                      make_note=measure.make_note,
                                       num_notes = measure.num_notes,
-                                      num_attributes=measure.num_attributes,
-                                      attr_name_idx_map=measure.attr_name_idx_map,
-                                      attr_vals_defaults_map=measure.attr_vals_defaults_map,
-                                      attr_get_type_cast_map=measure.attr_get_type_cast_map)
+                                      mn=measure.mn)
 
                 # For each note in the old measure, copy it to the new measure but let the Measure API
                 # manage adding it at the correct start time calculated with the new meter using the new tempo.

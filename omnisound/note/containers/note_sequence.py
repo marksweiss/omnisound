@@ -4,10 +4,11 @@
 # TODO EQUALITY TESTS EVERYWHERE
 # TODO COPY TESTS
 
-from typing import Any, Mapping, Iterator, Sequence, Tuple, Union
+from typing import Any, Iterator, Sequence, Tuple, Union
 
 import numpy as np
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.utils.utils import validate_optional_sequence_of_type, \
     validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, validate_types
 
@@ -42,42 +43,35 @@ class NoteSequence(object):
        you must 1) modify B, and then 2) call A.update_range_map().
     """
 
-    def __init__(self, make_note: Any = None,
+    def __init__(self,
                  num_notes: int = None,
-                 num_attributes: int = None,
-                 attr_name_idx_map: Mapping[str, int] = None,
-                 attr_vals_defaults_map: Mapping[str, float] = None,
-                 attr_get_type_cast_map: Mapping[str, Any] = None,
-                 child_sequences: Sequence['NoteSequence'] = None):
-        validate_types(('num_notes', num_notes, int), ('num_attributes', num_attributes, int),
-                       ('attr_name_idx_map', attr_name_idx_map, dict))
-        validate_optional_type('attr_vals_defaults_map', attr_vals_defaults_map, dict)
-        validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
-        validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.values(), int)
-        if attr_vals_defaults_map:
-            validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_defaults_map.keys()), str)
-            validate_optional_sequence_of_type('attr_vals_map', list(attr_vals_defaults_map.values()), float)
+                 child_sequences: Sequence['NoteSequence'] = None,
+                 mn: MakeNoteConfig = None):
+        validate_types(('num_notes', num_notes, int), ('num_attributes', mn.num_attributes, int),
+                       ('attr_name_idx_map', mn.attr_name_idx_map, dict))
+        validate_optional_type('attr_vals_defaults_map', mn.attr_vals_defaults_map, dict)
+        validate_sequence_of_type('attr_name_idx_map', mn.attr_name_idx_map.keys(), str)
+        validate_sequence_of_type('attr_name_idx_map', mn.attr_name_idx_map.values(), int)
+        if mn.attr_vals_defaults_map:
+            validate_optional_sequence_of_type('attr_vals_map', list(mn.attr_vals_defaults_map.keys()), str)
+            validate_optional_sequence_of_type('attr_vals_map', list(mn.attr_vals_defaults_map.values()), float)
         validate_optional_type_choice('child_sequences', child_sequences, (list, set))
         validate_optional_sequence_of_type('child_sequences', child_sequences, NoteSequence)
 
-        self.make_note = make_note
-        self.attr_get_type_cast_map = attr_get_type_cast_map
+        self.mn = mn
 
         # Construct empty 2D numpy array of the specified dimensions. Each row stores a Note's values.
-        rows = [[0.0] * num_attributes for _ in range(num_notes)]
+        rows = [[0.0] * self.mn.num_attributes for _ in range(num_notes)]
         self.note_attr_vals = np.array(rows)
         if num_notes > 0:
             # THIS MUST NOT BE ALTERED
             self._num_attributes = self.note_attr_vals.shape[1]
 
-        self.attr_name_idx_map = attr_name_idx_map
-        self.attr_vals_defaults_map = attr_vals_defaults_map
-        if attr_vals_defaults_map:
-            assert set(attr_vals_defaults_map.keys()) <= set(attr_name_idx_map.keys())
-            self.attr_vals_defaults_map = attr_vals_defaults_map
+        if self.mn.attr_vals_defaults_map:
+            assert set(self.mn.attr_vals_defaults_map.keys()) <= set(self.mn.attr_name_idx_map.keys())
             for note_attr in self.note_attr_vals:
-                for attr_name, attr_val in self.attr_vals_defaults_map.items():
-                    note_attr[self.attr_name_idx_map[attr_name]] = attr_val
+                for attr_name, attr_val in self.mn.attr_vals_defaults_map.items():
+                    note_attr[self.mn.attr_name_idx_map[attr_name]] = attr_val
 
         self.child_sequences = child_sequences or []
 
@@ -126,9 +120,9 @@ class NoteSequence(object):
             raise IndexError(f'`index` out of range index: {index} max_index: {len(self)}')
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
-            return self.make_note(self.note_attr_vals[index],
-                                  self.attr_name_idx_map,
-                                  attr_get_type_cast_map=self.attr_get_type_cast_map)
+            mn = MakeNoteConfig.copy(self.mn)
+            mn.attr_vals_defaults_map = self.note_attr_vals[index]
+            return self.make_note(mn)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
         # flattened sequence of child_sequences, or it's invalid
         else:
@@ -142,9 +136,9 @@ class NoteSequence(object):
                     # Adjust index to access the note_attr_vals with offset of 0. The index entry from range_map
                     # is the running sum of all the previous indexes so we need to subtract that from index
                     adjusted_index = index - index_range_sum
-                    return self.make_note(note_attrs[adjusted_index],
-                                          self.attr_name_idx_map,
-                                          attr_get_type_cast_map=self.attr_get_type_cast_map)
+                    mn = MakeNoteConfig.copy(self.mn)
+                    mn.attr_vals_defaults_map = note_attrs[adjusted_index]
+                    return self.make_note(mn)
                 index_range_sum += index_range
 
     # TODO UNIT TEST SLICE
@@ -172,29 +166,21 @@ class NoteSequence(object):
         return note
 
     @staticmethod
-    def make_note(make_note: Any = None,
-                  num_attributes: int = None,
-                  attr_name_idx_map: Mapping[str, int] = None,
-                  attr_vals_defaults_map: Mapping[str, float] = None,
-                  attr_get_type_cast_map: Mapping[str, Any] = None):
+    def make_note(mn: MakeNoteConfig) -> 'NoteSequence':
         """Factory method to construct a single note with underlying storage so it can be appended to another
         NoteSequence like a Measure."""
-        note_sequence = NoteSequence(make_note=make_note,
-                                     num_notes=1,
-                                     num_attributes=num_attributes,
-                                     attr_name_idx_map=attr_name_idx_map,
-                                     attr_vals_defaults_map=attr_vals_defaults_map,
-                                     attr_get_type_cast_map=attr_get_type_cast_map)
-        return note_sequence.note(0)
+        return NoteSequence(num_notes=1, mn=mn).note(0)
 
     # noinspection PyCallingNonCallable
     def make_notes(self) -> Sequence[Any]:
         notes = []
         for note_seq in self.range_map.values():
-            notes.extend([self.make_note(note_seq.note_attr_vals[i],
-                                         self.attr_name_idx_map,
-                                         attr_get_type_cast_map=self.attr_get_type_cast_map)
-                          for i in range(note_seq.note_attr_vals.shape[0])])
+            note_seq_notes = []
+            for i in range(note_seq.note_attr_vals.shape[0]):
+                mn = MakeNoteConfig.copy(self.mn)
+                mn.attr_vals_defaults_map = note_seq.note_attr_vals[i]
+                note_seq_notes.append(self.make_note(mn))
+            notes.extend(note_seq_notes)
         return notes
 
     def __eq__(self, other: 'NoteSequence') -> bool:
@@ -300,12 +286,9 @@ class NoteSequence(object):
     @staticmethod
     def copy(source: 'NoteSequence') -> 'NoteSequence':
         validate_type('source', source, NoteSequence)
-        copy = NoteSequence(make_note=source.make_note,
-                            num_notes=len(source),
-                            num_attributes=source._num_attributes,
-                            attr_name_idx_map=source.attr_name_idx_map,
-                            attr_vals_defaults_map=source.attr_vals_defaults_map,
-                            child_sequences=source.child_sequences)
+        copy = NoteSequence(num_notes=len(source),
+                            child_sequences=source.child_sequences,
+                            mn=source.mn)
         # Copy the underlying np array from source note to target
         copy.note_attr_vals = np.copy(source.note_attr_vals)
         return copy
