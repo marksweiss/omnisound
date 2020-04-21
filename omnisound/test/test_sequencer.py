@@ -216,5 +216,3 @@ def test_pattern_to_track_length(sequencer):
     assert pytest.approx(first_measure[1].pitch, 4.03)
     assert pytest.approx(first_measure[2].pitch, 4.05)
     assert pytest.approx(first_measure[3].pitch, 4.06)
-
-
