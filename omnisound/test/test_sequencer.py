@@ -47,7 +47,8 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          # TODO FIX THIS ASYMMETRY WITH WRAPPER make() method OR GETTER/SETTER FOR ALL ATTRS
+                          _attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
                           attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
 
 
@@ -196,7 +197,7 @@ def test_pattern_resolution(make_note_config, meter, swing):
         assert eighth_note_pattern_resolution_expected_starts[i] == note.start
 
 
-def test_pattern_to_track_length(sequencer):
+def test_fill_pattern_to_track_length(sequencer):
     # Make a pattern that is one measure long, load into sequencer set to have 4-measure tracks, verify the length
     #  of the track and that notes in it. There should be four measures identical to the one defined by `short_pattern`
     short_pattern = 'C:4::100 D:4::100 E:4::100 F:4::100'

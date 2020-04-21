@@ -38,7 +38,7 @@ class MakeNoteConfig:
                         Any]
     get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]]
     attr_name_idx_map: Mapping[str, int]
-    attr_vals_defaults_map: Mapping[str, Union[float, int]]
+    _attr_vals_defaults_map: Mapping[str, Union[float, int]]
     attr_get_type_cast_map: Mapping[str, Callable[[Union[float, int]], Union[float, int]]]
 
     @staticmethod
@@ -48,8 +48,19 @@ class MakeNoteConfig:
                               make_note=source.make_note,
                               get_pitch_for_key=source.get_pitch_for_key,
                               attr_name_idx_map=source.attr_name_idx_map,
-                              attr_vals_defaults_map=source.attr_vals_defaults_map,
+                              _attr_vals_defaults_map=source._attr_vals_defaults_map,
                               attr_get_type_cast_map=source.attr_get_type_cast_map)
+
+    @property
+    def attr_vals_defaults_map(self):
+        return self._attr_vals_defaults_map
+
+    @attr_vals_defaults_map.setter
+    def attr_vals_defaults_map(self, avdm: Union[Mapping[str, Union[float, int]], np_array]):
+        if isinstance(avdm, dict):
+            self._attr_vals_defaults_map = avdm
+        else:
+            self._attr_vals_defaults_map = {self.attr_name_idx_map[i]: avdm[i] for i in range(self.num_attributes)}
 
 
 def add_base_attr_name_indexes(attr_name_idx_map: Dict[str, int]):
