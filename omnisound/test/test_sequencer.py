@@ -1,7 +1,5 @@
 # Copyright 2020 Mark S. Weiss
 
-from typing import List, Tuple
-
 import pytest
 
 from omnisound.note.containers.note_sequence import NoteSequence
@@ -205,3 +203,18 @@ def test_pattern_resolution(meter, swing):
                                                       4 * new_dur, 5 * new_dur, 6 * new_dur, 7 * new_dur]
     for i, note in enumerate(first_measure):
         assert eighth_note_pattern_resolution_expected_starts[i] == note.start
+
+
+def test_pattern_to_track_length(sequencer):
+    # Make a pattern that is one measure long, load into sequencer set to have 4-measure tracks, verify the length
+    #  of the track and that notes in it. There should be four measures identical to the one defined by `short_pattern`
+    short_pattern = 'C:4::100 D:4::100 E:4::100 F:4::100'
+    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=short_pattern, instrument=INSTRUMENT)
+    assert NUM_MEASURES == len(sequencer.track(TRACK_NAME))
+    first_measure = sequencer.track(TRACK_NAME).measure_list[0]
+    assert pytest.approx(first_measure[0].pitch, 4.01)
+    assert pytest.approx(first_measure[1].pitch, 4.03)
+    assert pytest.approx(first_measure[2].pitch, 4.05)
+    assert pytest.approx(first_measure[3].pitch, 4.06)
+
+

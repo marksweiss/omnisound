@@ -1,6 +1,6 @@
 # Copyright 2019 Mark S. Weiss
 
-from typing import List, Tuple
+from typing import List, Sequence, Tuple
 
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.utils.utils import (validate_optional_sequence_of_type, validate_sequence_of_type,
@@ -18,6 +18,11 @@ class NoteSequenceSequence(object):
     def append(self, seq: NoteSequence) -> 'NoteSequenceSequence':
         validate_type('seq', seq, NoteSequence)
         self.note_seq_seq.append(seq)
+        return self
+
+    def extend(self, seqs: Sequence[NoteSequence]) -> 'NoteSequenceSequence':
+        validate_sequence_of_type('seqs', seqs, NoteSequence)
+        self.note_seq_seq.extend(seqs)
         return self
 
     def __add__(self, to_add: NoteSequence) -> 'NoteSequenceSequence':

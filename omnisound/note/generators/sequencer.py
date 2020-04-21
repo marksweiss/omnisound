@@ -141,7 +141,10 @@ class Sequencer(Song):
         if track.measure_list:
             track.remove((0, self.num_measures))
         instrument = instrument or track.instrument
-        track.extend(to_add=self._parse_pattern_to_section(pattern=pattern, instrument=instrument))
+        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument)
+        if len(section) < self.num_measures:
+            self._fill_section_to_track_length(section)
+        track.extend(to_add=section)
         swing = swing or self.swing
         if swing and swing.is_swing_on():
             track.apply_swing()
@@ -165,14 +168,9 @@ class Sequencer(Song):
 
         # Set the measures in the section to add to the track
         section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument)
-
-        # If pattern was shorter than number of measures in Track then repeat the pattern until the Track is filled
-        measures_to_fill = self.num_measures - len(section)
-        while measures_to_fill:
-            section_copy = Section.copy(section)
-            # TODO REFACTOR TO RENAME EXTEND()
-            section.append(section_copy[0:min(measures_to_fill, len(section))])
-            measures_to_fill = self.num_measures - len(section)
+        # If the section is shorter than num_measures, the length of all tracks, repeat it to fill the track
+        if len(section) < self.num_measures:
+            self._fill_section_to_track_length(section)
 
         # Create the track, add the section to it, apply quantize and swing according to the logic in the docstring
         track_name = track_name or str(self._next_track)
@@ -192,6 +190,20 @@ class Sequencer(Song):
 
     def track_names(self):
         return '\n'.join(self._track_name_idx_map.keys())
+
+    def _fill_section_to_track_length(self, section: Section):
+        """
+        Implements logic to repeat a pattern shorter than `self.num_measures` to fill out the measures in the track.
+        The logic is simple `divmod()`, repeat as many times as needed and if the pattern doesn't fit evenly then
+        the last repeat is partial and cuts off on whatever measure reaches `num_measures`.
+        """
+        # We already have a section of the length of the pattern, so subtract that
+        quotient, remainder = divmod(self.num_measures - len(section), len(section))
+        section_cpy = Section.copy(section)
+        for i in range(quotient):
+            # TODO REFACTOR TO RENAME EXTEND()
+            section.extend(Section.copy(section_cpy).measure_list)
+        section.extend(Section.copy(section_cpy).measure_list[0:remainder])
 
     # TODO MORE SOPHISTICATED PARSING IF WE EXTEND THE PATTERN LANGUAGE
     def _parse_pattern_to_section(self,
