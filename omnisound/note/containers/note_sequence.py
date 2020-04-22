@@ -82,9 +82,6 @@ class NoteSequence(object):
         self.index = 0
         self.range_map = {0: self}
 
-    def note(self, index: int):
-        return self._get_note_for_index(index)
-
     def update_range_map(self):
         # What we need is a data structure that defines the range of indexes covered by a particular NoteSequence
         # and maps that to a reference to that NoteSequence.
@@ -106,11 +103,6 @@ class NoteSequence(object):
             # note_attr_vals. So if we take len(sequences) here rather than len(sequence.note_attr_vals) we will
             # double count the last sequence in the current range_map
             last_index += len(seq.note_attr_vals)
-
-    # Manage iter / slice
-    def __len__(self) -> int:
-        k, v = tuple(self.range_map.items())[-1]
-        return k + len(v.note_attr_vals)
 
     # noinspection PyCallingNonCallable
     def _get_note_for_index(self, index: int) -> Any:
@@ -141,6 +133,36 @@ class NoteSequence(object):
                     return self.make_note(mn)
                 index_range_sum += index_range
 
+    # TODO CHANGE NAME TO `get_note` or `get_note_reference` BECAUSE THEY POINT TO UNDERLYING NOTE STORAGE
+    def note(self, index: int):
+        return self._get_note_for_index(index)
+
+    # TODO CHANGE NAME TO `get_notes` or `get_note_references` BECAUSE THEY POINT TO UNDERLYING NOTE STORAGE
+    # noinspection PyCallingNonCallable
+    def make_notes(self) -> Sequence[Any]:
+        notes = []
+        for note_seq in self.range_map.values():
+            note_seq_notes = []
+            for i in range(note_seq.note_attr_vals.shape[0]):
+                mn = MakeNoteConfig.copy(self.mn)
+                mn.attr_vals_defaults_map = note_seq.note_attr_vals[i]
+                note_seq_notes.append(self.make_note(mn))
+            notes.extend(note_seq_notes)
+        return notes
+
+    # TODO FIX NAME
+    # TODO THIS IS WRONG, NOT MAKING A COPY
+    @staticmethod
+    def new_note(mn: MakeNoteConfig = None) -> 'NoteSequence':
+        """Factory method to construct a single note with underlying storage so it can be appended to another
+        NoteSequence like a Measure."""
+        return NoteSequence(num_notes=1, mn=mn).note(0)
+
+    # Manage iter / slice
+    def __len__(self) -> int:
+        k, v = tuple(self.range_map.items())[-1]
+        return k + len(v.note_attr_vals)
+
     # TODO UNIT TEST SLICE
     # TODO CORRECT HANDLING FOR NEGATIVE INDEXES
     def __getitem__(self, index: Union[int, slice]) -> Any:
@@ -164,24 +186,6 @@ class NoteSequence(object):
         note = self._get_note_for_index(self.index)
         self.index += 1
         return note
-
-    @staticmethod
-    def make_note(mn: MakeNoteConfig) -> 'NoteSequence':
-        """Factory method to construct a single note with underlying storage so it can be appended to another
-        NoteSequence like a Measure."""
-        return NoteSequence(num_notes=1, mn=mn).note(0)
-
-    # noinspection PyCallingNonCallable
-    def make_notes(self) -> Sequence[Any]:
-        notes = []
-        for note_seq in self.range_map.values():
-            note_seq_notes = []
-            for i in range(note_seq.note_attr_vals.shape[0]):
-                mn = MakeNoteConfig.copy(self.mn)
-                mn.attr_vals_defaults_map = note_seq.note_attr_vals[i]
-                note_seq_notes.append(self.make_note(mn))
-            notes.extend(note_seq_notes)
-        return notes
 
     def __eq__(self, other: 'NoteSequence') -> bool:
         # All child sequences must match and the notes in self in both NoteSequences must match

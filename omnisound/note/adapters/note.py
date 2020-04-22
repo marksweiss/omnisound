@@ -57,10 +57,12 @@ class MakeNoteConfig:
 
     @attr_vals_defaults_map.setter
     def attr_vals_defaults_map(self, avdm: Union[Mapping[str, Union[float, int]], np_array]):
+        # TODO `dict` more restrictive than `mapping`
         if isinstance(avdm, dict):
             self._attr_vals_defaults_map = avdm
         else:
-            self._attr_vals_defaults_map = {self.attr_name_idx_map[i]: avdm[i] for i in range(self.num_attributes)}
+            self._attr_vals_defaults_map = {attr: avdm[self.attr_name_idx_map[attr]]
+                                            for attr in self.attr_name_idx_map.keys()}
 
 
 def add_base_attr_name_indexes(attr_name_idx_map: Dict[str, int]):
