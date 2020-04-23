@@ -28,18 +28,39 @@ BASE_ATTR_NAMES = tuple(BASE_ATTR_NAME_IDX_MAP.keys())
 DEFAULT_VAL = 0.0
 
 
-@dataclass
 class MakeNoteConfig:
-    cls_name: str
-    num_attributes: int
-    make_note: Callable[[np_array,
-                         Mapping[str, int],
-                         Mapping[str, Callable[[Union[float, int]], Union[float, int]]]],
-                        Any]
-    get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]]
-    attr_name_idx_map: Mapping[str, int]
-    _attr_vals_defaults_map: Mapping[str, Union[float, int]]
-    attr_get_type_cast_map: Mapping[str, Callable[[Union[float, int]], Union[float, int]]]
+    def __init__(self,
+                 cls_name: str,
+                 num_attributes: int,
+                 make_note: Callable[[np_array,
+                                      Mapping[str, int],
+                                      Mapping[str, Callable[[Union[float, int]], Union[float, int]]]],
+                                     Any],
+                 get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
+                 attr_name_idx_map: Mapping[str, int],
+                 attr_vals_defaults_map: Mapping[str, Union[float, int]],
+                 attr_get_type_cast_map: Mapping[str, Callable[[Union[float, int]], Union[float, int]]]):
+        self.cls_name = cls_name
+        self.num_attributes = num_attributes
+        self.make_note = make_note
+        self.get_pitch_for_key = get_pitch_for_key
+        self.attr_name_idx_map = attr_name_idx_map
+        self._attr_vals_defaults_map = attr_vals_defaults_map
+        self.attr_get_type_cast_map = attr_get_type_cast_map
+
+    @property
+    def attr_vals_defaults_map(self):
+        return self._attr_vals_defaults_map
+
+    @attr_vals_defaults_map.setter
+    def attr_vals_defaults_map(self, av: Union[Mapping[str, Union[float, int]], np_array]):
+        # TODO `dict` more restrictive than `mapping`
+        if isinstance(av, dict):
+            self._attr_vals_defaults_map = av
+        else:
+            # noinspection PyTypeChecker
+            self._attr_vals_defaults_map = {attr_name: av[self.attr_name_idx_map[attr_name]]
+                                            for attr_name in self.attr_name_idx_map.keys()}
 
     @staticmethod
     def copy(source: 'MakeNoteConfig') -> 'MakeNoteConfig':
@@ -48,21 +69,25 @@ class MakeNoteConfig:
                               make_note=source.make_note,
                               get_pitch_for_key=source.get_pitch_for_key,
                               attr_name_idx_map=source.attr_name_idx_map,
-                              _attr_vals_defaults_map=source._attr_vals_defaults_map,
+                              attr_vals_defaults_map=source._attr_vals_defaults_map,
                               attr_get_type_cast_map=source.attr_get_type_cast_map)
 
-    @property
-    def attr_vals_defaults_map(self):
-        return self._attr_vals_defaults_map
 
-    @attr_vals_defaults_map.setter
-    def attr_vals_defaults_map(self, avdm: Union[Mapping[str, Union[float, int]], np_array]):
-        # TODO `dict` more restrictive than `mapping`
-        if isinstance(avdm, dict):
-            self._attr_vals_defaults_map = avdm
-        else:
-            self._attr_vals_defaults_map = {attr: avdm[self.attr_name_idx_map[attr]]
-                                            for attr in self.attr_name_idx_map.keys()}
+class NoteValues(object):
+    """Convenience class to dynamically create, manipulate and retrieve collections of note attributes."""
+    def __init__(self, attr_names):
+        self._attr_names = attr_names
+        for attr_name in attr_names:
+            setattr(self, attr_name, None)
+
+    def as_dict(self) -> Dict:
+        return {field: getattr(self, field) or DEFAULT_VAL for field in self._attr_names}
+
+    def as_list(self) -> List:
+        return [getattr(self, field) for field in self._attr_names]
+
+    def as_array(self) -> np_array:
+        return np_array(self.as_list())
 
 
 def add_base_attr_name_indexes(attr_name_idx_map: Dict[str, int]):
@@ -90,23 +115,6 @@ def setter(attr_name: str):
         else:
             setattr(self, attr_name, attr_val)
     return _setter
-
-
-class NoteValues(object):
-    """Convenience class to dynamically create, manipulate and retrieve collections of note attributes."""
-    def __init__(self, attr_names):
-        self._attr_names = attr_names
-        for attr_name in attr_names:
-            setattr(self, attr_name, None)
-
-    def as_dict(self) -> Dict:
-        return {field: getattr(self, field) or DEFAULT_VAL for field in self._attr_names}
-
-    def as_list(self) -> List:
-        return [getattr(self, field) for field in self._attr_names]
-
-    def as_array(self) -> np_array:
-        return np_array(self.as_list())
 
 
 def as_list(note) -> List[float]:

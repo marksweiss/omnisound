@@ -181,7 +181,7 @@ def test_nested_child_sequences(note_sequence):
 
 def test_make_notes(note_sequence):
     assert len(note_sequence) == 2
-    notes = note_sequence.make_notes()
+    notes = note_sequence.notes()
     assert notes
     assert len(notes) == 2
 
@@ -190,7 +190,7 @@ def test_make_notes(note_sequence):
     child_sequence.append_child_sequence(child_child_sequence)
     note_sequence.append_child_sequence(child_sequence)
     assert len(note_sequence) == 6
-    notes = note_sequence.make_notes()
+    notes = note_sequence.notes()
     assert len(notes) == 6
 
     for note in notes:

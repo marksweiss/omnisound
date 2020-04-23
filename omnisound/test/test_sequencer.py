@@ -47,8 +47,7 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          # TODO FIX THIS ASYMMETRY WITH WRAPPER make() method OR GETTER/SETTER FOR ALL ATTRS
-                          _attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
                           attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
 
 
