@@ -5,4 +5,6 @@ Installation
 install [supercollider](https://supercollider.github.io/download)
 install [csound](https://csound.com/download.html)
 
+git clone https://github.com/marksweiss/omnisound.git
+cd omnisound
 ./install.sh
