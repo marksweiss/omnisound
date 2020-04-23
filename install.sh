@@ -1,4 +1,3 @@
-git clone https://github.com/marksweiss/omnisound.git
 git submodule update --init --recursive
 ENV_DIR=$(pwd)
 python3 -m venv --prompt=omnisound "$ENV_DIR"
