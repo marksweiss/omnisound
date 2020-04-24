@@ -134,6 +134,7 @@ class Section(NoteSequenceSequence):
             measure.set_attr(name, val)
     # Getters and setters for all core note properties, get from all notes, apply to all notes
 
+    # noinspection PyTypeChecker
     @staticmethod
     def copy(source: 'Section') -> 'Section':
         measure_list = None

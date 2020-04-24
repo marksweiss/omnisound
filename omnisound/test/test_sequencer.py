@@ -212,10 +212,10 @@ def test_fill_pattern_to_track_length(sequencer):
     # Test the case where the pattern does not divide the track length evenly
     # Three-measure pattern into 4-measure track, so the first measure should repeat in the fourth measure
     new_track_name = 'new track'
-    three_measure_pattern = ('C:4::100 D:4::100 E:4::100 F:4::100||'
-                             'C:4::100 D:4::100 E:4::100 F:4::100|'
-                             'C:4::100 D:4::100 E:4::100 F:4::100')
-    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=three_measure_pattern, instrument=INSTRUMENT)
+    three_measure_pattern = ('C:4::100 D:4::100 E:4::100 F:4::100|'
+                             'C:5::100 D:5::100 E:5::100 F:5::100|'
+                             'C:6::100 D:6::100 E:6::100 F:6::100')
+    sequencer.add_pattern_as_new_track(track_name=new_track_name, pattern=three_measure_pattern, instrument=INSTRUMENT)
     assert NUM_MEASURES == len(sequencer.track(new_track_name))
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
     last_measure = sequencer.track(TRACK_NAME).measure_list[3]

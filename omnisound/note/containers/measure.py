@@ -300,7 +300,7 @@ class Measure(NoteSequence):
         new_measure = Measure(meter=source.meter,
                               swing=source.swing,
                               num_notes=source.num_notes,
-                              mn=source.mn,
+                              mn=MakeNoteConfig.copy(source.mn),
                               performance_attrs=source.performance_attrs)
         new_measure.beat = source.beat
         new_measure.next_note_start = source.next_note_start

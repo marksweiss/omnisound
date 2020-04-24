@@ -276,7 +276,7 @@ class Sequencer(Song):
             measure = Measure(num_notes=len(note_vals_lst),
                               meter=self.meter,
                               swing=swing,
-                              mn=self.mn)
+                              mn=MakeNoteConfig.copy(self.mn))
             for i, note_vals in enumerate(note_vals_lst):
                 note = measure.note(i)
                 set_attr_vals_from_note_values(note, note_vals)

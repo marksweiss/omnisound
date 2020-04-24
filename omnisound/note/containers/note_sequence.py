@@ -8,7 +8,7 @@ from typing import Any, Iterator, Sequence, Tuple, Union
 
 import numpy as np
 
-from omnisound.note.adapters.note import MakeNoteConfig, get_num_attributes, set_attr_vals_from_dict
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.utils.utils import validate_optional_sequence_of_type, \
     validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, validate_types
 
@@ -104,7 +104,7 @@ class NoteSequence(object):
             # double count the last sequence in the current range_map
             last_index += len(seq.note_attr_vals)
 
-    # noinspection PyCallingNonCallable
+    # noinspection PyCallingNonCallable,PyArgumentList
     def _get_note_for_index(self, index: int) -> Any:
         """Factory method to construct a Note over a stored Note value at an index in the underlying array"""
         validate_type('index', index, int)
@@ -112,7 +112,7 @@ class NoteSequence(object):
             raise IndexError(f'`index` out of range index: {index} max_index: {len(self)}')
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
-            return self.mn.make_note(self.note_attr_vals,
+            return self.mn.make_note(self.note_attr_vals[index],
                                      self.mn.attr_name_idx_map,
                                      attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
@@ -128,24 +128,22 @@ class NoteSequence(object):
                     # Adjust index to access the note_attr_vals with offset of 0. The index entry from range_map
                     # is the running sum of all the previous indexes so we need to subtract that from index
                     adjusted_index = index - index_range_sum
-                    return self.make_note(note_attrs[adjusted_index],
-                                          self.mn.attr_name_idx_map,
-                                          attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
+                    return self.mn.make_note(note_attrs[adjusted_index],
+                                             self.mn.attr_name_idx_map,
+                                             attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
                 index_range_sum += index_range
 
     def note(self, index: int):
         return self._get_note_for_index(index)
 
-    # noinspection PyCallingNonCallable
+    # noinspection PyArgumentList
     def notes(self) -> Sequence[Any]:
         notes = []
         for note_seq in self.range_map.values():
-            note_seq_notes = []
-            for i in range(note_seq.note_attr_vals.shape[0]):
-                mn = MakeNoteConfig.copy(self.mn)
-                mn.attr_vals_defaults_map = note_seq.note_attr_vals[i]
-                note_seq_notes.append(self.make_note(mn))
-            notes.extend(note_seq_notes)
+            notes.extend([self.mn.make_note(note_seq.note_attr_vals[i],
+                                            self.mn.attr_name_idx_map,
+                                            attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
+                          for i in range(note_seq.note_attr_vals.shape[0])])
         return notes
 
     # TODO METHOD TO COPY ONE NOTE TO ANOTHER
@@ -156,7 +154,7 @@ class NoteSequence(object):
         sequence, so that there is reference to the underlying NoteSequence with the storage to the note
         in the calling scope. If we didn't do that the Note reference would be invalid."""
         seq = NoteSequence(num_notes=1,
-                           mn=mn)
+                           mn=MakeNoteConfig.copy(mn))
         return seq.note(0)
 
     # Manage iter / slice
