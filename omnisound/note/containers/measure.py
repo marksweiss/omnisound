@@ -7,6 +7,7 @@
 from copy import copy
 from typing import Any, List, Tuple
 
+from numpy import copy as np_copy
 import pytest
 
 from omnisound.note.adapters.note import as_list, MakeNoteConfig, START_I
@@ -295,6 +296,7 @@ class Measure(NoteSequence):
             self.max_duration == pytest.approx(other.max_duration)
     # /Iterator support
 
+    # TODO ALL CLASSES LIKE METER AND SWING NEED COPY AND ALL COPIES ARE DEEP COPIES
     @staticmethod
     def copy(source: 'Measure') -> 'Measure':
         new_measure = Measure(meter=source.meter,
@@ -302,6 +304,14 @@ class Measure(NoteSequence):
                               num_notes=source.num_notes,
                               mn=MakeNoteConfig.copy(source.mn),
                               performance_attrs=source.performance_attrs)
+
+        # Copy the underlying np array from source note before constructing a Measure (and parent class NoteSequence)
+        #  from the source. This is because both of those __init__()s construct new storage and notes from the
+        #  measure's MakeNoteConfig. If that has attr_vals_default_map set it will use that to construct the notes.
+        #  But we want copy ctor semantics, not ctor semantics. So we have to repeat the same logic as is found
+        #  in NoteSequence.copy() and copy the underlying note storage from source to target.
+        new_measure.note_attr_vals = np_copy(source.note_attr_vals)
+
         new_measure.beat = source.beat
         new_measure.next_note_start = source.next_note_start
         return new_measure

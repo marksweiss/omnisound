@@ -6,7 +6,8 @@
 
 from typing import Any, Iterator, Sequence, Tuple, Union
 
-import numpy as np
+from numpy import array as np_array, array_equal as np_array_equal, concatenate as np_concatenate, copy as np_copy, \
+    copyto as np_copyto, delete as np_delete, insert as np_insert
 
 from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.utils.utils import validate_optional_sequence_of_type, \
@@ -62,7 +63,7 @@ class NoteSequence(object):
 
         # Construct empty 2D numpy array of the specified dimensions. Each row stores a Note's values.
         rows = [[0.0] * self.mn.num_attributes for _ in range(num_notes)]
-        self.note_attr_vals = np.array(rows)
+        self.note_attr_vals = np_array(rows)
         if num_notes > 0:
             # THIS MUST NOT BE ALTERED
             self._num_attributes = self.note_attr_vals.shape[1]
@@ -190,10 +191,10 @@ class NoteSequence(object):
         # All child sequences must match and the notes in self in both NoteSequences must match
         if len(self.child_sequences) != len(other.child_sequences):
             return False
-        if not np.array_equal(self.note_attr_vals, other.note_attr_vals):
+        if not np_array_equal(self.note_attr_vals, other.note_attr_vals):
             return False
         for i, note_sequence in enumerate(self.child_sequences):
-            if not np.array_equal(note_sequence, other.child_sequences[i]):
+            if not np_array_equal(note_sequence, other.child_sequences[i]):
                 return False
         return True
     # /Manage iter / slice
@@ -211,7 +212,7 @@ class NoteSequence(object):
         new_note_idx = len(self.note_attr_vals)
         # noinspection PyTypeChecker
         self.note_attr_vals.resize(new_note_idx + 1, num_attributes)
-        np.copyto(self.note_attr_vals[new_note_idx], note.note_attr_vals)
+        np_copyto(self.note_attr_vals[new_note_idx], note.note_attr_vals)
         self.update_range_map()
         return self
 
@@ -232,9 +233,9 @@ class NoteSequence(object):
         # If it is, make this sequence the note_attr_vals of this sequence. If it is not, append these notes
         # to the existing sequence -- we have already confirmed the shapes conform if  existing sequence is not empty.
         if len(self.note_attr_vals):
-            self.note_attr_vals = np.concatenate((self.note_attr_vals, note_sequence.note_attr_vals))
+            self.note_attr_vals = np_concatenate((self.note_attr_vals, note_sequence.note_attr_vals))
         else:
-            self.note_attr_vals = np.copy(note_sequence.note_attr_vals)
+            self.note_attr_vals = np_copy(note_sequence.note_attr_vals)
         self.update_range_map()
         return self
 
@@ -265,13 +266,13 @@ class NoteSequence(object):
                     'NoteSequence inserted into a NoteSequence must have the same number of attributes')
 
         if len(self.note_attr_vals):
-            self.note_attr_vals = np.insert(self.note_attr_vals, index, new_notes, axis=0)
+            self.note_attr_vals = np_insert(self.note_attr_vals, index, new_notes, axis=0)
         else:
             # Must copy the list of the underlying note array to initialize storage for a NoteSequence
             # because NoteSequence arrays are 2D
             if len(new_notes.shape) == 1:
                 new_notes = [new_notes]
-            self.note_attr_vals = np.copy(new_notes)
+            self.note_attr_vals = np_copy(new_notes)
 
         self.update_range_map()
         return self
@@ -281,7 +282,7 @@ class NoteSequence(object):
         validate_sequence_of_type('range_to_remove', range_to_remove, int)
         # noinspection PyTupleAssignmentBalance
         range_start, range_end = range_to_remove
-        self.note_attr_vals = np.delete(self.note_attr_vals, range(range_start, range_end), axis=0)
+        self.note_attr_vals = np_delete(self.note_attr_vals, range(range_start, range_end), axis=0)
 
         self.update_range_map()
         return self
@@ -293,7 +294,7 @@ class NoteSequence(object):
                             child_sequences=source.child_sequences,
                             mn=source.mn)
         # Copy the underlying np array from source note sequence to target
-        copy.note_attr_vals = np.copy(source.note_attr_vals)
+        copy.note_attr_vals = np_copy(source.note_attr_vals)
         return copy
 
     # /Manage note list

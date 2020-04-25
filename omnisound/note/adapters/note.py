@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Mapping, Union
+from typing import Any, Callable, Dict, List, Optional, Mapping, Union
 
 from numpy import array as np_array
 
@@ -38,15 +38,15 @@ class MakeNoteConfig:
                                      Any],
                  get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
                  attr_name_idx_map: Mapping[str, int],
-                 attr_vals_defaults_map: Mapping[str, Union[float, int]],
-                 attr_get_type_cast_map: Mapping[str, Callable[[Union[float, int]], Union[float, int]]]):
+                 attr_vals_defaults_map: Optional[Mapping[str, Union[float, int]]] = None,
+                 attr_get_type_cast_map: Optional[Mapping[str, Callable[[Union[float, int]], Union[float, int]]]] = None):
         self.cls_name = cls_name
         self.num_attributes = num_attributes
         self.make_note = make_note
         self.get_pitch_for_key = get_pitch_for_key
         self.attr_name_idx_map = attr_name_idx_map
-        self._attr_vals_defaults_map = attr_vals_defaults_map
-        self.attr_get_type_cast_map = attr_get_type_cast_map
+        self._attr_vals_defaults_map = attr_vals_defaults_map or {}
+        self.attr_get_type_cast_map = attr_get_type_cast_map or {}
 
     @property
     def attr_vals_defaults_map(self):

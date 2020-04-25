@@ -72,12 +72,6 @@ class Sequencer(Song):
         meter = meter or Sequencer.DEFAULT_METER
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
-        # self.make_note = n.make_note
-        # self.get_pitch_for_key = n.get_pitch_for_key
-        # self.num_attributes = n.num_attributes
-        # self.attr_name_idx_map = n.attr_name_idx_map
-        # self.attr_vals_defaults_map = n.attr_vals_defaults_map
-        # self.attr_get_type_cast_map = n.attr_get_type_cast_map
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
@@ -209,7 +203,7 @@ class Sequencer(Song):
         swing = swing or self.swing
 
         def _make_note_val(_instrument, _start, _duration, _amplitude, _pitch):
-            _note_vals = NoteValues(self.mn.attr_vals_defaults_map.keys ())
+            _note_vals = NoteValues(self.mn.attr_name_idx_map.keys ())
             _note_vals.instrument = _instrument
             _note_vals.start = _start
             _note_vals.duration = _duration
