@@ -4,6 +4,7 @@ from typing import List
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.chord import Chord
 from omnisound.note.generators.chord_globals import HarmonicChord
@@ -33,58 +34,59 @@ ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
                           'duration': DUR,
                           'amplitude': AMP,
                           'pitch': PITCH}
+ATTR_GET_TYPE_CAST_MAP = csound_note.ATTR_GET_TYPE_CAST_MAP
+
 NOTE_SEQUENCE_IDX = 0
 
-NOTE_CLS = csound_note
 ATTR_NAMES = csound_note.ATTR_NAMES
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
 NUM_NOTES = 2
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
-def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=NOTE_CLS.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
+@pytest.fixture
+def make_note_config():
+    return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=csound_note.make_note,
+                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+
+
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
 
 
 @pytest.fixture
-def note_sequence():
-    return _note_sequence()
+def note_sequence(make_note_config):
+    return _note_sequence(mn=make_note_config)
 
 
-def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    return NoteSequence.make_note(make_note=csound_note.make_note,
-                                  num_attributes=num_attributes,
-                                  attr_name_idx_map=attr_name_idx_map,
-                                  attr_vals_defaults_map=attr_vals_defaults_map)
+def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.new_note(mn)
 
 
 @pytest.fixture
-def note():
-    return _note()
+def note(make_note_config):
+    return _note(mn=make_note_config)
 
 
 @pytest.fixture(scope='function')
-def chord():
+def chord(make_note_config):
     harmonic_chord = HarmonicChord.MajorTriad
     return Chord(harmonic_chord=harmonic_chord,
                  octave=OCTAVE,
                  key=KEY,
-                 get_pitch_for_key=NOTE_CLS.get_pitch_for_key,
-                 make_note=NOTE_CLS.make_note,
-                 num_attributes=len(NOTE_CLS.ATTR_NAMES),
-                 attr_name_idx_map=ATTR_NAME_IDX_MAP)
+                 mn=make_note_config)
 
 
 def _assert_expected_pitches(chord_for_test, expected_pitches):
@@ -92,7 +94,7 @@ def _assert_expected_pitches(chord_for_test, expected_pitches):
         assert expected_pitches[i] == pytest.approx(note.pitch)
 
 
-def test_chord(chord):
+def test_chord(make_note_config, chord):
     assert chord.harmonic_chord == HARMONIC_CHORD
     assert chord.octave == OCTAVE
     # noinspection PyCallingNonCallable
@@ -100,7 +102,7 @@ def test_chord(chord):
     assert len(chord) == len(HARMONIC_CHORD.value(KEY.name))
     for i, note in enumerate(chord):
         chord_key = Scale.MAJOR_KEY_REVERSE_MAP[chord.mingus_chord[i]]
-        assert note.pitch == pytest.approx(NOTE_CLS.get_pitch_for_key(chord_key, OCTAVE))
+        assert note.pitch == pytest.approx(make_note_config.get_pitch_for_key(chord_key, OCTAVE))
 
 
 def test_chord_mod_first_inversion(chord):

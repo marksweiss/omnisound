@@ -65,7 +65,7 @@ class Sequencer(Song):
         validate_optional_types(('name', name, str),
                                 ('swing', swing, Swing),
                                 ('pattern_resolution', pattern_resolution, NoteDur))
-        validate_type('num_measures', num_measures, int)
+        validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
 
         # Sequencer wraps song but starts with no Tracks. It provides an alternate API for generating and adding Tracks.
         to_add = []
