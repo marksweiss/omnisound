@@ -2,6 +2,7 @@
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.measure import Meter, NoteDur
 from omnisound.note.containers.note_sequence import NoteSequence
 import omnisound.note.adapters.csound_note as csound_note
@@ -30,37 +31,40 @@ NUM_NOTES = 4
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
-def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=csound_note.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
+@pytest.fixture
+def make_note_config():
+    return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=csound_note.make_note,
+                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_get_type_cast_map={})
+
+
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
 
 
 @pytest.fixture
-def note_sequence():
-    return _note_sequence()
+def note_sequence(make_note_config):
+    return _note_sequence(mn=make_note_config)
 
 
-def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    return NoteSequence.make_note(make_note=csound_note.make_note,
-                                  num_attributes=num_attributes,
-                                  attr_name_idx_map=attr_name_idx_map,
-                                  attr_vals_defaults_map=attr_vals_defaults_map)
+def _note(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.new_note(mn)
 
 
 @pytest.fixture
-def note():
-    return _note()
+def note(make_note_config):
+    return _note(mn=make_note_config)
 
 
 @pytest.fixture
@@ -75,6 +79,7 @@ def test_meter():
 
     assert meter.beats_per_measure == BEATS_PER_MEASURE
     assert meter.beat_note_dur == BEAT_NOTE_DUR
+    # noinspection PyTypeChecker
     beat_note_dur: float = BEAT_NOTE_DUR.value
     assert meter.meter_notation == (BEATS_PER_MEASURE, int(1 / beat_note_dur))
     assert meter.tempo_qpm == TEMPO_QPM
@@ -103,15 +108,15 @@ def test_quantizing_on_off(meter):
     assert not meter_2.is_quantizing()
 
 
-def _setup_test_quantize(meter, quantize_on=True):
-    sequence_before_quantize = _note_sequence()
+def _setup_test_quantize(mn=None, meter=None, quantize_on=True):
+    sequence_before_quantize = _note_sequence(mn=mn)
     for note in sequence_before_quantize:
         note.duration *= 2
     sequence_before_quantize[1].start += DUR
     sequence_before_quantize[2].start += (DUR * 2)
     sequence_before_quantize[3].start += (DUR * 3)
 
-    sequence_after_quantize = _note_sequence()
+    sequence_after_quantize = _note_sequence(mn=mn)
     for note in sequence_after_quantize:
         note.duration *= 2
     sequence_after_quantize[1].start += DUR
@@ -128,7 +133,7 @@ def _setup_test_quantize(meter, quantize_on=True):
     return sequence_before_quantize, sequence_after_quantize
 
 
-def test_quantize_on_off(note_sequence, meter):
+def test_quantize_on_off(make_note_config, note_sequence, meter):
     # BEFORE
     # measure ------------------------*
     # 0    0.25    0.50    0.75    1.00     1.25
@@ -146,7 +151,9 @@ def test_quantize_on_off(note_sequence, meter):
     #                   n3************
 
     # Test quantize on
-    note_list_before_quantize, note_list_after_quantize = _setup_test_quantize(meter, quantize_on=True)
+    note_list_before_quantize, note_list_after_quantize = _setup_test_quantize(mn=make_note_config,
+                                                                               meter=meter,
+                                                                               quantize_on=True)
 
     # Test dur adjustments
     # Expected adjustment is -0.125 because:
@@ -168,7 +175,9 @@ def test_quantize_on_off(note_sequence, meter):
         assert note.start == pytest.approx(expected_starts[i])
 
     # Test quantize off
-    note_list_before_quantize, note_list_after_quantize = _setup_test_quantize(meter, quantize_on=False)
+    note_list_before_quantize, note_list_after_quantize = _setup_test_quantize(mn=make_note_config,
+                                                                               meter=meter,
+                                                                               quantize_on=False)
 
     expected_dur_adjustment = 0.125
     for i, note in enumerate(note_list_after_quantize):
@@ -179,7 +188,7 @@ def test_quantize_on_off(note_sequence, meter):
         assert note.start == pytest.approx(0.0) or note.start != pytest.approx(expected_starts[i])
 
 
-def test_quantize_to_beat(note_sequence, meter):
+def test_quantize_to_beat(make_note_config, note_sequence, meter):
     # Simplest test case: Note durations sum to measure duration and no quantizing required
     # Also note_list is already sorted by start ascending, so the order after quantization will be unchanged
 
@@ -196,7 +205,7 @@ def test_quantize_to_beat(note_sequence, meter):
         note_durations_before_quantize == note_durations_after_quantize
 
     # Test: Note durations not on the beat, quantization required
-    note_sequence_with_offset_start_times = _note_sequence()
+    note_sequence_with_offset_start_times = _note_sequence(mn=make_note_config)
     note_sequence_with_offset_start_times[1].start += DUR
     note_sequence_with_offset_start_times[2].start += (DUR * 2)
     note_sequence_with_offset_start_times[3].start += (DUR * 3)
