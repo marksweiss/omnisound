@@ -44,8 +44,7 @@ class Measure(NoteSequence):
                  performance_attrs: PerformanceAttrs = None):
         validate_optional_types(('meter', meter, Meter), ('swing', swing, Swing),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
-        super(Measure, self).__init__(num_notes=num_notes,
-                                      mn=mn)
+        super(Measure, self).__init__(num_notes=num_notes, mn=mn)
 
         # Maintain the invariant that notes are sorted ascending by start
         self._sort_notes_by_start_time()

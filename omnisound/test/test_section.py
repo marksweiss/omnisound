@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.measure import (Measure,
@@ -42,50 +43,49 @@ NUM_NOTES = 4
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
-def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=csound_note.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
+@pytest.fixture
+def make_note_config():
+    return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=csound_note.make_note,
+                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_get_type_cast_map={})
+
+
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
 
 
 @pytest.fixture
-def note_sequence():
-    return _note_sequence()
+def note_sequence(make_note_config):
+    return _note_sequence(mn=make_note_config)
 
 
-def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    return NoteSequence.make_note(make_note=csound_note.make_note,
-                                  num_attributes=num_attributes,
-                                  attr_name_idx_map=attr_name_idx_map,
-                                  attr_vals_defaults_map=attr_vals_defaults_map)
+def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.new_note(mn)
 
 
 @pytest.fixture
-def note():
-    return _note()
+def note(make_note_config):
+    return _note(mn=make_note_config)
 
 
-def _measure(meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None):
-    if num_notes is None:
-        num_notes = NUM_NOTES
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+def _measure(mn=None, meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None):
+    num_notes = num_notes or NUM_NOTES
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
     measure = Measure(meter=meter,
                       swing=swing,
-                      make_note=csound_note.make_note,
                       num_notes=num_notes,
-                      num_attributes=NUM_ATTRIBUTES,
-                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                      attr_vals_defaults_map=attr_vals_defaults_map)
+                      mn=mn)
     if len(measure) == 4:
         measure[1].start += DUR
         measure[2].start += (DUR * 2)
@@ -94,22 +94,24 @@ def _measure(meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None
 
 
 @pytest.fixture
-def measure(meter, swing):
-    return _measure(meter=meter, swing=swing)
+def measure(make_note_config, meter, swing):
+    return _measure(mn=make_note_config, meter=meter, swing=swing)
 
 
-def _measure_list(meter, swing):
-    return [_measure(meter, swing), _measure(meter, swing)]
+def _measure_list(mn, meter, swing):
+    return [_measure(mn=mn, meter=meter, swing=swing), _measure(mn=mn, meter=meter, swing=swing)]
 
 
 @pytest.fixture
-def measure_list(meter, swing):
-    return _measure_list(meter, swing)
+def measure_list(make_note_config, meter, swing):
+    return _measure_list(make_note_config, meter, swing)
 
 
 @pytest.fixture
 def meter():
-    return Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
+    return Meter(beats_per_measure=BEATS_PER_MEASURE,
+                 beat_note_dur=BEAT_DUR,
+                 tempo=TEMPO_QPM)
 
 
 @pytest.fixture
@@ -282,7 +284,7 @@ def test_assign_meter_swing(meter, section):
     assert section._swing == new_swing
 
 
-def test_quantize(section, measure_list, swing, meter):
+def test_quantize(make_note_config, section, measure_list, swing, meter):
     # BEFORE
     # measure ------------------------*
     # 0    0.25    0.50    0.75    1.00     1.25
@@ -306,7 +308,7 @@ def test_quantize(section, measure_list, swing, meter):
         measure[1].start = DUR
         measure[2].start = (DUR * 2)
         measure[3].start = (DUR * 3)
-    quantized_measure_list = _measure_list(meter, swing)
+    quantized_measure_list = _measure_list(make_note_config, meter, swing)
     quantized_section = _section(measure_list=quantized_measure_list, meter=meter, swing=swing)
     for measure in quantized_section:
         for note in measure:
@@ -342,10 +344,11 @@ def test_quantize(section, measure_list, swing, meter):
             assert note.start == pytest.approx(expected_starts[i])
 
 
-def test_quantize_to_beat(measure, meter, swing):
+def test_quantize_to_beat(make_note_config, measure, meter, swing):
     # Test: Note durations not on the beat, quantization required
     no_swing = None
-    quantized_measure_list = [_measure(meter=meter, swing=no_swing), _measure(meter=meter, swing=no_swing)]
+    quantized_measure_list = [_measure(mn=make_note_config, meter=meter, swing=no_swing),
+                              _measure(mn=make_note_config, meter=meter, swing=no_swing)]
     quantized_section = _section(measure_list=quantized_measure_list, meter=meter, swing=swing)
     for quantized_measure in quantized_section:
         for note in quantized_measure:
@@ -379,8 +382,8 @@ def test_get_attr(section):
     assert section.get_attr('start') == [0.0, 0.25, 0.5, 0.75] + [0.0, 0.25, 0.5, 0.75]
 
 
-def test_len_append(section, measure, meter, swing):
-    expected_len = len(_measure_list(meter, swing))
+def test_len_append(make_note_config, section, measure, meter, swing):
+    expected_len = len(_measure_list(make_note_config, meter, swing))
     assert len(section) == expected_len
     section.append(measure)
     assert len(section) == expected_len + 1
@@ -392,8 +395,8 @@ def test_len_append(section, measure, meter, swing):
     assert len(section) == expected_len + 1
 
 
-def test_getitem_insert_remove(section, measure, meter, swing):
-    expected_len = len(_measure_list(meter, swing))
+def test_getitem_insert_remove(make_note_config, section, measure, meter, swing):
+    expected_len = len(_measure_list(make_note_config, meter, swing))
     assert len(section) == expected_len
     old_first_measure = section[0]
     old_first_note = old_first_measure[0]
@@ -414,8 +417,8 @@ def test_getitem_insert_remove(section, measure, meter, swing):
     assert old_first_note.amplitude == old_first_note_amplitude
 
 
-def test_iter_next_eq(section, meter, swing):
-    comp_measure = _measure(meter=meter, swing=swing)
+def test_iter_next_eq(make_note_config, section, meter, swing):
+    comp_measure = _measure(mn=make_note_config, meter=meter, swing=swing)
     for measure in section:
         assert measure == comp_measure
 
