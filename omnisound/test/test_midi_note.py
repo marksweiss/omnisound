@@ -167,7 +167,7 @@ def test_midi_note_attrs(make_note_config, start, duration, amplitude, pitch):
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
-def test_midi_note_to_str(start, duration, amplitude, pitch):
+def test_midi_note_to_str(make_note_config, start, duration, amplitude, pitch):
     # Add multiple aliased property names for note attributes
     attr_name_idx_map = {'instrument': 0,
                          'time': 1,
@@ -183,7 +183,8 @@ def test_midi_note_to_str(start, duration, amplitude, pitch):
         'velocity': amplitude,
         'pitch': pitch,
     }
-    note = _note(attr_name_idx_map=attr_name_idx_map,
+    note = _note(mn=make_note_config,
+                 attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
                  num_attributes=len(attr_vals_defaults_map))
 
@@ -196,7 +197,7 @@ def test_midi_note_to_str(start, duration, amplitude, pitch):
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
-def test_midi_note_attrs_fluent(start, duration, amplitude, pitch):
+def test_midi_note_attrs_fluent(make_note_config, start, duration, amplitude, pitch):
     # Add multiple aliased property names for note attributes
     attr_name_idx_map = {'i': 0, 'instrument': 0,
                          't': 1, 'time': 1,
@@ -214,7 +215,8 @@ def test_midi_note_attrs_fluent(start, duration, amplitude, pitch):
     }
     attr_get_type_cast_map = {'p': int, 'v': int}
     # Don't pass in attr_vals_defaults_map, so not creating a Note with the s passed in to each test
-    note = _note(attr_name_idx_map=attr_name_idx_map,
+    note = _note(mn=make_note_config,
+                 attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
                  attr_get_type_cast_map=attr_get_type_cast_map,
                  num_attributes=len(attr_vals_defaults_map))
@@ -239,9 +241,9 @@ def test_midi_note_channel(note):
     assert note.channel == midi_note.DEFAULT_CHANNEL + 1
 
 
-def test_note_values():
+def test_note_values(make_note_config):
     note_values = _setup_note_values()
-    note = _note(attr_vals_defaults_map=note_values.as_dict())
+    note = _note(mn=make_note_config, attr_vals_defaults_map=note_values.as_dict())
 
     # noinspection PyTypeChecker
     assert note.instrument == float(MIDI_INSTRUMENT.value)
