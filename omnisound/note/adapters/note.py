@@ -1,9 +1,11 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Dict, List, Mapping
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Mapping, Union
 
-from numpy import array
+from numpy import array as np_array
 
+from omnisound.note.generators.scale_globals import MajorKey, MinorKey
 from omnisound.utils.utils import validate_type, validate_type_choice
 
 
@@ -24,6 +26,68 @@ BASE_ATTR_NAME_IDX_MAP = {
 BASE_ATTR_NAMES = tuple(BASE_ATTR_NAME_IDX_MAP.keys())
 
 DEFAULT_VAL = 0.0
+
+
+class MakeNoteConfig:
+    def __init__(self,
+                 cls_name: str,
+                 num_attributes: int,
+                 make_note: Callable[[np_array,
+                                      Mapping[str, int],
+                                      Mapping[str, Callable[[Union[float, int]], Union[float, int]]]],
+                                     Any],
+                 get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
+                 attr_name_idx_map: Mapping[str, int],
+                 attr_vals_defaults_map: Optional[Mapping[str, Union[float, int]]] = None,
+                 attr_get_type_cast_map: Optional[Mapping[str, Callable[[Union[float, int]], Union[float, int]]]] = None):
+        self.cls_name = cls_name
+        self.num_attributes = num_attributes
+        self.make_note = make_note
+        self.get_pitch_for_key = get_pitch_for_key
+        self.attr_name_idx_map = attr_name_idx_map
+        self._attr_vals_defaults_map = attr_vals_defaults_map or {}
+        self.attr_get_type_cast_map = attr_get_type_cast_map or {}
+
+    @property
+    def attr_vals_defaults_map(self):
+        return self._attr_vals_defaults_map
+
+    @attr_vals_defaults_map.setter
+    def attr_vals_defaults_map(self, av: Union[Mapping[str, Union[float, int]], np_array]):
+        # TODO `dict` more restrictive than `mapping`
+        if isinstance(av, dict):
+            self._attr_vals_defaults_map = av
+        else:
+            # noinspection PyTypeChecker
+            self._attr_vals_defaults_map = {attr_name: av[self.attr_name_idx_map[attr_name]]
+                                            for attr_name in self.attr_name_idx_map.keys()}
+
+    @staticmethod
+    def copy(source: 'MakeNoteConfig') -> 'MakeNoteConfig':
+        return MakeNoteConfig(cls_name=source.cls_name,
+                              num_attributes=source.num_attributes,
+                              make_note=source.make_note,
+                              get_pitch_for_key=source.get_pitch_for_key,
+                              attr_name_idx_map=source.attr_name_idx_map,
+                              attr_vals_defaults_map=source._attr_vals_defaults_map,
+                              attr_get_type_cast_map=source.attr_get_type_cast_map)
+
+
+class NoteValues(object):
+    """Convenience class to dynamically create, manipulate and retrieve collections of note attributes."""
+    def __init__(self, attr_names):
+        self._attr_names = attr_names
+        for attr_name in attr_names:
+            setattr(self, attr_name, None)
+
+    def as_dict(self) -> Dict:
+        return {field: getattr(self, field) or DEFAULT_VAL for field in self._attr_names}
+
+    def as_list(self) -> List:
+        return [getattr(self, field) for field in self._attr_names]
+
+    def as_array(self) -> np_array:
+        return np_array(self.as_list())
 
 
 def add_base_attr_name_indexes(attr_name_idx_map: Dict[str, int]):
@@ -51,23 +115,6 @@ def setter(attr_name: str):
         else:
             setattr(self, attr_name, attr_val)
     return _setter
-
-
-class NoteValues(object):
-    """Convenience class to dynamically create, manipulate and retrieve collections of note attributes."""
-    def __init__(self, attr_names):
-        self._attr_names = attr_names
-        for attr_name in attr_names:
-            setattr(self, attr_name, None)
-
-    def as_dict(self) -> Dict:
-        return {field: getattr(self, field) or DEFAULT_VAL for field in self._attr_names}
-
-    def as_list(self) -> List:
-        return [getattr(self, field) for field in self._attr_names]
-
-    def as_array(self) -> array:
-        return array(self.as_list())
 
 
 def as_list(note) -> List[float]:

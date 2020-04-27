@@ -1,6 +1,7 @@
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import (HarmonicScale, MajorKey,
@@ -29,54 +30,55 @@ NUM_NOTES = 2
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
-def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=csound_note.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
+@pytest.fixture
+def make_note_config():
+    return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=csound_note.make_note,
+                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_get_type_cast_map={})
+
+
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
 
 
 @pytest.fixture
-def note_sequence():
-    return _note_sequence()
+def note_sequence(make_note_config):
+    return _note_sequence(mn=make_note_config)
 
 
-def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    return NoteSequence.make_note(make_note=csound_note.make_note,
-                                  num_attributes=num_attributes,
-                                  attr_name_idx_map=attr_name_idx_map,
-                                  attr_vals_defaults_map=attr_vals_defaults_map)
+def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.new_note(mn)
 
 
 @pytest.fixture
-def note():
-    return _note()
+def note(make_note_config):
+    return _note(mn=make_note_config)
 
 
-def _scale(key=None, octave=None, harmonic_scale=None, note_type=None):
+def _scale(mn=None, key=None, octave=None, harmonic_scale=None):
     key = key or KEY
     octave = octave or OCTAVE
     harmonic_scale = harmonic_scale or HARMONIC_SCALE
-    note_type = note_type or csound_note
-    return Scale(key=key, octave=octave, harmonic_scale=harmonic_scale,
-                 get_pitch_for_key=note_type.get_pitch_for_key,
-                 make_note=note_type.make_note,
-                 num_attributes=NUM_ATTRIBUTES,
-                 attr_name_idx_map=ATTR_NAME_IDX_MAP)
+    return Scale(key=key,
+                 octave=octave,
+                 harmonic_scale=harmonic_scale,
+                 mn=mn)
 
 
 @pytest.fixture
-def scale():
-    return _scale()
+def scale(make_note_config):
+    return _scale(mn=make_note_config)
 
 
 def test_scale(note, scale):
@@ -87,17 +89,17 @@ def test_scale(note, scale):
                           MajorKey.A, MajorKey.B]
 
 
-def test_is_major_key_is_minor_key(note, scale):
+def test_is_major_key_is_minor_key(make_note_config, note, scale):
     # Default note is C Major
     assert scale.is_major_key
     assert (not scale.is_minor_key)
     # MinorKey case
-    scale_minor = _scale(key=MinorKey.C)
+    scale_minor = _scale(mn=make_note_config, key=MinorKey.C)
     assert not scale_minor.is_major_key
     assert scale_minor.is_minor_key
 
 
-def test_get_pitch_for_key_csound(note, scale):
+def test_get_pitch_for_key_csound(make_note_config, note, scale):
     # Expect that Scale.__init__() will populate the underlying NoteSequence with the notes for the `scale_cls`
     # and `key` (type of scale and root key), starting at the value of `octave` arg passed to Scale.__init__()
     expected_pitches = (4.01, 4.03, 4.05, 4.06, 4.08, 4.10, 4.12)
@@ -106,23 +108,26 @@ def test_get_pitch_for_key_csound(note, scale):
         assert expected_pitch == pytest.approx(pitches[i])
 
     # MinorKey case, HarmonicMinor class in Mingus
-    scale_minor = _scale(key=MinorKey.C, harmonic_scale=HarmonicScale.HarmonicMinor)
+    scale_minor = _scale(mn=make_note_config, key=MinorKey.C, harmonic_scale=HarmonicScale.HarmonicMinor)
     expected_pitches = (4.01, 4.03, 4.04, 4.06, 4.08, 4.09, 4.12)
     pitches = [n.pitch for n in scale_minor]
     for i, expected_pitch in enumerate(expected_pitches):
         assert expected_pitch == pytest.approx(pitches[i])
 
 
-def test_get_pitch_for_key_midi():
+def test_get_pitch_for_key_midi(make_note_config):
     key = MajorKey.C
-    scale_major = _scale(key=key, note_type=midi_note)
+    make_note_config.cls_name = midi_note.CLASS_NAME
+    make_note_config.make_note = midi_note.make_note
+    make_note_config.get_pitch_for_key = midi_note.get_pitch_for_key
+    scale_major = _scale(mn=make_note_config, key=key)
     expected_pitches = (60, 62, 64, 65, 67, 69, 71)
     pitches = [n.pitch for n in scale_major]
     for i, expected_pitch in enumerate(expected_pitches):
         assert expected_pitch == pitches[i]
 
     key = MinorKey.C
-    scale_minor = _scale(key=key, harmonic_scale=HarmonicScale.HarmonicMinor, note_type=midi_note)
+    scale_minor = _scale(mn=make_note_config, key=key, harmonic_scale=HarmonicScale.HarmonicMinor)
     expected_pitches = (60, 62, 63, 65, 67, 68, 71)
     pitches = [n.pitch for n in scale_minor]
     for i, expected_pitch in enumerate(expected_pitches):

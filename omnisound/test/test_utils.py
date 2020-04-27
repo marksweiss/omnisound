@@ -1,23 +1,41 @@
 # Copyright 2018 Mark S. Weiss
 
+from enum import Enum
+
 import pytest
 
-from omnisound.test.test_globals import ENUM_VAL, TestEnum
 from omnisound.utils.utils import *
 
 ARG_NAME = 'arg'
 
 
+class TestEnum(Enum):
+    A = 1
+    B = 2
+
+
 def test_enum_to_dict():
-    expected_dict = {TestEnum.ENUM_NAME: ENUM_VAL}
-    actual_dict = enum_to_dict(TestEnum)
-    assert expected_dict == actual_dict
+    expected_dict = {
+        TestEnum.A: 1,
+        TestEnum.B: 2
+    }
+    assert enum_to_dict(TestEnum) == expected_dict
 
 
 def test_enum_to_dict_reverse_mapping():
-    expected_dict = {ENUM_VAL: TestEnum.ENUM_NAME}
-    actual_dict = enum_to_dict_reverse_mapping(TestEnum)
-    assert expected_dict == actual_dict
+    expected_dict = {
+        1: TestEnum.A,
+        2: TestEnum.B
+    }
+    assert enum_to_dict_reverse_mapping(TestEnum) == expected_dict
+
+
+def test_enum_to_str_key_dict():
+    expected_dict = {
+        'A': TestEnum.A,
+        'B': TestEnum.B
+    }
+    assert enum_to_str_key_dict(TestEnum) == expected_dict
 
 
 def test_sign():

@@ -2,6 +2,7 @@
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.note_sequence_sequence import NoteSequenceSequence
 import omnisound.note.adapters.csound_note as csound_note
@@ -24,16 +25,27 @@ NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
 @pytest.fixture
-def note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=csound_note.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
+def make_note_config():
+    return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=csound_note.make_note,
+                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_get_type_cast_map={})
+
+
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
+
+
+@pytest.fixture
+def note_sequence(make_note_config):
+    return _note_sequence(mn=make_note_config)
 
 
 @pytest.fixture

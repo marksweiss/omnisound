@@ -8,6 +8,8 @@ from random import random
 from typing import Any, Dict, Optional, Tuple
 
 
+# TODO MOVE ALL VALIDATORS INTO A validators.py
+
 def validate_type(arg_name, val, val_type) -> bool:
     if not isinstance(val, val_type):
         raise ValueError(f'arg: `{arg_name}` has val: `{val}` and type: {type(val)} but must be type: `{val_type}`')

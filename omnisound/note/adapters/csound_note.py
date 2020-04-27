@@ -2,7 +2,7 @@
 
 from typing import Any, Mapping, Union
 
-from numpy import ndarray
+import numpy as np
 
 from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
 from omnisound.note.generators.scale_globals import (NUM_NOTES_IN_OCTAVE, MajorKey, MinorKey)
@@ -273,10 +273,11 @@ def _make_cls(attr_name_idx_map):
     return cls
 
 
-def make_note(note_attr_vals: ndarray,
+def make_note(note_attr_vals: np.array,
               attr_name_idx_map: Mapping[str, int],
-              attr_get_type_cast_map: Mapping[str, Any] = None):
-    validate_type('note_attr_vals', note_attr_vals, ndarray)
+              attr_get_type_cast_map: Mapping[str, Any] = None) -> Any:
+    # TODO THIS VALIDATION BREAKS BECAUSE numpy.array IS A FUNCTION NOT A TYPE
+    # validate_type('note_attr_vals', note_attr_vals, np.array)
     validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
     validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
     validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)

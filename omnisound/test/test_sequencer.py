@@ -2,6 +2,7 @@
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.measure import Meter, NoteDur, Swing
 from omnisound.note.generators.sequencer import Sequencer, InvalidPatternException
@@ -13,11 +14,6 @@ DUR = float(NoteDur.QUARTER.value)
 AMP = 100.0
 PITCH = 9.01
 
-ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
-                          'start': START,
-                          'duration': DUR,
-                          'amplitude': AMP,
-                          'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
 ATTR_GET_TYPE_CAST_MAP = csound_note.ATTR_GET_TYPE_CAST_MAP
@@ -39,37 +35,15 @@ PATTERN = ('C:4::100 D:4::100 E:4::100 F:4::100|C:4::100 D:4::100 E:4::100 F:4::
            'C:4::100 D:4::100 E:4::100 F:4::100|C:4::100 D:4::100 E:4::100 F:4::100')
 
 
-def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=csound_note.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
-    return note_sequence
-
-
 @pytest.fixture
-def note_sequence():
-    return _note_sequence()
-
-
-def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    return NoteSequence.make_note(make_note=csound_note.make_note,
-                                  num_attributes=num_attributes,
-                                  attr_name_idx_map=attr_name_idx_map,
-                                  attr_vals_defaults_map=attr_vals_defaults_map)
-
-
-@pytest.fixture
-def note():
-    return _note()
+def make_note_config():
+    # Don't pass attr_vals_default_map to Sequencer, because it constructs all its notes from patterns
+    return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=csound_note.make_note,
+                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
 
 
 @pytest.fixture
@@ -83,26 +57,18 @@ def swing():
     return Swing(swing_range=SWING_RANGE)
 
 
-# TODO Refactor everywhere to use a struct arg for making notes with make_note(), get_pitch_for_key(),
-#  attr_name_idx_map, attr_vals_defaults_map, attr_get_type_cast_map, num_attributes
-#  to clean up the args in all the class inits
-def _sequencer(meter, swing):
+def _sequencer(mn, meter, swing):
     return Sequencer(name=SEQUENCER_NAME,
                      num_measures=NUM_MEASURES,
                      pattern_resolution=PATTERN_RESOLUTION,
                      meter=meter,
-                     make_note=csound_note.make_note,
-                     num_attributes=NUM_ATTRIBUTES,
-                     attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                     attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
-                     attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP,
-                     get_pitch_for_key=csound_note.get_pitch_for_key,
-                     swing=swing)
+                     swing=swing,
+                     mn=mn)
 
 
 @pytest.fixture
-def sequencer(meter, swing):
-    return _sequencer(meter, swing)
+def sequencer(make_note_config, meter, swing):
+    return _sequencer(make_note_config, meter, swing)
 
 
 def test_init(sequencer):
@@ -135,7 +101,7 @@ def test_set_pattern_for_track(sequencer):
     assert first_note.instrument == new_instrument
 
 
-def test_add_pattern_as_new_track(sequencer, meter, swing):
+def test_add_pattern_as_new_track(make_note_config, sequencer, meter, swing):
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT)
     track = sequencer.track(TRACK_NAME)
 
@@ -148,7 +114,7 @@ def test_add_pattern_as_new_track(sequencer, meter, swing):
     # Make a new sequencer with swing on and verify the start times are adjusted from being on the beat
     swing.set_swing_on()
     swing.swing_direction = Swing.SwingDirection.Forward
-    new_sequencer = _sequencer(meter, swing)
+    new_sequencer = _sequencer(make_note_config, meter, swing)
     new_sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT)
     first_measure = new_sequencer.track(TRACK_NAME).measure_list[0]
     for i, note in enumerate(first_measure):
@@ -173,19 +139,14 @@ def test_add_pattern_wth_chords_as_new_track(sequencer, meter, swing):
     assert first_chord_notes[0].start == first_chord_notes[1].start == first_chord_notes[2].start
 
 
-def test_pattern_resolution(meter, swing):
+def test_pattern_resolution(make_note_config, meter, swing):
     new_pattern_resolution = NoteDur.EIGHTH
     sequencer = Sequencer(name=SEQUENCER_NAME,
                           num_measures=NUM_MEASURES,
                           pattern_resolution=new_pattern_resolution,
                           meter=meter,
-                          make_note=csound_note.make_note,
-                          num_attributes=NUM_ATTRIBUTES,
-                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
-                          attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP,
-                          get_pitch_for_key=csound_note.get_pitch_for_key,
-                          swing=swing)
+                          swing=swing,
+                          mn=make_note_config)
 
     # Fixture pattern raises because it has four notes per measure but we halved the pattern resolution
     # so there need to be 8 notes per measure
@@ -205,7 +166,7 @@ def test_pattern_resolution(meter, swing):
         assert eighth_note_pattern_resolution_expected_starts[i] == note.start
 
 
-def test_pattern_to_track_length(sequencer):
+def test_fill_pattern_to_track_length(sequencer):
     # Make a pattern that is one measure long, load into sequencer set to have 4-measure tracks, verify the length
     #  of the track and that notes in it. There should be four measures identical to the one defined by `short_pattern`
     short_pattern = 'C:4::100 D:4::100 E:4::100 F:4::100'
@@ -217,4 +178,15 @@ def test_pattern_to_track_length(sequencer):
     assert pytest.approx(first_measure[2].pitch, 4.05)
     assert pytest.approx(first_measure[3].pitch, 4.06)
 
-
+    # TODO THIS CASE IS UNTESTED BUT SHOULD PASS
+    # Test the case where the pattern does not divide the track length evenly
+    # Three-measure pattern into 4-measure track, so the first measure should repeat in the fourth measure
+    new_track_name = 'new track'
+    three_measure_pattern = ('C:4::100 D:4::100 E:4::100 F:4::100|'
+                             'C:5::100 D:5::100 E:5::100 F:5::100|'
+                             'C:6::100 D:6::100 E:6::100 F:6::100')
+    sequencer.add_pattern_as_new_track(track_name=new_track_name, pattern=three_measure_pattern, instrument=INSTRUMENT)
+    assert NUM_MEASURES == len(sequencer.track(new_track_name))
+    first_measure = sequencer.track(TRACK_NAME).measure_list[0]
+    last_measure = sequencer.track(TRACK_NAME).measure_list[3]
+    assert first_measure == last_measure

@@ -2,6 +2,7 @@
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.measure import (Measure,
@@ -43,50 +44,49 @@ NUM_NOTES = 4
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
 
-def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=csound_note.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
+@pytest.fixture
+def make_note_config():
+    return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=csound_note.make_note,
+                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_get_type_cast_map={})
+
+
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
 
 
 @pytest.fixture
-def note_sequence():
-    return _note_sequence()
+def note_sequence(make_note_config):
+    return _note_sequence(mn=make_note_config)
 
 
-def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    return NoteSequence.make_note(make_note=csound_note.make_note,
-                                  num_attributes=num_attributes,
-                                  attr_name_idx_map=attr_name_idx_map,
-                                  attr_vals_defaults_map=attr_vals_defaults_map)
+def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.new_note(mn)
 
 
 @pytest.fixture
-def note():
-    return _note()
+def note(make_note_config):
+    return _note(mn=make_note_config)
 
 
-def _measure(meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None):
-    if num_notes is None:
-        num_notes = NUM_NOTES
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+def _measure(mn=None, meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None):
+    num_notes = num_notes or NUM_NOTES
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
     measure = Measure(meter=meter,
                       swing=swing,
-                      make_note=csound_note.make_note,
                       num_notes=num_notes,
-                      num_attributes=NUM_ATTRIBUTES,
-                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                      attr_vals_defaults_map=attr_vals_defaults_map)
+                      mn=mn)
     if len(measure) == 4:
         measure[1].start += DUR
         measure[2].start += (DUR * 2)
@@ -95,17 +95,18 @@ def _measure(meter=None, swing=None, num_notes=None, attr_vals_defaults_map=None
 
 
 @pytest.fixture
-def measure(meter, swing):
-    return _measure(meter=meter, swing=swing)
+def measure(make_note_config, meter, swing):
+    return _measure(mn=make_note_config, meter=meter, swing=swing)
 
 
-def _measure_list(meter, swing):
-    return [_measure(meter, swing), _measure(meter, swing)]
+def _measure_list(mn, meter, swing):
+    return [_measure(mn=mn, meter=meter, swing=swing),
+            _measure(mn=mn, meter=meter, swing=swing)]
 
 
 @pytest.fixture
-def measure_list(meter, swing):
-    return _measure_list(meter, swing)
+def measure_list(make_note_config, meter, swing):
+    return _measure_list(make_note_config, meter, swing)
 
 
 @pytest.fixture

@@ -1,7 +1,8 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Any, Mapping, Union
+from typing import Any, Union
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
@@ -25,31 +26,24 @@ class Chord(NoteSequence):
                  harmonic_chord: Any = None,
                  octave: int = None,
                  key: Union[MajorKey, MinorKey] = None,
-                 get_pitch_for_key: Any = None,
-                 make_note: Any = None,
-                 num_attributes: int = None,
-                 attr_name_idx_map: Mapping[str, int] = None,
-                 attr_vals_defaults_map: Mapping[str, float] = None,
-                 attr_get_type_cast_map: Mapping[str, Any] = None):
-        validate_types(('harmonic_chord', harmonic_chord, HarmonicChord), ('octave', octave, int))
+                 mn: MakeNoteConfig = None):
+        validate_types(('harmonic_chord', harmonic_chord, HarmonicChord), ('octave', octave, int),
+                       ('mn', mn, MakeNoteConfig))
+        validate_type_choice('key', key, (MajorKey, MinorKey))
 
         self.matched_key_type = Chord.get_key_type(key, harmonic_chord)
         # Assign attrs before completing validation because it's more convenient to check for required
         # attrs by using getattr(attr_name) after they have been assigned
         self.harmonic_chord = harmonic_chord
         self.octave = octave
-        self.get_pitch_for_key = get_pitch_for_key
-        self.num_attributes = num_attributes
+        self.get_pitch_for_key = mn.get_pitch_for_key
+        self.num_attributes = mn.num_attributes
         # Get the list of keys in the chord as string names from mingus
         self.key = key
-        self.mingus_chord = Chord.get_mingus_chord_for_harmonic_chord (key, harmonic_chord)
+        self.mingus_chord = Chord.get_mingus_chord_for_harmonic_chord(key, harmonic_chord)
         # Construct the sequence of notes for the chord in the NoteSequence base class
-        super(Chord, self).__init__(make_note=make_note,
-                                    num_notes=len(self.mingus_chord),
-                                    num_attributes=num_attributes,
-                                    attr_name_idx_map=attr_name_idx_map,
-                                    attr_vals_defaults_map=attr_vals_defaults_map,
-                                    attr_get_type_cast_map=attr_get_type_cast_map)
+        super(Chord, self).__init__(num_notes=len(self.mingus_chord),
+                                    mn=mn)
 
         # Convert to Notes for this chord's note_type with pitch assigned for the key in the chord
         self._mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(self.matched_key_type)
@@ -202,13 +196,8 @@ class Chord(NoteSequence):
         return chord
 
     @staticmethod
-    def copy(source_chord: 'Chord') -> 'Chord':
-        return Chord(harmonic_chord=source_chord.harmonic_chord,
-                     octave=source_chord.octave,
-                     key=source_chord.key,
-                     get_pitch_for_key=source_chord.get_pitch_for_key,
-                     make_note=source_chord.make_note,
-                     num_attributes=source_chord.num_attributes,
-                     attr_name_idx_map=source_chord.attr_name_idx_map,
-                     attr_vals_defaults_map=source_chord.attr_vals_defaults_map,
-                     attr_get_type_cast_map=source_chord.attr_get_type_cast_map)
+    def copy(source: 'Chord') -> 'Chord':
+        return Chord(harmonic_chord=source.harmonic_chord,
+                     octave=source.octave,
+                     key=source.key,
+                     mn=MakeNoteConfig.copy(source.mn))

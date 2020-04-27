@@ -5,6 +5,7 @@ from typing import List
 
 import pytest
 
+from omnisound.note.adapters.note import MakeNoteConfig
 import omnisound.note.adapters.foxdot_supercollider_note as foxdot_note
 from omnisound.note.adapters.note import NoteValues
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
@@ -43,37 +44,40 @@ NUM_NOTES = 2
 NUM_ATTRIBUTES = len(foxdot_note.ATTR_NAMES)
 
 
-def _note_sequence(attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes  or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(make_note=foxdot_note.make_note,
-                                 num_notes=NUM_NOTES,
-                                 num_attributes=num_attributes,
-                                 attr_name_idx_map=attr_name_idx_map,
-                                 attr_vals_defaults_map=attr_vals_defaults_map)
+@pytest.fixture
+def make_note_config():
+    return MakeNoteConfig(cls_name=foxdot_note.CLASS_NAME,
+                          num_attributes=NUM_ATTRIBUTES,
+                          make_note=foxdot_note.make_note,
+                          get_pitch_for_key=foxdot_note.get_pitch_for_key,
+                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_get_type_cast_map={})
+
+
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
 
 
 @pytest.fixture
-def note_sequence():
-    return _note_sequence()
+def note_sequence(make_note_config):
+    return _note_sequence(mn=make_note_config)
 
 
-def _note(attr_name_idx_map=None, attr_vals_defaults_map=None,
-          num_attributes=None):
-    attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    num_attributes = num_attributes or NUM_ATTRIBUTES
-    return NoteSequence.make_note(make_note=foxdot_note.make_note,
-                                  num_attributes=num_attributes,
-                                  attr_name_idx_map=attr_name_idx_map,
-                                  attr_vals_defaults_map=attr_vals_defaults_map)
+def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+    mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
+    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.num_attributes = num_attributes or NUM_ATTRIBUTES
+    return NoteSequence.new_note(mn)
 
 
 @pytest.fixture
-def note():
-    return _note()
+def note(make_note_config):
+    return _note(mn=make_note_config)
 
 
 def _setup_note_values():
@@ -86,28 +90,20 @@ def _setup_note_values():
     return note_values
 
 
-def test_note():
-    # Test adding a non-standard mapping
-    attr_name_idx_map = deepcopy(ATTR_NAME_IDX_MAP)
-    attr_name_idx_map['a'] = ATTR_NAME_IDX_MAP['amp']
-    attr_name_idx_map['duration'] = ATTR_NAME_IDX_MAP['dur']
-    note = _note(attr_name_idx_map=attr_name_idx_map)
+def test_note(make_note_config):
+    note = _note(mn=make_note_config)
 
     assert note.delay == START
-    assert note.duration == DUR
     assert note.dur == DUR
     assert note.amp == AMP
-    assert note.a == AMP
     assert note.degree == PITCH
 
     note.delay += 1.0
     assert note.delay == START + 1.0
-    note.duration += 1.0
-    assert note.duration == DUR + 1.0
+    note.dur += 1.0
     assert note.dur == DUR + 1.0
     note.amp += 1.0
     assert note.amp == AMP + 1.0
-    assert note.a == AMP + 1.0
     note.degree += 1.0
     assert note.degree == PITCH + 1.0
 
@@ -116,11 +112,10 @@ def test_note():
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
-def test_foxdot_note_attrs(start, duration, amplitude, pitch):
-    # Add multiple aliased property names for note attributes
+def test_foxdot_note_attrs(make_note_config, start, duration, amplitude, pitch):
     attr_name_idx_map = {'delay': 0,
-                         'd': 1, 'dur': 1, 'duration': 1,
-                         'a': 2, 'amp': 2, 'amplitude': 2,
+                         'dur': 1,
+                         'amp': 2,
                          'degree': 3,
                          'octave': 4}
     # Test assigning default values to each note created in the underlying NoteSequence
@@ -131,13 +126,14 @@ def test_foxdot_note_attrs(start, duration, amplitude, pitch):
         'degree': pitch,
         'octave': float(OCTAVE),
     }
-    note = _note(attr_name_idx_map=attr_name_idx_map,
+    note = _note(mn=make_note_config,
+                 attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
-                 num_attributes=len(attr_vals_defaults_map))
+                 num_attributes=len(attr_name_idx_map))
 
     assert note.delay == start
-    assert note.duration == note.dur == note.d == duration
-    assert note.amplitude == note.amp == note.a == amplitude
+    assert note.dur == duration
+    assert note.amp == amplitude
     assert note.degree == pitch
     assert note.octave == OCTAVE
 
@@ -146,11 +142,10 @@ def test_foxdot_note_attrs(start, duration, amplitude, pitch):
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
-def test_foxdot_note_to_str(start, duration, amplitude, pitch):
-    # Add multiple aliased property names for note attributes
+def test_foxdot_note_to_str(make_note_config, start, duration, amplitude, pitch):
     attr_name_idx_map = {'delay': 0,
-                         'd': 1, 'dur': 1, 'duration': 1,
-                         'a': 2, 'amp': 2, 'amplitude': 2,
+                         'dur': 1,
+                         'amp': 2,
                          'degree': 3,
                          'octave': 4}
     # Test assigning default values to each note created in the underlying NoteSequence
@@ -161,9 +156,10 @@ def test_foxdot_note_to_str(start, duration, amplitude, pitch):
         'degree': pitch,
         'octave': float(OCTAVE),
     }
-    note = _note(attr_name_idx_map=attr_name_idx_map,
+    note = _note(mn=make_note_config,
+                 attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
-                 num_attributes=len(attr_vals_defaults_map))
+                 num_attributes=len(attr_name_idx_map))
     note.scale = SCALE
 
     assert f'delay: {start} dur: {duration} amp: {float(amplitude)} degree: {pitch} octave: {OCTAVE} scale: {SCALE}' \
@@ -174,11 +170,11 @@ def test_foxdot_note_to_str(start, duration, amplitude, pitch):
 @pytest.mark.parametrize('amplitude', AMPS)
 @pytest.mark.parametrize('duration', DURS)
 @pytest.mark.parametrize('start', STARTS)
-def test_foxdot_note_attrs_fluent(start, duration, amplitude, pitch):
+def test_foxdot_note_attrs_fluent(make_note_config, start, duration, amplitude, pitch):
     # Add multiple aliased property names for note attributes
     attr_name_idx_map = {'delay': 0,
-                         'd': 1, 'dur': 1, 'duration': 1,
-                         'a': 2, 'amp': 2, 'amplitude': 2,
+                         'dur': 1,
+                         'amp': 2,
                          'degree': 3,
                          'octave': 4}
     # Test assigning default values to each note created in the underlying NoteSequence
@@ -189,28 +185,30 @@ def test_foxdot_note_attrs_fluent(start, duration, amplitude, pitch):
         'degree': 0.0,
         'octave': float(0),
     }
-    note = _note(attr_name_idx_map=attr_name_idx_map,
+    note = _note(mn=make_note_config,
+                 attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
-                 num_attributes=len(attr_vals_defaults_map))
+                 num_attributes=len(attr_name_idx_map))
 
     assert note.delay != start
-    assert note.duration == note.dur == note.d != duration
-    assert note.amplitude == note.amp == note.a != amplitude
+    assert note.dur != duration
+    assert note.amp != amplitude
     assert note.degree != pitch
     assert note.octave != OCTAVE
 
     note.DE(start).DU(duration).A(amplitude).DG(pitch).O(float(OCTAVE))
 
     assert note.delay == start
-    assert note.duration == note.dur == note.d == duration
-    assert note.amplitude == note.amp == note.a == amplitude
+    assert note.dur == duration
+    assert note.amp == amplitude
     assert note.degree == pitch
     assert note.octave == OCTAVE
 
 
-def test_note_values():
+def test_note_values(make_note_config):
     note_values = _setup_note_values()
-    note = _note(attr_vals_defaults_map=note_values.as_dict())
+    make_note_config.attr_vals_defaults_map = note_values.as_dict()
+    note = _note(mn=make_note_config)
 
     # noinspection PyTypeChecker
     assert note.delay == START
