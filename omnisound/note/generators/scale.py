@@ -9,8 +9,9 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
   of Key => Pitch for each tuple (Key, Octave)
 """
 
-from typing import Any, Mapping, Union
+from typing import Union
 
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.generators.scale_globals import (HarmonicScale, MajorKey,
                                                      MinorKey)
@@ -34,15 +35,10 @@ class Scale(NoteSequence):
                  key: Union[MajorKey, MinorKey] = None,
                  octave: int = None,
                  harmonic_scale: HarmonicScale = None,
-                 get_pitch_for_key: Any = None,
-                 make_note: Any = None,
-                 num_attributes: int = None,
-                 attr_name_idx_map: Mapping[str, int] = None,
-                 attr_vals_defaults_map: Mapping[str, float] = None,
-                 attr_get_type_cast_map: Mapping[str, Any] = None):
-
-        validate_types(('octave', octave, int), ('harmonic_scale', harmonic_scale, HarmonicScale))
-
+                 mn: MakeNoteConfig = None):
+        validate_types(('octave', octave, int),
+                       ('harmonic_scale', harmonic_scale, HarmonicScale),
+                       ('mn', mn, MakeNoteConfig))
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
         _, matched_key_type = validate_type_choice('key', key, (MajorKey, MinorKey))
@@ -52,7 +48,6 @@ class Scale(NoteSequence):
         self.key = key
         self.octave = octave
         self.harmonic_scale = harmonic_scale
-        self.get_pitch_for_key = get_pitch_for_key
 
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
         mingus_keys = harmonic_scale.value(key.name).ascending()
@@ -65,17 +60,12 @@ class Scale(NoteSequence):
         self.keys = [mingus_key_to_key_enum_mapping[mingus_key.upper()] for mingus_key in mingus_keys]
 
         # Construct the sequence of notes for the chord in the NoteSequence base class
-        super(Scale, self).__init__(make_note=make_note,
-                                    num_notes=len(mingus_keys),
-                                    num_attributes=num_attributes,
-                                    attr_name_idx_map=attr_name_idx_map,
-                                    attr_vals_defaults_map=attr_vals_defaults_map,
-                                    attr_get_type_cast_map=attr_get_type_cast_map)
+        super(Scale, self).__init__(num_notes=len(mingus_keys), mn=mn)
 
         set_notes_pitches_to_mingus_keys(mingus_keys,
                                          mingus_key_to_key_enum_mapping,
                                          self,
-                                         get_pitch_for_key,
+                                         mn.get_pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -83,4 +73,3 @@ class Scale(NoteSequence):
     def get_mingus_key_to_key_enum_mapping(key_type: Union[MajorKey, MinorKey]):
         validate_type_reference_choice('key_type', key_type, (MajorKey, MinorKey))
         return Scale.KEY_MAPS[key_type.__name__]
-
