@@ -87,8 +87,9 @@ class Track(Section):
         return self._section_map.values()
     section_list = property(_get_section_list, None)
 
+    # Properties
     @property
-    def instrument(self):
+    def instrument(self) -> Union[float, int]:
         return self._instrument
 
     @instrument.setter
@@ -96,6 +97,18 @@ class Track(Section):
         for measure in self.measure_list:
             measure.set_attr('instrument', instrument)
         self._instrument = instrument
+
+    @property
+    def tempo(self) -> float:
+        return self.meter.tempo_qpm
+
+    # TODO TEST
+    @tempo.setter
+    def tempo(self, tempo: int):
+        self.meter.tempo = tempo
+        for measure in self.measure_list:
+            measure.tempo = tempo
+    # /Properties
 
     # Measure list management
     def append(self, measure: Measure) -> 'Track':

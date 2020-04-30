@@ -296,41 +296,10 @@ class Sequencer(Song):
         validate_type('tempo', tempo, int)
         self.meter.tempo = tempo
         for track in self.track_list:
-            self._set_tempo_for_track(track)
+            track.tempo = tempo
 
     def set_tempo_for_track(self, track_name: str = None, tempo: int = None):
         validate_types(('track_name', track_name, str), ('tempo', tempo, int))
         # Make a new meter object set to the new tempo and assign it to the sequencer
         track = self.track_list[self._track_name_idx_map[track_name]]
-        meter = Meter(beat_note_dur=self.meter.beat_note_dur,
-                      beats_per_measure=self.meter.beats_per_measure,
-                      tempo=tempo)
-        self._set_tempo_for_track(track, meter=meter)
-
-    def _set_tempo_for_track(self, track: Track, meter: Meter = None):
-        meter = meter or self.meter
-        for i, section in enumerate(track.section_list):
-            for j, measure in enumerate(section):
-                # Copy the measure to copy its list of notes
-                old_measure = Measure(meter=meter,
-                                      swing=self.swing,
-                                      num_notes = measure.num_notes,
-                                      mn=measure.mn)
-
-                # For each note in the old measure, copy it to the new measure but let the Measure API
-                # manage adding it at the correct start time calculated with the new meter using the new tempo.
-                for k in range(len(measure)):
-                    # Automatically increments start time of each note added
-                    new_measure.add_notes_on_start(measure.note(k))
-
-                # TODO THIS DOES NOT RECALCULATE NOTES, MUST DO THE FOLLOWING
-                #  - Allow Measure, Section, Track to update tempo and recursively recalculate all Notes in all Measures
-                #    by calling Measure.set_tempo()
-                #  - Tests
-                #  - Add update in place Setter __setitem__ to all containers
-                # Now replace the old measure with the new one in the section
-                section.remove((j, j + 1))
-                section.insert(j, new_measure)
-
-            track.remove((i, i + 1))
-            track.insert(i, section)
+        track.tempo = tempo

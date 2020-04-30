@@ -74,23 +74,6 @@ class Measure(NoteSequence):
             for j in range(len(sorted_note_attr_vals)):
                 note.note_attr_vals[j] = sorted_note_attr_vals[j]
 
-    # Tempo management
-    @property
-    def tempo(self):
-        return self.meter.tempo
-
-    @tempo.setter
-    def tempo(self, tempo: int):
-        self.meter.tempo = tempo
-        self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur.value
-        self._adjust_notes_for_tempo()
-
-    def _adjust_notes_for_tempo(self):
-        for note in self:
-            note.start = self._get_start_for_tempo(note.start)
-            note.duration = self._get_duration_for_tempo(note.duration)
-        self._sort_notes_by_start_time()
-
     # Beat state management
     def reset_current_beat(self):
         self.beat = 0
@@ -144,6 +127,35 @@ class Measure(NoteSequence):
         return self
     # /Adding notes in sequence on the beat
 
+    # Updating Tempo and resetting note start and duration
+    @property
+    def tempo(self):
+        return self.meter.tempo
+
+    @tempo.setter
+    def tempo(self, tempo: int):
+        self.meter.tempo = tempo
+        self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur.value
+        self._adjust_notes_for_tempo()
+
+    def _adjust_notes_for_tempo(self):
+        for note in self:
+            note.start = self._get_start_for_tempo(note.start)
+            note.duration = self._get_duration_for_tempo(note.duration)
+        self._sort_notes_by_start_time()
+
+    def _get_start_for_tempo(self, note: Any) -> float:
+        # Get the ratio of the note start time to the duration of the entire measure, and then adjust for tempo
+        #  to get the actual start time
+        measure_duration = self.meter.beats_per_measure * \
+                           self.meter.quarter_notes_per_beat_note * \
+                           NoteDur.QUARTER.value
+        return note.start * (measure_duration / self.meter.measure_dur_secs)
+
+    def _get_duration_for_tempo(self, note: Any) -> float:
+        return self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
+    # /Updating Tempo and resetting note start and duration
+
     # Adding notes in sequence from the current start time, one note immediately after another
     def add_note_on_start(self, note: Any, increment_start=False) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
@@ -194,17 +206,7 @@ class Measure(NoteSequence):
             self.next_note_start += self._get_duration_for_tempo(note)
 
         return self
-
-    def _get_duration_for_tempo(self, note: Any) -> float:
-        return self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
-
-    def _get_start_for_tempo(self, note: Any) -> float:
-        # Get the ratio of the note start time to the duration of the entire measure, and then adjust for tempo
-        #  to get the actual start time
-        measure_duration = self.meter.beats_per_measure * \
-                           self.meter.quarter_notes_per_beat_note * \
-                           NoteDur.QUARTER.value
-        return note.start * (measure_duration / self.meter.measure_dur_secs)
+    # /Adding notes in sequence from the current start time, one note immediately after another
 
     # Quantize notes
     def quantizing_on(self):

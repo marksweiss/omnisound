@@ -53,6 +53,7 @@ class Section(NoteSequenceSequence):
             for measure in self.measure_list:
                 measure.performance_attrs = self._performance_attrs
 
+    # Properties
     # Quantizing for all Measures in the Section
     @property
     def meter(self):
@@ -64,6 +65,18 @@ class Section(NoteSequenceSequence):
         self._meter = meter
         for measure in self.measure_list:
             measure.meter = meter
+
+    @property
+    def tempo(self) -> float:
+        return self.meter.tempo_qpm
+
+    # TODO TEST
+    @tempo.setter
+    def tempo(self, tempo: int):
+        self.meter.tempo = tempo
+        for measure in self.measure_list:
+            measure.tempo = tempo
+    # /Properties
 
     def quantizing_on(self):
         for measure in self.measure_list:
