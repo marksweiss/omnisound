@@ -140,8 +140,8 @@ class Measure(NoteSequence):
 
     def _adjust_notes_for_tempo(self):
         for note in self:
-            note.start = self._get_start_for_tempo(note.start)
-            note.duration = self._get_duration_for_tempo(note.duration)
+            note.start = self._get_start_for_tempo(note)
+            note.duration = self._get_duration_for_tempo(note)
         self._sort_notes_by_start_time()
 
     def _get_start_for_tempo(self, note: Any) -> float:
