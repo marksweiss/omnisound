@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Iterable, List, Mapping, Optional, Tuple, Union
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.measure import Measure
@@ -46,7 +46,7 @@ class Track(Section):
         validate_optional_type_choice('instrument', instrument, (float, int))
 
         # Get the measure_list from either List[Measure] or Section
-        self._section_map = {}
+        self._section_map: Mapping[str, Section] = {}
         measure_list = []
         if to_add:
             try:
@@ -78,9 +78,14 @@ class Track(Section):
         else:
             self.instrument = Track.DEFAULT_INSTRUMENT
 
-    def get_section_map(self) -> Dict[str, Section]:
+    def _get_section_map(self) -> Mapping[str, Section]:
         return self._section_map
-    section_map = property(get_section_map, None)
+    section_map = property(_get_section_map, None)
+
+    # TODO Refactor `measure_list` and `section_list` to `measures` and `sections`
+    def _get_section_list(self) -> Iterable[Section]:
+        return self._section_map.values()
+    section_list = property(_get_section_list, None)
 
     @property
     def instrument(self):

@@ -219,5 +219,19 @@ def test_quantize_to_beat(make_note_config, note_sequence, meter):
            [note.start for note in note_sequence]
 
 
+def test_tempo(meter):
+    assert meter.tempo == TEMPO_QPM
+    quarter_note_dur_secs = meter.quarter_note_dur_secs
+    note_dur_secs = meter.note_dur_secs
+    measure_dur_secs = meter.measure_dur_secs
+
+    new_tempo = TEMPO_QPM / 2
+    meter.tempo = new_tempo
+    assert meter.tempo == new_tempo
+    assert meter.quarter_note_dur_secs == pytest.approx(2 * quarter_note_dur_secs)
+    assert meter.note_dur_secs == pytest.approx(2 * note_dur_secs)
+    assert meter.measure_dur_secs == pytest.approx(2 * measure_dur_secs)
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])

@@ -53,6 +53,14 @@ class NoteSequenceSequence(object):
             raise IndexError(f'`index` out of range index: {index} len(note_seq_seq): {len(self.note_seq_seq)}')
         return self.note_seq_seq[index]
 
+    # TODO UNIT TEST
+    # TODO ADD SET ITEM AND TESTS TO ALL CONTAINERS!!!!!
+    def __setitem__(self, index: int, note_sequence: NoteSequence) -> None:
+        validate_types(('index', index, int), ('note_sequence', note_sequence, NoteSequence))
+        if abs(index) >= len(self.note_seq_seq):
+            raise IndexError(f'`index` out of range index: {index} len(note_seq_seq): {len(self.note_seq_seq)}')
+        return self.note_seq_seq[index]
+
     def __iter__(self) -> 'NoteSequenceSequence':
         self.index = 0
         return self

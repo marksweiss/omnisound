@@ -286,7 +286,6 @@ class Sequencer(Song):
     def tempo(self) -> int:
         return self.meter.tempo_qpm
 
-    # TODO THIS HAS NO IMPACT BECAUSE METER DOESN'T REALLY SUPPORT TEMPO RIGHT NOW
     @tempo.setter
     def tempo(self, tempo: int) -> None:
         """
@@ -295,28 +294,25 @@ class Sequencer(Song):
         new meter with the new tempo.
         """
         validate_type('tempo', tempo, int)
-
-        # Make a new meter object set to the new tempo and assign it to the sequencer
-        self.meter = Meter(beat_note_dur=self.meter.beat_note_dur,
-                           beats_per_measure=self.meter.beats_per_measure,
-                           tempo=tempo)
-
+        self.meter.tempo = tempo
         for track in self.track_list:
             self._set_tempo_for_track(track)
 
-    # TODO THIS HAS NO IMPACT BECAUSE METER DOESN'T REALLY SUPPORT TEMPO RIGHT NOW
     def set_tempo_for_track(self, track_name: str = None, tempo: int = None):
         validate_types(('track_name', track_name, str), ('tempo', tempo, int))
+        # Make a new meter object set to the new tempo and assign it to the sequencer
         track = self.track_list[self._track_name_idx_map[track_name]]
-        self._set_tempo_for_track(track)
+        meter = Meter(beat_note_dur=self.meter.beat_note_dur,
+                      beats_per_measure=self.meter.beats_per_measure,
+                      tempo=tempo)
+        self._set_tempo_for_track(track, meter=meter)
 
-    def _set_tempo_for_track(self, track: Track):
-        for i, section in enumerate(track):
-            new_section = section.copy(section)
+    def _set_tempo_for_track(self, track: Track, meter: Meter = None):
+        meter = meter or self.meter
+        for i, section in enumerate(track.section_list):
             for j, measure in enumerate(section):
-                # Make a shallow copy of the measure, with the new meter with the new tempo. This ctor will
-                # allocate storage for new notes, but they won't have values set.
-                new_measure = Measure(meter=self.meter,
+                # Copy the measure to copy its list of notes
+                old_measure = Measure(meter=meter,
                                       swing=self.swing,
                                       num_notes = measure.num_notes,
                                       mn=measure.mn)
@@ -327,11 +323,14 @@ class Sequencer(Song):
                     # Automatically increments start time of each note added
                     new_measure.add_notes_on_start(measure.note(k))
 
+                # TODO THIS DOES NOT RECALCULATE NOTES, MUST DO THE FOLLOWING
+                #  - Allow Measure, Section, Track to update tempo and recursively recalculate all Notes in all Measures
+                #    by calling Measure.set_tempo()
+                #  - Tests
+                #  - Add update in place Setter __setitem__ to all containers
                 # Now replace the old measure with the new one in the section
-                # TODO Add swap() API to NoteSequence and it's children
                 section.remove((j, j + 1))
                 section.insert(j, new_measure)
 
-            # TODO Add swap() API to NoteSequence and it's children
             track.remove((i, i + 1))
             track.insert(i, section)

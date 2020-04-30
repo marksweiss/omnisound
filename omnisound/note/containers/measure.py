@@ -74,6 +74,23 @@ class Measure(NoteSequence):
             for j in range(len(sorted_note_attr_vals)):
                 note.note_attr_vals[j] = sorted_note_attr_vals[j]
 
+    # Tempo management
+    @property
+    def tempo(self):
+        return self.meter.tempo
+
+    @tempo.setter
+    def tempo(self, tempo: int):
+        self.meter.tempo = tempo
+        self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur.value
+        self._adjust_notes_for_tempo()
+
+    def _adjust_notes_for_tempo(self):
+        for note in self:
+            note.start = self._get_start_for_tempo(note.start)
+            note.duration = self._get_duration_for_tempo(note.duration)
+        self._sort_notes_by_start_time()
+
     # Beat state management
     def reset_current_beat(self):
         self.beat = 0
@@ -136,7 +153,13 @@ class Measure(NoteSequence):
         """
         validate_types(('increment_start', increment_start, bool))
 
-        if self.next_note_start + note.duration > self.max_duration:
+        # The note has a specified duration, but this is derived from its NoteDur, which can be thought of
+        #  as a note on a musical score, i.e a "quarter note." NoteDur maps these to float values where
+        #  a whole note == 1, and so a quarter note == 0.25. To convert that unitless value into a float
+        #  number of seconds, the ratio of note.duration to a quarter note is multiplied by the actual
+        #  wall time of a quarter note derived from the tempo, which is the number of quarter notes per minute.
+        actual_duration = self._get_duration_for_tempo(note)
+        if self.next_note_start + actual_duration > self.max_duration:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
 
@@ -144,7 +167,7 @@ class Measure(NoteSequence):
         self.append(note)
 
         if increment_start:
-            self.next_note_start += note.duration
+            self.next_note_start += actual_duration
 
         return self
 
@@ -158,7 +181,8 @@ class Measure(NoteSequence):
         validate_types(('to_add', to_add, NoteSequence))
 
         # TODO DO THIS IN NUMPY NATIVE WAY
-        sum_of_durations = sum([note.duration for note in to_add])
+        sum_of_durations = sum([self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
+                                for note in to_add])
         if self.next_note_start + sum_of_durations > self.max_duration:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + '
                               f'sum of note.durations {sum_of_durations} > '
@@ -167,10 +191,20 @@ class Measure(NoteSequence):
         for note in to_add:
             note.start = self.next_note_start
             self.append(note)
-            self.next_note_start += note.duration
+            self.next_note_start += self._get_duration_for_tempo(note)
 
         return self
-    # Adding notes in sequence from the current start time, one note immediately after another
+
+    def _get_duration_for_tempo(self, note: Any) -> float:
+        return self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
+
+    def _get_start_for_tempo(self, note: Any) -> float:
+        # Get the ratio of the note start time to the duration of the entire measure, and then adjust for tempo
+        #  to get the actual start time
+        measure_duration = self.meter.beats_per_measure * \
+                           self.meter.quarter_notes_per_beat_note * \
+                           NoteDur.QUARTER.value
+        return note.start * (measure_duration / self.meter.measure_dur_secs)
 
     # Quantize notes
     def quantizing_on(self):

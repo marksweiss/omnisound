@@ -15,6 +15,7 @@ from mingus.core.chords import third_inversion as m_third_inversion
 
 
 # TODO SUPPORT FOR ARBITRARY CLUSTERS THAT AREN'T PART OF A SCALE
+# TODO SUPPORT A 'ZIP' METHOD IN EVERY CONTAINER THAT TAKE TWO SEQUENCES AND COMBINES THEM INTO A SEQUENCE OF CHORDS
 class Chord(NoteSequence):
     """Represents a musical Chord, that is a group of Notes that harmonically work together according to the rules
        of some harmonic system. It uses mingus-python to return lists of pitches as string names and
