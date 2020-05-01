@@ -355,6 +355,22 @@ def test_add_notes_on_start(make_note_config, meter, swing):
         measure.add_notes_on_start(note_sequence)
 
 
+def test_set_tempo(measure):
+    expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
+    expected_dur = DUR
+    assert expected_note_start_times == [note.start for note in measure]
+    for note in measure:
+        assert expected_dur == note.duration
+
+    # Halve the tempo and expect duration and start times to double
+    measure.tempo = int(TEMPO_QPM / 2)
+    expected_note_start_times = [0.0, 0.5, 1.0, 1.5]
+    expected_dur = DUR * 2
+    assert expected_note_start_times == [note.start for note in measure]
+    for note in measure:
+        assert expected_dur == note.duration
+
+
 def test_measure_add_lshift_extend(make_note_config, meter, swing):
     measure = _measure(mn=make_note_config, meter=meter, swing=swing, num_notes=0)
     expected_len = 0

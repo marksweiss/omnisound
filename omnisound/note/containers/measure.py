@@ -134,15 +134,11 @@ class Measure(NoteSequence):
 
     @tempo.setter
     def tempo(self, tempo: int):
+        old_tempo = self.meter.tempo
         self.meter.tempo = tempo
-        self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur.value
-        self._adjust_notes_for_tempo()
-
-    def _adjust_notes_for_tempo(self):
         for note in self:
-            note.start = self._get_start_for_tempo(note.start)
-            note.duration = self._get_duration_for_tempo(note.duration)
-        self._sort_notes_by_start_time()
+            note.start *= (old_tempo / tempo)
+            note.duration *= (old_tempo / tempo)
 
     def _get_start_for_tempo(self, note: Any) -> float:
         # Get the ratio of the note start time to the duration of the entire measure, and then adjust for tempo
@@ -171,7 +167,7 @@ class Measure(NoteSequence):
         #  number of seconds, the ratio of note.duration to a quarter note is multiplied by the actual
         #  wall time of a quarter note derived from the tempo, which is the number of quarter notes per minute.
         actual_duration = self._get_duration_for_tempo(note)
-        if self.next_note_start + actual_duration > self.max_duration:
+        if self.next_note_start + actual_duration > self.meter.measure_dur_secs:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
 
