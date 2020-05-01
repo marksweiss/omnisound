@@ -366,9 +366,45 @@ def test_set_tempo(measure):
     measure.tempo = int(TEMPO_QPM / 2)
     expected_note_start_times = [0.0, 0.5, 1.0, 1.5]
     expected_dur = DUR * 2
-    assert expected_note_start_times == [note.start for note in measure]
+    assert [note.start for note in measure] == expected_note_start_times
     for note in measure:
-        assert expected_dur == note.duration
+        assert note.duration == expected_dur
+
+
+def test_add_notes_on_start_set_tempo(make_note_config, meter):
+    # Test adding a NoteSequence and having each added at the beat position
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
+    measure.add_notes_on_start(_note_sequence(mn=make_note_config))
+    assert [note.start for note in measure] == expected_note_start_times
+
+    # Halve the tempo and expect duration and start times to double
+    expected_note_start_times = [0.0, 0.5, 1.0, 1.5]
+    expected_dur = DUR * 2
+    meter.tempo = TEMPO_QPM / 2
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    assert len(measure) == 0
+    measure.add_notes_on_start(_note_sequence(mn=make_note_config))
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
+    for note in measure:
+        assert note.duration == expected_dur
+
+
+def test_add_note_on_start_set_tempo(make_note_config, meter):
+    # Halve the tempo and expect duration and start times to double
+    expected_note_start_times = [0.0, 0.5, 1.0, 1.5]
+    expected_dur = DUR * 2
+    meter.tempo = TEMPO_QPM / 2
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    assert len(measure) == 0
+    for _ in range(4):
+        # TODO REMOVE increment_on_start FLAG
+        measure.add_note_on_start(_note(mn=make_note_config), increment_start=True)
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
+    for note in measure:
+        assert note.duration == expected_dur
 
 
 def test_measure_add_lshift_extend(make_note_config, meter, swing):
