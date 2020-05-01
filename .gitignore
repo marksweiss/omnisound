@@ -17,3 +17,4 @@ omnisound/test/*.mid
 omnisound/test/*.wav
 omnisound/test/*.aif
 *.swp
+mingus
