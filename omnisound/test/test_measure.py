@@ -399,7 +399,7 @@ def test_add_note_on_start_set_tempo(make_note_config, meter):
     measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
     assert len(measure) == 0
     for _ in range(2):
-        # TODO REMOVE increment_on_start FLAG
+        # TODO REMOVE increment_start FLAG
         measure.add_note_on_start(_note(mn=make_note_config), increment_start=True)
     assert len(measure) == 2
     assert [note.start for note in measure] == expected_note_start_times

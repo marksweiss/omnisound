@@ -172,24 +172,16 @@ class Measure(NoteSequence):
         if self.next_note_start + actual_duration_secs > self.meter.measure_dur_secs:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
-        # TEMP DEBUG
-        # print(f'AFTER APPEND str(NOTE) {note}')
-        # print(f'AFTER APPEND __GET__ {self[len(self) - 1].note_attr_vals}')
-        print(f'BEFORE APPEND next_note_start {self.next_note_start}')
 
-        # TODO DOCUMENT THIS TERRIBLE LOGIC
-        start = None
+        note.duration = self._get_duration_for_tempo(note)
         if increment_start:
-            start = self.next_note_start
+            note.start = self.next_note_start
+        else:
+            note.start = self._get_start_for_tempo(note)
+        self.next_note_start += note.duration
 
-        self.append(note, start=start)
-
-        self.next_note_start += self[len(self) - 1].duration
-
-        # TEMP DEBUG
-        # print(f'AFTER APPEND str(NOTE) {note}')
-        # print(f'AFTER APPEND __GET__ {self[len(self) - 1].note_attr_vals}')
-        print(f'AFTER APPEND next_note_start {self.next_note_start}')
+        super(Measure, self).append(note)
+        self._sort_notes_by_start_time()
 
         return self
 
@@ -210,15 +202,17 @@ class Measure(NoteSequence):
                               f'measure.max_duration {self.max_duration}'))
 
         # TODO THIS DOESN'T ACTUALLY REPLACE EXISITING NOTES LIKE THE DOCSTRING SAYS
-        # DO THIS AND ADD TEST COVERAGE and MAKE SURE THIS DOESN'T BREAK ANYTHING
-        # OR REMOVE DOCSTRING, LEAVE THIS AS IS AND ADD A replace_notes_on start()
-        # WITH THESE SEMANTICS
+        #  DO THIS AND ADD TEST COVERAGE and MAKE SURE THIS DOESN'T BREAK ANYTHING
+        #  OR REMOVE DOCSTRING, LEAVE THIS AS IS AND ADD A replace_notes_on start()
+        #  WITH THESE SEMANTICS
         # measure.remove((0, len(measure)))
 
         for note in to_add:
-            self.append(note)
+            note.duration = self._get_duration_for_tempo (note)
             note.start = self.next_note_start
             self.next_note_start += note.duration
+            super (Measure, self).append (note)
+        self._sort_notes_by_start_time ()
 
         return self
     # /Adding notes in sequence from the current start time, one note immediately after another
@@ -310,19 +304,19 @@ class Measure(NoteSequence):
         # TODO DOCUMENT THIS TERRIBLE LOGIC
         note.start = start or self._get_start_for_tempo(note)
         note.duration = self._get_duration_for_tempo(note)
-        self._sort_notes_by_start_time()
         # This is a COPY operation so all modifications to note state must be done before
         #  append() in parent class, which will create new storage for the note and copy
         #  its values into the storage, and expose that storage through iterator/accessor interface.
         super(Measure, self).append(note)
+        self._sort_notes_by_start_time()
         return self
 
     def extend(self, to_add: NoteSequence) -> 'Measure':
         for note in to_add:
             note.start = self._get_start_for_tempo (note)
             note.duration = self._get_duration_for_tempo (note)
-        self._sort_notes_by_start_time()
         super(Measure, self).extend(to_add)
+        self._sort_notes_by_start_time()
         return self
 
     def __add__(self, to_add: Any) -> 'Measure':
@@ -343,13 +337,13 @@ class Measure(NoteSequence):
         else:
             to_add.start = self._get_start_for_tempo (to_add)
             to_add.duration = self._get_duration_for_tempo (to_add)
-        self._sort_notes_by_start_time()
         super(Measure, self).insert(index, to_add)
+        self._sort_notes_by_start_time()
         return self
 
     def remove(self, range_to_remove: Tuple[int, int]) -> 'Measure':
-        self._sort_notes_by_start_time()
         super(Measure, self).remove(range_to_remove)
+        self._sort_notes_by_start_time()
         return self
     # /NoteSequence note_list management
 
