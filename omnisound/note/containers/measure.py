@@ -172,12 +172,24 @@ class Measure(NoteSequence):
         if self.next_note_start + actual_duration_secs > self.meter.measure_dur_secs:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
+        # TEMP DEBUG
+        # print(f'AFTER APPEND str(NOTE) {note}')
+        # print(f'AFTER APPEND __GET__ {self[len(self) - 1].note_attr_vals}')
+        print(f'BEFORE APPEND next_note_start {self.next_note_start}')
 
-        note.duration = actual_duration_secs
-        note.start = self.next_note_start
-        self.append(note)
+        # TODO DOCUMENT THIS TERRIBLE LOGIC
+        start = None
         if increment_start:
-            self.next_note_start += actual_duration_secs
+            start = self.next_note_start
+
+        self.append(note, start=start)
+
+        self.next_note_start += self[len(self) - 1].duration
+
+        # TEMP DEBUG
+        # print(f'AFTER APPEND str(NOTE) {note}')
+        # print(f'AFTER APPEND __GET__ {self[len(self) - 1].note_attr_vals}')
+        print(f'AFTER APPEND next_note_start {self.next_note_start}')
 
         return self
 
@@ -204,9 +216,8 @@ class Measure(NoteSequence):
         # measure.remove((0, len(measure)))
 
         for note in to_add:
-            note.duration = self._get_duration_for_tempo(note)
-            note.start = self.next_note_start
             self.append(note)
+            note.start = self.next_note_start
             self.next_note_start += note.duration
 
         return self
@@ -295,23 +306,23 @@ class Measure(NoteSequence):
 
     # NoteSequence note_list management
     # Wrap all parent methods to maintain invariant that note_list is sorted by note.start_time ascending
-    def append(self, note: Any) -> 'Measure':
-        super(Measure, self).append(note)
-        note.start = self._get_start_for_tempo(note)
+    def append(self, note: Any, start=None) -> 'Measure':
+        # TODO DOCUMENT THIS TERRIBLE LOGIC
+        note.start = start or self._get_start_for_tempo(note)
         note.duration = self._get_duration_for_tempo(note)
         self._sort_notes_by_start_time()
-
-        # TEMP DEBUG
-        print(f'in append {note.duration}')
-
+        # This is a COPY operation so all modifications to note state must be done before
+        #  append() in parent class, which will create new storage for the note and copy
+        #  its values into the storage, and expose that storage through iterator/accessor interface.
+        super(Measure, self).append(note)
         return self
 
     def extend(self, to_add: NoteSequence) -> 'Measure':
-        super(Measure, self).extend(to_add)
         for note in to_add:
             note.start = self._get_start_for_tempo (note)
             note.duration = self._get_duration_for_tempo (note)
         self._sort_notes_by_start_time()
+        super(Measure, self).extend(to_add)
         return self
 
     def __add__(self, to_add: Any) -> 'Measure':
@@ -325,15 +336,20 @@ class Measure(NoteSequence):
         return self.__add__(to_add)
 
     def insert(self, index: int, to_add: Any) -> 'Measure':
-        super(Measure, self).insert(index, to_add)
-        to_add.start = self._get_start_for_tempo (to_add)
-        to_add.duration = self._get_duration_for_tempo (to_add)
+        if isinstance(to_add, NoteSequence):
+            for note in to_add:
+                to_add.start = self._get_start_for_tempo (note)
+                to_add.duration = self._get_duration_for_tempo (note)
+        else:
+            to_add.start = self._get_start_for_tempo (to_add)
+            to_add.duration = self._get_duration_for_tempo (to_add)
         self._sort_notes_by_start_time()
+        super(Measure, self).insert(index, to_add)
         return self
 
     def remove(self, range_to_remove: Tuple[int, int]) -> 'Measure':
-        super(Measure, self).remove(range_to_remove)
         self._sort_notes_by_start_time()
+        super(Measure, self).remove(range_to_remove)
         return self
     # /NoteSequence note_list management
 
