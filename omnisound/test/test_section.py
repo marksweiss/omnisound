@@ -365,6 +365,15 @@ def test_quantize_to_beat(make_note_config, measure, meter, swing):
             assert quantized_note.start == pytest.approx(note.start)
 
 
+def test_set_tempo(section):
+    section.tempo = TEMPO_QPM / 2
+    expected_starts = [0.0, 2 * DUR, DUR * 4, DUR * 6]
+    for measure in section:
+        for note in measure:
+            assert note.duration == pytest.approx(DUR * 2)
+        assert [note.start for note in measure] == expected_starts
+
+
 def test_set_attr(section):
     expected_amp = 100.1
 

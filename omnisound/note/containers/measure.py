@@ -297,17 +297,28 @@ class Measure(NoteSequence):
     # Wrap all parent methods to maintain invariant that note_list is sorted by note.start_time ascending
     def append(self, note: Any) -> 'Measure':
         super(Measure, self).append(note)
+        note.start = self._get_start_for_tempo(note)
+        note.duration = self._get_duration_for_tempo(note)
         self._sort_notes_by_start_time()
+
+        # TEMP DEBUG
+        print(f'in append {note.duration}')
+
         return self
 
     def extend(self, to_add: NoteSequence) -> 'Measure':
         super(Measure, self).extend(to_add)
+        for note in to_add:
+            note.start = self._get_start_for_tempo (note)
+            note.duration = self._get_duration_for_tempo (note)
         self._sort_notes_by_start_time()
         return self
 
     def __add__(self, to_add: Any) -> 'Measure':
-        super(Measure, self).__add__(to_add)
-        self._sort_notes_by_start_time()
+        if isinstance(to_add, NoteSequence):
+            self.extend(to_add)
+        else:
+            self.append(to_add)
         return self
 
     def __lshift__(self, to_add: Any) -> 'Measure':
@@ -315,6 +326,8 @@ class Measure(NoteSequence):
 
     def insert(self, index: int, to_add: Any) -> 'Measure':
         super(Measure, self).insert(index, to_add)
+        to_add.start = self._get_start_for_tempo (to_add)
+        to_add.duration = self._get_duration_for_tempo (to_add)
         self._sort_notes_by_start_time()
         return self
 

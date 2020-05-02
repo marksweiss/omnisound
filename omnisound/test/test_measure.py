@@ -444,6 +444,33 @@ def test_measure_add_lshift_extend(make_note_config, meter, swing):
     assert note_starts == 4 * [0.1] + 4 * [0.2]
 
 
+def test_append_add_lshift_insert_adjust_tempo(make_note_config, meter):
+    meter.tempo = TEMPO_QPM / 2
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    note = _note(mn=make_note_config)
+    assert note.duration == DUR
+    measure.append(note)
+    assert note.duration == DUR * 2
+
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    note = _note(mn=make_note_config)
+    assert note.duration == DUR
+    measure += note
+    assert note.duration == DUR * 2
+
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    note = _note(mn=make_note_config)
+    assert note.duration == DUR
+    measure << note
+    assert note.duration == DUR * 2
+
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    note = _note(mn=make_note_config)
+    assert note.duration == DUR
+    measure.insert(0, note)
+    assert note.duration == DUR * 2
+
+
 def test_measure_insert_remove_getitem(make_note_config, meter, swing):
     # Insert a single note at the front of the list
     measure = _measure(mn=make_note_config, meter=meter, swing=swing, num_notes=0)
