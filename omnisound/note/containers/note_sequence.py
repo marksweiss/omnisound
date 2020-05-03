@@ -18,7 +18,7 @@ class NoteSequenceInvalidAppendException(Exception):
     pass
 
 
-class NoteSequence(object):
+class NoteSequence:
     """Provides an iterator abstraction over a collection of Notes. Also owns the storage for the collection
        of Notes as a Numpy array of rank 2. The shape of the array is the number of note attributes and the
        depth of it is the number of note_attr_vals.

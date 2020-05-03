@@ -23,6 +23,7 @@ NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR
 TEMPO_QPM = 240
+SECS_PER_MINUTE = 60
 DEFAULT_IS_QUANTIZING = False
 SWING_RANGE = 0.1
 
@@ -190,3 +191,19 @@ def test_fill_pattern_to_track_length(sequencer):
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
     last_measure = sequencer.track(TRACK_NAME).measure_list[3]
     assert first_measure == last_measure
+
+
+def test_set_tempo(sequencer):
+    expected_duration_secs = SECS_PER_MINUTE / TEMPO_QPM
+    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT)
+    first_measure = sequencer.track(TRACK_NAME).measure_list[0]
+    first_note = first_measure[0]
+    assert first_note.duration == expected_duration_secs
+
+    # Slower tempo should reset all the notes in the measure to be longer duration
+    new_tempo = int(TEMPO_QPM / 2)
+    new_expected_duration_secs = expected_duration_secs * 2
+    sequencer.set_tempo_for_track(track_name=TRACK_NAME, tempo=new_tempo)
+    first_measure = sequencer.track(TRACK_NAME).measure_list[0]
+    first_note = first_measure[0]
+    assert first_note.duration == new_expected_duration_secs

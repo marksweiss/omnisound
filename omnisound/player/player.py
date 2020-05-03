@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
 
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.utils.utils import validate_type
@@ -47,10 +47,10 @@ class Player(metaclass=ABCMeta):
         # TODO REMOVE OR FIX
         # self.note_sequence = note_sequence
         self.improvising = False
-        self.pre_play_hooks: Dict[str, Any] = {}
-        self.pre_play_hooks_list: List[Any] = []
-        self.post_play_hooks: Dict[str, int] = {}
-        self.post_play_hooks_list: List[Any] = []
+        self.pre_play_hooks: Dict[str, Callable] = {}
+        self.pre_play_hooks_list: List[Callable] = []
+        self.post_play_hooks: Dict[str, Callable] = {}
+        self.post_play_hooks_list: List[Callable] = []
 
     # TODO REMOVE
     # @property

@@ -34,6 +34,12 @@ class Measure(NoteSequence):
     """
 
     DEFAULT_METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QUARTER, quantizing=True)
+    # This value for tempo means a 4/4 measure or four quarter notes is one second, that is that a quarter note,
+    #  which has the unit-less float value of 0.25, is actually 0.25 secs duration. So this is the "unit tempo,"
+    #  the tempo for which no adjustment to note start_time or duration is necessary to adjust unitless note
+    #  values to their actual wall time value in seconds. This is used where we adjust start_time and duration,
+    #  such as the tempo setter property.
+    UNIT_TEMPO_QPM = 240
 
     # Measure does not take `child_sequences` arg because musical measures do not meaningfully have "child measures"
     def __init__(self,
@@ -96,9 +102,7 @@ class Measure(NoteSequence):
             raise ValueError(f'Attempt to add a note to a measure greater than the the number of beats per measure')
 
         note.start = self.meter.beat_start_times_secs[self.beat]
-
         self.append(note)
-
         # Increment beat position if flag set and beat is not on last beat of the measure already
         if increment_beat:
             self.increment_beat()
@@ -127,24 +131,53 @@ class Measure(NoteSequence):
         return self
     # /Adding notes in sequence on the beat
 
+    # Updating Tempo and resetting note start and duration
+    @property
+    def tempo(self):
+        return self.meter.tempo
+
+    @tempo.setter
+    def tempo(self, tempo: int):
+        self.meter.tempo = tempo
+        for note in self:
+            note.start *= (Measure.UNIT_TEMPO_QPM / tempo)
+            note.duration *= (Measure.UNIT_TEMPO_QPM / tempo)
+        self._sort_notes_by_start_time()
+
+    def _get_start_for_tempo(self, note: Any) -> float:
+        # Get the ratio of the note start time to the duration of the entire measure, and then adjust for tempo
+        #  to get the actual start time
+        measure_duration = self.meter.beats_per_measure * \
+                           self.meter.quarter_notes_per_beat_note * \
+                           NoteDur.QUARTER.value
+        return note.start * (measure_duration / self.meter.measure_dur_secs)
+
+    def _get_duration_for_tempo(self, note: Any) -> float:
+        return self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
+    # /Updating Tempo and resetting note start and duration
+
     # Adding notes in sequence from the current start time, one note immediately after another
-    def add_note_on_start(self, note: Any, increment_start=False) -> 'Measure':
+    def add_note_on_start(self, note: Any) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
            If increment_start == True then measure.start is also incremented, after the insertion. So this method
            is a convenience method for inserting multiple notes in sequence.
            Validates that all the durations fit in the total duration of the measure.
         """
-        validate_types(('increment_start', increment_start, bool))
-
-        if self.next_note_start + note.duration > self.max_duration:
+        # The note has a specified duration, but this is derived from its NoteDur, which can be thought of
+        #  as a note on a musical score, i.e a "quarter note." NoteDur maps these to float values where
+        #  a whole note == 1, and so a quarter note == 0.25. To convert that unitless value into a float
+        #  number of seconds, the ratio of note.duration to a quarter note is multiplied by the actual
+        #  wall time of a quarter note derived from the tempo, which is the number of quarter notes per minute.
+        actual_duration_secs = self._get_duration_for_tempo(note)
+        if self.next_note_start + actual_duration_secs > self.meter.measure_dur_secs:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
 
+        note.duration = self._get_duration_for_tempo(note)
         note.start = self.next_note_start
-        self.append(note)
-
-        if increment_start:
-            self.next_note_start += note.duration
+        self.next_note_start += note.duration
+        super(Measure, self).append(note)
+        self._sort_notes_by_start_time()
 
         return self
 
@@ -158,19 +191,33 @@ class Measure(NoteSequence):
         validate_types(('to_add', to_add, NoteSequence))
 
         # TODO DO THIS IN NUMPY NATIVE WAY
-        sum_of_durations = sum([note.duration for note in to_add])
-        if self.next_note_start + sum_of_durations > self.max_duration:
+        sum_of_durations = sum([self._get_duration_for_tempo(note) for note in to_add])
+        if self.next_note_start + sum_of_durations > self.meter.measure_dur_secs:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + '
                               f'sum of note.durations {sum_of_durations} > '
                               f'measure.max_duration {self.max_duration}'))
 
         for note in to_add:
+            note.duration = self._get_duration_for_tempo (note)
             note.start = self.next_note_start
-            self.append(note)
             self.next_note_start += note.duration
+            super (Measure, self).append (note)
+        self._sort_notes_by_start_time ()
 
         return self
-    # Adding notes in sequence from the current start time, one note immediately after another
+
+    def replace_notes_on_start(self, to_add: NoteSequence) -> 'Measure':
+        self.remove((0, len(self)))
+        self.next_note_start = 0.0
+        for note in to_add:
+            note.duration = self._get_duration_for_tempo (note)
+            note.start = self.next_note_start
+            self.next_note_start += note.duration
+            super (Measure, self).append (note)
+        self._sort_notes_by_start_time ()
+
+        return self
+    # /Adding notes in sequence from the current start time, one note immediately after another
 
     # Quantize notes
     def quantizing_on(self):
@@ -255,25 +302,42 @@ class Measure(NoteSequence):
 
     # NoteSequence note_list management
     # Wrap all parent methods to maintain invariant that note_list is sorted by note.start_time ascending
-    def append(self, note: Any) -> 'Measure':
+    def append(self, note: Any, start=None) -> 'Measure':
+        note.start = start or self._get_start_for_tempo(note)
+        note.duration = self._get_duration_for_tempo(note)
+        # This is a COPY operation so all modifications to note state must be done before
+        #  append() in parent class, which will create new storage for the note and copy
+        #  its values into the storage, and expose that storage through iterator/accessor interface.
         super(Measure, self).append(note)
         self._sort_notes_by_start_time()
         return self
 
     def extend(self, to_add: NoteSequence) -> 'Measure':
+        for note in to_add:
+            note.start = self._get_start_for_tempo (note)
+            note.duration = self._get_duration_for_tempo (note)
         super(Measure, self).extend(to_add)
         self._sort_notes_by_start_time()
         return self
 
     def __add__(self, to_add: Any) -> 'Measure':
-        super(Measure, self).__add__(to_add)
-        self._sort_notes_by_start_time()
+        if isinstance(to_add, NoteSequence):
+            self.extend(to_add)
+        else:
+            self.append(to_add)
         return self
 
     def __lshift__(self, to_add: Any) -> 'Measure':
         return self.__add__(to_add)
 
     def insert(self, index: int, to_add: Any) -> 'Measure':
+        if isinstance(to_add, NoteSequence):
+            for note in to_add:
+                to_add.start = self._get_start_for_tempo (note)
+                to_add.duration = self._get_duration_for_tempo (note)
+        else:
+            to_add.start = self._get_start_for_tempo (to_add)
+            to_add.duration = self._get_duration_for_tempo (to_add)
         super(Measure, self).insert(index, to_add)
         self._sort_notes_by_start_time()
         return self
