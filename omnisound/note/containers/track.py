@@ -102,7 +102,6 @@ class Track(Section):
     def tempo(self) -> float:
         return self.meter.tempo_qpm
 
-    # TODO TEST
     @tempo.setter
     def tempo(self, tempo: int):
         self.meter.tempo = tempo
