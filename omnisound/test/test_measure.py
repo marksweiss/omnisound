@@ -331,9 +331,9 @@ def test_add_note_on_start(make_note_config, meter, swing):
         measure.add_note_on_start(note)
 
 
-def test_add_notes_on_start(make_note_config, meter, swing):
-    # Test adding a NoteSequence and having each added at the beat position
-    measure = _measure(mn=make_note_config, meter=meter, swing=swing, num_notes=0)
+def test_add_notes_on_start(make_note_config, meter):
+    # Test adding a NoteSequence and having each added at the next start_time after the previous note's duration
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
     assert len(measure) == 0
     expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
     measure.add_notes_on_start(_note_sequence(mn=make_note_config))
@@ -345,6 +345,21 @@ def test_add_notes_on_start(make_note_config, meter, swing):
     note_sequence[0].dur = measure.max_duration + 1
     with pytest.raises(ValueError):
         measure.add_notes_on_start(note_sequence)
+
+
+def test_replace_notes_on_start(make_note_config, meter):
+    measure = _measure(mn=make_note_config, meter=meter, num_notes=0)
+    assert len(measure) == 0
+    expected_note_start_times = [0.0, 0.25, 0.5, 0.75]
+    measure.add_notes_on_start(_note_sequence(mn=make_note_config))
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
+
+    expected_note_start_times = [0.0, 0.5, 1.0, 1.5]
+    measure.tempo = TEMPO_QPM / 2
+    measure.replace_notes_on_start(_note_sequence(mn=make_note_config))
+    assert len(measure) == 4
+    assert [note.start for note in measure] == expected_note_start_times
 
 
 def test_set_tempo(measure):

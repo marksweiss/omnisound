@@ -197,7 +197,18 @@ class Measure(NoteSequence):
                               f'sum of note.durations {sum_of_durations} > '
                               f'measure.max_duration {self.max_duration}'))
 
-        # self.remove((0, len(self)))
+        for note in to_add:
+            note.duration = self._get_duration_for_tempo (note)
+            note.start = self.next_note_start
+            self.next_note_start += note.duration
+            super (Measure, self).append (note)
+        self._sort_notes_by_start_time ()
+
+        return self
+
+    def replace_notes_on_start(self, to_add: NoteSequence) -> 'Measure':
+        self.remove((0, len(self)))
+        self.next_note_start = 0.0
         for note in to_add:
             note.duration = self._get_duration_for_tempo (note)
             note.start = self.next_note_start
