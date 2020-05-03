@@ -304,14 +304,5 @@ def test_set_tempo(track, meter):
             assert [note.start for note in measure] == expected_starts
 
 
-    # track = Track(to_add=measure_list, instrument=INSTRUMENT, meter=meter)
-    # track.tempo = int(TEMPO_QPM / 2)
-    # expected_starts = [0.0, 2 * DUR, DUR * 4, DUR * 6]
-    # for measure in track:
-    #     for note in measure:
-    #         assert note.duration == pytest.approx(DUR * 2)
-    #     assert [note.start for note in measure] == expected_starts
-
-
 if __name__ == '__main__':
     pytest.main(['-xrf'])
