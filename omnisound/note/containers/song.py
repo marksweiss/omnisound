@@ -76,6 +76,16 @@ class Song:
         for track in self.track_list:
             track.meter = meter
 
+    @property
+    def tempo(self) -> float:
+        return self.meter.tempo_qpm
+
+    @tempo.setter
+    def tempo(self, tempo: int):
+        self.meter.tempo = tempo
+        for track in self.track_list:
+            track.tempo = tempo
+
     def quantizing_on(self):
         for track in self.track_list:
             track.quantizing_on()

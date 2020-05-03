@@ -290,5 +290,28 @@ def test_song_insert_remove_getitem(track):
     assert not song.track_map
 
 
+def test_set_tempo(track, meter):
+    empty_track_list = []
+    song = Song(to_add=empty_track_list, meter=meter)
+    track.meter = meter
+    song.insert(0, track)
+    song.tempo = int(TEMPO_QPM / 2)
+    expected_starts = [0.0, 2 * DUR, DUR * 4, DUR * 6]
+    for track in song:
+        for measure in track:
+            for note in measure:
+                assert note.duration == pytest.approx(DUR * 2)
+            assert [note.start for note in measure] == expected_starts
+
+
+    # track = Track(to_add=measure_list, instrument=INSTRUMENT, meter=meter)
+    # track.tempo = int(TEMPO_QPM / 2)
+    # expected_starts = [0.0, 2 * DUR, DUR * 4, DUR * 6]
+    # for measure in track:
+    #     for note in measure:
+    #         assert note.duration == pytest.approx(DUR * 2)
+    #     assert [note.start for note in measure] == expected_starts
+
+
 if __name__ == '__main__':
     pytest.main(['-xrf'])
