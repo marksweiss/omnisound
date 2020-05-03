@@ -13,6 +13,7 @@ from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
+from omnisound.player.player import Player
 from omnisound.utils.mingus_utils import get_chord_pitches
 from omnisound.utils.utils import (validate_optional_type, validate_optional_type_choice, validate_optional_types,
                                    validate_type, validate_type_choice, validate_types)
@@ -90,6 +91,39 @@ class Sequencer(Song):
         self._next_track = 0
         self._track_name_idx_map = {}
 
+        self._track_name_player_map = {}
+
+    # Properties
+    @property
+    def tempo(self) -> int:
+        return self.meter.tempo_qpm
+
+    @tempo.setter
+    def tempo(self, tempo: int) -> None:
+        """
+        Sets the meter.tempo_qpm to the tempo value provided. Also recursively traverses down to every measure
+        in every section in every track, rebuilding the measures notes to adjust their start times to use the
+        new meter with the new tempo.
+        """
+        validate_type('tempo', tempo, int)
+        self.meter.tempo = tempo
+        for track in self.track_list:
+            track.tempo = tempo
+
+    def set_tempo_for_track(self, track_name: str = None, tempo: int = None):
+        validate_types(('track_name', track_name, str), ('tempo', tempo, int))
+        # Make a new meter object set to the new tempo and assign it to the sequencer
+        track = self.track_list[self._track_name_idx_map[track_name]]
+        track.tempo = tempo
+
+    def track(self, track_name: str):
+        return self.track_list[self._track_name_idx_map[track_name]]
+
+    def track_names(self):
+        return '\n'.join(self._track_name_idx_map.keys())
+    # /Properties
+
+    # Track and Pattern Management
     # TODO Validate instrument is int, MidiInstrument enum or a class (Foxdot)
     def add_track(self,
                   track_name: str = None,
@@ -176,9 +210,6 @@ class Sequencer(Song):
         self._next_track += 1
 
         return track_name
-
-    def track_names(self):
-        return '\n'.join(self._track_name_idx_map.keys())
 
     def _fill_section_to_track_length(self, section: Section):
         """
@@ -278,28 +309,19 @@ class Sequencer(Song):
             section.append(measure)
 
         return section
+    # /Track and Pattern Management
 
-    def track(self, track_name: str):
-        return self.track_list[self._track_name_idx_map[track_name]]
+    # Track and Player Management
+    def add_player_for_track(self,
+                             track_name: str = None,
+                             player: Player = None):
+        validate_types(('track_name', track_name, str), ('player', player, Player))
+        self._track_name_player_map[track_name] = player
 
-    @property
-    def tempo(self) -> int:
-        return self.meter.tempo_qpm
+    def play_track(self,
+                   track_name: str = None):
+        validate_type('track_name', track_name, str)
+        player = self._track_name_player_map[track_name]
+        player.play_all()
 
-    @tempo.setter
-    def tempo(self, tempo: int) -> None:
-        """
-        Sets the meter.tempo_qpm to the tempo value provided. Also recursively traverses down to every measure
-        in every section in every track, rebuilding the measures notes to adjust their start times to use the
-        new meter with the new tempo.
-        """
-        validate_type('tempo', tempo, int)
-        self.meter.tempo = tempo
-        for track in self.track_list:
-            track.tempo = tempo
-
-    def set_tempo_for_track(self, track_name: str = None, tempo: int = None):
-        validate_types(('track_name', track_name, str), ('tempo', tempo, int))
-        # Make a new meter object set to the new tempo and assign it to the sequencer
-        track = self.track_list[self._track_name_idx_map[track_name]]
-        track.tempo = tempo
+    # /Track and Player Management

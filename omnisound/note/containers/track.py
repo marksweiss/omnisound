@@ -78,6 +78,7 @@ class Track(Section):
         else:
             self.instrument = Track.DEFAULT_INSTRUMENT
 
+    # Properties
     def _get_section_map(self) -> Mapping[str, Section]:
         return self._section_map
     section_map = property(_get_section_map, None)
@@ -87,7 +88,6 @@ class Track(Section):
         return self._section_map.values()
     section_list = property(_get_section_list, None)
 
-    # Properties
     @property
     def instrument(self) -> Union[float, int]:
         return self._instrument

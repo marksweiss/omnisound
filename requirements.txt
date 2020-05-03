@@ -1,3 +1,4 @@
 ctcsound
+mido
 numpy
 pytest

@@ -11,13 +11,15 @@
 # 1M (ticks per second) / beats per minute * 60
 # 1M (ticks per second) / beats per second
 
+# TODO Fix broken imports and get example player playing again
+
 from enum import Enum
 from typing import List
 
 # noinspection PyProtectedMember
 from mido import Message, MidiFile, MidiTrack
 
-from omnisound.note.adapters.midi_note import MidiNote
+from omnisound.note.adapters.midi_note import MidiNoteMeta
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.song import Song
 from omnisound.note.modifiers.meter import NoteDur

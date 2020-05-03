@@ -103,6 +103,14 @@ if __name__ == '__main__':
     orchestra = CSoundOrchestra(instruments=INSTRUMENTS,
                                 sampling_rate=SR, ksmps=KSMPS, num_channels=NCHNLS)
 
+    # TODO MOVE THIS Song INSIDE CSoundInteractivePlayer AND IT WILL HAVE EQUIVALENT API AS MidiPlayer:
+    #  input is a Song of Tracks =>
+    #  Player converts to stream of note events for that back-end =>
+    #  Player writes data for that back-end to file OR plays back interactively
+    #  ```
+    #  player = XYZPlayer(song)
+    #  player.play_all()
+    #  ```
     note_lines = []
     for track in song:
         for measure in track.measure_list:
