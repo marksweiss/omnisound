@@ -34,6 +34,12 @@ class Measure(NoteSequence):
     """
 
     DEFAULT_METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QUARTER, quantizing=True)
+    # This value for tempo means a 4/4 measure or four quarter notes is one second, that is that a quarter note,
+    #  which has the unit-less float value of 0.25, is actually 0.25 secs duration. So this is the "unit tempo,"
+    #  the tempo for which no adjustment to note start_time or duration is necessary to adjust unitless note
+    #  values to their actual wall time value in seconds. This is used where we adjust start_time and duration,
+    #  such as the tempo setter property.
+    UNIT_TEMPO_QPM = 240
 
     # Measure does not take `child_sequences` arg because musical measures do not meaningfully have "child measures"
     def __init__(self,
@@ -96,9 +102,7 @@ class Measure(NoteSequence):
             raise ValueError(f'Attempt to add a note to a measure greater than the the number of beats per measure')
 
         note.start = self.meter.beat_start_times_secs[self.beat]
-
         self.append(note)
-
         # Increment beat position if flag set and beat is not on last beat of the measure already
         if increment_beat:
             self.increment_beat()
@@ -134,11 +138,11 @@ class Measure(NoteSequence):
 
     @tempo.setter
     def tempo(self, tempo: int):
-        old_tempo = self.meter.tempo
         self.meter.tempo = tempo
         for note in self:
-            note.start *= (old_tempo / tempo)
-            note.duration *= (old_tempo / tempo)
+            note.start *= (Measure.UNIT_TEMPO_QPM / tempo)
+            note.duration *= (Measure.UNIT_TEMPO_QPM / tempo)
+        self._sort_notes_by_start_time()
 
     def _get_start_for_tempo(self, note: Any) -> float:
         # Get the ratio of the note start time to the duration of the entire measure, and then adjust for tempo

@@ -73,7 +73,7 @@ class Section(NoteSequenceSequence):
     @tempo.setter
     def tempo(self, tempo: int):
         self.meter.tempo = tempo
-        for measure in self.measure_list:
+        for measure in self:
             measure.tempo = tempo
     # /Properties
 
