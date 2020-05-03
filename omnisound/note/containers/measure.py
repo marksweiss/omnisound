@@ -156,17 +156,13 @@ class Measure(NoteSequence):
         return self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
     # /Updating Tempo and resetting note start and duration
 
-    # TODO REMOVE increment_on_start flag -- that is the whole point of the method and it should
-    #  be symmetric with add_notes_on_start()
     # Adding notes in sequence from the current start time, one note immediately after another
-    def add_note_on_start(self, note: Any, increment_start=False) -> 'Measure':
+    def add_note_on_start(self, note: Any) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
            If increment_start == True then measure.start is also incremented, after the insertion. So this method
            is a convenience method for inserting multiple notes in sequence.
            Validates that all the durations fit in the total duration of the measure.
         """
-        validate_types(('increment_start', increment_start, bool))
-
         # The note has a specified duration, but this is derived from its NoteDur, which can be thought of
         #  as a note on a musical score, i.e a "quarter note." NoteDur maps these to float values where
         #  a whole note == 1, and so a quarter note == 0.25. To convert that unitless value into a float
@@ -178,12 +174,8 @@ class Measure(NoteSequence):
                               f'measure.max_duration {self.max_duration}'))
 
         note.duration = self._get_duration_for_tempo(note)
-        if increment_start:
-            note.start = self.next_note_start
-        else:
-            note.start = self._get_start_for_tempo(note)
+        note.start = self.next_note_start
         self.next_note_start += note.duration
-
         super(Measure, self).append(note)
         self._sort_notes_by_start_time()
 
@@ -205,12 +197,7 @@ class Measure(NoteSequence):
                               f'sum of note.durations {sum_of_durations} > '
                               f'measure.max_duration {self.max_duration}'))
 
-        # TODO THIS DOESN'T ACTUALLY REPLACE EXISITING NOTES LIKE THE DOCSTRING SAYS
-        #  DO THIS AND ADD TEST COVERAGE and MAKE SURE THIS DOESN'T BREAK ANYTHING
-        #  OR REMOVE DOCSTRING, LEAVE THIS AS IS AND ADD A replace_notes_on start()
-        #  WITH THESE SEMANTICS
-        # measure.remove((0, len(measure)))
-
+        # self.remove((0, len(self)))
         for note in to_add:
             note.duration = self._get_duration_for_tempo (note)
             note.start = self.next_note_start
@@ -305,7 +292,6 @@ class Measure(NoteSequence):
     # NoteSequence note_list management
     # Wrap all parent methods to maintain invariant that note_list is sorted by note.start_time ascending
     def append(self, note: Any, start=None) -> 'Measure':
-        # TODO DOCUMENT THIS TERRIBLE LOGIC
         note.start = start or self._get_start_for_tempo(note)
         note.duration = self._get_duration_for_tempo(note)
         # This is a COPY operation so all modifications to note state must be done before

@@ -59,7 +59,7 @@ class NoteSequenceSequence(object):
         validate_types(('index', index, int), ('note_sequence', note_sequence, NoteSequence))
         if abs(index) >= len(self.note_seq_seq):
             raise IndexError(f'`index` out of range index: {index} len(note_seq_seq): {len(self.note_seq_seq)}')
-        return self.note_seq_seq[index]
+        self.note_seq_seq[index] = NoteSequence.copy(note_sequence)
 
     def __iter__(self) -> 'NoteSequenceSequence':
         self.index = 0

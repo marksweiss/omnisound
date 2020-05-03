@@ -113,10 +113,6 @@ class NoteSequence:
             raise IndexError(f'`index` out of range index: {index} max_index: {len(self)}')
         # Simple case, index is in the range of self.attrs
         if index < len(self.note_attr_vals):
-
-            # TEMP DEBUG
-            # print(f'NOTE ATTR VALS IN GET NOTE {self.note_attr_vals[index]}')
-
             return self.mn.make_note(self.note_attr_vals[index],
                                      self.mn.attr_name_idx_map,
                                      attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
@@ -217,10 +213,6 @@ class NoteSequence:
         # noinspection PyTypeChecker
         self.note_attr_vals.resize(new_note_idx + 1, num_attributes)
         np_copyto(self.note_attr_vals[new_note_idx], note.note_attr_vals)
-
-        # TEMP DEBUG
-        # print(f'NOTE ATTR VALS IN APPEND {self.note_attr_vals[new_note_idx]}')
-
         self.update_range_map()
         return self
 
