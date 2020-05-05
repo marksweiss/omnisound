@@ -14,19 +14,16 @@
 # TODO Fix broken imports and get example player playing again
 
 from enum import Enum
-from typing import List
+from typing import Any, List
 
 # noinspection PyProtectedMember
 from mido import Message, MidiFile, MidiTrack
 
-from omnisound.note.adapters.midi_note import MidiNoteMeta
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.song import Song
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
-from omnisound.utils.utils import validate_optional_path, validate_types
-
-# TODO TESTS!!!
+from omnisound.utils.utils import validate_optional_path, validate_type, validate_types
 
 
 class MidiPlayerAppendMode(Enum):
@@ -46,11 +43,11 @@ class MidiPlayerEvent(object):
        and calculates its own event_time. `order_events()` orders a sequence of events.
 
        The object also includes properties for tick (the time converted to MIDI tick), in absolute
-       time since the start of the elements in the sequence), and tick_delta, the offset of this
+       time since the start of the elements in the sequence, and tick_delta, the offset of this
        event's tick to the event that preceded it in a sequence.
     """
-    def __init__(self, note: MidiNote, measure: Measure, event_type: MidiEventType):
-        validate_types(('note', note, MidiNote), ('event_type', event_type, MidiEventType))
+    def __init__(self, note: Any, measure: Measure, event_type: MidiEventType):
+        validate_type('event_type', event_type, MidiEventType)
         self.note = note
         self.measure = measure
         self.event_type = event_type
@@ -94,9 +91,10 @@ class MidiPlayer(Player):
     PLAY_ALL = 'play_all'
     PLAY_EACH = 'play_each'
 
-    def __init__(self, song: Song = None, append_mode: MidiPlayerAppendMode = None,
+    def __init__(self,
+                 song: Song = None,
+                 append_mode: MidiPlayerAppendMode = None,
                  midi_file_path: str = None):
-        # TODO REVSIT WHY SONG CANNOT BE A NOTE SEQUENCE. IT SHOULD BE AND PLAYER DESIGN IS BREAKING BECAUST IT ISN'T
         # MidiPlayer only can play a Song with one or more Tracks. Tracks may be bare NoteSequence collections
         # or Measures with Meter
         validate_types(('song', song, Song), ('append_mode', append_mode, MidiPlayerAppendMode))
@@ -142,12 +140,12 @@ class MidiPlayer(Player):
             for measure in track.measure_list:
                 # TODO Support Midi Performance Attrs
                 # if op == PLAY_ALL
-                #     performance_attrs = measure.performance_attrsj
+                #     performance_attrs = measure.performance_attrs
                 # Build an ordered event list of the notes in the measure
                 # NOTE: Assumes first note start on 0.0, because the first note of every measure is 0 offset
                 #       i.e. it assumes it will occur exactly after the last note of the last measure
                 # NOTE: Need to carry over last offset from previous measure, and then this will work :-)
-                # TODO MAKE MEAURE ALWAYS FILL IN TRAILING (ALL?) RESTS SO THIS IS NOT AN ISSUE
+                # TODO MAKE MEASURE ALWAYS FILL IN TRAILING (ALL?) RESTS SO THIS IS NOT AN ISSUE
                 event_list = []
                 for note in measure:
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
