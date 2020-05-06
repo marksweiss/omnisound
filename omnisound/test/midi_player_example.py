@@ -67,7 +67,9 @@ if __name__ == '__main__':
     swing = Swing(swing_on=True, swing_range=swing_factor, swing_direction=Swing.SwingDirection.Both)
 
     for _ in range(NUM_MEASURES):
-        ostinato_measure = Measure(meter=METER, swing=swing)
+        note_config = MakeNoteConfig.copy(NOTE_CONFIG)
+        ostinato_measure = Measure(meter=METER, swing=swing, num_notes=notes_per_measure, mn=note_config)
+
         for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
             note_values.time = (i % notes_per_measure) * dur_val
@@ -75,7 +77,6 @@ if __name__ == '__main__':
             note_values.velocity = int(BASE_VELOCITY - ((i % notes_per_measure) / VELOCITY_FACTOR))
             note_values.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
 
-            note_config = MakeNoteConfig.copy(NOTE_CONFIG)
             note_config.attr_vals_defaults_map = note_values.as_dict()
 
             note = NoteSequence.new_note(note_config)
@@ -91,9 +92,9 @@ if __name__ == '__main__':
     octave = OCTAVE - 2
 
     for _ in range(NUM_MEASURES):
-        ostinato_measure = Measure(meter=METER, swing=swing)
-        note_config = MakeNoteConfig.copy (NOTE_CONFIG)
-        chords_notes = NoteSequence([])
+        note_config = MakeNoteConfig.copy(NOTE_CONFIG)
+        chords_measure = Measure(meter=METER, swing=swing, num_notes=notes_per_measure, mn=note_config)
+
         for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
             note_values.time = 0.0
@@ -101,20 +102,15 @@ if __name__ == '__main__':
             note_values.velocity = BASE_VELOCITY - 20
             chord_root = SCALE[i % NUM_NOTES_IN_SCALE]
             note_values.pitch = chord_root.pitch
+
             note_config.attr_vals_defaults_map = note_values.as_dict()
 
             chord_note = NoteSequence.new_note(note_config)
             # Now get the chord for the current key
             chord_root_key = SCALE.keys[i % NUM_NOTES_IN_SCALE]
-            scale = Scale(key=chord_root_key, octave=octave, harmonic_scale=HARMONIC_SCALE,
-                          mn=note_config)
             chord = Chord(harmonic_chord=HARMONIC_CHORD, octave=octave, key=chord_root_key,
                           mn=note_config)
-            # Append all the notes in the chord note list to the measure notes
-            chords_notes.extend(chord)
-        chords_measure = Measure(meter=METER, swing=swing,
-                                 num_notes=len(chords_notes),
-                                 mn=note_config)
+            chords_measure.extend(chord)
         chords_track.append(chords_measure)
 
     # Render the tracks in the song
