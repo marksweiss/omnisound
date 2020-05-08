@@ -59,7 +59,8 @@ if __name__ == '__main__':
                              channel=2)
 
     # Ostinato
-    dur = NoteDur.THIRTYSECOND
+    # dur = NoteDur.THIRTYSECOND
+    dur = NoteDur.HALF
     # noinspection PyTypeChecker
     dur_val: float = dur.value
     notes_per_measure = int((1 / BEAT_DUR_VAL) * ((1 / dur_val) / (1 / BEAT_DUR_VAL)))
@@ -72,13 +73,11 @@ if __name__ == '__main__':
 
         for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
-            note_values.time = (i % notes_per_measure) * dur_val
+            note_values.time = 0.0 # (i % notes_per_measure) * dur_val
             note_values.duration = dur_val
             note_values.velocity = int(BASE_VELOCITY - ((i % notes_per_measure) / VELOCITY_FACTOR))
             note_values.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
-
             note_config.attr_vals_defaults_map = note_values.as_dict()
-
             note = NoteSequence.new_note(note_config)
             ostinato_measure.append(note)
         ostinato_measure.apply_swing()
@@ -117,6 +116,6 @@ if __name__ == '__main__':
     tracks = [ostinato_track, chords_track]
     song = Song(to_add=tracks, name=SONG_NAME)
     player = MidiPlayer(song=song, append_mode=APPEND_MODE,
-                        midi_file_path='/Users/markweiss/Documents/projects/omnisound/test_song.mid')
+                        midi_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_song.mid')
     player.play_all()
     player.write_midi_file()

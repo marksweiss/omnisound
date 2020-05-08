@@ -19,6 +19,7 @@ from typing import Any, List
 # noinspection PyProtectedMember
 from mido import Message, MidiFile, MidiTrack
 
+from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.song import Song
 from omnisound.note.modifiers.meter import NoteDur
@@ -51,7 +52,7 @@ class MidiPlayerEvent(object):
         self.note = note
         self.measure = measure
         self.event_type = event_type
-        self.event_time = self._event_time()
+        self.event_time = abs(self._event_time())
         self.tick = self._tick()
         self.tick_delta = 0
 
@@ -59,7 +60,7 @@ class MidiPlayerEvent(object):
         if self.event_type == MidiEventType.NOTE_ON:
             return self.note.time
         elif self.event_type == MidiEventType.NOTE_OFF:
-            return self.note.time + self.note.dur
+            return self.note.time + self.note.duration
 
     def _tick(self) -> int:
         return int(self.measure.meter.get_secs_for_note_time(note_time_val=self.event_time) *
@@ -132,7 +133,7 @@ class MidiPlayer(Player):
             #     track_performance_attrs = track.performance_attrs
 
             midi_track = MidiTrack()
-            midi_track.append(Message('program_change', program=track.track_instrument, time=0))
+            midi_track.append(Message('program_change', program=track.instrument, time=0))
             self.midi_file.tracks.append(midi_track)
 
             # mido channels numbered 0..15 instead of MIDI standard 1..16
@@ -151,7 +152,6 @@ class MidiPlayer(Player):
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_OFF))
                 MidiPlayerEvent.set_tick_deltas(event_list)
-
                 for event in event_list:
                     # TODO Support Midi Performance Attrs
                     # note_performance_attrs = note.performance_attrs
@@ -160,8 +160,10 @@ class MidiPlayer(Player):
                     #                                   performance_attrs, note_performance_attrs)
                     # else:
                     #     self._apply_performance_attrs(note, note_performance_attrs)
-                    message = Message(event.event_type.value, time=event.tick_delta, velocity=event.note.amp,
-                                      note=event.note.pitch, channel=channel)
+                    message = Message(event.event_type.value, time=event.tick_delta,
+                                      velocity=ATTR_GET_TYPE_CAST_MAP['velocity'](event.note.amplitude),
+                                      note=ATTR_GET_TYPE_CAST_MAP['pitch'](event.note.pitch),
+                                      channel=channel)
                     midi_track.append(message)
 
     def improvise(self):

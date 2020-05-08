@@ -7,7 +7,7 @@ from typing import Union
 import pytest
 
 from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.utils.utils import validate_optional_types, validate_type
+from omnisound.utils.utils import validate_optional_types, validate_type, validate_type_choice
 
 
 class NoteDur(Enum):
@@ -107,13 +107,17 @@ class Meter:
 
     tempo = property(_get_tempo, _set_tempo)
 
-    def get_secs_for_note_time(self, note_time_val: Union[float, NoteDur]):
+    def get_secs_for_note_time(self, note_time_val: Union[float, int, NoteDur]):
         """Helper to convert a note time in NoteDur or float that represents either a note start_time or
            note duration within a measure in the measure's meter into an absolute floating point value in
            seconds.
         """
+        validate_type_choice('note_time_val', note_time_val, (float, int, NoteDur))
+
         dur = note_time_val
-        if note_time_val in NoteDur:
+        if not isinstance(note_time_val, float) \
+                and not isinstance(note_time_val, int) \
+                and note_time_val in NoteDur:
             dur = note_time_val.value
         # noinspection PyTypeChecker
         return self.note_dur_secs * dur
