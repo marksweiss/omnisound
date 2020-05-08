@@ -103,34 +103,21 @@ if __name__ == '__main__':
     orchestra = CSoundOrchestra(instruments=INSTRUMENTS,
                                 sampling_rate=SR, ksmps=KSMPS, num_channels=NCHNLS)
 
-    # TODO MOVE THIS Song INSIDE CSoundInteractivePlayer AND IT WILL HAVE EQUIVALENT API AS MidiPlayer:
-    #  input is a Song of Tracks =>
-    #  Player converts to stream of note events for that back-end =>
-    #  Player writes data for that back-end to file OR plays back interactively
-    #  ```
-    #  player = XYZPlayer(song)
-    #  player.play_all()
-    #  ```
-    note_lines = []
-    for track in song:
-        for measure in track.measure_list:
-            for note in measure:
-                note_lines.append(f'{str (note)}')
-    score = CSoundScore(header_lines=SCORE_HEADER_LINES, note_lines=note_lines)
-    player = CSoundCSDPlayer(csound_orchestra=orchestra, csound_score=score)
-    ret = player.play_all()
+    # Play song with CSD player
+    player = CSoundCSDPlayer(csound_orchestra=orchestra)
+    player.play_song(song, score_header_lines=SCORE_HEADER_LINES)
 
-    # Create the player
+    # Play song with interactive player
     player = CSoundInteractivePlayer(csound_orchestra=orchestra)
     # Add a function table with 0th arg == 1, this defines data referred to by 'instrument 1'
     # in the Orchestra bound to the Player
     player.add_score_event(CSoundScoreEvent(event_type=CSoundEventType.FunctionTable,
                                             event_data=(1, 0, 8193, 10, 1)))
+
     # Now add score events of type 'i', these are instrument events, that play the instrument with
     # start_time, amplitude and pitch
-    for track in song:
-        for measure in track.measure_list:
-            player.add_score_events([CSoundScoreEvent.note_to_score_event(note) for note in measure])
+    player.add_song_note_events(song)
+
     # Now add an end event event of type 'e' that stops the performance and closes writing the output
     player.add_end_score_event(beats_to_wait=10)
     # Perform the score events on the Orchestra bound to the Player

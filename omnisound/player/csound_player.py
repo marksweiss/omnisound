@@ -6,6 +6,8 @@ from typing import Any, Optional, Sequence, Union
 import ctcsound
 
 from omnisound.note.adapters.note import as_list
+from omnisound.note.containers.song import Song
+from omnisound.note.containers.track import Track
 from omnisound.player.player import Player
 from omnisound.utils.utils import (validate_type, validate_types, validate_optional_types,
                                    validate_optional_sequence_of_type, validate_sequence_of_type,
@@ -142,12 +144,28 @@ class CSD:
 class CSoundCSDPlayer(Player):
     def __init__(self,
                  csound_orchestra: CSoundOrchestra = None,
-                 csound_score: CSoundScore = None):
+                 csound_score: Optional[CSoundScore] = None):
         validate_types(('csound_orchestra', csound_orchestra, CSoundOrchestra),
                        ('csound_score', csound_score, CSoundScore))
         super(CSoundCSDPlayer, self).__init__()
 
+        self.orchestra = csound_orchestra
         self._csd = CSD(csound_orchestra, csound_score)
+
+    def play_song(self, song: Song, score_header_lines: Optional[Sequence[str]] = None):
+        for track in song:
+            # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
+            #  Multithreaded interactive player?
+            self.play_track(track, score_header_lines=score_header_lines)
+
+    def play_track(self, track: Track, score_header_lines: Optional[Sequence[str]] = None):
+        note_lines = []
+        for measure in track.measure_list:
+            for note in measure:
+                note_lines.append (f'{str (note)}')
+        score = CSoundScore (header_lines=score_header_lines or [''], note_lines=note_lines)
+        player = CSoundCSDPlayer (csound_orchestra=self.orchestra, csound_score=score)
+        ret = player.play_all()
 
     def play_all(self) -> int:
         cs = ctcsound.Csound()
@@ -217,6 +235,14 @@ class CSoundInteractivePlayer:
     def add_score_events(self, events: Sequence[CSoundScoreEvent]):
         for event in events:
             self.add_score_event(event)
+
+    def add_song_note_events(self, song: Song):
+        for track in song:
+            self.add_track_note_events(track)
+
+    def add_track_note_events(self, track: Track):
+        for measure in track.measure_list:
+            self.add_score_events([CSoundScoreEvent.note_to_score_event (note) for note in measure])
 
     def add_end_score_event(self, beats_to_wait: int = 0):
         if beats_to_wait:

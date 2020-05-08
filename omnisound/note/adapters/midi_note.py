@@ -19,8 +19,8 @@ ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
 ATTR_NAME_IDX_MAP = add_base_attr_name_indexes({attr_name: i for i, attr_name in enumerate(ATTR_NAMES)})
 ATTR_GET_TYPE_CAST_MAP = {
     'instrument': int,
-    'time': int,
-    'duration': int,
+    'time': float,
+    'duration': float,
     'velocity': int,
     'pitch': int,
 }

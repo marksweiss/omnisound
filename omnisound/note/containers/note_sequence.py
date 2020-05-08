@@ -10,8 +10,9 @@ from numpy import array as np_array, array_equal as np_array_equal, concatenate 
     copyto as np_copyto, delete as np_delete, insert as np_insert
 
 from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.utils.utils import validate_optional_sequence_of_type, \
-    validate_optional_type, validate_optional_type_choice, validate_sequence_of_type, validate_type, validate_types
+from omnisound.utils.utils import (validate_optional_sequence_of_type, validate_optional_type,
+                                   validate_optional_type_choice, validate_sequence_of_type,
+                                   validate_sequence_of_type_choice, validate_type, validate_types)
 
 
 class NoteSequenceInvalidAppendException(Exception):
@@ -54,8 +55,8 @@ class NoteSequence:
         validate_sequence_of_type('attr_name_idx_map', mn.attr_name_idx_map.keys(), str)
         validate_sequence_of_type('attr_name_idx_map', mn.attr_name_idx_map.values(), int)
         if mn.attr_vals_defaults_map:
-            validate_optional_sequence_of_type('attr_vals_map', list(mn.attr_vals_defaults_map.keys()), str)
-            validate_optional_sequence_of_type('attr_vals_map', list(mn.attr_vals_defaults_map.values()), float)
+            validate_sequence_of_type('attr_vals_map', list(mn.attr_vals_defaults_map.keys()), str)
+            validate_sequence_of_type_choice('attr_vals_map', list(mn.attr_vals_defaults_map.values()), (float, int))
         validate_optional_type_choice('child_sequences', child_sequences, (list, set))
         validate_optional_sequence_of_type('child_sequences', child_sequences, NoteSequence)
 
