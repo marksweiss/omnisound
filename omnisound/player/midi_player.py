@@ -149,7 +149,9 @@ class MidiPlayer(Player):
                 # TODO MAKE MEASURE ALWAYS FILL IN TRAILING (ALL?) RESTS SO THIS IS NOT AN ISSUE
                 event_list = []
                 for note in measure:
+                    # noinspection PyTypeChecker
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
+                    # noinspection PyTypeChecker
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_OFF))
                 MidiPlayerEvent.set_tick_deltas(event_list)
                 for event in event_list:

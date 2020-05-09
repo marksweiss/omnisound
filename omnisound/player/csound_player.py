@@ -9,7 +9,7 @@ from omnisound.note.adapters.note import as_list
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
 from omnisound.player.player import Player
-from omnisound.utils.utils import (validate_type, validate_types, validate_optional_types,
+from omnisound.utils.utils import (validate_type, validate_types, validate_optional_type, validate_optional_types,
                                    validate_optional_sequence_of_type, validate_sequence_of_type,
                                    validate_sequence_of_type_choice)
 
@@ -143,29 +143,48 @@ class CSD:
 
 class CSoundCSDPlayer(Player):
     def __init__(self,
-                 csound_orchestra: CSoundOrchestra = None,
-                 csound_score: Optional[CSoundScore] = None):
+                 csound_orchestra: Optional[CSoundOrchestra] = None,
+                 csound_score: Optional[CSoundScore] = None,
+                 song: Optional[Song] = None):
         validate_types(('csound_orchestra', csound_orchestra, CSoundOrchestra),
-                       ('csound_score', csound_score, CSoundScore))
+                       ('csound_score', csound_score, CSoundScore),
+                       ('song', song, Song))
         super(CSoundCSDPlayer, self).__init__()
 
         self.orchestra = csound_orchestra
-        self._csd = CSD(csound_orchestra, csound_score)
+        if csound_orchestra and csound_score:
+            self._csd = CSD(csound_orchestra, csound_score)
+        self._song = song
 
-    def play_song(self, song: Song, score_header_lines: Optional[Sequence[str]] = None):
-        for track in song:
-            # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
-            #  Multithreaded interactive player?
-            self.play_track(track, score_header_lines=score_header_lines)
+    # Properties
+    @property
+    def song(self):
+        return self._song
 
-    def play_track(self, track: Track, score_header_lines: Optional[Sequence[str]] = None):
+    @song.setter
+    def song(self, song: Song, score_header_lines: Optional[Sequence[str]] = None):
+        validate_type('song', song, Song)
+        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
+        self._song = song
+        self._set_csd_for_song(score_header_lines=score_header_lines)
+    # /Properties
+
+    def _set_csd_for_song(self, score_header_lines: Optional[Sequence[str]] = None):
+        # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
+        #  Multithreaded interactive player?
+        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
+        for track in self._song:
+            self._set_csd_for_track(track, score_header_lines=score_header_lines)
+
+    def _set_csd_for_track(self, track: Track, score_header_lines: Optional[Sequence[str]] = None):
+        validate_type('track', track, Track)
+        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
         note_lines = []
         for measure in track.measure_list:
             for note in measure:
-                note_lines.append (f'{str (note)}')
-        score = CSoundScore (header_lines=score_header_lines or [''], note_lines=note_lines)
-        player = CSoundCSDPlayer (csound_orchestra=self.orchestra, csound_score=score)
-        ret = player.play_all()
+                note_lines.append(f'{str (note)}')
+        score = CSoundScore(header_lines=score_header_lines or [''], note_lines=note_lines)
+        self._csd = CSD(self.orchestra, score)
 
     def play_all(self) -> int:
         cs = ctcsound.Csound()
@@ -190,13 +209,15 @@ class CSoundCSDPlayer(Player):
         raise NotImplementedError('CSoundCSDPlayer does not support improvising')
 
 
-# TODO Design that supports adding "cached" notes that persist and can be replayed
-#  as well as the current design, which supports adding notes with no copy overhead and playing them once.
 # TODO add a copy() method so that we can add an notes and then copy the object and change the orchestra
 #  in the copy and thus play the same pattern on different instruments
 class CSoundInteractivePlayer:
-    def __init__(self, csound_orchestra: CSoundOrchestra = None):
+    def __init__(self,
+                 csound_orchestra: CSoundOrchestra = None,
+                 song: Optional[Song] = None):
         validate_type('csound_orchestra', csound_orchestra, CSoundOrchestra)
+        validate_optional_type('song', song, Song)
+
         super(CSoundInteractivePlayer, self).__init__()
         self._orchestra = csound_orchestra
         self._cs = ctcsound.Csound()
@@ -205,6 +226,7 @@ class CSoundInteractivePlayer:
         self._cs.setOption('-m0')
         if self._cs.compileOrc(str(self._orchestra)) != ctcsound.CSOUND_SUCCESS:
             raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
+        self._song = song
 
     def play_all(self) -> int:
         self._cs.start()
@@ -219,6 +241,7 @@ class CSoundInteractivePlayer:
     def __del__(self):
         del self._cs
 
+    # Properties
     @property
     def orchestra(self):
         return self._orchestra
@@ -229,29 +252,46 @@ class CSoundInteractivePlayer:
         if self._cs.compileOrc(str(self._orchestra)) != ctcsound.CSOUND_SUCCESS:
             raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
 
+    @property
+    def song(self):
+        return self._song
+
+    @song.setter
+    def song(self, song: Song):
+        validate_type('song', song, Song)
+        self._song = song
+        self.add_song_note_events()
+    # /Properties
+
     def add_score_event(self, event: CSoundScoreEvent):
+        validate_type('event', event, CSoundScoreEvent)
         self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[event.event_type.name], event.event_data)
 
     def add_score_events(self, events: Sequence[CSoundScoreEvent]):
+        validate_sequence_of_type('events', events, CSoundScoreEvent)
         for event in events:
             self.add_score_event(event)
 
-    def add_song_note_events(self, song: Song):
+    def add_song_note_events(self, song: Optional[Song] = None):
+        validate_optional_type('song', song, Song)
+        song = song or self._song
         for track in song:
             self.add_track_note_events(track)
 
     def add_track_note_events(self, track: Track):
+        validate_type('track', track, Track)
         for measure in track.measure_list:
-            self.add_score_events([CSoundScoreEvent.note_to_score_event (note) for note in measure])
+            self.add_score_events([CSoundScoreEvent.note_to_score_event(note) for note in measure])
 
     def add_end_score_event(self, beats_to_wait: int = 0):
+        validate_type('beats_to_wait', beats_to_wait, int)
         if beats_to_wait:
             self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], (0, beats_to_wait))
         else:
             self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], ())
 
     def play_each(self, note: Any):
-        raise NotImplementedError('CSoundCSDPlayer does not support improvising')
+        raise NotImplementedError('CSoundInteractivePlayer does not support play_each()')
 
     def improvise(self):
         raise NotImplementedError('CSoundInteractivePlayer does not support improvising')

@@ -27,7 +27,11 @@ class InvalidAddPatternException(Exception):
     pass
 
 
-# TODO FACTOR PARSING OF PATTERN LANGUAGE INTO A SEPARATE MODULE SO WE CAN USE IT FOR PLAYERS TOO
+class InvalidPlayerException(Exception):
+    pass
+
+
+# TODO FACTOR PARSING OF PATTERN LANGUAGE INTO A SEPARATE MODULE SO WE CAN USE IT FOR PLAYERS TO
 #  TRANSLATE 'IN C' TO PATTERN AND DO IT AGAIN
 #  ADD MODULES FOR OTHER INPUTS LIKE MusicXML, LilyPond
 
@@ -62,10 +66,12 @@ class Sequencer(Song):
                  pattern_resolution: Optional[NoteDur] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 player: Optional[Player] = None,
                  mn: MakeNoteConfig = None):
         validate_optional_types(('name', name, str),
+                                ('pattern_resolution', pattern_resolution, NoteDur),
                                 ('swing', swing, Swing),
-                                ('pattern_resolution', pattern_resolution, NoteDur))
+                                ('player', player, Player))
         validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
 
         # Sequencer wraps song but starts with no Tracks. It provides an alternate API for generating and adding Tracks.
@@ -73,6 +79,7 @@ class Sequencer(Song):
         meter = meter or Sequencer.DEFAULT_METER
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
+        self._player = player
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
@@ -83,8 +90,7 @@ class Sequencer(Song):
         self.pattern_resolution = pattern_resolution or Sequencer.DEFAULT_PATTERN_RESOLUTION
         self.notes_per_measure = int(meter.beats_per_measure *
                                      (meter.beat_note_dur.value / self.pattern_resolution.value))
-        self.note_duration = \
-            self.mn.attr_get_type_cast_map['duration'](self.meter.measure_dur_secs / self.notes_per_measure)
+        self.note_duration = self.meter.measure_dur_secs / self.notes_per_measure
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
@@ -311,17 +317,29 @@ class Sequencer(Song):
         return section
     # /Track and Pattern Management
 
-    # Track and Player Management
+    # Track and Player Management and Playback
     def add_player_for_track(self,
                              track_name: str = None,
                              player: Player = None):
+        """Adds a Player specific to a track, which overrides self.player if present"""
         validate_types(('track_name', track_name, str), ('player', player, Player))
         self._track_name_player_map[track_name] = player
 
     def play_track(self,
                    track_name: str = None):
+        """Plays a track with a track-mapped Player, if present, otherwise plays using self.Player"""
         validate_type('track_name', track_name, str)
-        player = self._track_name_player_map[track_name]
+        track = self._track_name_idx_map[track_name]
+        # Create an anonymous song with just this track to pass to the Player, since Players play Songs
+        song = Song(to_add=track, meter=self.meter, swing=self.swing)
+        player = self._track_name_player_map.get(track_name) or self._player
+        if not player:
+            raise InvalidPlayerException(f'No track player or self.player found to play track {track_name}')
+        player.song = song
         player.play_all()
 
+    def play(self):
+        # noinspection PyArgumentList
+        self._player.song = self
+        self._player.play_all()
     # /Track and Player Management
