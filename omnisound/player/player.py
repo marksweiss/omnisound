@@ -3,9 +3,6 @@
 from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, List
 
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.utils.utils import validate_type
-
 
 class PlayerNoNotesException(Exception):
     pass
