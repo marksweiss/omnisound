@@ -186,7 +186,7 @@ class CSoundCSDPlayer(Player):
         score = CSoundScore(header_lines=score_header_lines or [''], note_lines=note_lines)
         self._csd = CSD(self.orchestra, score)
 
-    def play_all(self) -> int:
+    def play(self) -> int:
         cs = ctcsound.Csound()
         rendered_script = self._csd.render()
         if cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
@@ -211,7 +211,7 @@ class CSoundCSDPlayer(Player):
 
 # TODO add a copy() method so that we can add an notes and then copy the object and change the orchestra
 #  in the copy and thus play the same pattern on different instruments
-class CSoundInteractivePlayer:
+class CSoundInteractivePlayer(Player):
     def __init__(self,
                  csound_orchestra: CSoundOrchestra = None,
                  song: Optional[Song] = None):
@@ -228,7 +228,7 @@ class CSoundInteractivePlayer:
             raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
         self._song = song
 
-    def play_all(self) -> int:
+    def play(self) -> int:
         self._cs.start()
         while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
             pass
@@ -290,7 +290,7 @@ class CSoundInteractivePlayer:
         else:
             self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], ())
 
-    def play_each(self, note: Any):
+    def play_each(self):
         raise NotImplementedError('CSoundInteractivePlayer does not support play_each()')
 
     def improvise(self):

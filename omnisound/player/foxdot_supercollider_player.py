@@ -26,7 +26,7 @@ class FoxDotSupercolliderPlayer(Player):
             sleep(note.dur)
             self.sc_player.stop()
 
-    def play_all(self):
+    def play(self):
         if not self.notes:
             raise PlayerNoNotesException('No note_group to play')
         for note in self.notes:

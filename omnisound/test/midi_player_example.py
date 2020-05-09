@@ -124,5 +124,5 @@ if __name__ == '__main__':
     song = Song(to_add=tracks, name=SONG_NAME)
     player = MidiPlayer(song=song, append_mode=APPEND_MODE,
                         midi_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_song.mid')
-    player.play_all()
+    player.play()
     player.write_midi_file()

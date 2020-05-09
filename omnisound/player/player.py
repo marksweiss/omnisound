@@ -23,7 +23,7 @@ class Player(metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def play_all(self):
+    def play(self):
         """Play notes as a batch. Each notes note_attr_vals are honored but
            performance_attrs are applied to all notes in the batch.
 
@@ -37,6 +37,18 @@ class Player(metaclass=ABCMeta):
 
            Implementers should handle checking the state of self.improvising == False.
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    @property
+    def song(self):
+        """Player has a Song attribute that can be a source of notes to be played by the play*() methods"""
+        raise NotImplementedError()
+
+    @abstractmethod
+    @song.setter
+    def song(self, song):
+        """Player has a Song attribute that can be a source of notes to be played by the play*() methods"""
         raise NotImplementedError()
 
     def __init__(self):

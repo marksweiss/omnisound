@@ -64,7 +64,7 @@ class MidiPlayerEvent(object):
 
     def _tick(self) -> int:
         return int(self.measure.meter.get_secs_for_note_time(note_time_val=self.event_time) *
-            MidiPlayer.MIDI_TICKS_PER_SECOND)
+                   MidiPlayer.MIDI_TICKS_PER_SECOND)
 
     @staticmethod
     def order_event_list(event_list: List['MidiPlayerEvent']):
@@ -102,7 +102,7 @@ class MidiPlayer(Player):
         validate_optional_path('midi_file_path', midi_file_path)
         super(MidiPlayer, self).__init__()
 
-        self.song = song
+        self._song = song
         self.append_mode = append_mode
         self.midi_file_path = midi_file_path
         self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
@@ -115,18 +115,27 @@ class MidiPlayer(Player):
     def write_midi_file(self):
         self.midi_file.save(self.midi_file_path)
 
-    def play_all(self):
-        self._play()  # MidiPlayer.PLAY_ALL)
+    def play(self):
+        self._play()
 
     def play_each(self):
-        self._play()  # MidiPlayer.PLAY_EACH)
+        self._play()
+
+    @property
+    def song(self):
+        return self._song
+
+    @song.setter
+    def song(self, song: Song):
+        validate_type('song', song, Song)
+        self._song = song
 
     # TODO Support Midi Performance Attrs
     # def _apply_performance_attrs(self, note, *performance_attrs_list):
         # for pa 0in performance_attrs_list:
         #    apply pa to note
 
-    def _play(self):  # , op: str): # TODO Support Midi Performance Attrs
+    def _play(self):
         for track in self.song:
             # TODO Support Midi Performance Attrs
             # if op == PLAY_ALL

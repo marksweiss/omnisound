@@ -30,7 +30,7 @@ class CSoundWriter(Player):
         self._include_file_names = []
 
     # TODO FIX THIS HELPER FUNC
-    def play_all(self):
+    def play(self):
         self._play()
 
     # TODO FIX THIS HELPER FUNC

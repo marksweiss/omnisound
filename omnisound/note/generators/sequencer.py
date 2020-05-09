@@ -336,10 +336,10 @@ class Sequencer(Song):
         if not player:
             raise InvalidPlayerException(f'No track player or self.player found to play track {track_name}')
         player.song = song
-        player.play_all()
+        player.play()
 
     def play(self):
         # noinspection PyArgumentList
         self._player.song = self
-        self._player.play_all()
+        self._player.play()
     # /Track and Player Management

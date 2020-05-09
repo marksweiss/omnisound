@@ -58,4 +58,4 @@ if __name__ == '__main__':
 
     note_sequence = NoteSequence(notes)
     player = FoxDotSupercolliderPlayer(note_sequence)
-    player.play_all()
+    player.play()
