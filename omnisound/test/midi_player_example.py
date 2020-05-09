@@ -31,6 +31,7 @@ KEY = MajorKey.C
 OCTAVE = 4
 HARMONIC_SCALE = HarmonicScale.Major
 HARMONIC_CHORD = HarmonicChord.MajorTriad
+NUM_NOTES_IN_CHORD = 3
 
 NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                              num_attributes=NUM_ATTRIBUTES,
@@ -42,7 +43,7 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE,
               mn=NOTE_CONFIG)
 NUM_NOTES_IN_SCALE = 7
 
-NUM_MEASURES = 16
+NUM_MEASURES = 4
 BASE_VELOCITY = 100
 VELOCITY_FACTOR = 2
 
@@ -66,14 +67,10 @@ if __name__ == '__main__':
                             (1 / BEAT_DUR_VAL) *
                             ((1 / dur_val) / (1 / BEAT_DUR_VAL))
                            )
-    # TEMP DEBUG
-    print(f'notes_per_measure {notes_per_measure} {1 / BEAT_DUR_VAL} {(1 / dur_val)} {((1 / dur_val) / (1 / BEAT_DUR_VAL))}')
-
-    swing_factor = 0.01
+    swing_factor = 0.008
     swing = Swing(swing_on=True, swing_range=swing_factor, swing_direction=Swing.SwingDirection.Both)
 
-    # TEMP DEBUG
-    for _ in range(NUM_MEASURES): # TODO RESTORE NUM_MEASURES
+    for _ in range(NUM_MEASURES):
         note_config = MakeNoteConfig.copy(NOTE_CONFIG)
         ostinato_measure = Measure(meter=METER, swing=swing, num_notes=notes_per_measure, mn=note_config)
 
@@ -85,10 +82,6 @@ if __name__ == '__main__':
             note_values.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
             note_config.attr_vals_defaults_map = note_values.as_dict()
             note = NoteSequence.new_note(note_config)
-
-            # TEMP DEBUG
-            print(f'BEFORE MEASURE note duration {note.duration} note_attr_vals {note.note_attr_vals}')
-
             ostinato_measure.append(note)
         ostinato_measure.apply_swing()
         ostinato_track.append(ostinato_measure)
@@ -97,18 +90,22 @@ if __name__ == '__main__':
     dur = NoteDur.WHOLE
     # noinspection PyTypeChecker
     dur_val: float = dur.value
-    notes_per_measure = int((1 / BEAT_DUR_VAL) * (dur_val / BEAT_DUR_VAL))
+    notes_per_measure = int(
+            (1 / BEAT_DUR_VAL) *
+            ((1 / dur_val) / (1 / BEAT_DUR_VAL))
+    )
+    chords_per_measure = int(notes_per_measure / NUM_NOTES_IN_CHORD) or 1
     octave = OCTAVE - 2
 
     for _ in range(NUM_MEASURES):
         note_config = MakeNoteConfig.copy(NOTE_CONFIG)
         chords_measure = Measure(meter=METER, swing=swing, num_notes=notes_per_measure, mn=note_config)
 
-        for i in range(notes_per_measure):
+        for i in range(chords_per_measure):
             note_values = NoteValues(ATTR_NAMES)
             note_values.time = 0.0
             note_values.duration = dur_val
-            note_values.velocity = BASE_VELOCITY - 20
+            note_values.velocity = BASE_VELOCITY - 10
             chord_root = SCALE[i % NUM_NOTES_IN_SCALE]
             note_values.pitch = chord_root.pitch
 

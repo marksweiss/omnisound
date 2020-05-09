@@ -150,26 +150,9 @@ class Measure(NoteSequence):
         measure_duration = self.meter.beats_per_measure * \
                            self.meter.quarter_notes_per_beat_note * \
                            NoteDur.QUARTER.value
-
-        # TEMP DEBUG
-        print(f'self.meter.beats_per_measure {self.meter.beats_per_measure}')
-        print(f'self.meter.quarter_notes_per_beat_note {self.meter.quarter_notes_per_beat_note}')
-        print(f'measure_duration {measure_duration}')
-        print(f'note.start {note.start}')
-        print(f'self.meter.measure_dur_secs {self.meter.measure_dur_secs}')
-        print(f'(measure_duration * self.meter.measure_dur_secs) {(measure_duration * self.meter.measure_dur_secs)}')
-        print(f'note.start * (measure_duration * self.meter.measure_dur_secs) {note.start * (measure_duration * self.meter.measure_dur_secs)}')
-
         return note.start * (measure_duration * self.meter.measure_dur_secs)
 
     def _get_duration_for_tempo(self, note: Any) -> float:
-
-        # TEMP DEBUG
-        # print(f'self.meter.quarter_note_dur_secs {self.meter.quarter_note_dur_secs}')
-        # print(f'note.duration {note.duration}')
-        # print(f'NoteDur.QUARTER.value {NoteDur.QUARTER.value}')
-        # print(f'{self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)}')
-
         return self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
     # /Updating Tempo and resetting note start and duration
 
@@ -215,11 +198,11 @@ class Measure(NoteSequence):
                               f'measure.max_duration {self.max_duration}'))
 
         for note in to_add:
-            note.duration = self._get_duration_for_tempo (note)
+            note.duration = self._get_duration_for_tempo(note)
             note.start = self.next_note_start
             self.next_note_start += note.duration
-            super (Measure, self).append (note)
-        self._sort_notes_by_start_time ()
+            super(Measure, self).append(note)
+        self._sort_notes_by_start_time()
 
         return self
 
@@ -227,11 +210,11 @@ class Measure(NoteSequence):
         self.remove((0, len(self)))
         self.next_note_start = 0.0
         for note in to_add:
-            note.duration = self._get_duration_for_tempo (note)
+            note.duration = self._get_duration_for_tempo(note)
             note.start = self.next_note_start
             self.next_note_start += note.duration
-            super (Measure, self).append (note)
-        self._sort_notes_by_start_time ()
+            super(Measure, self).append(note)
+        self._sort_notes_by_start_time()
 
         return self
     # /Adding notes in sequence from the current start time, one note immediately after another
@@ -331,8 +314,8 @@ class Measure(NoteSequence):
 
     def extend(self, to_add: NoteSequence) -> 'Measure':
         for note in to_add:
-            note.start = self._get_start_for_tempo (note)
-            note.duration = self._get_duration_for_tempo (note)
+            note.start = self._get_start_for_tempo(note)
+            note.duration = self._get_duration_for_tempo(note)
         super(Measure, self).extend(to_add)
         self._sort_notes_by_start_time()
         return self
@@ -350,11 +333,11 @@ class Measure(NoteSequence):
     def insert(self, index: int, to_add: Any) -> 'Measure':
         if isinstance(to_add, NoteSequence):
             for note in to_add:
-                to_add.start = self._get_start_for_tempo (note)
-                to_add.duration = self._get_duration_for_tempo (note)
+                to_add.start = self._get_start_for_tempo(note)
+                to_add.duration = self._get_duration_for_tempo(note)
         else:
-            to_add.start = self._get_start_for_tempo (to_add)
-            to_add.duration = self._get_duration_for_tempo (to_add)
+            to_add.start = self._get_start_for_tempo(to_add)
+            to_add.duration = self._get_duration_for_tempo(to_add)
         super(Measure, self).insert(index, to_add)
         self._sort_notes_by_start_time()
         return self
