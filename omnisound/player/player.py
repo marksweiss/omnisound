@@ -39,15 +39,9 @@ class Player(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     @property
-    def song(self):
-        """Player has a Song attribute that can be a source of notes to be played by the play*() methods"""
-        raise NotImplementedError()
-
     @abstractmethod
-    @song.setter
-    def song(self, song):
+    def song(self):
         """Player has a Song attribute that can be a source of notes to be played by the play*() methods"""
         raise NotImplementedError()
 
