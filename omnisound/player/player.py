@@ -52,11 +52,6 @@ class Player(metaclass=ABCMeta):
         self.post_play_hooks: Dict[str, Callable] = {}
         self.post_play_hooks_list: List[Callable] = []
 
-    # TODO REMOVE
-    # @property
-    # def notes(self):
-    #     return self.note_sequence
-
     def add_pre_play_hook(self, name: str, hook: Any):
         self._add_hook(name, hook, self.pre_play_hooks, self.pre_play_hooks_list)
 
