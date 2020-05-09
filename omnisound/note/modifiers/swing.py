@@ -69,7 +69,6 @@ class Swing(object):
         if self.swing_on:
             for note in note_sequence:
                 note.start += self.calculate_swing_adjust(swing_direction, swing_jitter_type)
-                # TODO TEST FOR THIS CASE
                 if note.start < 0.0:
                     note.start = 0.0
 

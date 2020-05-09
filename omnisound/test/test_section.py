@@ -231,11 +231,13 @@ def test_swing_off_apply_swing(section):
 def test_assign_swing_apply_swing(section):
     # Expect notes to be adjusted downward instead of upward because we use
     # a new Swing with SwingDirection.Reverse instead of the default Forward
-    expected_swing_note_starts = [section[0][0].start - SWING_RANGE,
+    # Note that the first note is expected to be 0.0 and not negative because apply_swing() catches this case
+    # and assigns any negative note.start value to 0.0
+    expected_swing_note_starts = [0.0,
                                   section[0][1].start - SWING_RANGE,
                                   section[0][2].start - SWING_RANGE,
                                   section[0][3].start - SWING_RANGE,
-                                  section[1][0].start - SWING_RANGE,
+                                  0.0,
                                   section[1][1].start - SWING_RANGE,
                                   section[1][2].start - SWING_RANGE,
                                   section[1][3].start - SWING_RANGE]

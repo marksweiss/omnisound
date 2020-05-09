@@ -101,7 +101,9 @@ def test_swing_reverse_fixed(note_sequence, swing):
     note_sequence[2].start += (2 * DUR)
     note_sequence[3].start += (3 * DUR)
 
-    expected_swing_note_starts = [note_sequence[0].start - SWING_RANGE,
+    # Note that the first note is expected to be 0.0 and not negative because apply_swing() catches this case
+    # and assigns any negative note.start value to 0.0
+    expected_swing_note_starts = [0.0,
                                   note_sequence[1].start - SWING_RANGE,
                                   note_sequence[2].start - SWING_RANGE,
                                   note_sequence[3].start - SWING_RANGE]
