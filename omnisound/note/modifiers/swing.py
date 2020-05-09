@@ -69,6 +69,9 @@ class Swing(object):
         if self.swing_on:
             for note in note_sequence:
                 note.start += self.calculate_swing_adjust(swing_direction, swing_jitter_type)
+                # TODO TEST FOR THIS CASE
+                if note.start < 0.0:
+                    note.start = 0.0
 
     # This is also called from Measure directly, so it validates the swing_direction and swing_jitter_type args
     def calculate_swing_adjust(self,

@@ -150,9 +150,26 @@ class Measure(NoteSequence):
         measure_duration = self.meter.beats_per_measure * \
                            self.meter.quarter_notes_per_beat_note * \
                            NoteDur.QUARTER.value
-        return note.start * (measure_duration / self.meter.measure_dur_secs)
+
+        # TEMP DEBUG
+        print(f'self.meter.beats_per_measure {self.meter.beats_per_measure}')
+        print(f'self.meter.quarter_notes_per_beat_note {self.meter.quarter_notes_per_beat_note}')
+        print(f'measure_duration {measure_duration}')
+        print(f'note.start {note.start}')
+        print(f'self.meter.measure_dur_secs {self.meter.measure_dur_secs}')
+        print(f'(measure_duration * self.meter.measure_dur_secs) {(measure_duration * self.meter.measure_dur_secs)}')
+        print(f'note.start * (measure_duration * self.meter.measure_dur_secs) {note.start * (measure_duration * self.meter.measure_dur_secs)}')
+
+        return note.start * (measure_duration * self.meter.measure_dur_secs)
 
     def _get_duration_for_tempo(self, note: Any) -> float:
+
+        # TEMP DEBUG
+        # print(f'self.meter.quarter_note_dur_secs {self.meter.quarter_note_dur_secs}')
+        # print(f'note.duration {note.duration}')
+        # print(f'NoteDur.QUARTER.value {NoteDur.QUARTER.value}')
+        # print(f'{self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)}')
+
         return self.meter.quarter_note_dur_secs * (note.duration / NoteDur.QUARTER.value)
     # /Updating Tempo and resetting note start and duration
 
@@ -173,7 +190,7 @@ class Measure(NoteSequence):
             raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
                               f'measure.max_duration {self.max_duration}'))
 
-        note.duration = self._get_duration_for_tempo(note)
+        note.duration = actual_duration_secs
         note.start = self.next_note_start
         self.next_note_start += note.duration
         super(Measure, self).append(note)

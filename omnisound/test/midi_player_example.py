@@ -59,26 +59,36 @@ if __name__ == '__main__':
                              channel=2)
 
     # Ostinato
-    # dur = NoteDur.THIRTYSECOND
-    dur = NoteDur.HALF
+    dur = NoteDur.THIRTYSECOND
     # noinspection PyTypeChecker
     dur_val: float = dur.value
-    notes_per_measure = int((1 / BEAT_DUR_VAL) * ((1 / dur_val) / (1 / BEAT_DUR_VAL)))
+    notes_per_measure = int(
+                            (1 / BEAT_DUR_VAL) *
+                            ((1 / dur_val) / (1 / BEAT_DUR_VAL))
+                           )
+    # TEMP DEBUG
+    print(f'notes_per_measure {notes_per_measure} {1 / BEAT_DUR_VAL} {(1 / dur_val)} {((1 / dur_val) / (1 / BEAT_DUR_VAL))}')
+
     swing_factor = 0.01
     swing = Swing(swing_on=True, swing_range=swing_factor, swing_direction=Swing.SwingDirection.Both)
 
-    for _ in range(NUM_MEASURES):
+    # TEMP DEBUG
+    for _ in range(NUM_MEASURES): # TODO RESTORE NUM_MEASURES
         note_config = MakeNoteConfig.copy(NOTE_CONFIG)
         ostinato_measure = Measure(meter=METER, swing=swing, num_notes=notes_per_measure, mn=note_config)
 
         for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
-            note_values.time = 0.0 # (i % notes_per_measure) * dur_val
+            note_values.time = (i % notes_per_measure) * dur_val
             note_values.duration = dur_val
             note_values.velocity = int(BASE_VELOCITY - ((i % notes_per_measure) / VELOCITY_FACTOR))
             note_values.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
             note_config.attr_vals_defaults_map = note_values.as_dict()
             note = NoteSequence.new_note(note_config)
+
+            # TEMP DEBUG
+            print(f'BEFORE MEASURE note duration {note.duration} note_attr_vals {note.note_attr_vals}')
+
             ostinato_measure.append(note)
         ostinato_measure.apply_swing()
         ostinato_track.append(ostinato_measure)
