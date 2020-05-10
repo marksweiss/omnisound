@@ -27,9 +27,6 @@ class MidiSequencer(Sequencer):
                                      get_pitch_for_key=get_pitch_for_key,
                                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                      attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
-        mn.num_attributes = mn.num_attributes or NUM_ATTRIBUTES
-        mn.attr_name_idx_map = mn.attr_name_idx_map or ATTR_NAME_IDX_MAP
-        mn.attr_get_type_cast_map = mn.attr_get_type_cast_map or ATTR_GET_TYPE_CAST_MAP
         super(MidiSequencer, self).__init__(name=name,
                                             num_measures=num_measures,
                                             pattern_resolution=pattern_resolution,
