@@ -49,14 +49,7 @@ if __name__ == '__main__':
 
     track_name = 'chord'
     instrument = MidiInstrument.Acoustic_Grand_Piano.value
-    notes_per_measure = int(1 / NoteDur.WHOLE.value)
-    pattern_measures = []
-    for i in range(NUM_MEASURES):
-        for j in range(notes_per_measure):
-            pattern_phrase = f'C:2:MajorTriad:{BASE_VELOCITY - 10}'
-            pattern_phrases.append(pattern_phrase)
-        pattern_measures.append(' '.join(pattern_phrases))
-    pattern = '|'.join(pattern_measures)
+    pattern = f'C:2:MajorTriad:{BASE_VELOCITY - 10}'
     SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern, instrument=instrument)
 
     SEQUENCER.play()
