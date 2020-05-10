@@ -7,6 +7,7 @@ from omnisound.note.adapters.midi_note import ATTR_NAME_IDX_MAP, ATTR_GET_TYPE_C
 from omnisound.note.generators.sequencer import Sequencer
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
+from omnisound.player.midi_player import MidiPlayer, MidiPlayerAppendMode
 
 
 class MidiSequencer(Sequencer):
@@ -16,6 +17,7 @@ class MidiSequencer(Sequencer):
                  pattern_resolution: Optional[NoteDur] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 midi_file_path: str = None,
                  mn: MakeNoteConfig = None):
         mn.num_attributes = mn.num_attributes or NUM_ATTRIBUTES
         mn.attr_name_idx_map = mn.attr_name_idx_map or ATTR_NAME_IDX_MAP
@@ -25,4 +27,6 @@ class MidiSequencer(Sequencer):
                                             pattern_resolution=pattern_resolution,
                                             meter=meter,
                                             swing=swing,
+                                            player=MidiPlayer(append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote,
+                                                              midi_file_path=midi_file_path),
                                             mn=mn)

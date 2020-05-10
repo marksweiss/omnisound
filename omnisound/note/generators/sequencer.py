@@ -68,11 +68,11 @@ class Sequencer(Song):
                  swing: Optional[Swing] = None,
                  player: Optional[Player] = None,
                  mn: MakeNoteConfig = None):
+        validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
         validate_optional_types(('name', name, str),
                                 ('pattern_resolution', pattern_resolution, NoteDur),
                                 ('swing', swing, Swing),
                                 ('player', player, Player))
-        validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
 
         # Sequencer wraps song but starts with no Tracks. It provides an alternate API for generating and adding Tracks.
         to_add = []
@@ -240,7 +240,7 @@ class Sequencer(Song):
         swing = swing or self.swing
 
         def _make_note_val(_instrument, _start, _duration, _amplitude, _pitch):
-            _note_vals = NoteValues(self.mn.attr_name_idx_map.keys ())
+            _note_vals = NoteValues(self.mn.attr_name_idx_map.keys())
             _note_vals.instrument = _instrument
             _note_vals.start = _start
             _note_vals.duration = _duration

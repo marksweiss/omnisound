@@ -47,7 +47,9 @@ class MidiPlayerEvent(object):
        time since the start of the elements in the sequence, and tick_delta, the offset of this
        event's tick to the event that preceded it in a sequence.
     """
-    def __init__(self, note: Any, measure: Measure, event_type: MidiEventType):
+    def __init__(self, note: Any,
+                 measure: Measure,
+                 event_type: MidiEventType):
         validate_type('event_type', event_type, MidiEventType)
         self.note = note
         self.measure = measure
@@ -78,7 +80,6 @@ class MidiPlayerEvent(object):
             event.tick_delta = event.tick - event_list[j - 1].tick
 
 
-# TODO ONLY GARAGEBAND CAN OPEN THE FILES PRODUCED BY THIS
 class MidiPlayer(Player):
     MIDI_TICKS_PER_QUARTER_NOTE = 960
     MIDI_QUARTER_NOTES_PER_BEAT = 4

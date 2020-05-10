@@ -42,6 +42,11 @@ class Player(metaclass=ABCMeta):
         """Player has a Song attribute that can be a source of notes to be played by the play*() methods"""
         raise NotImplementedError()
 
+    @song.setter
+    @abstractmethod
+    def song(self, song):
+        raise NotImplementedError()
+
     def __init__(self):
         self.improvising = False
         self.pre_play_hooks: Dict[str, Callable] = {}
