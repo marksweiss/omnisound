@@ -232,7 +232,7 @@ class NoteSequence:
                 'NoteSequence extended to a NoteSequence must have the same number of attributes')
         # Either this is the first note in the sequence, or it's not
         # If it is, make this sequence the note_attr_vals of this sequence. If it is not, append these notes
-        # to the existing sequence -- we have already confirmed the shapes conform if  existing sequence is not empty.
+        # to the existing sequence -- we have already confirmed the shapes conform if existing sequence is not empty.
         if len(self.note_attr_vals):
             self.note_attr_vals = np_concatenate((self.note_attr_vals, note_sequence.note_attr_vals))
         else:

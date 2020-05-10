@@ -24,7 +24,7 @@ BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QUARTER
 # noinspection PyTypeChecker
 BEAT_DUR_VAL: float = BEAT_DUR.value
-BPM = 120
+BPM = 240
 METER = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=BPM, quantizing=True)
 
 KEY = MajorKey.C
@@ -60,23 +60,23 @@ if __name__ == '__main__':
                              channel=2)
 
     # Ostinato
-    dur = NoteDur.THIRTYSECOND
-    # noinspection PyTypeChecker
-    dur_val: float = dur.value
-    notes_per_measure = int(
-                            (1 / BEAT_DUR_VAL) *
-                            ((1 / dur_val) / (1 / BEAT_DUR_VAL))
-                           )
     swing_factor = 0.008
     swing = Swing(swing_on=True, swing_range=swing_factor, swing_direction=Swing.SwingDirection.Both)
 
+    dur = NoteDur.THIRTYSECOND
+    # noinspection PyTypeChecker
+    dur_val: float = dur.value
+    notes_per_measure = int((1 / dur_val) * (BEATS_PER_MEASURE * BEAT_DUR_VAL))
     for _ in range(NUM_MEASURES):
         note_config = MakeNoteConfig.copy(NOTE_CONFIG)
-        ostinato_measure = Measure(meter=METER, swing=swing, num_notes=notes_per_measure, mn=note_config)
+        # Start the measure with 0 notes because we are appending into it
+        # Otherwise append doesn't work correctly. TODO WHY THIS SEEMS COUNTERINTUITIVE AND STUPID
+        ostinato_measure = Measure(meter=METER, swing=swing, num_notes=0,
+                                   mn=note_config)
 
         for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
-            note_values.time = (i % notes_per_measure) * dur_val
+            note_values.time = i * dur_val
             note_values.duration = dur_val
             note_values.velocity = int(BASE_VELOCITY - ((i % notes_per_measure) / VELOCITY_FACTOR))
             note_values.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
@@ -87,21 +87,18 @@ if __name__ == '__main__':
         ostinato_track.append(ostinato_measure)
 
     # Chords
+    octave = OCTAVE - 2
     dur = NoteDur.WHOLE
+
     # noinspection PyTypeChecker
     dur_val: float = dur.value
-    notes_per_measure = int(
-            (1 / BEAT_DUR_VAL) *
-            ((1 / dur_val) / (1 / BEAT_DUR_VAL))
-    )
-    chords_per_measure = int(notes_per_measure / NUM_NOTES_IN_CHORD) or 1
-    octave = OCTAVE - 2
-
+    notes_per_measure = int((1 / dur_val) * (BEATS_PER_MEASURE * BEAT_DUR_VAL))
     for _ in range(NUM_MEASURES):
         note_config = MakeNoteConfig.copy(NOTE_CONFIG)
-        chords_measure = Measure(meter=METER, swing=swing, num_notes=notes_per_measure, mn=note_config)
+        chords_measure = Measure(meter=METER, swing=swing, num_notes=0,
+                                 mn=note_config)
 
-        for i in range(chords_per_measure):
+        for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
             note_values.time = 0.0
             note_values.duration = dur_val

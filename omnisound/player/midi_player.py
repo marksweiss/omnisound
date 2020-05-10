@@ -162,6 +162,7 @@ class MidiPlayer(Player):
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
                     # noinspection PyTypeChecker
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_OFF))
+
                 MidiPlayerEvent.set_tick_deltas(event_list)
                 for event in event_list:
                     # TODO Support Midi Performance Attrs
