@@ -36,7 +36,6 @@ if __name__ == '__main__':
         return int(BASE_VELOCITY - ((j % notes_per_measure) / VELOCITY_FACTOR))
 
     track_name = 'ostinato'
-    instrument = MidiInstrument.Vibraphone.value
     notes_per_measure = int(1 / NoteDur.THIRTYSECOND.value)
     pattern_phrases = []
     for j in range(0, notes_per_measure, 4):
@@ -46,17 +45,18 @@ if __name__ == '__main__':
                           f'E:4::{get_velocity (j + 3, notes_per_measure)}')
         pattern_phrases.append(pattern_phrase)
     pattern = ' '.join(pattern_phrases)
-    SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern, instrument=instrument,
+    SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
+                                       instrument=MidiInstrument.Vibraphone.value,
                                        track_type=MidiTrack)
     SEQUENCER.track(track_name).channel = 1
     SEQUENCER.track(track_name).apply_swing()
 
     track_name = 'chord'
-    instrument = MidiInstrument.Acoustic_Grand_Piano.value
     # TODO MODIFY SEQUENCER TO SUPPORT PATTERNS WITH NOTES OF DIFFERENT LENGTHS IN DIFFERENT TRACKS AS LONG
     #  AS ALL MEASURES IN ALL TRACKS ARE THE SAME AND CORRECT DURATION
     pattern = f'C:2:MajorTriad:{BASE_VELOCITY - 10} ' + ' '.join(['C:2::0'] * 31)
-    SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern, instrument=instrument,
+    SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
+                                       instrument=MidiInstrument.Acoustic_Grand_Piano.value,
                                        track_type=MidiTrack)
     SEQUENCER.track(track_name).channel = 2
 

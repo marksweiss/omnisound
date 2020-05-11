@@ -212,7 +212,7 @@ class Sequencer(Song):
         track_name = track_name or str(self._next_track)
         self._track_name_idx_map[track_name] = self._next_track
         swing = swing or self.swing
-        track = track_type(name=track_name, meter=self.meter, swing=swing)
+        track = track_type(name=track_name, instrument=instrument, meter=self.meter, swing=swing)
         track.extend(to_add=section)
         if swing and swing.is_swing_on():
             track.apply_swing()
