@@ -1,6 +1,6 @@
 # Copyright 2020 Mark S. Weiss
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from omnisound.note.adapters.note import MakeNoteConfig, NoteValues, set_attr_vals_from_note_values
 from omnisound.note.containers.measure import Measure
@@ -16,7 +16,7 @@ from omnisound.note.modifiers.swing import Swing
 from omnisound.player.player import Player
 from omnisound.utils.mingus_utils import get_chord_pitches
 from omnisound.utils.utils import (validate_optional_type, validate_optional_type_choice, validate_optional_types,
-                                   validate_type, validate_type_choice, validate_types)
+                                   validate_type, validate_type_reference, validate_type_choice, validate_types)
 
 
 class InvalidPatternException(Exception):
@@ -79,7 +79,7 @@ class Sequencer(Song):
         meter = meter or Sequencer.DEFAULT_METER
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
-        self._player = player
+        self.player = player
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
@@ -88,15 +88,18 @@ class Sequencer(Song):
         #  a quarter note. With no pattern resolution argument, patterns are 4 notes per measure. But if
         #  pattern_resolution is passed in as an eighth note, then the patterns would have 4 * (1/4 / 1/8) == 8 notes.
         self.pattern_resolution = pattern_resolution or Sequencer.DEFAULT_PATTERN_RESOLUTION
+        # TODO REMOVE NOTES_PER_MEASURE AND TEST COVERAGE
         self.notes_per_measure = int(meter.beats_per_measure *
                                      (meter.beat_note_dur.value / self.pattern_resolution.value))
+        # TODO REMOVE NOTE_DURATION AND TEST COVERAGE
+        #  INSTEAD TEST FOR the duration of the pattern being one or more full measures by testing for its duration
+        #  and fill if it's less than the number of measures for the sequence
         self.note_duration = self.meter.measure_dur_secs / self.notes_per_measure
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
         self._next_track = 0
         self._track_name_idx_map = {}
-
         self._track_name_player_map = {}
 
     # Properties
@@ -182,7 +185,8 @@ class Sequencer(Song):
                                  track_name: Optional[str] = None,
                                  pattern: str = None,
                                  instrument: Union[float, int] = None,
-                                 swing: Optional[Swing] = None):
+                                 swing: Optional[Swing] = None,
+                                 track_type: Optional[Any] = Track):
         """
         - Sets the pattern, a section of measures in a new track named `track_name` or if no name is provided
           in a track with a default name of its track number.
@@ -190,10 +194,13 @@ class Sequencer(Song):
         - If `track_name` is not supplied, a default name of `Track N`, where N is the index of the track, is assigned
         - If `swing` is arg is supplied and `is_swing_on()` is `True`, then the track will have swing applied using it
         - If `self.swing` `is_swing_on()` is `True` then the track will have swing applied using it
+        - If `track_type` is provided, this method constructs a subclass of Track. This allows callers to
+          construct for example a MidiTrack, which derives from Track and adds attributes specific to MIDI.
         """
         validate_type('pattern', pattern, str)
         validate_optional_types(('track_name', track_name, str), ('swing', swing, Swing))
         validate_type_choice('instrument', instrument, (float, int))
+        validate_type_reference('track_type', track_type, Track)
 
         # Set the measures in the section to add to the track
         section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument)
@@ -205,7 +212,7 @@ class Sequencer(Song):
         track_name = track_name or str(self._next_track)
         self._track_name_idx_map[track_name] = self._next_track
         swing = swing or self.swing
-        track = Track(name=track_name, meter=self.meter, swing=swing)
+        track = track_type(name=track_name, meter=self.meter, swing=swing)
         track.extend(to_add=section)
         if swing and swing.is_swing_on():
             track.apply_swing()
@@ -340,6 +347,6 @@ class Sequencer(Song):
 
     def play(self):
         # noinspection PyArgumentList
-        self._player.song = self
-        self._player.play()
+        self.player.song = self
+        self.player.play()
     # /Track and Player Management

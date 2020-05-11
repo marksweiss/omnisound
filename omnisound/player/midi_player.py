@@ -1,20 +1,7 @@
-# Copyright 2018 Mark S. Weiss
-
-# 960 ticks per qn
-# 4 q per beat
-# 60 bpm
-# 240 qpm
-# 240 * 960 / 60
-
-# adjbpm = int (60.0 * 1000000.0 / tempo)
-# 60 seconds * 1M (ticks per second) / beats per minute
-# 1M (ticks per second) / beats per minute * 60
-# 1M (ticks per second) / beats per second
-
-# TODO Fix broken imports and get example player playing again
+# Copyright 2020 Mark S. Weiss
 
 from enum import Enum
-from typing import Any, List
+from typing import Any, List, Optional
 
 # noinspection PyProtectedMember
 from mido import Message, MidiFile, MidiTrack
@@ -24,7 +11,7 @@ from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.song import Song
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
-from omnisound.utils.utils import validate_optional_path, validate_type, validate_types
+from omnisound.utils.utils import validate_optional_path, validate_optional_type, validate_type, validate_types
 
 
 class MidiPlayerAppendMode(Enum):
@@ -50,7 +37,7 @@ class MidiPlayerEvent(object):
     def __init__(self, note: Any,
                  measure: Measure,
                  event_type: MidiEventType):
-        validate_type('event_type', event_type, MidiEventType)
+        validate_types(('measure', measure, Measure), ('event_type', event_type, MidiEventType))
         self.note = note
         self.measure = measure
         self.event_type = event_type
@@ -94,12 +81,13 @@ class MidiPlayer(Player):
     PLAY_EACH = 'play_each'
 
     def __init__(self,
-                 song: Song = None,
+                 song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
                  midi_file_path: str = None):
         # MidiPlayer only can play a Song with one or more Tracks. Tracks may be bare NoteSequence collections
         # or Measures with Meter
-        validate_types(('song', song, Song), ('append_mode', append_mode, MidiPlayerAppendMode))
+        validate_types(('append_mode', append_mode, MidiPlayerAppendMode))
+        validate_optional_type('song', song, Song)
         validate_optional_path('midi_file_path', midi_file_path)
         super(MidiPlayer, self).__init__()
 

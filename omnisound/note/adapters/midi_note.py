@@ -15,13 +15,23 @@ from omnisound.utils.utils import (validate_optional_type, validate_optional_seq
 
 CLASS_NAME = 'MidiNote'
 
+# NOTE: Aliased names should NOT be added to ATTR_NAMES or ATTR_NAME_IDX_MAP, because this sets the field names
+# in the underlying numpy storage. Instead we dynamically create aliased accessors in the metaclass.
+# But they ARE hardcoded into the ATTR_GET_TYPE_CAST_MAP, because that is statically declared as a CONST.
 ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
+# TODO RESTORE TEST COVERAGE FOR ALIASED NAMES
+ATTR_NAME_ALIASES = {
+    'time': 'start',
+    'velocity': 'amplitude'
+}
 ATTR_NAME_IDX_MAP = add_base_attr_name_indexes({attr_name: i for i, attr_name in enumerate(ATTR_NAMES)})
 ATTR_GET_TYPE_CAST_MAP = {
     'instrument': int,
     'time': float,
+    'start': float,
     'duration': float,
     'velocity': int,
+    'amplitude': int,
     'pitch': int,
 }
 NUM_ATTRIBUTES = len(ATTR_NAMES)
@@ -31,7 +41,7 @@ class MidiInstrument(Enum):
     Acoustic_Grand_Piano = 0
     Bright_Acoustic_Piano = 1
     Electric_Grand_Piano = 2
-    Honky_tonk_Piano = 3
+    Honkytonk_Piano = 3
     Electric_Piano_1 = 4
     Electric_Piano_2 = 5
     Harpsichord = 6
@@ -303,6 +313,7 @@ def s_channel():
     return _s_channel
 
 
+# TODO GET RID OF THESE?
 # Fluent getters setters for core core note attributes
 # noinspection PyPep8Naming
 def I(self, attr_val: int):
@@ -361,6 +372,7 @@ class MidiNoteMeta(type):
         # Attributes assigned by the caller
         cls.note_attr_vals = None
         cls.attr_name_idx_map = None
+        cls.attr_name_aliases = None
         cls.attr_get_type_cast_map = None
         cls.performance_attrs = None
 
@@ -373,24 +385,37 @@ class MidiNoteMeta(type):
 def _make_cls(attr_name_idx_map):
     cls_bases = ()
     methods = {}
+
     # Create dynamically getters and setters for the note attributes for this instantiation of a CSoundNote class
     for attr_name in attr_name_idx_map.keys():
         get_func = getter(attr_name)
         methods[f'g_{attr_name}'] = get_func
+        if attr_name in ATTR_NAME_ALIASES:
+            methods[f'g_{ATTR_NAME_ALIASES[attr_name]}'] = get_func
+
         set_func = setter(attr_name)
         methods[f's_{attr_name}'] = set_func
+        if attr_name in ATTR_NAME_ALIASES:
+            methods[f's_{ATTR_NAME_ALIASES[attr_name]}'] = set_func
+
         methods[attr_name] = property(get_func, set_func)
+        if attr_name in ATTR_NAME_ALIASES:
+            methods[ATTR_NAME_ALIASES[attr_name]] = property(get_func, set_func)
+
+    # TODO GET RID OF THESE?
     # Standard Note fluent accessor methods
     methods['I'] = I
     methods['T'] = T
     methods['D'] = D
     methods['V'] = V
     methods['P'] = P
+
     # Standard Note API
     methods['transpose'] = transpose
     # Supported dunder methods
     methods['__eq__'] = eq
     methods['__str__'] = to_str
+
     # Custom MidiNote methods
     methods['program_change'] = program_change
     # noinspection PyTypeChecker
@@ -425,6 +450,7 @@ def make_note(note_attr_vals: ndarray,
     # These are always returned as an int
     note.attr_get_type_cast_map['instrument'] = int
     note.attr_get_type_cast_map['velocity'] = int
+    note.attr_get_type_cast_map['amplitude'] = int
     note.attr_get_type_cast_map['pitch'] = int
     note.attr_get_type_cast_map['channel'] = int
 

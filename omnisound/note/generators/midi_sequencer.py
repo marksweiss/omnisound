@@ -21,12 +21,12 @@ class MidiSequencer(Sequencer):
                  midi_file_path: str = None,
                  mn: MakeNoteConfig = None):
         if not mn:
-            self.mn = MakeNoteConfig(cls_name=CLASS_NAME,
-                                     num_attributes=NUM_ATTRIBUTES,
-                                     make_note=make_note,
-                                     get_pitch_for_key=get_pitch_for_key,
-                                     attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                     attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+            mn = MakeNoteConfig(cls_name=CLASS_NAME,
+                                num_attributes=NUM_ATTRIBUTES,
+                                make_note=make_note,
+                                get_pitch_for_key=get_pitch_for_key,
+                                attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                                attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
         super(MidiSequencer, self).__init__(name=name,
                                             num_measures=num_measures,
                                             pattern_resolution=pattern_resolution,

@@ -39,7 +39,8 @@ class MakeNoteConfig:
                  get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
                  attr_name_idx_map: Mapping[str, int],
                  attr_vals_defaults_map: Optional[Mapping[str, Union[float, int]]] = None,
-                 attr_get_type_cast_map: Optional[Mapping[str, Callable[[Union[float, int]], Union[float, int]]]] = None):
+                 attr_get_type_cast_map: Optional[Mapping[str, Callable[[Union[float, int]],
+                                                                        Union[float, int]]]] = None):
         self.cls_name = cls_name
         self.num_attributes = num_attributes
         self.make_note = make_note

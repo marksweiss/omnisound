@@ -172,9 +172,9 @@ class MidiTrack(Track):
                  swing: Optional[Swing] = None,
                  name: Optional[str] = None,
                  instrument: Optional[int] = None,
-                 channel: int = None,
+                 channel: Optional[int] = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
-        validate_type('channel', channel, int)
+        validate_optional_type('channel', channel, int)
         self.channel = channel
         super(MidiTrack, self).__init__(to_add=to_add,
                                         meter=meter,
