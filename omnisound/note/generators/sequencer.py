@@ -2,6 +2,8 @@
 
 from typing import Any, Optional, Union
 
+import pytest
+
 from omnisound.note.adapters.note import MakeNoteConfig, NoteValues, set_attr_vals_from_note_values
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.section import Section
@@ -40,8 +42,10 @@ class InvalidPlayerException(Exception):
 class Sequencer(Song):
     """
     Pattern language:
-      - Notes have 4 elements: Pitch:Octave:Chord:Amplitude
+      - Notes have 5 elements: Pitch:Octave:Chord:Amplitude:Duration
       - Chord is optional. Optional elements are simply no characters long.
+      - Duration is optional, and again can be no characters to indicate no value being provided. If the pattern
+        does not have a duration the note is assigned the beat duration for the meter the sequencer is constructed with.
       - Elements in a Note entry are delimited with colons
       - Rests are '.' entries
       - Measures are '|'
@@ -63,14 +67,12 @@ class Sequencer(Song):
     def __init__(self,
                  name: Optional[str] = None,
                  num_measures: int = None,
-                 pattern_resolution: Optional[NoteDur] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
                  player: Optional[Player] = None,
                  mn: MakeNoteConfig = None):
         validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
         validate_optional_types(('name', name, str),
-                                ('pattern_resolution', pattern_resolution, NoteDur),
                                 ('swing', swing, Swing),
                                 ('player', player, Player))
 
@@ -83,18 +85,7 @@ class Sequencer(Song):
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
-        # `pattern_resolution` allows creating patterns with more notes per measure than the meter.beats_per_measure
-        # For example if we use the default Meter of 4/4 we would have 4 beats per measure and a beat would be
-        #  a quarter note. With no pattern resolution argument, patterns are 4 notes per measure. But if
-        #  pattern_resolution is passed in as an eighth note, then the patterns would have 4 * (1/4 / 1/8) == 8 notes.
-        self.pattern_resolution = pattern_resolution or Sequencer.DEFAULT_PATTERN_RESOLUTION
-        # TODO REMOVE NOTES_PER_MEASURE AND TEST COVERAGE
-        self.notes_per_measure = int(meter.beats_per_measure *
-                                     (meter.beat_note_dur.value / self.pattern_resolution.value))
-        # TODO REMOVE NOTE_DURATION AND TEST COVERAGE
-        #  INSTEAD TEST FOR the duration of the pattern being one or more full measures by testing for its duration
-        #  and fill if it's less than the number of measures for the sequence
-        self.note_duration = self.meter.measure_dur_secs / self.notes_per_measure
+        self.default_note_duration = self.meter.quarter_notes_per_beat_note * 4
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
@@ -131,6 +122,15 @@ class Sequencer(Song):
     def track_names(self):
         return '\n'.join(self._track_name_idx_map.keys())
     # /Properties
+
+    # TODO TEST COVERAGE
+    # Note Modification
+    def transpose(self, interval: int):
+        validate_type('interval', interval, int)
+        for track in self.track_list:
+            for measure in track:
+                measure.transpose(interval)
+    # /Note Modification
 
     # Track and Pattern Management
     # TODO Validate instrument is int, MidiInstrument enum or a class (Foxdot)
@@ -258,12 +258,6 @@ class Sequencer(Song):
         measure_tokens = [t.strip() for t in pattern.split(Sequencer.MEASURE_TOKEN_DELIMITER)]
         for measure_token in measure_tokens:
             note_tokens = [t.strip() for t in measure_token.split()]
-            if len(note_tokens) != self.notes_per_measure:
-                raise InvalidPatternException(('Invalid pattern '
-                                               f'\'{pattern.split(Sequencer.MEASURE_TOKEN_DELIMITER)[0]} | ...\' '
-                                               f'has {len(note_tokens)} tokens per measure '
-                                               f'but notes_per_measure is {self.notes_per_measure}'))
-
             next_start = 0
             note_vals_lst = []
             for i, note_token in enumerate(note_tokens):
@@ -274,11 +268,11 @@ class Sequencer(Song):
                     # Dummy values
                     amplitude = self.mn.attr_get_type_cast_map['amplitude'](0)
                     pitch = self.mn.attr_get_type_cast_map['pitch'](1)
-                    note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
+                    note_vals = _make_note_val(instrument, start, self.default_note_duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
                 # It's a sounding note or chord
                 else:
-                    key, octave, chord, amplitude = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
+                    key, octave, chord, amplitude, duration = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
 
                     # Only major or minor notes supported
                     key = MAJOR_KEY_DICT.get(key) or MINOR_KEY_DICT.get(key)
@@ -287,6 +281,7 @@ class Sequencer(Song):
 
                     octave = int(octave)
                     amplitude = self.mn.attr_get_type_cast_map['amplitude'](amplitude)
+                    duration = duration or self.default_note_duration
 
                     if chord:
                         # Chord can be empty, but if there is a token it must be valid
@@ -302,19 +297,26 @@ class Sequencer(Song):
                                                           get_pitch_for_key=self.mn.get_pitch_for_key,
                                                           octave=octave)
                         for pitch in chord_pitches:
-                            note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
+                            note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
                             note_vals_lst.append(note_vals)
                     else:
                         pitch = self.mn.get_pitch_for_key(key, octave)
-                        note_vals = _make_note_val(instrument, start, self.note_duration, amplitude, pitch)
+                        note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
                         note_vals_lst.append(note_vals)
 
-                next_start += self.note_duration
+                next_start += duration
 
             measure = Measure(num_notes=len(note_vals_lst),
                               meter=self.meter,
                               swing=swing,
                               mn=MakeNoteConfig.copy(self.mn))
+
+            new_measure_duration = sum([note_vals.duration for note_vals in note_vals_lst])
+            if new_measure_duration != \
+                    pytest.approx(self.meter.quarter_notes_per_beat_note * 4 * NoteDur.QUARTER.value):
+                raise InvalidPatternException((f'Measure duration {new_measure_duration} !='
+                                               f'self.meter.beats_per_measure {self.meter.beats_per_measure} *'
+                                               f'self.meter_beat_note_dur {self.meter.beat_note_dur}'))
             for i, note_vals in enumerate(note_vals_lst):
                 note = measure.note(i)
                 set_attr_vals_from_note_values(note, note_vals)

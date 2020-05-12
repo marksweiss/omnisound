@@ -3,9 +3,8 @@
 import pytest
 
 from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.containers.measure import Meter, NoteDur, Swing
-from omnisound.note.generators.sequencer import Sequencer, InvalidPatternException
+from omnisound.note.generators.sequencer import Sequencer
 import omnisound.note.adapters.csound_note as csound_note
 
 INSTRUMENT = 1
@@ -32,8 +31,8 @@ NUM_MEASURES = 4
 PATTERN_RESOLUTION = NoteDur.QUARTER
 
 TRACK_NAME = 'Track 1'
-PATTERN = ('C:4::100 D:4::100 E:4::100 F:4::100|C:4::100 D:4::100 E:4::100 F:4::100|'
-           'C:4::100 D:4::100 E:4::100 F:4::100|C:4::100 D:4::100 E:4::100 F:4::100')
+PATTERN = ('C:4::100: D:4::100: E:4::100: F:4::100:|C:4::100: D:4::100: E:4::100: F:4::100:|'
+           'C:4::100: D:4::100: E:4::100: F:4::100:|C:4::100: D:4::100: E:4::100: F:4::100:')
 
 
 @pytest.fixture
@@ -61,7 +60,6 @@ def swing():
 def _sequencer(mn, meter, swing):
     return Sequencer(name=SEQUENCER_NAME,
                      num_measures=NUM_MEASURES,
-                     pattern_resolution=PATTERN_RESOLUTION,
                      meter=meter,
                      swing=swing,
                      mn=mn)
@@ -123,10 +121,10 @@ def test_add_pattern_as_new_track(make_note_config, sequencer, meter, swing):
 
 
 def test_add_pattern_wth_chords_as_new_track(sequencer, meter, swing):
-    chord_pattern = ('C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100|'
-                     'C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100|'
-                     'C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100|'
-                     'C:4::100 C:4:MajorTriad:100 C:4::100 C:4:MajorTriad:100')
+    chord_pattern = ('C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
+                     'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
+                     'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
+                     'C:4::100: C:4:MajorTriad:100: C:4::100 :C:4:MajorTriad:100:')
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=chord_pattern, instrument=INSTRUMENT)
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
     # Assert that there are notes in the measure for each single note and each note that is part of a chord
@@ -140,37 +138,10 @@ def test_add_pattern_wth_chords_as_new_track(sequencer, meter, swing):
     assert first_chord_notes[0].start == first_chord_notes[1].start == first_chord_notes[2].start
 
 
-def test_pattern_resolution(make_note_config, meter, swing):
-    new_pattern_resolution = NoteDur.EIGHTH
-    sequencer = Sequencer(name=SEQUENCER_NAME,
-                          num_measures=NUM_MEASURES,
-                          pattern_resolution=new_pattern_resolution,
-                          meter=meter,
-                          swing=swing,
-                          mn=make_note_config)
-
-    # Fixture pattern raises because it has four notes per measure but we halved the pattern resolution
-    # so there need to be 8 notes per measure
-    with pytest.raises(InvalidPatternException):
-        sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT)
-
-    new_pattern = ('C:4::100 D:4::100 E:4::100 F:4::100 C:4::100 D:4::100 E:4::100 F:4::100|'
-                   'C:4::100 D:4::100 E:4::100 F:4::100 C:4::100 D:4::100 E:4::100 F:4::100|'
-                   'C:4::100 D:4::100 E:4::100 F:4::100 C:4::100 D:4::100 E:4::100 F:4::100|'
-                   'C:4::100 D:4::100 E:4::100 F:4::100 C:4::100 D:4::100 E:4::100 F:4::100')
-    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=new_pattern, instrument=INSTRUMENT)
-    first_measure = sequencer.track(TRACK_NAME).measure_list[0]
-    new_dur = DUR / 2
-    eighth_note_pattern_resolution_expected_starts = [0.0, new_dur, 2 * new_dur, 3 * new_dur,
-                                                      4 * new_dur, 5 * new_dur, 6 * new_dur, 7 * new_dur]
-    for i, note in enumerate(first_measure):
-        assert eighth_note_pattern_resolution_expected_starts[i] == note.start
-
-
 def test_fill_pattern_to_track_length(sequencer):
     # Make a pattern that is one measure long, load into sequencer set to have 4-measure tracks, verify the length
     #  of the track and that notes in it. There should be four measures identical to the one defined by `short_pattern`
-    short_pattern = 'C:4::100 D:4::100 E:4::100 F:4::100'
+    short_pattern = 'C:4::100: D:4::100: E:4::100: F:4::100:'
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=short_pattern, instrument=INSTRUMENT)
     assert NUM_MEASURES == len(sequencer.track(TRACK_NAME))
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
@@ -183,9 +154,9 @@ def test_fill_pattern_to_track_length(sequencer):
     # Test the case where the pattern does not divide the track length evenly
     # Three-measure pattern into 4-measure track, so the first measure should repeat in the fourth measure
     new_track_name = 'new track'
-    three_measure_pattern = ('C:4::100 D:4::100 E:4::100 F:4::100|'
-                             'C:5::100 D:5::100 E:5::100 F:5::100|'
-                             'C:6::100 D:6::100 E:6::100 F:6::100')
+    three_measure_pattern = ('C:4::100: D:4::100: E:4::100: F:4::100:|'
+                             'C:5::100: D:5::100: E:5::100: F:5::100:|'
+                             'C:6::100: D:6::100: E:6::100: F:6::100:')
     sequencer.add_pattern_as_new_track(track_name=new_track_name, pattern=three_measure_pattern, instrument=INSTRUMENT)
     assert NUM_MEASURES == len(sequencer.track(new_track_name))
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
