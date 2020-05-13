@@ -15,7 +15,6 @@ class CSoundSequencer(Sequencer):
     def __init__(self,
                  name: Optional[str] = None,
                  num_measures: int = None,
-                 pattern_resolution: Optional[NoteDur] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
                  player: Optional[Union[CSoundCSDPlayer, CSoundInteractivePlayer]] = None,
@@ -29,7 +28,6 @@ class CSoundSequencer(Sequencer):
                                 attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
         super(CSoundSequencer, self).__init__(name=name,
                                               num_measures=num_measures,
-                                              pattern_resolution=pattern_resolution,
                                               meter=meter,
                                               swing=swing,
                                               player=player,
