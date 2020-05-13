@@ -164,6 +164,16 @@ def test_fill_pattern_to_track_length(sequencer):
     assert first_measure == last_measure
 
 
+def test_pattern_with_varying_durations(sequencer):
+    pattern = 'C:4::100:0.5 D:4::100:0.125 E:4::100:0.125 F:4::100:0.25'
+    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=pattern, instrument=INSTRUMENT)
+    measure = sequencer.track(TRACK_NAME).measure_list[0]
+    assert measure[0].duration == pytest.approx(NoteDur.HALF.value)
+    assert measure[1].duration == pytest.approx(NoteDur.EIGHTH.value)
+    assert measure[2].duration == pytest.approx(NoteDur.EIGHTH.value)
+    assert measure[3].duration == pytest.approx(NoteDur.QUARTER.value)
+
+
 def test_set_tempo(sequencer):
     expected_duration_secs = SECS_PER_MINUTE / TEMPO_QPM
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT)
@@ -178,3 +188,14 @@ def test_set_tempo(sequencer):
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
     first_note = first_measure[0]
     assert first_note.duration == new_expected_duration_secs
+
+
+def test_transpose(sequencer):
+    expected_pitch = 4.01
+    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT)
+    first_measure = sequencer.track(TRACK_NAME).measure_list[0]
+    first_note = first_measure[0]
+    assert expected_pitch == first_note.pitch
+    interval = 3
+    sequencer.transpose(interval)
+    assert first_note.pitch == 4.04

@@ -38,7 +38,6 @@ class InvalidPlayerException(Exception):
 #  ADD MODULES FOR OTHER INPUTS LIKE MusicXML, LilyPond
 
 # TODO USE IT!
-# TODO TRANSPOSE SUPPORT
 class Sequencer(Song):
     """
     Pattern language:
@@ -123,7 +122,6 @@ class Sequencer(Song):
         return '\n'.join(self._track_name_idx_map.keys())
     # /Properties
 
-    # TODO TEST COVERAGE
     # Note Modification
     def transpose(self, interval: int):
         validate_type('interval', interval, int)
@@ -287,7 +285,10 @@ class Sequencer(Song):
 
                     octave = int(octave)
                     amplitude = self.mn.attr_get_type_cast_map['amplitude'](amplitude)
-                    duration = duration or self.default_note_duration
+                    if duration:
+                        duration = self.mn.attr_get_type_cast_map['duration'](duration)
+                    else:
+                        duration = self.default_note_duration
 
                     if chord:
                         # Chord can be empty, but if there is a token it must be valid
