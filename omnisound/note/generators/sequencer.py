@@ -85,7 +85,7 @@ class Sequencer(Song):
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
-        self.default_note_duration = self.meter.quarter_notes_per_beat_note * 4
+        self.default_note_duration = self.meter.beat_note_dur.value
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
@@ -259,17 +259,23 @@ class Sequencer(Song):
         for measure_token in measure_tokens:
             note_tokens = [t.strip() for t in measure_token.split()]
             next_start = 0
+            duration = self.default_note_duration
+            # Sum up the duration of all note positions to validate that the notes fit in the measure. We look at
+            # "note positions" because for chords we only count the duration of all the notes in the chord once,
+            # because they sound simultaneously so that duration only contributes to the total duration once.
+            measure_duration = 0
             note_vals_lst = []
             for i, note_token in enumerate(note_tokens):
                 start = self.mn.attr_get_type_cast_map['start'](next_start)
 
-                # It's a single sounding note or rest
+                # It's a rest note
                 if note_token == Sequencer.REST_TOKEN:
                     # Dummy values
                     amplitude = self.mn.attr_get_type_cast_map['amplitude'](0)
                     pitch = self.mn.attr_get_type_cast_map['pitch'](1)
                     note_vals = _make_note_val(instrument, start, self.default_note_duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
+                    measure_duration += note_vals.duration
                 # It's a sounding note or chord
                 else:
                     key, octave, chord, amplitude, duration = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
@@ -299,10 +305,13 @@ class Sequencer(Song):
                         for pitch in chord_pitches:
                             note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
                             note_vals_lst.append(note_vals)
+                        # Only count duration of the chord once in the total for the measure
+                        measure_duration += duration
                     else:
                         pitch = self.mn.get_pitch_for_key(key, octave)
                         note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
                         note_vals_lst.append(note_vals)
+                        measure_duration += note_vals.duration
 
                 next_start += duration
 
@@ -311,12 +320,14 @@ class Sequencer(Song):
                               swing=swing,
                               mn=MakeNoteConfig.copy(self.mn))
 
-            new_measure_duration = sum([note_vals.duration for note_vals in note_vals_lst])
-            if new_measure_duration != \
-                    pytest.approx(self.meter.quarter_notes_per_beat_note * 4 * NoteDur.QUARTER.value):
-                raise InvalidPatternException((f'Measure duration {new_measure_duration} !='
-                                               f'self.meter.beats_per_measure {self.meter.beats_per_measure} *'
-                                               f'self.meter_beat_note_dur {self.meter.beat_note_dur}'))
+            # TEMP DEBUG
+            # breakpoint()
+
+            if measure_duration != \
+                    pytest.approx(self.meter.beats_per_measure * self.meter.beat_note_dur.value):
+                raise InvalidPatternException((f'Measure duration {measure_duration} != '
+                                               f'self.meter.beats_per_measure {self.meter.beats_per_measure} * '
+                                               f'self.meter_beat_note_dur {self.meter.beat_note_dur.value}'))
             for i, note_vals in enumerate(note_vals_lst):
                 note = measure.note(i)
                 set_attr_vals_from_note_values(note, note_vals)

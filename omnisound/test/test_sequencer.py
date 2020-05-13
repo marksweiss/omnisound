@@ -124,7 +124,7 @@ def test_add_pattern_wth_chords_as_new_track(sequencer, meter, swing):
     chord_pattern = ('C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
                      'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
                      'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
-                     'C:4::100: C:4:MajorTriad:100: C:4::100 :C:4:MajorTriad:100:')
+                     'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:')
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=chord_pattern, instrument=INSTRUMENT)
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
     # Assert that there are notes in the measure for each single note and each note that is part of a chord
