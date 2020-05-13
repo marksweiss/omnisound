@@ -321,9 +321,6 @@ class Sequencer(Song):
                               swing=swing,
                               mn=MakeNoteConfig.copy(self.mn))
 
-            # TEMP DEBUG
-            # breakpoint()
-
             if measure_duration != \
                     pytest.approx(self.meter.beats_per_measure * self.meter.beat_note_dur.value):
                 raise InvalidPatternException((f'Measure duration {measure_duration} != '

@@ -16,7 +16,7 @@ BEAT_DUR_VAL: float = BEAT_DUR.value
 BPM = 240
 METER = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=BPM, quantizing=True)
 # Swing
-SWING_FACTOR = 0.002
+SWING_FACTOR = 0.005
 SWING = Swing(swing_on=True, swing_range=SWING_FACTOR, swing_direction=Swing.SwingDirection.Both)
 # Sequencer
 SEQUENCER_NAME = 'test_midi_sequencer_song'
