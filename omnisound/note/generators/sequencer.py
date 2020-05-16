@@ -11,13 +11,11 @@ from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
 from omnisound.note.generators.chord import Chord
 from omnisound.note.generators.chord_globals import HarmonicChord, HARMONIC_CHORD_DICT
-from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
 from omnisound.player.player import Player
-from omnisound.utils.mingus_utils import get_chord_pitches
-from omnisound.utils.utils import (validate_optional_type, validate_optional_type_choice, validate_optional_types,
+from omnisound.utils.utils import (validate_optional_type_choice, validate_optional_types,
                                    validate_type, validate_type_reference, validate_type_choice, validate_types)
 
 
@@ -72,11 +70,13 @@ class Sequencer(Song):
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
                  player: Optional[Player] = None,
+                 arpeggiator_chord: Optional[Chord] = None,
                  mn: MakeNoteConfig = None):
         validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
         validate_optional_types(('name', name, str),
                                 ('swing', swing, Swing),
-                                ('player', player, Player))
+                                ('player', player, Player),
+                                ('arpeggiator_chord', arpeggiator_chord, Chord))
 
         # Sequencer wraps song but starts with no Tracks. It provides an alternate API for generating and adding Tracks.
         to_add = []
@@ -84,6 +84,7 @@ class Sequencer(Song):
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
         self.player = player
+        self.arpeggiator_chord = arpeggiator_chord or Sequencer.DEFAULT_ARPEGGIATOR_CHORD
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
@@ -156,7 +157,8 @@ class Sequencer(Song):
                           pattern: str = None,
                           instrument: Optional[Union[float, int]] = None,
                           swing: Optional[Swing] = None,
-                          arpeggiate=False):
+                          arpeggiate: bool = False,
+                          arpeggiator_chord: Optional[Chord] = None):
         """
         - Sets the pattern, a section of measures in the track named `track_name`.
         - If the track already has a pattern, it is replaced. If the track is empty, its pattern is set to `pattern`.
@@ -167,7 +169,8 @@ class Sequencer(Song):
           object will be used to apply swing
         """
         validate_types(('track_name', track_name, str), ('pattern', pattern, str))
-        validate_optional_type('swing', swing, Swing)
+        validate_optional_types(('arpeggiate', arpeggiate, bool), ('arpeggiator_chord', arpeggiator_chord, Chord),
+                                ('swing', swing, Swing))
         validate_optional_type_choice('instrument', instrument, (float, int))
 
         # Will raise if track_name is not valid
@@ -189,7 +192,8 @@ class Sequencer(Song):
                                  instrument: Union[float, int] = None,
                                  swing: Optional[Swing] = None,
                                  track_type: Optional[Any] = Track,
-                                 arpeggiate=False):
+                                 arpeggiate: bool = False,
+                                 arpeggiator_chord: Optional[Chord] = None) -> str:
         """
         - Sets the pattern, a section of measures in a new track named `track_name` or if no name is provided
           in a track with a default name of its track number.
@@ -201,7 +205,8 @@ class Sequencer(Song):
           construct for example a MidiTrack, which derives from Track and adds attributes specific to MIDI.
         """
         validate_type('pattern', pattern, str)
-        validate_optional_types(('track_name', track_name, str), ('swing', swing, Swing))
+        validate_optional_types(('track_name', track_name, str), ('swing', swing, Swing),
+                                ('arpeggiator_chord', arpeggiator_chord, Chord), ('arpeggiate', arpeggiate, bool))
         validate_type_choice('instrument', instrument, (float, int))
         validate_type_reference('track_type', track_type, Track)
 
@@ -246,7 +251,8 @@ class Sequencer(Song):
                                   pattern: str = None,
                                   instrument: Union[float, int] = None,
                                   swing: Swing = None,
-                                  arpeggiate=False) -> Section:
+                                  arpeggiate: bool = False,
+                                  arpeggiator_chord: Optional[Chord] = None) -> Section:
         section = Section([])
         swing = swing or self.swing
 
@@ -317,11 +323,8 @@ class Sequencer(Song):
                         else:
                             # TODO PARAMETERIZE IN METHOD, THIS LOOKUP RIGHT NOW IS EXTRA EVERY TIME FOR A CONST
                             # TODO MOVE INTO HELPER THIS CODE IS DUPLICATED IN CHORD BLOCK ABOVE
-                            harmonic_chord = HARMONIC_CHORD_DICT.get(Sequencer.DEFAULT_ARPEGGIATOR_CHORD_KEY)
-                            if not harmonic_chord:
-                                raise InvalidPatternException((f'Pattern \'{pattern}\' has invalid chord {chord} '
-                                                              f'from key {key}'))
-                            chord_sequence = Chord (harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
+                            harmonic_chord = HARMONIC_CHORD_DICT.get(arpeggiator_chord or self.arpeggiator_chord)
+                            chord_sequence = Chord(harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
                             arpeggiation_offset = duration / len(chord_sequence)
                             chord_sequence.mod_ostinato(init_start_time=start, start_time_interval=arpeggiation_offset)
                             for note in chord_sequence:
