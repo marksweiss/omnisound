@@ -188,12 +188,12 @@ def test_pattern_with_arpeggiation(sequencer):
                        3 * DUR, (3 * DUR) + DUR * (1 / 3), (3 * DUR) + DUR * (2 / 3)]
     first_measure = track.measure_list[0]
     for i, note in enumerate(first_measure):
-        assert expected_starts[i] == note.start
+        assert expected_starts[i] == pytest.approx(note.start)
 
     expected_chord_pitches = [4.01, 4.05, 4.08]
     first_chord = first_measure[:3]
     first_chord_pitches = [note.pitch for note in first_chord]
-    assert expected_chord_pitches == first_chord_pitches
+    assert expected_chord_pitches == pytest.approx(first_chord_pitches)
 
 
 def test_set_tempo(sequencer):

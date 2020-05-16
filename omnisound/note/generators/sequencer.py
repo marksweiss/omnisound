@@ -280,7 +280,7 @@ class Sequencer(Song):
                     note_vals = _make_note_val(instrument, start, self.default_note_duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
                     measure_duration += note_vals.duration
-                # It's a sounding not or chord, parse the pattern and collect the note/chord parameters
+                # It's a sounding note or chord, parse the pattern and collect the note/chord parameters
                 else:
                     key, octave, chord, amplitude, duration = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
 
@@ -302,22 +302,15 @@ class Sequencer(Song):
                         harmonic_chord = HARMONIC_CHORD_DICT.get(chord)
                         if not harmonic_chord:
                             raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid chord {chord} token')
-
-                        key_type = Chord.get_key_type(key, harmonic_chord)
-                        mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(key_type)
-                        mingus_chord = Chord.get_mingus_chord_for_harmonic_chord(key, harmonic_chord)
-                        chord_pitches = get_chord_pitches(mingus_keys=mingus_chord,
-                                                          mingus_key_to_key_enum_mapping=mingus_key_to_key_enum_mapping,
-                                                          get_pitch_for_key=self.mn.get_pitch_for_key,
-                                                          octave=octave)
-                        for pitch in chord_pitches:
-                            note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
-                            note_vals_lst.append(note_vals)
+                        chord_sequence = Chord(harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
+                        for note in chord_sequence:
+                            note_vals_lst.append(_make_note_val(instrument, start, duration, amplitude, note.pitch))
                         # Only count duration of the chord once in the total for the measure
                         measure_duration += duration
                     # It's a single sounding note. Single notes are converted into chords if `arpeggiate=True`.
                     else:
                         pitch = self.mn.get_pitch_for_key(key, octave)
+
                         if not arpeggiate:
                             note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
                             note_vals_lst.append(note_vals)
@@ -325,22 +318,15 @@ class Sequencer(Song):
                             # TODO PARAMETERIZE IN METHOD, THIS LOOKUP RIGHT NOW IS EXTRA EVERY TIME FOR A CONST
                             # TODO MOVE INTO HELPER THIS CODE IS DUPLICATED IN CHORD BLOCK ABOVE
                             harmonic_chord = HARMONIC_CHORD_DICT.get(Sequencer.DEFAULT_ARPEGGIATOR_CHORD_KEY)
-                            key_type = Chord.get_key_type(key, harmonic_chord)
-                            mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(key_type)
-                            mingus_chord = Chord.get_mingus_chord_for_harmonic_chord(key, harmonic_chord)
-                            chord_pitches = get_chord_pitches(
-                                    mingus_keys=mingus_chord,
-                                    mingus_key_to_key_enum_mapping=mingus_key_to_key_enum_mapping,
-                                    get_pitch_for_key=self.mn.get_pitch_for_key,
-                                    octave=octave)
-                            # TODO PARAMETERIZE THIS
-                            arpeggiation_offset = duration / len(chord_pitches)
-                            for j, pitch in enumerate(chord_pitches):
-                                start_offset = j * arpeggiation_offset
-                                note_vals = _make_note_val(instrument,
-                                                           start + start_offset, duration,
-                                                           amplitude, pitch)
-                                note_vals_lst.append(note_vals)
+                            if not harmonic_chord:
+                                raise InvalidPatternException((f'Pattern \'{pattern}\' has invalid chord {chord} '
+                                                              f'from key {key}'))
+                            chord_sequence = Chord (harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
+                            arpeggiation_offset = duration / len(chord_sequence)
+                            chord_sequence.mod_ostinato(init_start_time=start, start_time_interval=arpeggiation_offset)
+                            for note in chord_sequence:
+                                note_vals_lst.append(_make_note_val(
+                                        instrument, note.start, duration, amplitude, note.pitch))
 
                         measure_duration += duration
                 next_start += duration
@@ -359,8 +345,7 @@ class Sequencer(Song):
                                                f'self.meter.beats_per_measure {self.meter.beats_per_measure} * '
                                                f'self.meter_beat_note_dur {self.meter.beat_note_dur.value}'))
             for i, note_vals in enumerate(note_vals_lst):
-                note = measure.note(i)
-                set_attr_vals_from_note_values(note, note_vals)
+                set_attr_vals_from_note_values(measure.note(i), note_vals)
 
             section.append(measure)
 
