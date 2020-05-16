@@ -64,6 +64,7 @@ class Sequencer(Song):
     NOTE_TOKEN_DELIMITER = ':'
 
     DEFAULT_ARPEGGIATOR_CHORD = HarmonicChord.MajorTriad
+    DEFAULT_ARPEGGIATOR_CHORD_KEY = str(DEFAULT_ARPEGGIATOR_CHORD).split('.')[1]
 
     def __init__(self,
                  name: Optional[str] = None,
@@ -323,7 +324,7 @@ class Sequencer(Song):
                         else:
                             # TODO PARAMETERIZE IN METHOD, THIS LOOKUP RIGHT NOW IS EXTRA EVERY TIME FOR A CONST
                             # TODO MOVE INTO HELPER THIS CODE IS DUPLICATED IN CHORD BLOCK ABOVE
-                            harmonic_chord = HARMONIC_CHORD_DICT.get(Sequencer.DEFAULT_ARPEGGIATOR_CHORD)
+                            harmonic_chord = HARMONIC_CHORD_DICT.get(Sequencer.DEFAULT_ARPEGGIATOR_CHORD_KEY)
                             key_type = Chord.get_key_type(key, harmonic_chord)
                             mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(key_type)
                             mingus_chord = Chord.get_mingus_chord_for_harmonic_chord(key, harmonic_chord)

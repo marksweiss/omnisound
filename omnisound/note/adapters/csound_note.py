@@ -34,6 +34,7 @@ PITCH_MAP = {
     MajorKey.F_s: 1.07,
     MajorKey.G_f: 1.07,
     MajorKey.G: 1.08,
+    MajorKey.G_s: 1.09,
     MajorKey.A_f: 1.09,
     MajorKey.A: 1.10,
     MajorKey.B_f: 1.11,

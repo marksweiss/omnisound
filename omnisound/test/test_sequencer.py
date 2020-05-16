@@ -174,6 +174,28 @@ def test_pattern_with_varying_durations(sequencer):
     assert measure[3].duration == pytest.approx(NoteDur.QUARTER.value)
 
 
+def test_pattern_with_arpeggiation(sequencer):
+    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT,
+                                       arpeggiate=True)
+    track = sequencer.track(TRACK_NAME)
+    # Defaults for fixtures have swing off
+    # Each arpeggio has three notes, because the default arpeggio chord is MajorTriad
+    second_note_offset = DUR * (1 / 3)
+    third_note_offset = DUR * (2 / 3)
+    expected_starts = [0.0, second_note_offset, third_note_offset,
+                       DUR, DUR + second_note_offset, DUR + third_note_offset,
+                       2 * DUR, (2 * DUR) + second_note_offset, (2 * DUR) + third_note_offset,
+                       3 * DUR, (3 * DUR) + DUR * (1 / 3), (3 * DUR) + DUR * (2 / 3)]
+    first_measure = track.measure_list[0]
+    for i, note in enumerate(first_measure):
+        assert expected_starts[i] == note.start
+
+    expected_chord_pitches = [4.01, 4.05, 4.08]
+    first_chord = first_measure[:3]
+    first_chord_pitches = [note.pitch for note in first_chord]
+    assert expected_chord_pitches == first_chord_pitches
+
+
 def test_set_tempo(sequencer):
     expected_duration_secs = SECS_PER_MINUTE / TEMPO_QPM
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT)
