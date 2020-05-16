@@ -10,7 +10,7 @@ from omnisound.note.containers.section import Section
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
 from omnisound.note.generators.chord import Chord
-from omnisound.note.generators.chord_globals import HARMONIC_CHORD_DICT
+from omnisound.note.generators.chord_globals import HarmonicChord, HARMONIC_CHORD_DICT
 from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.note.modifiers.meter import Meter, NoteDur
@@ -62,6 +62,8 @@ class Sequencer(Song):
     MEASURE_TOKEN_DELIMITER = '|'
     REST_TOKEN = '.'
     NOTE_TOKEN_DELIMITER = ':'
+
+    DEFAULT_ARPEGGIATOR_CHORD = HarmonicChord.MajorTriad
 
     def __init__(self,
                  name: Optional[str] = None,
@@ -152,7 +154,8 @@ class Sequencer(Song):
                           track_name: str = None,
                           pattern: str = None,
                           instrument: Optional[Union[float, int]] = None,
-                          swing: Optional[Swing] = None):
+                          swing: Optional[Swing] = None,
+                          arpeggiate=False):
         """
         - Sets the pattern, a section of measures in the track named `track_name`.
         - If the track already has a pattern, it is replaced. If the track is empty, its pattern is set to `pattern`.
@@ -171,7 +174,7 @@ class Sequencer(Song):
         if track.measure_list:
             track.remove((0, self.num_measures))
         instrument = instrument or track.instrument
-        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument)
+        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument, arpeggiate=arpeggiate)
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
         track.extend(to_add=section)
@@ -184,7 +187,8 @@ class Sequencer(Song):
                                  pattern: str = None,
                                  instrument: Union[float, int] = None,
                                  swing: Optional[Swing] = None,
-                                 track_type: Optional[Any] = Track):
+                                 track_type: Optional[Any] = Track,
+                                 arpeggiate=False):
         """
         - Sets the pattern, a section of measures in a new track named `track_name` or if no name is provided
           in a track with a default name of its track number.
@@ -201,7 +205,7 @@ class Sequencer(Song):
         validate_type_reference('track_type', track_type, Track)
 
         # Set the measures in the section to add to the track
-        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument)
+        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument, arpeggiate=arpeggiate)
         # If the section is shorter than num_measures, the length of all tracks, repeat it to fill the track
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
@@ -240,7 +244,8 @@ class Sequencer(Song):
     def _parse_pattern_to_section(self,
                                   pattern: str = None,
                                   instrument: Union[float, int] = None,
-                                  swing: Swing = None) -> Section:
+                                  swing: Swing = None,
+                                  arpeggiate=False) -> Section:
         section = Section([])
         swing = swing or self.swing
 
@@ -274,7 +279,7 @@ class Sequencer(Song):
                     note_vals = _make_note_val(instrument, start, self.default_note_duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
                     measure_duration += note_vals.duration
-                # It's a sounding note or chord
+                # It's a sounding not or chord, parse the pattern and collect the note/chord parameters
                 else:
                     key, octave, chord, amplitude, duration = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
 
@@ -290,6 +295,7 @@ class Sequencer(Song):
                     else:
                         duration = self.default_note_duration
 
+                    # It's a chord. `arpeggiate=True` is ignored.
                     if chord:
                         # Chord can be empty, but if there is a token it must be valid
                         harmonic_chord = HARMONIC_CHORD_DICT.get(chord)
@@ -308,11 +314,37 @@ class Sequencer(Song):
                             note_vals_lst.append(note_vals)
                         # Only count duration of the chord once in the total for the measure
                         measure_duration += duration
+                    # It's a single sounding note. Single notes are converted into chords if `arpeggiate=True`.
                     else:
                         pitch = self.mn.get_pitch_for_key(key, octave)
-                        note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
-                        note_vals_lst.append(note_vals)
-                        measure_duration += note_vals.duration
+                        if not arpeggiate:
+                            note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
+                            note_vals_lst.append(note_vals)
+                        else:
+                            # TODO PARAMETERIZE IN METHOD, THIS LOOKUP RIGHT NOW IS EXTRA EVERY TIME FOR A CONST
+                            # TODO MOVE INTO HELPER THIS CODE IS DUPLICATED IN CHORD BLOCK ABOVE
+                            harmonic_chord = HARMONIC_CHORD_DICT.get(Sequencer.DEFAULT_ARPEGGIATOR_CHORD)
+                            key_type = Chord.get_key_type (key, harmonic_chord)
+                            mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping (key_type)
+                            mingus_chord = Chord.get_mingus_chord_for_harmonic_chord (key, harmonic_chord)
+                            chord_pitches = get_chord_pitches(
+                                    mingus_keys=mingus_chord,
+                                    mingus_key_to_key_enum_mapping=mingus_key_to_key_enum_mapping,
+                                    get_pitch_for_key=self.mn.get_pitch_for_key,
+                                    octave=octave)
+                            # TODO PARAMETERIZE THIS
+                            arpeggiation_offset = duration / len(chord_pitches)
+                            for i, pitch in enumerate(chord_pitches):
+                                start_offset = i * arpeggiation_offset
+                                # TODO ADD A PROPERTY to Meter for `beat_duration` to avoid repeating this computation
+                                adjusted_duration = min(start + start_offset + duration,
+                                                        self.meter.beat_note_dur * self.meter.beats_per_measure)
+                                note_vals = _make_note_val(instrument,
+                                                           start + start_offset, adjusted_duration,
+                                                           amplitude, pitch)
+                                note_vals_lst.append(note_vals)
+
+                        measure_duration += duration
 
                 next_start += duration
 
@@ -350,7 +382,7 @@ class Sequencer(Song):
         track = self._track_name_idx_map[track_name]
         # Create an anonymous song with just this track to pass to the Player, since Players play Songs
         song = Song(to_add=track, meter=self.meter, swing=self.swing)
-        player = self._track_name_player_map.get(track_name) or self._player
+        player = self._track_name_player_map.get(track_name) or self.player
         if not player:
             raise InvalidPlayerException(f'No track player or self.player found to play track {track_name}')
         player.song = song
