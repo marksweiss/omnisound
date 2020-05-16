@@ -324,9 +324,9 @@ class Sequencer(Song):
                             # TODO PARAMETERIZE IN METHOD, THIS LOOKUP RIGHT NOW IS EXTRA EVERY TIME FOR A CONST
                             # TODO MOVE INTO HELPER THIS CODE IS DUPLICATED IN CHORD BLOCK ABOVE
                             harmonic_chord = HARMONIC_CHORD_DICT.get(Sequencer.DEFAULT_ARPEGGIATOR_CHORD)
-                            key_type = Chord.get_key_type (key, harmonic_chord)
-                            mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping (key_type)
-                            mingus_chord = Chord.get_mingus_chord_for_harmonic_chord (key, harmonic_chord)
+                            key_type = Chord.get_key_type(key, harmonic_chord)
+                            mingus_key_to_key_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(key_type)
+                            mingus_chord = Chord.get_mingus_chord_for_harmonic_chord(key, harmonic_chord)
                             chord_pitches = get_chord_pitches(
                                     mingus_keys=mingus_chord,
                                     mingus_key_to_key_enum_mapping=mingus_key_to_key_enum_mapping,
@@ -334,18 +334,14 @@ class Sequencer(Song):
                                     octave=octave)
                             # TODO PARAMETERIZE THIS
                             arpeggiation_offset = duration / len(chord_pitches)
-                            for i, pitch in enumerate(chord_pitches):
-                                start_offset = i * arpeggiation_offset
-                                # TODO ADD A PROPERTY to Meter for `beat_duration` to avoid repeating this computation
-                                adjusted_duration = min(start + start_offset + duration,
-                                                        self.meter.beat_note_dur * self.meter.beats_per_measure)
+                            for j, pitch in enumerate(chord_pitches):
+                                start_offset = j * arpeggiation_offset
                                 note_vals = _make_note_val(instrument,
-                                                           start + start_offset, adjusted_duration,
+                                                           start + start_offset, duration,
                                                            amplitude, pitch)
                                 note_vals_lst.append(note_vals)
 
                         measure_duration += duration
-
                 next_start += duration
 
             measure = Measure(num_notes=len(note_vals_lst),
@@ -353,7 +349,10 @@ class Sequencer(Song):
                               swing=swing,
                               mn=MakeNoteConfig.copy(self.mn))
 
-            if measure_duration != \
+            # TODO BETTER RULE THAN THIS FOR ARPEGGIATION
+            # Don't validate measure duration if we are arpeggiating, because arpeggiating on the last note will
+            #  push offset start times beyond the end of the measure
+            if not arpeggiate and measure_duration != \
                     pytest.approx(self.meter.beats_per_measure * self.meter.beat_note_dur.value):
                 raise InvalidPatternException((f'Measure duration {measure_duration} != '
                                                f'self.meter.beats_per_measure {self.meter.beats_per_measure} * '
