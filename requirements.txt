@@ -2,3 +2,4 @@ ctcsound
 mido
 numpy
 pytest
+python-rtmidi
