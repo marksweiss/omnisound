@@ -84,3 +84,8 @@ class HarmonicChord(Enum):
 
 
 HARMONIC_CHORD_DICT = enum_to_str_key_dict(HarmonicChord)
+
+
+# TODO UNIT TEST
+def harmonic_chord_to_str(harmonic_chord: HarmonicChord, include_prefix=False):
+    return str(harmonic_chord).split('.')[1]
