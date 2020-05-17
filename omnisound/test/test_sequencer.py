@@ -2,6 +2,7 @@
 
 import pytest
 
+from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.measure import Meter, NoteDur, Swing
 from omnisound.note.generators.sequencer import Sequencer
@@ -29,6 +30,7 @@ SWING_RANGE = 0.1
 SEQUENCER_NAME = 'Sequencer'
 NUM_MEASURES = 4
 PATTERN_RESOLUTION = NoteDur.QUARTER
+ARPEGGIATOR_CHORD = HarmonicChord.MinorTriad
 
 TRACK_NAME = 'Track 1'
 PATTERN = ('C:4::100: D:4::100: E:4::100: F:4::100:|C:4::100: D:4::100: E:4::100: F:4::100:|'
@@ -192,6 +194,44 @@ def test_pattern_with_arpeggiation(sequencer):
 
     expected_chord_pitches = [4.01, 4.05, 4.08]
     first_chord = first_measure[:3]
+    first_chord_pitches = [note.pitch for note in first_chord]
+    assert expected_chord_pitches == pytest.approx(first_chord_pitches)
+
+
+def test_pattern_with_arpeggiation_custom_chord(sequencer):
+    sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=PATTERN, instrument=INSTRUMENT,
+                                       arpeggiate=True)
+    track = sequencer.track(TRACK_NAME)
+    sequencer.arpeggiator_chord = ARPEGGIATOR_CHORD
+    first_measure = track.measure_list[0]
+    # Default pitches are from class default chord, MajorTriad
+    expected_chord_pitches = [4.01, 4.05, 4.08]
+    first_chord = first_measure[:3]
+    first_chord_pitches = [note.pitch for note in first_chord]
+    assert expected_chord_pitches == pytest.approx(first_chord_pitches)
+
+    # Now override the default MajorTriad with MinorTriad and add another track
+    sequencer.arpeggiator_chord = ARPEGGIATOR_CHORD
+    track_name = TRACK_NAME + '_2'
+    sequencer.add_pattern_as_new_track(track_name=track_name, pattern=PATTERN, instrument=INSTRUMENT,
+                                       arpeggiate=True)
+    track = sequencer.track(track_name)
+    sequencer.arpeggiator_chord = ARPEGGIATOR_CHORD
+    first_measure = track.measure_list[0]
+    expected_chord_pitches = [4.01, 4.04, 4.08]
+    first_chord = first_measure[:3]
+    first_chord_pitches = [note.pitch for note in first_chord]
+    assert expected_chord_pitches == pytest.approx(first_chord_pitches)
+
+    # Now pass in arpeggiator_chord to the method and override the current instance value
+    track_name = TRACK_NAME + '_3'
+    arpeggiator_chord = HarmonicChord.MajorSeventh
+    sequencer.add_pattern_as_new_track(track_name=track_name, pattern=PATTERN, instrument=INSTRUMENT,
+                                       arpeggiate=True, arpeggiator_chord=arpeggiator_chord)
+    track = sequencer.track(track_name)
+    first_measure = track.measure_list[0]
+    expected_chord_pitches = [4.01, 4.05, 4.08, 4.12]
+    first_chord = first_measure[:4]
     first_chord_pitches = [note.pitch for note in first_chord]
     assert expected_chord_pitches == pytest.approx(first_chord_pitches)
 

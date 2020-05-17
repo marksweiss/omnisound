@@ -159,7 +159,7 @@ class Sequencer(Song):
                           instrument: Optional[Union[float, int]] = None,
                           swing: Optional[Swing] = None,
                           arpeggiate: bool = False,
-                          arpeggiator_chord: Optional[Chord] = None):
+                          arpeggiator_chord: Optional[HarmonicChord] = None):
         """
         - Sets the pattern, a section of measures in the track named `track_name`.
         - If the track already has a pattern, it is replaced. If the track is empty, its pattern is set to `pattern`.
@@ -170,8 +170,8 @@ class Sequencer(Song):
           object will be used to apply swing
         """
         validate_types(('track_name', track_name, str), ('pattern', pattern, str))
-        validate_optional_types(('arpeggiate', arpeggiate, bool), ('arpeggiator_chord', arpeggiator_chord, Chord),
-                                ('swing', swing, Swing))
+        validate_optional_types(('arpeggiate', arpeggiate, bool),
+                                ('arpeggiator_chord', arpeggiator_chord, HarmonicChord), ('swing', swing, Swing))
         validate_optional_type_choice('instrument', instrument, (float, int))
 
         # Will raise if track_name is not valid
@@ -179,7 +179,8 @@ class Sequencer(Song):
         if track.measure_list:
             track.remove((0, self.num_measures))
         instrument = instrument or track.instrument
-        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument, arpeggiate=arpeggiate)
+        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument,
+                                                 arpeggiate=arpeggiate, arpeggiator_chord=arpeggiator_chord)
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
         track.extend(to_add=section)
@@ -194,7 +195,7 @@ class Sequencer(Song):
                                  swing: Optional[Swing] = None,
                                  track_type: Optional[Any] = Track,
                                  arpeggiate: bool = False,
-                                 arpeggiator_chord: Optional[Chord] = None) -> str:
+                                 arpeggiator_chord: Optional[HarmonicChord] = None) -> str:
         """
         - Sets the pattern, a section of measures in a new track named `track_name` or if no name is provided
           in a track with a default name of its track number.
@@ -207,12 +208,14 @@ class Sequencer(Song):
         """
         validate_type('pattern', pattern, str)
         validate_optional_types(('track_name', track_name, str), ('swing', swing, Swing),
-                                ('arpeggiator_chord', arpeggiator_chord, Chord), ('arpeggiate', arpeggiate, bool))
+                                ('arpeggiate', arpeggiate, bool),
+                                ('arpeggiator_chord', arpeggiator_chord, HarmonicChord))
         validate_type_choice('instrument', instrument, (float, int))
         validate_type_reference('track_type', track_type, Track)
 
         # Set the measures in the section to add to the track
-        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument, arpeggiate=arpeggiate)
+        section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument,
+                                                 arpeggiate=arpeggiate, arpeggiator_chord=arpeggiator_chord)
         # If the section is shorter than num_measures, the length of all tracks, repeat it to fill the track
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
@@ -253,7 +256,7 @@ class Sequencer(Song):
                                   instrument: Union[float, int] = None,
                                   swing: Swing = None,
                                   arpeggiate: bool = False,
-                                  arpeggiator_chord: Optional[Chord] = None) -> Section:
+                                  arpeggiator_chord: Optional[HarmonicChord] = None) -> Section:
         section = Section([])
         swing = swing or self.swing
 
@@ -322,14 +325,7 @@ class Sequencer(Song):
                             note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
                             note_vals_lst.append(note_vals)
                         else:
-                            # TODO PARAMETERIZE IN METHOD, THIS LOOKUP RIGHT NOW IS EXTRA EVERY TIME FOR A CONST
-                            # TODO MOVE INTO HELPER THIS CODE IS DUPLICATED IN CHORD BLOCK ABOVE
-                            arpeggiator_chord = arpeggiator_chord or self.arpeggiator_chord
-                            arpeggiator_chord_str_key = harmonic_chord_to_str(arpeggiator_chord)
-                            harmonic_chord = HARMONIC_CHORD_DICT.get(arpeggiator_chord_str_key)
-                            if not harmonic_chord:
-                                raise InvalidPatternException((f'Pattern \'{pattern}\' has invalid '
-                                                              f'arpeggiator_chord {arpeggiator_chord} token'))
+                            harmonic_chord = arpeggiator_chord or self.arpeggiator_chord
                             chord_sequence = Chord(harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
                             arpeggiation_offset = duration / len(chord_sequence)
                             chord_sequence.mod_ostinato(init_start_time=start, start_time_interval=arpeggiation_offset)
