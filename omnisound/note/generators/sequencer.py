@@ -217,6 +217,10 @@ class Sequencer(Song):
         section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument,
                                                  arpeggiate=arpeggiate, arpeggiator_chord=arpeggiator_chord)
         # If the section is shorter than num_measures, the length of all tracks, repeat it to fill the track
+
+        # TEMP DEBUG
+        print(f'len(section) {len(section)}')
+
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
 
@@ -244,11 +248,21 @@ class Sequencer(Song):
         """
         # We already have a section of the length of the pattern, so subtract that
         quotient, remainder = divmod(self.num_measures - len(section), len(section))
+
+        # TEMP DEBUG
+        print(f'quotient {quotient} remainder {remainder}')
+
         section_cpy = Section.copy(section)
         for i in range(quotient):
-            # TODO REFACTOR TO RENAME EXTEND()
             section.extend(Section.copy(section_cpy).measure_list)
-        section.extend(Section.copy(section_cpy).measure_list[0:remainder])
+        section.extend(Section.copy(section_cpy).measure_list[:remainder])
+
+        # TEMP DEBUG
+        print(f'len after fill {len(section)}')
+        for measure in section:
+            print('measure')
+            for note in measure:
+                print(str(note))
 
     # TODO MORE SOPHISTICATED PARSING IF WE EXTEND THE PATTERN LANGUAGE
     def _parse_pattern_to_section(self,
@@ -317,7 +331,7 @@ class Sequencer(Song):
                             note_vals_lst.append(_make_note_val(instrument, start, duration, amplitude, note.pitch))
                         # Only count duration of the chord once in the total for the measure
                         measure_duration += duration
-                    # It's a single sounding note. Single notes are converted into chords if `arpeggiate=True`.
+                    # It's a single sounding note. Converted into arpeggiated chords if `arpeggiate=True`.
                     else:
                         pitch = self.mn.get_pitch_for_key(key, octave)
 
@@ -329,9 +343,11 @@ class Sequencer(Song):
                             chord_sequence = Chord(harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
                             arpeggiation_offset = duration / len(chord_sequence)
                             chord_sequence.mod_ostinato(init_start_time=start, start_time_interval=arpeggiation_offset)
+                            # Duration of arpeggiated notes are fit into the duration of the notated note
+                            arpeggiated_note_duration = duration / len(chord_sequence)
                             for note in chord_sequence:
                                 note_vals_lst.append(_make_note_val(
-                                        instrument, note.start, duration, amplitude, note.pitch))
+                                        instrument, note.start, arpeggiated_note_duration, amplitude, note.pitch))
 
                         measure_duration += duration
                 next_start += duration

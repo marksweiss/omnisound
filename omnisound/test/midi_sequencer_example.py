@@ -61,7 +61,7 @@ if __name__ == '__main__':
     track_name = 'arpeggiator'
     pattern = f'F:6::{BASE_VELOCITY}:0.25 B:6::{BASE_VELOCITY}:0.25 E:6::{BASE_VELOCITY}:0.25 A:6::{BASE_VELOCITY}:0.25'
     SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
-                                       instrument=MidiInstrument.Bird_Tweet.value,
+                                       instrument=MidiInstrument.Alto_Sax.value,
                                        track_type=MidiTrack,
                                        arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh)
     SEQUENCER.track(track_name).channel = 3
