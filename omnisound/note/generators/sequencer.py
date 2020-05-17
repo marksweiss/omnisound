@@ -4,6 +4,7 @@ from typing import Any, Optional, Union
 
 import pytest
 
+from omnisound.note.generators.chord_globals import harmonic_chord_to_str
 from omnisound.note.adapters.note import MakeNoteConfig, NoteValues, set_attr_vals_from_note_values
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.section import Section
@@ -62,7 +63,7 @@ class Sequencer(Song):
     NOTE_TOKEN_DELIMITER = ':'
 
     DEFAULT_ARPEGGIATOR_CHORD = HarmonicChord.MajorTriad
-    DEFAULT_ARPEGGIATOR_CHORD_KEY = str(DEFAULT_ARPEGGIATOR_CHORD).split('.')[1]
+    DEFAULT_ARPEGGIATOR_CHORD_KEY = harmonic_chord_to_str(DEFAULT_ARPEGGIATOR_CHORD)
 
     def __init__(self,
                  name: Optional[str] = None,
@@ -323,7 +324,12 @@ class Sequencer(Song):
                         else:
                             # TODO PARAMETERIZE IN METHOD, THIS LOOKUP RIGHT NOW IS EXTRA EVERY TIME FOR A CONST
                             # TODO MOVE INTO HELPER THIS CODE IS DUPLICATED IN CHORD BLOCK ABOVE
-                            harmonic_chord = HARMONIC_CHORD_DICT.get(arpeggiator_chord or self.arpeggiator_chord)
+                            arpeggiator_chord = arpeggiator_chord or self.arpeggiator_chord
+                            arpeggiator_chord_str_key = harmonic_chord_to_str(arpeggiator_chord)
+                            harmonic_chord = HARMONIC_CHORD_DICT.get(arpeggiator_chord_str_key)
+                            if not harmonic_chord:
+                                raise InvalidPatternException((f'Pattern \'{pattern}\' has invalid '
+                                                              f'arpeggiator_chord {arpeggiator_chord} token'))
                             chord_sequence = Chord(harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
                             arpeggiation_offset = duration / len(chord_sequence)
                             chord_sequence.mod_ostinato(init_start_time=start, start_time_interval=arpeggiation_offset)
