@@ -343,6 +343,7 @@ class Sequencer(Song):
                               mn=MakeNoteConfig.copy(self.mn))
 
             # TODO BETTER RULE THAN THIS FOR ARPEGGIATION
+            # TODO WE SHOULD NOT NEED THIS ANYMORE BUT WE STILL DO OR TESTS FAIL ON MEASURE DURATION
             # Don't validate measure duration if we are arpeggiating, because arpeggiating on the last note will
             #  push offset start times beyond the end of the measure
             if not arpeggiate and measure_duration != \
