@@ -244,16 +244,10 @@ class Sequencer(Song):
         """
         # We already have a section of the length of the pattern, so subtract that
         quotient, remainder = divmod(self.num_measures - len(section), len(section))
-        print(f'quotient {quotient} remainder {remainder}')
-
         section_cpy = Section.copy(section)
         for i in range(quotient):
             section.extend(Section.copy(section_cpy).measure_list)
         section.extend(Section.copy(section_cpy).measure_list[:remainder])
-        for measure in section:
-            print('measure')
-            for note in measure:
-                print(str(note))
 
     # TODO MORE SOPHISTICATED PARSING IF WE EXTEND THE PATTERN LANGUAGE
     def _parse_pattern_to_section(self,
