@@ -217,10 +217,6 @@ class Sequencer(Song):
         section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument,
                                                  arpeggiate=arpeggiate, arpeggiator_chord=arpeggiator_chord)
         # If the section is shorter than num_measures, the length of all tracks, repeat it to fill the track
-
-        # TEMP DEBUG
-        print(f'len(section) {len(section)}')
-
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
 
@@ -248,17 +244,12 @@ class Sequencer(Song):
         """
         # We already have a section of the length of the pattern, so subtract that
         quotient, remainder = divmod(self.num_measures - len(section), len(section))
-
-        # TEMP DEBUG
         print(f'quotient {quotient} remainder {remainder}')
 
         section_cpy = Section.copy(section)
         for i in range(quotient):
             section.extend(Section.copy(section_cpy).measure_list)
         section.extend(Section.copy(section_cpy).measure_list[:remainder])
-
-        # TEMP DEBUG
-        print(f'len after fill {len(section)}')
         for measure in section:
             print('measure')
             for note in measure:
