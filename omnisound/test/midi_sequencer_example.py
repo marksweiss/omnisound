@@ -4,7 +4,7 @@ from omnisound.note.adapters.midi_note import MidiInstrument
 from omnisound.note.containers.measure import Meter
 from omnisound.note.containers.track import MidiTrack
 from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.midi_sequencer import MidiSequencer
+from omnisound.note.generators.midi_sequencer import MidiWriterSequencer
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.note.modifiers.swing import Swing
 
@@ -23,9 +23,9 @@ SWING = Swing(swing_on=True, swing_range=SWING_FACTOR, swing_direction=Swing.Swi
 SEQUENCER_NAME = 'test_midi_sequencer_song'
 NUM_MEASURES = 4
 MIDI_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_sequencer_song.mid'
-SEQUENCER = MidiSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-                          meter=METER, swing=SWING,
-                          midi_file_path=MIDI_FILE_PATH)
+SEQUENCER = MidiWriterSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
+                                meter=METER, swing=SWING,
+                                midi_file_path=MIDI_FILE_PATH)
 # Algo Comp Settings
 BASE_VELOCITY = 100
 VELOCITY_FACTOR = 2
@@ -71,4 +71,3 @@ if __name__ == '__main__':
     SEQUENCER.play()
     # noinspection PyUnresolvedReferences
     SEQUENCER.player.write_midi_file()
-

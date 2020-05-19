@@ -1,12 +1,12 @@
 # Copyright 2019 Mark S. Weiss
 
 from omnisound.note.containers.song import Song
-from omnisound.player.player import Player
+from omnisound.player.midi_player import MidiPlayerBase
 from omnisound.utils.utils import validate_optional_type, validate_types
 
 
 # TODO SUPPORT CHANNELS - IN PART TO TAKE MULTITRACK OUTPUT FROM SEQUENCER
-class CSoundWriter(Player):
+class CSoundWriter(MidiPlayerBase):
     CSOUND_OSX_PATH = '/usr/local/bin/csound'
     # PLAY_ALL = 'play_all'
     # PLAY_EACH = 'play_each'
@@ -64,7 +64,7 @@ class CSoundWriter(Player):
             # subprocess.call(cmd.split(), shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def improvise(self):
-        raise NotImplementedError('CsoundPlayer does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
 
     def add_score_include_file(self, include_file_name: str):
         self._include_file_names.append(include_file_name)

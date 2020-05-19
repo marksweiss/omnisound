@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional, Sequence
 
 # noinspection PyProtectedMember
-from mido import Message, MidiFile, MidiTrack, open_output
+from mido import Message, MidiTrack, open_output
 
 from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.measure import Measure
@@ -12,7 +12,7 @@ from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import MidiTrack as OmnisoundMidiTrack
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
-from omnisound.utils.utils import validate_optional_path, validate_optional_type, validate_type, validate_types
+from omnisound.utils.utils import validate_optional_type, validate_type, validate_types
 
 MIDI_TICKS_PER_QUARTER_NOTE = 960
 MIDI_QUARTER_NOTES_PER_BEAT = 4
@@ -171,49 +171,18 @@ class MidiPlayerBase(Player):
         raise NotImplementedError('MidiPlayerBase.play_each should not be instantiated')
 
     def improvise(self):
-        raise NotImplementedError('MidiPlayerBase.improvise should not be instantiated')
-
-
-class MidiWriter(MidiPlayerBase):
-    def __init__(self,
-                 song: Optional[Song] = None,
-                 append_mode: MidiPlayerAppendMode = None,
-                 midi_file_path: str = None):
-        validate_type('append_mode', append_mode, MidiPlayerAppendMode)
-        validate_optional_type('song', song, Song)
-        validate_optional_path('midi_file_path', midi_file_path)
-        super(MidiWriter, self).__init__(song=song, append_mode=append_mode)
-        self.midi_file_path = midi_file_path
-        # Type 1 - multiple synchronous tracks, all starting at the same time
-        # https://mido.readthedocs.io/en/latest/midi_files.html
-        self.midi_file = MidiFile(type=1)
-
-    def write_midi_file(self):
-        self.midi_file.save(self.midi_file_path)
-
-    def play(self):
-        midi_tracks = self._play()
-        for midi_track in midi_tracks:
-            self.midi_file.tracks.append(midi_track)
-
-    def play_each(self):
-        midi_tracks = self._play()
-        for midi_track in midi_tracks:
-            self.midi_file.tracks.append(midi_track)
-
-    def improvise(self):
-        raise NotImplementedError('MidiPlayer does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
 
 
 # TODO SUPPORT MULTIPLE CHANNELS
-class MidiInteractivePlayer(MidiPlayerBase):
+class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
                  port_name: str = None):
         validate_types(('port_name', port_name, str), ('append_mode', append_mode, MidiPlayerAppendMode))
         validate_optional_type('song', song, Song)
-        super(MidiInteractivePlayer, self).__init__(song=song, append_mode=append_mode)
+        super(MidiInteractiveSingleTrackPlayer, self).__init__(song=song, append_mode=append_mode)
         # Second arg creates a virtual port that other listening applications can bind to
         self.port = open_output(port_name, True)
 
