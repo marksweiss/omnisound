@@ -29,7 +29,8 @@ notes = [60, 62, 64, 67, 69, 72]
 
 In Reaper:
 * Add a Track to a Project: `Track -> Insert New Track`
-* Click on the "in" arrow on the Track and choose `Record: MIDI Overdub/Replace`
+* Add a Midi Item to the Track: `Insert -> New MIDI Item`
+* Click on the "in" arrow on the Track and choose `Record: MIDI Overdub/Replace -> Record MIDI Overdub`
 * Click on the red circular `Record Armed` button to turn on recording
 * Right-click on the `Record Armed` button and choose `Input: MIDI -> rtmidi_out -> Channel 1`
 * Go to `Preferences -> Audio -> MIDI Devices` and ensure that under `MIDI Inputs` you see `rtmidi_out` with status `Enabled`

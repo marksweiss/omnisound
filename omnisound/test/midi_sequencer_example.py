@@ -59,23 +59,20 @@ if __name__ == '__main__':
                                               instrument=MidiInstrument.Acoustic_Grand_Piano.value,
                                               track_type=MidiTrack).channel = 2
 
-    #track_name = 'arpeggiator'
-    #pattern = f'F:6::{BASE_VELOCITY}:0.25 B:6::{BASE_VELOCITY}:0.25 E:6::{BASE_VELOCITY}:0.25 A:6::{BASE_VELOCITY}:0.25'
-    #WRITER_SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
-    #                                          instrument=MidiInstrument.Alto_Sax.value,
-    #                                          track_type=MidiTrack,
-    #                                          arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh).channel = 3
+    track_name = 'arpeggiator'
+    pattern = f'F:6::{BASE_VELOCITY}:0.25 B:6::{BASE_VELOCITY}:0.25 E:6::{BASE_VELOCITY}:0.25 A:6::{BASE_VELOCITY}:0.25'
+    WRITER_SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
+                                              instrument=MidiInstrument.Violin.value,
+                                              track_type=MidiTrack,
+                                              arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh).channel = 3
 
     # Now render all tracks into one multi-track MIDI file
     WRITER_SEQUENCER.apply_swing()
-
-    # TEMP DEBUG
-    # breakpoint()
-
     WRITER_SEQUENCER.play()
     # noinspection PyUnresolvedReferences
     WRITER_SEQUENCER.player.write_midi_file()
 
     # Now send song to interactive midi player which sends all note events on MIDI channel 1 to any listening devices
-    #INTERACTIVE_SEQUENCER.song = WRITER_SEQUENCER
-    #INTERACTIVE_SEQUENCER.play()
+    for track in WRITER_SEQUENCER:
+        INTERACTIVE_SEQUENCER.append(track)
+    INTERACTIVE_SEQUENCER.play()

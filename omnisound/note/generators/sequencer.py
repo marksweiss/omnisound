@@ -217,10 +217,6 @@ class Sequencer(Song):
         section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument,
                                                  arpeggiate=arpeggiate, arpeggiator_chord=arpeggiator_chord)
         # If the section is shorter than num_measures, the length of all tracks, repeat it to fill the track
-
-        # TEMP DEBUG
-        breakpoint()
-
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
 

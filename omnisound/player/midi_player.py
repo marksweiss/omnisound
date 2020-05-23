@@ -143,9 +143,6 @@ class MidiPlayerBase(Player):
                              channel=channel)
                              for event in event_list])
 
-        # TEMP DEBUG
-        breakpoint()
-
         return messages
 
     def _play(self) -> Sequence[MidiTrack]:
@@ -195,7 +192,7 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
         self.port_name = port_name or MidiInteractiveSingleTrackPlayer.DEFAULT_PORT_NAME
         self.port = open_output(self.port_name, True)
 
-    # TODO MAKE A STREAMING PLAYER
+    # TODO MAKE A STREAMING PLAYE
     def play(self):
         for track in self.song:
             # TODO GENERATOR
