@@ -139,7 +139,7 @@ class Sequencer(Song):
     # TODO Validate instrument is int, MidiInstrument enum or a class (Foxdot)
     def add_track(self,
                   track_name: str = None,
-                  instrument: Union[float, int] = None) -> str:
+                  instrument: Union[float, int] = None) -> Track:
         validate_type('track_name', track_name, str)
         validate_type_choice('instrument', instrument, (float, int))
 
@@ -151,7 +151,7 @@ class Sequencer(Song):
         self.num_tracks += 1
         self._track_name_idx_map[track_name] = self._next_track
         self._next_track += 1
-        return track_name
+        return track
 
     def set_track_pattern(self,
                           track_name: str = None,
@@ -195,7 +195,7 @@ class Sequencer(Song):
                                  swing: Optional[Swing] = None,
                                  track_type: Optional[Any] = Track,
                                  arpeggiate: bool = False,
-                                 arpeggiator_chord: Optional[HarmonicChord] = None) -> str:
+                                 arpeggiator_chord: Optional[HarmonicChord] = None) -> Track:
         """
         - Sets the pattern, a section of measures in a new track named `track_name` or if no name is provided
           in a track with a default name of its track number.
@@ -217,6 +217,10 @@ class Sequencer(Song):
         section = self._parse_pattern_to_section(pattern=pattern, instrument=instrument,
                                                  arpeggiate=arpeggiate, arpeggiator_chord=arpeggiator_chord)
         # If the section is shorter than num_measures, the length of all tracks, repeat it to fill the track
+
+        # TEMP DEBUG
+        breakpoint()
+
         if len(section) < self.num_measures:
             self._fill_section_to_track_length(section)
 
@@ -234,7 +238,7 @@ class Sequencer(Song):
         self.num_tracks += 1
         self._next_track += 1
 
-        return track_name
+        return track
 
     def _fill_section_to_track_length(self, section: Section):
         """

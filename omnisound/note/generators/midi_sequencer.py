@@ -31,8 +31,7 @@ class MidiSingleTrackSequencer(Sequencer):
                 num_measures=num_measures,
                 meter=meter,
                 swing=swing,
-                player=MidiInteractiveSingleTrackPlayer(
-                    append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote),
+                player=MidiInteractiveSingleTrackPlayer(append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote),
                 mn=mn)
 
 
