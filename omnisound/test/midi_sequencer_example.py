@@ -7,7 +7,6 @@ from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.midi_sequencer import MidiSingleTrackSequencer, MidiWriterSequencer
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.note.modifiers.swing import Swing
-from omnisound.player.midi_player import MidiPlayerAppendMode
 
 
 # Meter
@@ -73,6 +72,6 @@ if __name__ == '__main__':
     WRITER_SEQUENCER.player.write_midi_file()
 
     # Now send song to interactive midi player which sends all note events on MIDI channel 1 to any listening devices
-    for track in WRITER_SEQUENCER:
-        INTERACTIVE_SEQUENCER.append(track)
-    INTERACTIVE_SEQUENCER.play()
+    INTERACTIVE_SEQUENCER.append(WRITER_SEQUENCER[0])
+    # INTERACTIVE_SEQUENCER.play()
+    INTERACTIVE_SEQUENCER.loop()

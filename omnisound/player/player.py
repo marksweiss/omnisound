@@ -36,6 +36,15 @@ class Player(metaclass=ABCMeta):
         """
         raise NotImplementedError()
 
+    # TODO SPLIT INTO TWO BASE CLASSES, WRITER AND INTERACTIVE, BECAUSE LOOPING MAKES NO SENSE FOR WRITER
+    @abstractmethod
+    def loop(self):
+        """Player generates notes according to the concrete class implementation and plays them. When the sequence
+        end is reached, the player plays the sequence again from the beginning. This repeats until a KeyboardInterrupt
+        exception is raised.
+        """
+        raise NotImplementedError()
+
     @property
     @abstractmethod
     def song(self):

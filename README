@@ -44,15 +44,15 @@ try:
         while True:
             note = random.choice(notes)
 
-            on = Message('note_on', note=note)
+            on = Message('note_on', note=note, channel=1, time=0, velocity=64)
             print('Sending {}'.format(on))
             port.send(on)
             time.sleep(0.05)
 
-            off = Message('note_off', note=note)
+            off = Message('note_off', note=note, channel=1, time=0, velocity=64)
             print('Sending {}'.format(off))
             port.send(off)
-            time.sleep(0.1)
+            time.sleep(0.05)
 except KeyboardInterrupt:
     pass
 ```

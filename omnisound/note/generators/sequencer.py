@@ -384,4 +384,9 @@ class Sequencer(Song):
         # noinspection PyArgumentList
         self.player.song = self
         self.player.play()
+
+    def loop(self):
+        # noinspection PyArgumentList
+        self.player.song = self
+        self.player.loop()
     # /Track and Player Management
