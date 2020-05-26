@@ -80,7 +80,6 @@ class MidiPlayerEvent(object):
             event.tick_delta = event.tick - event_list[j - 1].tick
 
 
-# TODO MAKE ABC
 class MidiPlayerBase(Player):
     def __init__(self,
                  song: Optional[Song] = None,
