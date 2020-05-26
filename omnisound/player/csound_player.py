@@ -206,7 +206,10 @@ class CSoundCSDPlayer(Player):
         raise NotImplementedError('CSoundCSDPlayer does not support play_each()')
 
     def improvise(self):
-        raise NotImplementedError('CSoundCSDPlayer does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
+
+    def loop(self):
+        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
 
 
 # TODO add a copy() method so that we can add an notes and then copy the object and change the orchestra
@@ -294,4 +297,8 @@ class CSoundInteractivePlayer(Player):
         raise NotImplementedError('CSoundInteractivePlayer does not support play_each()')
 
     def improvise(self):
-        raise NotImplementedError('CSoundInteractivePlayer does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
+
+    # TODO IMPLEMENT
+    def loop(self):
+        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')

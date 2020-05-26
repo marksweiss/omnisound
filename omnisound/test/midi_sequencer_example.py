@@ -4,7 +4,7 @@ from omnisound.note.adapters.midi_note import MidiInstrument
 from omnisound.note.containers.measure import Meter
 from omnisound.note.containers.track import MidiTrack
 from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.midi_sequencer import MidiSequencer
+from omnisound.note.generators.midi_sequencer import MidiSingleTrackSequencer, MidiWriterSequencer
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.note.modifiers.swing import Swing
 
@@ -23,10 +23,12 @@ SWING = Swing(swing_on=True, swing_range=SWING_FACTOR, swing_direction=Swing.Swi
 SEQUENCER_NAME = 'test_midi_sequencer_song'
 NUM_MEASURES = 4
 MIDI_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_sequencer_song.mid'
-SEQUENCER = MidiSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-                          meter=METER, swing=SWING,
-                          midi_file_path=MIDI_FILE_PATH)
-# Algo Comp Settings
+WRITER_SEQUENCER = MidiWriterSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
+                                       meter=METER, swing=SWING,
+                                       midi_file_path=MIDI_FILE_PATH)
+INTERACTIVE_SEQUENCER = MidiSingleTrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
+                                                 meter=METER, swing=SWING)
+
 BASE_VELOCITY = 100
 VELOCITY_FACTOR = 2
 
@@ -46,29 +48,30 @@ if __name__ == '__main__':
                           f'E:4::{get_velocity (j + 3, notes_per_measure)}:0.03125')
         pattern_phrases.append(pattern_phrase)
     pattern = ' '.join(pattern_phrases)
-    SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
-                                       instrument=MidiInstrument.Vibraphone.value,
-                                       track_type=MidiTrack)
-    SEQUENCER.track(track_name).channel = 1
+    WRITER_SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
+                                              instrument=MidiInstrument.Vibraphone.value,
+                                              track_type=MidiTrack).channel = 1
 
     track_name = 'chord'
     pattern = f'C:2:MajorTriad:{BASE_VELOCITY - 10}:1.0'
-    SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
-                                       instrument=MidiInstrument.Acoustic_Grand_Piano.value,
-                                       track_type=MidiTrack)
-    SEQUENCER.track(track_name).channel = 2
+    WRITER_SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
+                                              instrument=MidiInstrument.Acoustic_Grand_Piano.value,
+                                              track_type=MidiTrack).channel = 2
 
     track_name = 'arpeggiator'
     pattern = f'F:6::{BASE_VELOCITY}:0.25 B:6::{BASE_VELOCITY}:0.25 E:6::{BASE_VELOCITY}:0.25 A:6::{BASE_VELOCITY}:0.25'
-    SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
-                                       instrument=MidiInstrument.Alto_Sax.value,
-                                       track_type=MidiTrack,
-                                       arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh)
-    SEQUENCER.track(track_name).channel = 3
+    WRITER_SEQUENCER.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
+                                              instrument=MidiInstrument.Violin.value,
+                                              track_type=MidiTrack,
+                                              arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh).channel = 3
 
     # Now render all tracks into one multi-track MIDI file
-    SEQUENCER.apply_swing()
-    SEQUENCER.play()
+    WRITER_SEQUENCER.apply_swing()
+    WRITER_SEQUENCER.play()
     # noinspection PyUnresolvedReferences
-    SEQUENCER.player.write_midi_file()
+    WRITER_SEQUENCER.player.write_midi_file()
 
+    # Now send song to interactive midi player which sends all note events on MIDI channel 1 to any listening devices
+    INTERACTIVE_SEQUENCER.append(WRITER_SEQUENCER[0])
+    # INTERACTIVE_SEQUENCER.play()
+    INTERACTIVE_SEQUENCER.loop()

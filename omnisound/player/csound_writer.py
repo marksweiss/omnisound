@@ -63,8 +63,14 @@ class CSoundWriter(Player):
             #  COMPLETES, RETURNS 255 (CSound return code for 'help'), AND DOES NOT WRITE *.WAV OUTPUT
             # subprocess.call(cmd.split(), shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
-    def improvise(self):
-        raise NotImplementedError('CsoundPlayer does not support improvising')
-
     def add_score_include_file(self, include_file_name: str):
         self._include_file_names.append(include_file_name)
+
+    def song(self):
+        raise NotImplementedError(f'{self.__class__.__name__} does not have a song property')
+
+    def improvise(self):
+        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
+
+    def loop(self):
+        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')

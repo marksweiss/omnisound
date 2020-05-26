@@ -14,7 +14,8 @@ from omnisound.note.generators.scale import Scale
 from omnisound.note.generators.scale_globals import HarmonicScale, MajorKey
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.note.modifiers.swing import Swing
-from omnisound.player.midi_player import MidiPlayer, MidiPlayerAppendMode
+from omnisound.player.midi_player import MidiPlayerAppendMode
+from omnisound.player.midi_writer import MidiWriter
 
 
 SONG_NAME = 'test_midi_song'
@@ -119,7 +120,7 @@ if __name__ == '__main__':
     # Render the tracks in the song
     tracks = [ostinato_track, chords_track]
     song = Song(to_add=tracks, name=SONG_NAME)
-    player = MidiPlayer(song=song, append_mode=APPEND_MODE,
+    writer = MidiWriter(song=song, append_mode=APPEND_MODE,
                         midi_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_song.mid')
-    player.play()
-    player.write_midi_file()
+    writer.play()
+    writer.write_midi_file()
