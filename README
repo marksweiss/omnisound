@@ -37,6 +37,7 @@ In Reaper:
 * In the `Mixer` view, on the Mixer control for the Track, click the speaker icon under the red circular Record Armed button to ensure that `Monitoring` is set to `On`
 
 In Python3 console in `omnisound virtualenv`:
+NOTE: the below code, especially the use of `sleep()` is not production-quality
 ```
 try:
     with port:
