@@ -11,6 +11,7 @@ install [csound](https://csound.com/download.html)
 `d=$(pwd)``
 `ln -s "$d/ext/python_mingus/mingus/" "$d/mingus"`
 
+TODO REMOVE THIS IN FAVOR OF MIDI DOCUMENTATION
 RT MIDI Playback in Reaper
 ----
 In Python3 console in `omnisound virtualenv`:
@@ -26,7 +27,6 @@ port = mido.open_output(portname, True)
 # A pentatonic scale
 notes = [60, 62, 64, 67, 69, 72]
 ```
-
 In Reaper:
 * Add a Track to a Project: `Track -> Insert New Track`
 * Add a Midi Item to the Track: `Insert -> New MIDI Item`
