@@ -10,7 +10,6 @@ from mido import Message, open_output
 from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.song import Song
-from omnisound.note.containers.track import MidiTrack as OmnisoundMidiTrack
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
 from omnisound.utils.utils import validate_optional_types, validate_type, validate_types
@@ -107,40 +106,6 @@ class MidiPlayerBase(Player):
         # for pa 0in performance_attrs_list:
         #    apply pa to note
 
-    @staticmethod
-    def _get_midi_events_for_track(track: OmnisoundMidiTrack) -> Message:
-        # mido channels numbered 0..15 instead of MIDI standard 1..16
-        event_list = []
-        for measure in track:
-            # TODO Support Midi Performance Attrs
-            # if op == PLAY_ALL
-            #     performance_attrs = measure.performance_attrs
-            # Build an ordered event list of the notes in the measure
-            # NOTE: Assumes first note start on 0.0, because the first note of every measure is 0 offset
-            #       i.e. it assumes it will occur exactly after the last note of the last measure
-            # NOTE: Need to carry over last offset from previous measure, and then this will work :-)
-            for note in measure:
-                # noinspection PyTypeChecker
-                event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
-                # noinspection PyTypeChecker
-                event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_OFF))
-
-            # TODO DO WE NEED THIS? WORSE DO WE NEED IT ONLY FOR WRITER?
-            MidiPlayerEvent.set_tick_deltas(event_list)
-            # TODO Support Midi Performance Attrs
-            # note_performance_attrs = note.performance_attrs
-            # if op == PLAY_ALL:
-            #     self._apply_performance_attrs(note, song_performance_attrs, track_performance_attrs,
-            #                                   performance_attrs, note_performance_attrs)
-            # else:
-            #     self._apply_performance_attrs(note, note_performance_attrs)
-            for event in event_list:
-                # TODO DO WE NEED time= ATTR AT ALL? IF YES SHOULD IT BE tick OR tick_delta?
-                yield Message(event.event_type.value, time=event.tick,
-                              velocity=ATTR_GET_TYPE_CAST_MAP['velocity'](event.note.amplitude),
-                              note=ATTR_GET_TYPE_CAST_MAP['pitch'](event.note.pitch),
-                              channel=track.channel)
-
     def play(self):
         raise NotImplementedError('MidiPlayerBase.play should not be instantiated')
 
@@ -170,30 +135,47 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
         self.port_name = port_name or MidiInteractiveSingleTrackPlayer.DEFAULT_PORT_NAME
 
     def play(self):
-        # Second arg creates a virtual port that other listening applications can bind to
-        port = open_output(self.port_name, True)
-        with port:
-            for track in self.song:
-                # noinspection PyTypeChecker
-                for message in self._get_midi_events_for_track(track=track):
-                    port.send(message)
-                    # TODO FIX THIS WTF
-                    sleep(MidiInteractiveSingleTrackPlayer.SLEEP_DELAY)
-
-    def play_each(self):
-        port = open_output(self.port_name, True)
-        with port:
-            for track in self.song:
-                # noinspection PyTypeChecker
-                for message in self._get_midi_events_for_track(track=track):
-                    port.send(message)
-                    # TODO FIX THIS WTF
-                    sleep(MidiInteractiveSingleTrackPlayer.SLEEP_DELAY)
-
-    def loop(self):
         # Single-track player so only process the first track in the song
         track = self.song.track_list[0]
         # Memoize materializing the list of notes since we loop forever over it
+        notes = []
+        messages = []
+        for measure in track:
+            for note in measure:
+                notes.append(note)
+                amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
+                pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
+                messages.append(Message('note_on', velocity=amplitude, note=pitch, channel=track.channel))
+                messages.append(Message('note_off', velocity=amplitude, note=pitch, channel=track.channel))
+
+        port = open_output(self.port_name, True)
+        with port:
+            for i in range(len(notes)):
+                port.send(messages[i])
+                sleep(notes[i].duration)
+                port.send(messages[i + 1])
+
+    def play_each(self):
+        track = self.song.track_list[0]
+        notes = []
+        messages = []
+        for measure in track:
+            for note in measure:
+                notes.append(note)
+                amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
+                pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
+                messages.append(Message('note_on', velocity=amplitude, note=pitch, channel=track.channel))
+                messages.append(Message('note_off', velocity=amplitude, note=pitch, channel=track.channel))
+
+        port = open_output(self.port_name, True)
+        with port:
+            for i in range(len(notes)):
+                port.send(messages[i])
+                sleep(notes[i].duration)
+                port.send(messages[i + 1])
+
+    def loop(self):
+        track = self.song.track_list[0]
         notes = []
         messages = []
         for measure in track:
