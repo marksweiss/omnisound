@@ -78,7 +78,7 @@ def test_init(sequencer):
 
 def test_add_track(sequencer):
     ret = sequencer.add_track(track_name=TRACK_NAME, instrument=INSTRUMENT)
-    assert ret == TRACK_NAME
+    assert ret.name == TRACK_NAME
     assert len(sequencer) == 1
 
 
