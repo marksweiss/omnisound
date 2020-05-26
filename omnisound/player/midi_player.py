@@ -191,11 +191,11 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
                     sleep(MidiInteractiveSingleTrackPlayer.SLEEP_DELAY)
 
     def loop(self):
+        # Single-track player so only process the first track in the song
+        track = self.song.track_list[0]
         # Memoize materializing the list of notes since we loop forever over it
         notes = []
         messages = []
-        # Single-track player so only process the first track in the song
-        track = self.song.track_list[0]
         for measure in track:
             for note in measure:
                 notes.append(note)
