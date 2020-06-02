@@ -1,18 +1,22 @@
 # Copyright 2020 Mark S. Weiss
 
+from copy import deepcopy
 from enum import Enum
 from time import sleep
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Sequence
 
 # noinspection PyProtectedMember
 from mido import Message, open_output
+from mido.ports import MultiPort
 
 from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.song import Song
+from omnisound.note.containers.track import MidiTrack
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
-from omnisound.utils.utils import validate_optional_types, validate_type, validate_types
+from omnisound.utils.utils import (validate_optional_types, validate_optional_sequence_of_type,
+                                   validate_type, validate_types)
 
 MIDI_TICKS_PER_QUARTER_NOTE = 960
 MIDI_QUARTER_NOTES_PER_BEAT = 4
@@ -105,6 +109,20 @@ class MidiPlayerBase(Player):
         # for pa 0in performance_attrs_list:
         #    apply pa to note
 
+    @staticmethod
+    def get_midi_messages_and_notes_for_track(track: MidiTrack):
+        notes = []
+        messages = []
+        for measure in track:
+            for note in measure:
+                notes.append(note)
+                amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
+                pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
+                messages.append(Message('note_on', velocity=amplitude, note=pitch, channel=track.channel))
+                messages.append(Message('note_off', velocity=amplitude, note=pitch, channel=track.channel))
+
+        return messages, notes
+
     def play(self):
         raise NotImplementedError('MidiPlayerBase.play should not be instantiated')
 
@@ -118,11 +136,8 @@ class MidiPlayerBase(Player):
         raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
 
 
-# TODO SUPPORT MULTIPLE CHANNELS
 class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
     DEFAULT_PORT_NAME = 'MidiInteractiveSingleTrackPlayer_port'
-    # TODO FIX THIS WTF!
-    SLEEP_DELAY = 0.05
 
     def __init__(self,
                  song: Optional[Song] = None,
@@ -136,16 +151,7 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
     def play(self):
         # Single-track player so only process the first track in the song
         track = self.song.track_list[0]
-        # Memoize materializing the list of notes since we loop forever over it
-        notes = []
-        messages = []
-        for measure in track:
-            for note in measure:
-                notes.append(note)
-                amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
-                pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
-                messages.append(Message('note_on', velocity=amplitude, note=pitch, channel=track.channel))
-                messages.append(Message('note_off', velocity=amplitude, note=pitch, channel=track.channel))
+        messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
 
         port = open_output(self.port_name, True)
         with port:
@@ -156,15 +162,7 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
 
     def play_each(self):
         track = self.song.track_list[0]
-        notes = []
-        messages = []
-        for measure in track:
-            for note in measure:
-                notes.append(note)
-                amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
-                pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
-                messages.append(Message('note_on', velocity=amplitude, note=pitch, channel=track.channel))
-                messages.append(Message('note_off', velocity=amplitude, note=pitch, channel=track.channel))
+        messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
 
         port = open_output(self.port_name, True)
         with port:
@@ -175,15 +173,7 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
 
     def loop(self):
         track = self.song.track_list[0]
-        notes = []
-        messages = []
-        for measure in track:
-            for note in measure:
-                notes.append(note)
-                amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
-                pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
-                messages.append(Message('note_on', velocity=amplitude, note=pitch, channel=track.channel))
-                messages.append(Message('note_off', velocity=amplitude, note=pitch, channel=track.channel))
+        messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
 
         port = open_output(self.port_name, True)
         try:
@@ -197,4 +187,61 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
             pass
 
     def improvise(self):
-        raise NotImplementedError('MidiPlayer does not support improvising')
+        raise NotImplementedError('MidiInteractiveSingleTrackPlayer does not support improvising')
+
+
+class MidiInteractiveMultiTrackPlayer(MidiPlayerBase):
+    """Broadcasts messages from a single Omnisound Track to multiple Midi ports"""
+
+    DEFAULT_PORT_NAME = 'MidiInteractiveMultiTrackPlayer_port'
+
+    def __init__(self,
+                 song: Optional[Song] = None,
+                 append_mode: MidiPlayerAppendMode = None,
+                 num_ports: int = None,
+                 port_names: Optional[Sequence[str]] = None):
+        validate_types(('append_mode', append_mode, MidiPlayerAppendMode), ('num_ports', num_ports, int))
+        validate_optional_types('song', song, Song)
+        validate_optional_sequence_of_type('port_names', port_names, str)
+        if port_names:
+            assert num_ports == len(port_names)
+            self.port_names = deepcopy(port_names)
+        else:
+            self.port_names = [f'{MidiInteractiveMultiTrackPlayer.DEFAULT_PORT_NAME}_{i}'
+                               for i in range(num_ports)]
+        super(MidiInteractiveMultiTrackPlayer, self).__init__(song=song, append_mode=append_mode)
+        ports = [open_output(port_name) for port_name in self.port_names]
+        self._multi_port = MultiPort(ports)
+
+    def play(self):
+        # Single-track multicast to multiple ports player so only process the first track in the song
+        track = self.song.track_list[0]
+        messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
+        for i in range(len(notes)):
+            self._multi_port.send(messages[i])
+            sleep(notes[i].duration)
+            self._multi_port.send(messages[i + 1])
+
+    def play_each(self):
+        track = self.song.track_list[0]
+        messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
+        for i in range(len(notes)):
+            self._multi_port.send(messages[i])
+            sleep(notes[i].duration)
+            self._multi_port.send(messages[i + 1])
+
+    def loop(self):
+        track = self.song.track_list[0]
+        messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
+        try:
+            while True:
+                for i in range (len (notes)):
+                    self._multi_port.send (messages[i])
+                    sleep (notes[i].duration)
+                    self._multi_port.send (messages[i + 1])
+        except KeyboardInterrupt:
+            pass
+
+    def improvise(self):
+        raise NotImplementedError('MidiInteractiveMultiTrackPlayer does not support improvising')
+
