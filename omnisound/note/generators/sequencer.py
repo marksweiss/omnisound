@@ -245,7 +245,7 @@ class Sequencer(Song):
         # We already have a section of the length of the pattern, so subtract that
         quotient, remainder = divmod(self.num_measures - len(section), len(section))
         section_cpy = Section.copy(section)
-        for i in range(quotient):
+        for _ in range(quotient):
             section.extend(Section.copy(section_cpy).measure_list)
         section.extend(Section.copy(section_cpy).measure_list[:remainder])
 
