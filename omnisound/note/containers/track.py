@@ -78,9 +78,6 @@ class Track(Section):
         else:
             self.instrument = Track.DEFAULT_INSTRUMENT
 
-        self._measure_idx = 0
-        self._note_idx = 0
-
     # Properties
     def _get_section_map(self) -> Mapping[str, Section]:
         return self._section_map
@@ -112,17 +109,8 @@ class Track(Section):
             measure.tempo = tempo
 
     def next_note(self) -> Union[Any, None]:
-        if self._note_idx > len(self.measure_list[self._measure_idx]):
-            self._measure_idx += 1
-            self._note_idx = 0
-        if self._measure_idx > len(self.measure_list):
-            self._measure_idx = 0
-            self._note_idx = 0
-            ret = None
-        else:
-            ret = self.measure_list[self._measure_idx][self._note_idx]
-            self._note_idx += 1
-        return ret
+        for measure in self:
+            yield from measure
 
     # /Properties
 

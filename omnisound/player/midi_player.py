@@ -292,15 +292,15 @@ class MidiInteractiveMultitrackPlayer(MidiPlayerBase):
         while any(has_notes):
             track_idx = int(argmin(track_start_offsets))
             track = self.song.track_list[track_idx]
-            note = track.next_note()
-            if not note:
+            try:
+                note = next(track.next_note())
+                track_start_offsets[track_idx] += note.duration
+                task = asyncio.create_task(self._play_callbacks[track_idx](note))
+                await task
+            except StopIteration:
                 has_notes[track_idx] = False
                 # Finished playing track, ensure that this track isn't picked as having the minimum offset value
                 track_start_offsets[track_idx] = maxsize
-            else:
-                track_start_offsets[track_idx] += note.duration
-            task = asyncio.create_task(self._play_callbacks[track_idx](note))
-            await task
 
     async def play(self):
         await self._play()
