@@ -367,8 +367,7 @@ class Sequencer(Song):
         validate_types(('track_name', track_name, str), ('player', player, Player))
         self._track_name_player_map[track_name] = player
 
-    def play_track(self,
-                   track_name: str = None):
+    async def play_track(self, track_name: str = None):
         """Plays a track with a track-mapped Player, if present, otherwise plays using self.Player"""
         validate_type('track_name', track_name, str)
         track = self._track_name_idx_map[track_name]
@@ -378,15 +377,15 @@ class Sequencer(Song):
         if not player:
             raise InvalidPlayerException(f'No track player or self.player found to play track {track_name}')
         player.song = song
-        player.play()
+        await player.play()
 
-    def play(self):
+    async def play(self):
         # noinspection PyArgumentList
         self.player.song = self
-        self.player.play()
+        await self.player.play()
 
-    def loop(self):
+    async def loop(self):
         # noinspection PyArgumentList
         self.player.song = self
-        self.player.loop()
+        await self.player.loop()
     # /Track and Player Management

@@ -65,16 +65,15 @@ if __name__ == '__main__':
                                               track_type=MidiTrack,
                                               arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh).channel = 3
 
-    # Now render all tracks into one multi-track MIDI file
-    writer_sequencer.apply_swing()
-    writer_sequencer.play()
-    # noinspection PyUnresolvedReferences
-    writer_sequencer.player.write_midi_file()
+    ## Now render all tracks into one multi-track MIDI file
+    #writer_sequencer.apply_swing()
+    #writer_sequencer.play()
+    ## noinspection PyUnresolvedReferences
+    #writer_sequencer.player.write_midi_file()
 
     # Now send song to interactive midi player which sends all note events on MIDI channel 1 to any listening devices
     single_track_rt_sequencer = MidiSingleTrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-                                                         meter=METER, swing=SWING)
-    single_track_rt_sequencer.append(single_track_rt_sequencer[0])
+                                                         meter=METER, swing=SWING, song=writer_sequencer)
     asyncio.run(single_track_rt_sequencer.loop())
 
     # Now send song to interactive midi player which sends note events for each track to a separate MIDI channel

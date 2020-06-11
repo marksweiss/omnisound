@@ -3,6 +3,7 @@
 from copy import deepcopy
 from enum import Enum
 from functools import partial
+from inspect import currentframe
 from sys import maxsize
 from typing import Any, List, Optional, Sequence, Tuple, Union
 import asyncio
@@ -135,16 +136,19 @@ class MidiPlayerBase(Player):
         port.send(messages[1])
 
     def play(self):
-        raise NotImplementedError('MidiPlayerBase.play should not be instantiated')
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
 
     def play_each(self):
-        raise NotImplementedError('MidiPlayerBase.play_each should not be instantiated')
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
 
     def improvise(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
 
     def loop(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
+
+    def write(self):
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
 
 
 class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
@@ -193,7 +197,10 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
             pass
 
     def improvise(self):
-        raise NotImplementedError('MidiInteractiveSingleTrackPlayer does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
+
+    def write(self):
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
 
 
 class MidiInteractiveMulticastPlayer(MidiPlayerBase):
@@ -244,7 +251,10 @@ class MidiInteractiveMulticastPlayer(MidiPlayerBase):
             pass
 
     def improvise(self):
-        raise NotImplementedError('MidiInteractiveMulticastPlayer does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
+
+    def write(self):
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
 
 
 class MidiInteractiveMultitrackPlayer(MidiPlayerBase):
@@ -287,8 +297,8 @@ class MidiInteractiveMultitrackPlayer(MidiPlayerBase):
         # track has a dedicated partial which binds the play callback function to play notes to its own mido
         # MIDI port. So this design combined with async tasks lets us concurrently send messages for each track to
         # its own port, always sending the next one in order across all the tracks.
-        has_notes = [True for track in self.song]
-        track_start_offsets = [0.0 for track in self.song]
+        has_notes = [True] * len(self.song)
+        track_start_offsets = [0.0] * len(self.song)
         while any(has_notes):
             track_idx = int(argmin(track_start_offsets))
             track = self.song.track_list[track_idx]
@@ -313,4 +323,7 @@ class MidiInteractiveMultitrackPlayer(MidiPlayerBase):
             await self._play()
 
     def improvise(self):
-        raise NotImplementedError('MidiInteractiveMultitrackPlayer does not support improvising')
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
+
+    def write(self):
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')

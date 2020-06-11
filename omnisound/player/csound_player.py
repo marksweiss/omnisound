@@ -154,6 +154,7 @@ class CSoundCSDPlayer(Player):
         self.orchestra = csound_orchestra
         if csound_orchestra and csound_score:
             self._csd = CSD(csound_orchestra, csound_score)
+
         self._song = song
 
     # Properties
@@ -173,7 +174,7 @@ class CSoundCSDPlayer(Player):
         # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
         #  Multithreaded interactive player?
         validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
-        for track in self._song:
+        for track in self.song:
             self._set_csd_for_track(track, score_header_lines=score_header_lines)
 
     def _set_csd_for_track(self, track: Track, score_header_lines: Optional[Sequence[str]] = None):
@@ -203,7 +204,7 @@ class CSoundCSDPlayer(Player):
             raise InvalidScoreError('ctcsound.compileCsdTest() failed for rendered_script {}'.format(rendered_script))
 
     def play_each(self):
-        raise NotImplementedError('CSoundCSDPlayer does not support play_each()')
+        raise NotImplementedError(f'{self.__class__.__name__} does not support play_each()')
 
     def improvise(self):
         raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
