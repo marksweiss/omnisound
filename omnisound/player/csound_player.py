@@ -163,11 +163,9 @@ class CSoundCSDPlayer(Player):
         return self._song
 
     @song.setter
-    def song(self, song: Song, score_header_lines: Optional[Sequence[str]] = None):
+    def song(self, song: Song):
         validate_type('song', song, Song)
-        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
         self._song = song
-        self._set_csd_for_song(score_header_lines=score_header_lines)
     # /BasePlayer Properties
 
     # Player API
@@ -195,11 +193,17 @@ class CSoundCSDPlayer(Player):
 
     def loop(self):
         raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
+    # /Player API
+
+    def set_score_header_lines(self, score_header_lines: Optional[Sequence[str]]):
+        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
+        self._set_csd_for_song(score_header_lines=score_header_lines)
 
     def _set_csd_for_song(self, score_header_lines: Optional[Sequence[str]] = None):
         # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
         #  Multithreaded interactive player?
         validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
+        assert self._song
         for track in self.song:
             self._set_csd_for_track(track, score_header_lines=score_header_lines)
 
@@ -262,6 +266,7 @@ class CSoundInteractivePlayer(Player):
     # /Properties
 
     # Player API
+    # TODO THESE NEED TO BECOME ASYNC
     def play(self) -> int:
         self._cs.start()
         while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
