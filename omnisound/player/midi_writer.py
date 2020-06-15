@@ -1,16 +1,17 @@
 # Copyright 2020 Mark S. Weiss
 
-from typing import Optional
+from typing import Any, Optional, Sequence
 
 from mido.midifiles.midifiles import Message, MidiFile, MidiTrack
 from omnisound.utils.utils import validate_optional_path, validate_optional_type, validate_type
 
 from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.song import Song
-from omnisound.player.midi_player import MidiEventType, MidiPlayerBase, MidiPlayerEvent, MidiPlayerAppendMode
+from omnisound.player.midi_player import MidiEventType, MidiPlayerEvent, MidiPlayerAppendMode
+from omnisound.player.player import Writer
 
 
-class MidiWriter(MidiPlayerBase):
+class MidiWriter(Writer):
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
@@ -19,28 +20,36 @@ class MidiWriter(MidiPlayerBase):
         validate_optional_type('song', song, Song)
         validate_optional_path('midi_file_path', midi_file_path)
         super(MidiWriter, self).__init__(song=song, append_mode=append_mode)
+        self._song = song
         self.midi_file_path = midi_file_path
         # Type 1 - multiple synchronous tracks, all starting at the same time
         # https://mido.readthedocs.io/en/latest/midi_files.html
         self.midi_file = MidiFile(type=1)
 
-    def play(self):
-        self._play()
+    # BasePlayer Properties
+    @property
+    def song(self):
+        return self._song
 
-    def play_each(self):
-        self._play()
+    @song.setter
+    def song(self, song: Song):
+        validate_type('song', song, Song)
+        self._song = song
+    # /BasePlayer Properties
 
-    def write_midi_file(self):
+    # Writer API
+    def write(self):
         self.midi_file.save(self.midi_file_path)
 
-    def _play(self):
+    def generate(self) -> Sequence[Any]:
+        event_list = []
         for track in self.song:
             # TODO Support Midi Performance Attrs
             # if op == PLAY_ALL
             #     track_performance_attrs = track.performance_attrs
             midi_track = MidiTrack()
             midi_track.append(Message('program_change', program=track.instrument, time=0))
-            self.midi_file.tracks.append (midi_track)
+            self.midi_file.tracks.append(midi_track)
 
             # mido channels numbered 0..15 instead of MIDI standard 1..16
             channel = track.channel - 1
@@ -53,7 +62,6 @@ class MidiWriter(MidiPlayerBase):
                 #       i.e. it assumes it will occur exactly after the last note of the last measure
                 # NOTE: Need to carry over last offset from previous measure, and then this will work :-)
                 # TODO MAKE MEASURE ALWAYS FILL IN TRAILING (ALL?) RESTS SO THIS IS NOT AN ISSUE
-                event_list = []
                 for note in measure:
                     # noinspection PyTypeChecker
                     event_list.append(MidiPlayerEvent(note, measure, MidiEventType.NOTE_ON))
@@ -74,9 +82,5 @@ class MidiWriter(MidiPlayerBase):
                                       note=ATTR_GET_TYPE_CAST_MAP['pitch'](event.note.pitch),
                                       channel=channel)
                     midi_track.append(message)
-
-    def improvise(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
-
-    def loop(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
+        return event_list
+    # /Writer API

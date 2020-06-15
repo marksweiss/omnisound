@@ -32,8 +32,6 @@ MIDI_TICKS_PER_SECOND = int((MIDI_TICKS_PER_QUARTER_NOTE *
                             / 60)
 
 DEFAULT_BEAT_DURATION = NoteDur.QUARTER
-# PLAY_ALL = 'play_all'
-# PLAY_EACH = 'play_each'
 
 
 class MidiPlayerAppendMode(Enum):
@@ -89,7 +87,7 @@ class MidiPlayerEvent(object):
             event.tick_delta = event.tick - event_list[j - 1].tick
 
 
-class MidiPlayerBase(Player):
+class MidiPlayerBase:
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None):
@@ -98,21 +96,6 @@ class MidiPlayerBase(Player):
         self.append_mode = append_mode
         self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
         # TODO Support Midi Performance Attrs
-        # song_performance_attrs = song.performance_attrs
-
-    @property
-    def song(self):
-        return self._song
-
-    @song.setter
-    def song(self, song: Song):
-        validate_type('song', song, Song)
-        self._song = song
-
-    # TODO Support Midi Performance Attrs
-    # def _apply_performance_attrs(self, note, *performance_attrs_list):
-        # for pa 0in performance_attrs_list:
-        #    apply pa to note
 
     @staticmethod
     def get_midi_messages_and_notes_for_track(track: MidiTrack) -> Tuple[Sequence[Message], Sequence[Any]]:
@@ -135,25 +118,8 @@ class MidiPlayerBase(Player):
         asyncio.sleep(delay)
         port.send(messages[1])
 
-    def play(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
 
-    def play_each(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
-
-    def improvise(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
-
-    def loop(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
-
-    def write(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not instantiated in ABC')
-
-
-class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
-    DEFAULT_PORT_NAME = 'MidiInteractiveSingleTrackPlayer_port'
-
+class MidiInteractiveSingleTrackPlayer(Player, MidiPlayerBase):
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
@@ -161,8 +127,20 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
         validate_type('append_mode', append_mode, MidiPlayerAppendMode)
         validate_optional_types(('port_name', port_name, str), ('song', song, Song))
         super(MidiInteractiveSingleTrackPlayer, self).__init__(song=song, append_mode=append_mode)
-        self.port_name = port_name or MidiInteractiveSingleTrackPlayer.DEFAULT_PORT_NAME
+        self.port_name = port_name or f'{self.__class__.__name__}_port'
 
+    # BasePlayer Properties
+    @property
+    def song(self):
+        return self._song
+
+    @song.setter
+    def song(self, song: Song):
+        validate_type('song', song, Song)
+        self._song = song
+    # /BasePlayer Properties
+
+    # Player API
     # noinspection PyAsyncCall
     async def play(self):
         # Single-track player so only process the first track in the song
@@ -198,16 +176,10 @@ class MidiInteractiveSingleTrackPlayer(MidiPlayerBase):
 
     def improvise(self):
         raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
-
-    def write(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
+    # /Player API
 
 
-class MidiInteractiveMulticastPlayer(MidiPlayerBase):
-    """Broadcasts messages from a single Omnisound Track to multiple Midi ports"""
-
-    DEFAULT_PORT_NAME = 'MidiInteractiveMulticastPlayer_port'
-
+class MidiInteractiveMulticastPlayer(Player, MidiPlayerBase):
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
@@ -220,12 +192,24 @@ class MidiInteractiveMulticastPlayer(MidiPlayerBase):
             assert num_ports == len(port_names)
             self.port_names = deepcopy(port_names)
         else:
-            self.port_names = [f'{MidiInteractiveMulticastPlayer.DEFAULT_PORT_NAME}_{i}'
+            self.port_names = [f'{self.__class__.__name__}_{i}'
                                for i in range(num_ports)]
         super(MidiInteractiveMulticastPlayer, self).__init__(song=song, append_mode=append_mode)
         ports = [open_output(port_name) for port_name in self.port_names]
         self._multi_port = MultiPort(ports)
 
+    # BasePlayer Properties
+    @property
+    def song(self):
+        return self._song
+
+    @song.setter
+    def song(self, song: Song):
+        validate_type('song', song, Song)
+        self._song = song
+    # /BasePlayer Properties
+
+    # Player API
     async def play(self):
         # Single-track multicast to multiple ports player so only process the first track in the song
         track = self.song.track_list[0]
@@ -253,11 +237,8 @@ class MidiInteractiveMulticastPlayer(MidiPlayerBase):
     def improvise(self):
         raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
 
-    def write(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
 
-
-class MidiInteractiveMultitrackPlayer(MidiPlayerBase):
+class MidiInteractiveMultitrackPlayer(Player, MidiPlayerBase):
     """Broadcasts messages from a single Omnisound Track to multiple Midi ports"""
 
     DEFAULT_PORT_NAME = 'MidiInteractiveMultitrackPlayer_port'
@@ -290,6 +271,32 @@ class MidiInteractiveMultitrackPlayer(MidiPlayerBase):
         self._play_callbacks = [partial(_play_note_on_off, track=self.song[i], port=ports[i])
                                 for i in range(len(self.song))]
 
+    # BasePlayer Properties
+    @property
+    def song(self):
+        return self._song
+
+    @song.setter
+    def song(self, song: Song):
+        validate_type('song', song, Song)
+        self._song = song
+    # /BasePlayer Properties
+
+    # Player API
+    async def play(self):
+        await self._play()
+
+    async def play_each(self):
+        await self._play()
+
+    async def loop(self):
+        while True:
+            await self._play()
+
+    def improvise(self):
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
+    # /Player API
+
     async def _play(self):
         # Loop until we have consumed all notes in all tracks in the song.
         # On each iteration find the track whose current start position (sum of all note durations played for that
@@ -311,19 +318,3 @@ class MidiInteractiveMultitrackPlayer(MidiPlayerBase):
                 has_notes[track_idx] = False
                 # Finished playing track, ensure that this track isn't picked as having the minimum offset value
                 track_start_offsets[track_idx] = maxsize
-
-    async def play(self):
-        await self._play()
-
-    async def play_each(self):
-        await self._play()
-
-    async def loop(self):
-        while True:
-            await self._play()
-
-    def improvise(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
-
-    def write(self):
-        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')

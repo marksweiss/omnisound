@@ -157,7 +157,7 @@ class CSoundCSDPlayer(Player):
 
         self._song = song
 
-    # Properties
+    # BasePlayer Properties
     @property
     def song(self):
         return self._song
@@ -168,25 +168,9 @@ class CSoundCSDPlayer(Player):
         validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
         self._song = song
         self._set_csd_for_song(score_header_lines=score_header_lines)
-    # /Properties
+    # /BasePlayer Properties
 
-    def _set_csd_for_song(self, score_header_lines: Optional[Sequence[str]] = None):
-        # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
-        #  Multithreaded interactive player?
-        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
-        for track in self.song:
-            self._set_csd_for_track(track, score_header_lines=score_header_lines)
-
-    def _set_csd_for_track(self, track: Track, score_header_lines: Optional[Sequence[str]] = None):
-        validate_type('track', track, Track)
-        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
-        note_lines = []
-        for measure in track.measure_list:
-            for note in measure:
-                note_lines.append(f'{str (note)}')
-        score = CSoundScore(header_lines=score_header_lines or [''], note_lines=note_lines)
-        self._csd = CSD(self.orchestra, score)
-
+    # Player API
     def play(self) -> int:
         cs = ctcsound.Csound()
         rendered_script = self._csd.render()
@@ -212,6 +196,24 @@ class CSoundCSDPlayer(Player):
     def loop(self):
         raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
 
+    def _set_csd_for_song(self, score_header_lines: Optional[Sequence[str]] = None):
+        # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
+        #  Multithreaded interactive player?
+        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
+        for track in self.song:
+            self._set_csd_for_track(track, score_header_lines=score_header_lines)
+
+    def _set_csd_for_track(self, track: Track, score_header_lines: Optional[Sequence[str]] = None):
+        validate_type('track', track, Track)
+        validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
+        note_lines = []
+        for measure in track.measure_list:
+            for note in measure:
+                note_lines.append(f'{str (note)}')
+        score = CSoundScore(header_lines=score_header_lines or [''], note_lines=note_lines)
+        self._csd = CSD(self.orchestra, score)
+    # /Player API
+
 
 # TODO add a copy() method so that we can add an notes and then copy the object and change the orchestra
 #  in the copy and thus play the same pattern on different instruments
@@ -232,16 +234,6 @@ class CSoundInteractivePlayer(Player):
             raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
         self._song = song
 
-    def play(self) -> int:
-        self._cs.start()
-        while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
-            pass
-        # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
-        # holding the file handle open and leaking by continuing to write to that file.
-        result: int = self._cs.cleanup()
-        self._cs.reset()
-        return result
-
     def __del__(self):
         del self._cs
 
@@ -256,6 +248,7 @@ class CSoundInteractivePlayer(Player):
         if self._cs.compileOrc(str(self._orchestra)) != ctcsound.CSOUND_SUCCESS:
             raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
 
+    # BasePlayer Properties
     @property
     def song(self):
         return self._song
@@ -265,7 +258,29 @@ class CSoundInteractivePlayer(Player):
         validate_type('song', song, Song)
         self._song = song
         self.add_song_note_events()
+    # /BasePlayer Properties
     # /Properties
+
+    # Player API
+    def play(self) -> int:
+        self._cs.start()
+        while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
+            pass
+        # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
+        # holding the file handle open and leaking by continuing to write to that file.
+        result: int = self._cs.cleanup()
+        self._cs.reset()
+        return result
+
+    def play_each(self):
+        raise NotImplementedError('CSoundInteractivePlayer does not support play_each()')
+
+    def improvise(self):
+        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
+
+    def loop(self):
+        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
+    # /Player API
 
     def add_score_event(self, event: CSoundScoreEvent):
         validate_type('event', event, CSoundScoreEvent)
@@ -294,12 +309,3 @@ class CSoundInteractivePlayer(Player):
         else:
             self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], ())
 
-    def play_each(self):
-        raise NotImplementedError('CSoundInteractivePlayer does not support play_each()')
-
-    def improvise(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
-
-    # TODO IMPLEMENT
-    def loop(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
