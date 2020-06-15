@@ -70,10 +70,7 @@ if __name__ == '__main__':
     notes_per_measure = int((1 / dur_val) * (BEATS_PER_MEASURE * BEAT_DUR_VAL))
     for _ in range(NUM_MEASURES):
         note_config = MakeNoteConfig.copy(NOTE_CONFIG)
-        # Start the measure with 0 notes because we are appending into it
-        # Otherwise append doesn't work correctly. TODO WHY THIS SEEMS COUNTERINTUITIVE AND STUPID
-        ostinato_measure = Measure(meter=METER, swing=swing, num_notes=0,
-                                   mn=note_config)
+        ostinato_measure = Measure(meter=METER, swing=swing, mn=note_config)
 
         for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
@@ -122,5 +119,5 @@ if __name__ == '__main__':
     song = Song(to_add=tracks, name=SONG_NAME)
     writer = MidiWriter(song=song, append_mode=APPEND_MODE,
                         midi_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_song.mid')
-    writer.play()
-    writer.write_midi_file()
+    writer.generate()
+    writer.write()

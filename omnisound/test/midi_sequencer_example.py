@@ -45,9 +45,9 @@ if __name__ == '__main__':
                           f'E:4::{get_velocity (j + 3, notes_per_measure)}:0.03125')
         pattern_phrases.append(pattern_phrase)
     pattern = ' '.join(pattern_phrases)
-    writer_sequencer = MidiWriterSequencer (name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-                                            meter=METER, swing=SWING,
-                                            midi_file_path=MIDI_FILE_PATH)
+    writer_sequencer = MidiWriterSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
+                                           meter=METER, swing=SWING,
+                                           midi_file_path=MIDI_FILE_PATH)
     writer_sequencer.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
                                               instrument=MidiInstrument.Vibraphone.value,
                                               track_type=MidiTrack).channel = 1
@@ -65,11 +65,11 @@ if __name__ == '__main__':
                                               track_type=MidiTrack,
                                               arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh).channel = 3
 
-    ## Now render all tracks into one multi-track MIDI file
-    #writer_sequencer.apply_swing()
-    #writer_sequencer.play()
-    ## noinspection PyUnresolvedReferences
-    #writer_sequencer.player.write_midi_file()
+    # Now render all tracks into one multi-track MIDI file
+    writer_sequencer.apply_swing()
+    writer_sequencer.player.generate()
+    # noinspection PyUnresolvedReferences
+    writer_sequencer.player.write()
 
     # Now send song to interactive midi player which sends all note events on MIDI channel 1 to any listening devices
     single_track_rt_sequencer = MidiSingleTrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,

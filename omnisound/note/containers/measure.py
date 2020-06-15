@@ -57,7 +57,7 @@ class Measure(NoteSequence):
 
         self.meter = meter or copy(Measure.DEFAULT_METER)
         self.swing = swing
-        self.num_notes = num_notes
+        self.num_notes = num_notes or 0
         self.performance_attrs = performance_attrs
 
         # Support adding notes based on Meter
@@ -191,7 +191,7 @@ class Measure(NoteSequence):
         validate_types(('to_add', to_add, NoteSequence))
 
         # TODO DO THIS IN NUMPY NATIVE WAY
-        sum_of_durations = sum([self._get_duration_for_tempo(note) for note in to_add])
+        sum_of_durations = sum(self._get_duration_for_tempo(note) for note in to_add)
         if self.next_note_start + sum_of_durations > self.meter.measure_dur_secs:
             raise ValueError((f'measure.next_note_start {self.next_note_start} + '
                               f'sum of note.durations {sum_of_durations} > '

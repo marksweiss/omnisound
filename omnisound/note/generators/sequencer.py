@@ -15,7 +15,7 @@ from omnisound.note.generators.chord_globals import HarmonicChord, HARMONIC_CHOR
 from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
-from omnisound.player.player import Player
+from omnisound.player.player import Player, Writer
 from omnisound.utils.utils import (validate_optional_type_choice, validate_optional_types,
                                    validate_type, validate_type_reference, validate_type_choice, validate_types)
 
@@ -70,7 +70,7 @@ class Sequencer(Song):
                  num_measures: int = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
-                 player: Optional[Player] = None,
+                 player: Optional[Union[Player, Writer]] = None,
                  arpeggiator_chord: Optional[Chord] = None,
                  mn: MakeNoteConfig = None):
         validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))

@@ -78,11 +78,10 @@ class MidiWriterSequencer(Sequencer):
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                 attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
         super(MidiWriterSequencer, self).__init__(
-                name=name,
-                num_measures=num_measures,
-                meter=meter,
-                swing=swing,
-                player=MidiWriter(
-                        append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote,
-                        midi_file_path=midi_file_path),
-                mn=mn)
+              name=name,
+              num_measures=num_measures,
+              meter=meter,
+              swing=swing,
+              player=MidiWriter(append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote,
+                                midi_file_path=midi_file_path),
+              mn=mn)
