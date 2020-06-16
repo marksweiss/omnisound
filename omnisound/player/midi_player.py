@@ -91,7 +91,6 @@ class MidiPlayerBase:
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None):
-        super(MidiPlayerBase, self).__init__()
         self._song = song
         self.append_mode = append_mode
         self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
@@ -119,7 +118,7 @@ class MidiPlayerBase:
         port.send(messages[1])
 
 
-class MidiInteractiveSingleTrackPlayer(Player, MidiPlayerBase):
+class MidiInteractiveSingleTrackPlayer(MidiPlayerBase, Player):
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
@@ -162,6 +161,9 @@ class MidiInteractiveSingleTrackPlayer(Player, MidiPlayerBase):
                 await MidiPlayerBase._play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), port)
 
     async def loop(self):
+        # TEMP DEBUG
+        breakpoint()
+
         track = self.song.track_list[0]
         messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
 

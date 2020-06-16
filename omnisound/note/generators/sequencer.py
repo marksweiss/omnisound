@@ -76,8 +76,8 @@ class Sequencer(Song):
         validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
         validate_optional_types(('name', name, str),
                                 ('swing', swing, Swing),
-                                ('player', player, Player),
                                 ('arpeggiator_chord', arpeggiator_chord, Chord))
+        validate_optional_type_choice('player', player, (Player, Writer))
 
         # Sequencer wraps song but starts with no Tracks. It provides an alternate API for generating and adding Tracks.
         to_add = []
@@ -85,6 +85,9 @@ class Sequencer(Song):
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
         self.player = player
+        # Sequencer assigns itself as the song of its player. Sequencer subclasses song and in fact fills its own
+        # song tracks with generated notes. As it does this the reference to it in its player.song reflects the change.
+        self.player.song = self
         self.arpeggiator_chord = arpeggiator_chord or Sequencer.DEFAULT_ARPEGGIATOR_CHORD
         self.mn = mn
 
