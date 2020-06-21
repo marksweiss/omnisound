@@ -4,12 +4,10 @@ from omnisound.note.adapters.midi_note import MidiInstrument
 from omnisound.note.containers.measure import Meter
 from omnisound.note.containers.track import MidiTrack
 from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.midi_sequencer import (MidiMultitrackSequencer, MidiSingleTrackSequencer,
+from omnisound.note.generators.midi_sequencer import (MidiSingleTrackSequencer,
                                                       MidiWriterSequencer)
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.note.modifiers.swing import Swing
-
-import asyncio
 
 # Meter
 BEATS_PER_MEASURE = 4
@@ -72,17 +70,13 @@ if __name__ == '__main__':
     writer_sequencer.player.write()
 
     # Now send song to interactive midi player which sends all note events on MIDI channel 1 to any listening devices
-
-    # TEMP DEBUG
-    breakpoint()
-
     single_track_rt_sequencer = MidiSingleTrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-                                                         meter=METER, swing=SWING,
-                                                         song=writer_sequencer)
-    asyncio.run(single_track_rt_sequencer.loop())
+                                                         meter=METER, swing=SWING)
+    single_track_rt_sequencer.extend(to_add=writer_sequencer.track_list)
+    single_track_rt_sequencer.loop()
 
     # Now send song to interactive midi player which sends note events for each track to a separate MIDI channel
-    multi_track_rt_sequencer = MidiMultitrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-                                                       meter=METER, swing=SWING)
-    multi_track_rt_sequencer.append(writer_sequencer[0])
-    asyncio.run(multi_track_rt_sequencer.loop())
+    # multi_track_rt_sequencer = MidiMultitrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
+    #                                                    meter=METER, swing=SWING)
+    # multi_track_rt_sequencer.append(writer_sequencer[0])
+    # asyncio.run(multi_track_rt_sequencer.loop())

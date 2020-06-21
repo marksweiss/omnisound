@@ -387,8 +387,8 @@ class Sequencer(Song):
         self.player.song = self
         await self.player.play()
 
-    async def loop(self):
+    def loop(self):
         # noinspection PyArgumentList
         self.player.song = self
-        await self.player.loop()
+        self.player.loop()
     # /Track and Player Management
