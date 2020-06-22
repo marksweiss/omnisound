@@ -72,7 +72,11 @@ class MidiPlayerEvent(object):
             return self.note.time + self.note.duration
 
     def _tick(self) -> int:
-        return int(self.measure.meter.get_secs_for_note_time(note_time_val=self.event_time) *
+        return MidiPlayerEvent.get_tick(self.measure, self.event_time)
+
+    @staticmethod
+    def get_tick(measure: Measure, event_time: Union[float, int]):
+        return int(measure.meter.get_secs_for_note_time(note_time_val=event_time) *
                    MIDI_TICKS_PER_SECOND)
 
     @staticmethod
@@ -87,23 +91,22 @@ class MidiPlayerEvent(object):
             event.tick_delta = event.tick - event_list[j - 1].tick
 
 
-def get_midi_messages_and_notes_for_track(track: MidiTrack) -> Tuple[Sequence[Message], Sequence[Any]]:
-    notes = []
+def get_midi_messages_and_notes_for_track(track: MidiTrack) -> Tuple[Sequence[Message], Sequence[int]]:
     messages = []
-    for measure in track:
+    tick = 0
+    durations = []
+    for measure in track.measure_list:
         for note in measure:
-            notes.append(note)
             amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
             pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
-            messages.append(Message('note_on', velocity=amplitude, note=pitch, channel=track.channel))
-            messages.append(Message('note_off', velocity=amplitude, note=pitch, channel=track.channel))
-    return messages, notes
-
-
-async def _play_note_on_off(delay: float, messages: Tuple[Message, Message], port: Union[MultiPort, Output] = None):
-    port.send(messages[0])
-    await asyncio.sleep(delay)
-    port.send(messages[1])
+            durations.append(note.duration)
+            messages.append(Message('note_on', time=tick,
+                                    velocity=amplitude, note=pitch, channel=track.channel))
+            # noinspection PyTypeChecker
+            tick += MidiPlayerEvent.get_tick(measure, note.duration)
+            messages.append(Message('note_off', time=tick,
+                                    velocity=amplitude, note=pitch, channel=track.channel))
+    return messages, durations
 
 
 class MidiInteractiveSingleTrackPlayer(Player):
@@ -127,7 +130,8 @@ class MidiInteractiveSingleTrackPlayer(Player):
         port = open_output(self.port_name, True)
         with port:
             for i in range(len(notes)):
-                await _play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), port)
+                pass
+                # await _play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), port)
 
     async def play_each(self):
         track = self._song.track_list[0]
@@ -136,7 +140,8 @@ class MidiInteractiveSingleTrackPlayer(Player):
         port = open_output(self.port_name, True)
         with port:
             for i in range(len(notes)):
-                await _play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), port)
+                pass
+                # await _play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), port)
 
     def loop(self):
         event_loop = asyncio.get_event_loop()
@@ -144,15 +149,25 @@ class MidiInteractiveSingleTrackPlayer(Player):
 
     async def __play_note_on_off(self):
         track = self._song.track_list[0]
-        messages, notes = get_midi_messages_and_notes_for_track(track)
+        messages, durations = get_midi_messages_and_notes_for_track(track)
+
+        # TEMP DEBUG
+        # breakpoint()
+
         port = open_output(self.port_name, True)
         try:
             while True:
                 with port:
-                    for i in range(len(notes)):
-                        await _play_note_on_off(notes[i].duration,
-                                                (messages[i], messages[i + 1]),
-                                                port)
+                    for i in range(0, len(messages), 2):
+
+                        # TEMP DEBUG
+                        print(str(messages[i]))
+                        print(str(messages[i + 1]))
+                        print('*******')
+
+                        port.send(messages[i])
+                        await asyncio.sleep(durations[int(i / 2)])
+                        port.send(messages[i + 1])
         except KeyboardInterrupt:
             pass
 
