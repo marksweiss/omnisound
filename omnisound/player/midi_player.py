@@ -117,17 +117,6 @@ class MidiInteractiveSingleTrackPlayer(Player):
         self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
         self.port_name = port_name or f'{self.__class__.__name__}_port'
 
-    # BasePlayer Properties
-    @property
-    def song(self):
-        return self._song
-
-    @song.setter
-    def song(self, song: Song):
-        validate_type('song', song, Song)
-        self._song = song
-    # /BasePlayer Properties
-
     # Player API
     # noinspection PyAsyncCall
     async def play(self):
@@ -161,7 +150,9 @@ class MidiInteractiveSingleTrackPlayer(Player):
             while True:
                 with port:
                     for i in range(len(notes)):
-                        await _play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), port)
+                        await _play_note_on_off(notes[i].duration,
+                                                (messages[i], messages[i + 1]),
+                                                port)
         except KeyboardInterrupt:
             pass
 

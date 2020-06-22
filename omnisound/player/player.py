@@ -1,33 +1,33 @@
 # Copyright 2018 Mark S. Weiss
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Sequence
+
+from omnisound.note.containers.song import Song
+from omnisound.utils.utils import validate_type
 
 
 class PlayerNoNotesException(Exception):
     pass
 
 
-class PlayerBase(metaclass=ABCMeta):
-    @property
-    @abstractmethod
-    def song(self):
-        """Player has a Song attribute that can be a source of notes to be played by the play*() methods"""
-        raise NotImplementedError()
-
-    @song.setter
-    @abstractmethod
-    def song(self, song):
-        raise NotImplementedError()
-
-
-class Player(PlayerBase):
-    def __init__(self):
+class PlayerBase:
+    def __init__(self, song: Song = None):
+        self._song = song
         self.improvising = False
         self.pre_play_hooks: Dict[str, Callable] = {}
         self.pre_play_hooks_list: List[Callable] = []
         self.post_play_hooks: Dict[str, Callable] = {}
         self.post_play_hooks_list: List[Callable] = []
+
+    @property
+    def song(self):
+        return self._song
+
+    @song.setter
+    def song(self, song: Song):
+        validate_type('song', song, Song)
+        self._song = song
 
     def add_pre_play_hook(self, name: str, hook: Any):
         self._add_hook(name, hook, self.pre_play_hooks, self.pre_play_hooks_list)
@@ -58,6 +58,11 @@ class Player(PlayerBase):
         if hook:
             hooks_list.remove(hook)
             del hooks[name]
+
+
+class Player(PlayerBase):
+    def __init__(self, song: Song = None):
+        super(Player, self).__init__(song=song)
 
     @abstractmethod
     def play_each(self) -> Any:
@@ -94,6 +99,9 @@ class Player(PlayerBase):
 
 
 class Writer(PlayerBase):
+    def __init__(self, song: Song = None):
+        super(Writer, self).__init__(song=song)
+
     @abstractmethod
     def generate(self) -> Sequence[Any]:
         """Generates note events in a form compatible with a particular back end, in memory, from an Omnisound Song.
