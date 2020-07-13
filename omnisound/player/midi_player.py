@@ -100,13 +100,13 @@ def get_midi_messages_and_notes_for_track(track: MidiTrack) -> Tuple[Sequence[Me
             amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
             pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
             durations.append(note.duration)
-            # TODO WHY NO SOUND? TODO DO WE NEED TO SET TICK OR DOES IT JUST PLAY IN APPEND ORDER?
             messages.append(Message('note_on', time=tick,
                                     velocity=amplitude, note=pitch, channel=track.channel))
             # noinspection PyTypeChecker
             tick += MidiPlayerEvent.get_tick(measure, note.duration)
             messages.append(Message('note_off', time=tick,
                                     velocity=amplitude, note=pitch, channel=track.channel))
+
     return messages, durations
 
 
@@ -153,17 +153,21 @@ class MidiInteractiveSingleTrackPlayer(Player):
         messages, durations = get_midi_messages_and_notes_for_track(track)
         port = open_output(self.port_name, True)
         try:
+            loop_duration = messages[-1].time
+            j = 0
             while True:
                 with port:
                     for i in range(0, len(messages), 2):
 
                         # TEMP DEBUG
+                        messages[i].time += (j * loop_duration)
                         print(f'***** i = {i}')
                         print(f'***** messages[i] = {messages[i]}')
 
                         port.send(messages[i])
                         await asyncio.sleep(durations[int(i / 2)])
                         port.send(messages[i + 1])
+                    j += 1
         except KeyboardInterrupt:
             pass
 
