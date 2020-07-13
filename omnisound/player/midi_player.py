@@ -146,24 +146,20 @@ class MidiInteractiveSingleTrackPlayer(Player):
 
     def loop(self):
         event_loop = asyncio.get_event_loop()
-        event_loop.run_until_complete(self.__play_note_on_off())
+        event_loop.run_until_complete(self._loop())
 
-    async def __play_note_on_off(self):
+    async def _loop(self):  # sourcery skip: move-assign
         track = self._song.track_list[0]
         messages, durations = get_midi_messages_and_notes_for_track(track)
         port = open_output(self.port_name, True)
+        breakpoint()
         try:
             loop_duration = messages[-1].time
             j = 0
-            while True:
-                with port:
+            with port:
+                while True:
                     for i in range(0, len(messages), 2):
-
-                        # TEMP DEBUG
                         messages[i].time += (j * loop_duration)
-                        print(f'***** i = {i}')
-                        print(f'***** messages[i] = {messages[i]}')
-
                         port.send(messages[i])
                         await asyncio.sleep(durations[int(i / 2)])
                         port.send(messages[i + 1])
