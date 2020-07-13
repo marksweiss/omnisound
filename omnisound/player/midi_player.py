@@ -100,6 +100,7 @@ def get_midi_messages_and_notes_for_track(track: MidiTrack) -> Tuple[Sequence[Me
             amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
             pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
             durations.append(note.duration)
+            # TODO WHY NO SOUND? TODO DO WE NEED TO SET TICK OR DOES IT JUST PLAY IN APPEND ORDER?
             messages.append(Message('note_on', time=tick,
                                     velocity=amplitude, note=pitch, channel=track.channel))
             # noinspection PyTypeChecker
@@ -122,7 +123,7 @@ class MidiInteractiveSingleTrackPlayer(Player):
 
     # Player API
     # noinspection PyAsyncCall
-    async def play(self):
+    async def play(self):  # sourcery skip: for-index-replacement, for-index-underscore, hoist-statement-from-loop
         # Single-track player so only process the first track in the song
         track = self._song.track_list[0]
         messages, notes = get_midi_messages_and_notes_for_track(track)
@@ -133,7 +134,7 @@ class MidiInteractiveSingleTrackPlayer(Player):
                 pass
                 # await _play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), port)
 
-    async def play_each(self):
+    async def play_each(self):  # sourcery skip: for-index-replacement, for-index-underscore, hoist-statement-from-loop
         track = self._song.track_list[0]
         messages, notes = get_midi_messages_and_notes_for_track(track)
 
@@ -150,10 +151,6 @@ class MidiInteractiveSingleTrackPlayer(Player):
     async def __play_note_on_off(self):
         track = self._song.track_list[0]
         messages, durations = get_midi_messages_and_notes_for_track(track)
-
-        # TEMP DEBUG
-        # breakpoint()
-
         port = open_output(self.port_name, True)
         try:
             while True:
@@ -161,9 +158,8 @@ class MidiInteractiveSingleTrackPlayer(Player):
                     for i in range(0, len(messages), 2):
 
                         # TEMP DEBUG
-                        print(str(messages[i]))
-                        print(str(messages[i + 1]))
-                        print('*******')
+                        print(f'***** i = {i}')
+                        print(f'***** messages[i] = {messages[i]}')
 
                         port.send(messages[i])
                         await asyncio.sleep(durations[int(i / 2)])
