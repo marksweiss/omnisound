@@ -382,10 +382,10 @@ class Sequencer(Song):
         player.song = song
         await player.play()
 
-    async def play(self):
+    def play(self):
         # noinspection PyArgumentList
         self.player.song = self
-        await self.player.play()
+        self.player.play()
 
     def loop(self):
         # noinspection PyArgumentList
