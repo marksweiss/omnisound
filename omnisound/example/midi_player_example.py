@@ -20,7 +20,7 @@ from omnisound.player.midi_player import MidiPlayerAppendMode
 from omnisound.player.midi_writer import MidiWriter
 
 
-SONG_NAME = 'test_midi_song'
+SONG_NAME = 'example_midi_song'
 APPEND_MODE = MidiPlayerAppendMode.AppendAtAbsoluteTime
 
 BEATS_PER_MEASURE = 4
@@ -121,5 +121,5 @@ if __name__ == '__main__':
     song = Song(to_add=tracks, name=SONG_NAME)
     writer = MidiWriter(song=song, append_mode=APPEND_MODE,
                         midi_file_path=Path(('/Users/markweiss/Documents/projects/'
-                                             'omnisound/omnisound/test/test_song.mid')))
+                                             'omnisound/omnisound/example/example_song.mid')))
     writer.generate_and_write()

@@ -22,9 +22,9 @@ METER = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo
 SWING_FACTOR = 0.005
 SWING = Swing(swing_on=True, swing_range=SWING_FACTOR, swing_direction=Swing.SwingDirection.Both)
 # Sequencer
-SEQUENCER_NAME = 'test_midi_sequencer_song'
+SEQUENCER_NAME = 'example_midi_sequencer_song'
 NUM_MEASURES = 4
-MIDI_FILE_PATH = Path('/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_sequencer_song.mid')
+MIDI_FILE_PATH = Path('/Users/markweiss/Documents/projects/omnisound/omnisound/example/example_sequencer_song.mid')
 
 BASE_VELOCITY = 100
 VELOCITY_FACTOR = 2

@@ -141,7 +141,18 @@ class CSD:
         )
 
 
+# TODO Support multiple orchestras and test it
 class CSoundCSDPlayer(Player):
+    """
+    Player that renders a CSD Score file, which must define one or more Orchestras (instruments) and defines Score
+    events (notes) that use the orchestra(s). The Score is rendered and then played back directly using the ctcsound
+    API.
+
+    NOTE: This is implicitly multitrack, because CSound supports Score files support defining more than one Orchestra
+    in the CSD file or through an include mechanism, and support defining events that refer to multiple Orchestras
+    and have arbitrary start times. So two or more note events can start at the same time (or overlap), each producing
+    sound from a different orchestra. Thus, effectively multitrack.
+    """
     def __init__(self,
                  csound_orchestra: Optional[CSoundOrchestra] = None,
                  csound_score: Optional[CSoundScore] = None,
@@ -191,8 +202,26 @@ class CSoundCSDPlayer(Player):
     def improvise(self):
         raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
 
-    def loop(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
+    def loop(self) -> int:
+        result = 0
+        rendered_script = self._csd.render()
+        try:
+            cs = ctcsound.Csound()
+            while True:
+                # noinspection PyUnboundLocalVariable
+                if cs.compileCsdText(rendered_script) == ctcsound.CSOUND_SUCCESS:
+                    cs.start()
+                    while cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
+                        pass
+                    # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object
+                    # holding the file handle open and leaking by continuing to write to that file.
+                    result: int = cs.cleanup()
+                    cs.reset()
+                else:
+                    raise InvalidScoreError('ctcsound.compileCsdTest() failed for rendered_script {}'.format(rendered_script))
+        except KeyboardInterrupt:
+            del cs
+            return result
     # /Player API
 
     def set_score_header_lines(self, score_header_lines: Optional[Sequence[str]]):
@@ -200,8 +229,6 @@ class CSoundCSDPlayer(Player):
         self._set_csd_for_song(score_header_lines=score_header_lines)
 
     def _set_csd_for_song(self, score_header_lines: Optional[Sequence[str]] = None):
-        # TODO THIS IS BROKEN. It can't play multiple tracks simultaneously. Need to learn about Channels?
-        #  Multithreaded interactive player?
         validate_optional_sequence_of_type('score_header_lines', score_header_lines, str)
         assert self._song
         for track in self.song:
@@ -219,8 +246,7 @@ class CSoundCSDPlayer(Player):
     # /Player API
 
 
-# TODO add a copy() method so that we can add an notes and then copy the object and change the orchestra
-#  in the copy and thus play the same pattern on different instruments
+# TODO Support multiple orchestras and test it
 class CSoundInteractivePlayer(Player):
     def __init__(self,
                  csound_orchestra: CSoundOrchestra = None,
@@ -239,9 +265,13 @@ class CSoundInteractivePlayer(Player):
         self._song = song
 
     def __del__(self):
-        del self._cs
+        try:
+            del self._cs
+        except Exception:
+            pass
 
     # Properties
+    # TODO SUPPORT MULTIPLE ORCHESTRAS
     @property
     def orchestra(self):
         return self._orchestra
@@ -266,7 +296,6 @@ class CSoundInteractivePlayer(Player):
     # /Properties
 
     # Player API
-    # TODO THESE NEED TO BECOME ASYNC
     def play(self) -> int:
         self._cs.start()
         while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
@@ -275,6 +304,7 @@ class CSoundInteractivePlayer(Player):
         # holding the file handle open and leaking by continuing to write to that file.
         result: int = self._cs.cleanup()
         self._cs.reset()
+        del self._cs
         return result
 
     def play_each(self):
@@ -283,8 +313,20 @@ class CSoundInteractivePlayer(Player):
     def improvise(self):
         raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
 
-    def loop(self):
-        raise NotImplementedError(f'{self.__class__.__name__} does not support looping')
+    def loop(self) -> int:
+        result = 0
+        while True:
+            try:
+                self._cs.start()
+                while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
+                    pass
+                # self._cs.rewindScore()
+                self._cs.setScoreOffsetSeconds(0)
+                self._cs.reset()
+            except KeyboardInterrupt:
+                self._cs.reset()
+                result: int = self._cs.cleanup()
+                return result
     # /Player API
 
     def add_score_event(self, event: CSoundScoreEvent):
