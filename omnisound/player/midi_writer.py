@@ -1,9 +1,10 @@
 # Copyright 2020 Mark S. Weiss
 
+from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from mido.midifiles.midifiles import Message, MidiFile, MidiTrack
-from omnisound.utils.validation_utils import validate_optional_path, validate_optional_type, validate_type
+from omnisound.utils.validation_utils import validate_optional_types, validate_type
 
 from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.song import Song
@@ -15,10 +16,9 @@ class MidiWriter(Writer):
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
-                 midi_file_path: str = None):
+                 midi_file_path: Path = None):
         validate_type('append_mode', append_mode, MidiPlayerAppendMode)
-        validate_optional_type('song', song, Song)
-        validate_optional_path('midi_file_path', midi_file_path)
+        validate_optional_types(('song', song, Song), ('midi_file_path', midi_file_path, Path))
         self._song = song
         self.midi_file_path = midi_file_path
         # Type 1 - multiple synchronous tracks, all starting at the same time
@@ -39,7 +39,7 @@ class MidiWriter(Writer):
 
     # Writer API
     def write(self):
-        self.midi_file.save(self.midi_file_path)
+        self.midi_file.save(str(self.midi_file_path))
 
     def generate(self) -> Sequence[Any]:
         assert self._song

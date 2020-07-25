@@ -1,52 +1,13 @@
-# Copyright 2018 Mark S. Weiss
-
-from enum import Enum
-
 import pytest
 
-from omnisound.utils.enum_utils import enum_to_dict, enum_to_dict_reverse_mapping, enum_to_str_key_dict
-from omnisound.utils.math_utils import *
-from omnisound.utils.validation_utils import validate_not_falsey, validate_not_none, validate_optional_sequence_of_type, \
-    validate_optional_type, \
-    validate_optional_types, \
-    validate_sequence_of_type, validate_sequence_of_type_choice, validate_type_choice, validate_type_reference, \
-    validate_type_reference_choice
+from omnisound.utils.validation_utils import (validate_not_falsey, validate_not_none,
+                                              validate_optional_sequence_of_type, validate_optional_type,
+                                              validate_optional_types, validate_sequence_of_type,
+                                              validate_sequence_of_type_choice, validate_type_choice,
+                                              validate_type_reference, validate_type_reference_choice)
+
 
 ARG_NAME = 'arg'
-
-
-class TestEnum(Enum):
-    A = 1
-    B = 2
-
-
-def test_enum_to_dict():
-    expected_dict = {
-        TestEnum.A: 1,
-        TestEnum.B: 2
-    }
-    assert enum_to_dict(TestEnum) == expected_dict
-
-
-def test_enum_to_dict_reverse_mapping():
-    expected_dict = {
-        1: TestEnum.A,
-        2: TestEnum.B
-    }
-    assert enum_to_dict_reverse_mapping(TestEnum) == expected_dict
-
-
-def test_enum_to_str_key_dict():
-    expected_dict = {
-        'A': TestEnum.A,
-        'B': TestEnum.B
-    }
-    assert enum_to_str_key_dict(TestEnum) == expected_dict
-
-
-def test_sign():
-    for _ in range(10):
-        assert sign() in {1, -1}
 
 
 def test_validate_not_none():
@@ -58,7 +19,7 @@ def test_validate_not_none():
     assert validate_not_none(ARG_NAME, val)
 
 
-def test_validate_optional_sequence_of_types():
+def test_validate_optional_sequence_of_type():
     arg_name = 'arg'
     val_type = int
 

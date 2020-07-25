@@ -147,9 +147,9 @@ class CSoundCSDPlayer(Player):
                  csound_orchestra: Optional[CSoundOrchestra] = None,
                  csound_score: Optional[CSoundScore] = None,
                  song: Optional[Song] = None):
-        validate_types(('csound_orchestra', csound_orchestra, CSoundOrchestra),
-                       ('csound_score', csound_score, CSoundScore),
-                       ('song', song, Song))
+        validate_optional_types(('csound_orchestra', csound_orchestra, CSoundOrchestra),
+                                ('csound_score', csound_score, CSoundScore),
+                                ('song', song, Song))
         super(CSoundCSDPlayer, self).__init__()
 
         self.orchestra = csound_orchestra
@@ -314,4 +314,3 @@ class CSoundInteractivePlayer(Player):
             self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], (0, beats_to_wait))
         else:
             self._cs.scoreEvent(CSoundScoreEvent.EVENT_TYPE_CODES[CSoundEventType.EndScore.name], ())
-

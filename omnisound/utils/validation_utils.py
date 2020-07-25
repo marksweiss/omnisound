@@ -113,15 +113,15 @@ def validate_type_reference_choice(arg_name, type_ref_val, val_types) -> Tuple[b
     return matched, matched_type
 
 
-def validate_path(arg_name, val):
-    if not isinstance(val, str):
-        raise ValueError(f'arg: `{arg_name}` must be type `str` but is type: `{type(val)}`')
-    if not access(dirname(val), W_OK):
-        raise ValueError(f'arg: `{val}` is not a valid path')
-    return True
-
-
-def validate_optional_path(arg_name, val):
-    if not val:
-        return True
-    return validate_path(arg_name, val)
+#def validate_path(arg_name, val):
+#    if not isinstance(val, str):
+#        raise ValueError(f'arg: `{arg_name}` must be type `str` but is type: `{type(val)}`')
+#    if not access(dirname(val), W_OK):
+#        raise ValueError(f'arg: `{val}` is not a valid path')
+#    return True
+#
+#
+#def validate_optional_path(arg_name, val):
+#    if not val:
+#        return True
+#    return validate_path(arg_name, val)

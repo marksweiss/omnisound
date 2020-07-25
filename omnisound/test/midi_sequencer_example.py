@@ -1,5 +1,7 @@
 # Copyright 2020 Mark S. Weiss
 
+from pathlib import Path
+
 from omnisound.note.adapters.midi_note import MidiInstrument
 from omnisound.note.containers.measure import Meter
 from omnisound.note.containers.track import MidiTrack
@@ -22,7 +24,7 @@ SWING = Swing(swing_on=True, swing_range=SWING_FACTOR, swing_direction=Swing.Swi
 # Sequencer
 SEQUENCER_NAME = 'test_midi_sequencer_song'
 NUM_MEASURES = 4
-MIDI_FILE_PATH = '/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_sequencer_song.mid'
+MIDI_FILE_PATH = Path('/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_sequencer_song.mid')
 
 BASE_VELOCITY = 100
 VELOCITY_FACTOR = 2

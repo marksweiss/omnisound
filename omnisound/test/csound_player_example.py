@@ -90,7 +90,8 @@ NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
 if __name__ == '__main__':
     meter = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
     swing = Swing(swing_range=SWING_RANGE)
-    measure = Measure(meter=meter,
+    measure = Measure(num_notes=NUM_NOTES,
+                      meter=meter,
                       swing=swing,
                       mn=NOTE_CONFIG)
     for i in range(NUM_NOTES):

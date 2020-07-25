@@ -1,5 +1,6 @@
 # Copyright 2020 Mark S. Weiss
 
+from pathlib import Path
 from typing import Optional
 
 from omnisound.note.adapters.note import MakeNoteConfig
@@ -66,7 +67,7 @@ class MidiWriterSequencer(Sequencer):
                  num_measures: int = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
-                 midi_file_path: str = None,
+                 midi_file_path: Path = None,
                  mn: MakeNoteConfig = None):
         if not mn:
             mn = MakeNoteConfig(cls_name=CLASS_NAME,

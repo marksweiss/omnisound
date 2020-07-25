@@ -1,5 +1,7 @@
 # Copyright 2019 Mark S. Weiss
 
+from pathlib import Path
+
 from omnisound.note.adapters.midi_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, ATTR_NAMES, CLASS_NAME,
                                                NUM_ATTRIBUTES, get_pitch_for_key, make_note, MidiInstrument)
 from omnisound.note.adapters.note import MakeNoteConfig, NoteValues
@@ -70,7 +72,7 @@ if __name__ == '__main__':
     notes_per_measure = int((1 / dur_val) * (BEATS_PER_MEASURE * BEAT_DUR_VAL))
     for _ in range(NUM_MEASURES):
         note_config = MakeNoteConfig.copy(NOTE_CONFIG)
-        ostinato_measure = Measure(meter=METER, swing=swing, mn=note_config)
+        ostinato_measure = Measure(num_notes=notes_per_measure, meter=METER, swing=swing, mn=note_config)
 
         for i in range(notes_per_measure):
             note_values = NoteValues(ATTR_NAMES)
@@ -118,5 +120,6 @@ if __name__ == '__main__':
     tracks = [ostinato_track, chords_track]
     song = Song(to_add=tracks, name=SONG_NAME)
     writer = MidiWriter(song=song, append_mode=APPEND_MODE,
-                        midi_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_song.mid')
+                        midi_file_path=Path(('/Users/markweiss/Documents/projects/'
+                                             'omnisound/omnisound/test/test_song.mid')))
     writer.generate_and_write()

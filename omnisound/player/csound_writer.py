@@ -1,5 +1,6 @@
 # Copyright 2019 Mark S. Weiss
 
+from pathlib import Path
 from typing import Sequence
 
 from omnisound.note.containers.song import Song
@@ -9,15 +10,20 @@ from omnisound.utils.validation_utils import validate_optional_type, validate_ty
 
 class CSoundWriter(Writer):
     # TODO MAKE MORE PLATFORM-NEUTRAL
-    CSOUND_OSX_PATH = '/usr/local/bin/csound'
+    CSOUND_OSX_PATH = Path('/usr/local/bin/csound')
 
-    def __init__(self, song: Song = None, out_file_path: str = None,
-                 score_file_path: str = None, orchestra_file_path: str = None,
-                 csound_path: str = None, verbose: bool = False):
-        validate_types(('song', song, Song), ('out_file_path', out_file_path, str),
-                       ('score_file_path', score_file_path, str), ('orchestra_file_path', orchestra_file_path, str),
+    def __init__(self, song: Song = None,
+                 out_file_path: Path = None,
+                 score_file_path: Path = None,
+                 orchestra_file_path: Path = None,
+                 csound_path: Path = None,
+                 verbose: bool = False):
+        validate_types(('song', song, Song),
+                       ('out_file_path', out_file_path, Path),
+                       ('score_file_path', score_file_path, Path),
+                       ('orchestra_file_path', orchestra_file_path, Path),
                        ('verbose', verbose, bool))
-        validate_optional_type('csound_path', csound_path, str)
+        validate_optional_type('csound_path', csound_path, Path)
         super(CSoundWriter, self).__init__()
 
         self._song = song
@@ -41,7 +47,7 @@ class CSoundWriter(Writer):
 
     # Writer API
     def write(self) -> None:
-        with open(self.score_file_path, 'w') as score_file:
+        with open(str(self.score_file_path), 'w') as score_file:
             score_file.write('\n'.join(self._score_file_lines))
 
     def generate(self) -> Sequence[str]:
