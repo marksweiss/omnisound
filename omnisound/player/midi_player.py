@@ -1,27 +1,19 @@
 # Copyright 2020 Mark S. Weiss
 
-from copy import deepcopy
 from enum import Enum
-from functools import partial
 from inspect import currentframe
-from sys import maxsize
 from typing import Any, List, Optional, Sequence, Tuple, Union
 import asyncio
 
 # noinspection PyProtectedMember
 from mido import Message, open_output
-from mido.backends.rtmidi import Output
-from mido.ports import MultiPort
-from numpy import argmin
 
 from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.measure import Measure
-from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import MidiTrack
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
-from omnisound.utils.utils import (validate_optional_type, validate_optional_types, validate_optional_sequence_of_type,
-                                   validate_type, validate_types)
+from omnisound.utils.utils import validate_optional_type, validate_type, validate_types
 
 MIDI_TICKS_PER_QUARTER_NOTE = 960
 MIDI_QUARTER_NOTES_PER_BEAT = 4
@@ -121,8 +113,6 @@ class MidiInteractiveSingleTrackPlayer(Player):
         self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
         self.port_name = port_name or f'{self.__class__.__name__}_port'
 
-    # Player API
-    # noinspection PyAsyncCall
     def play(self):
         event_loop = asyncio.get_event_loop()
         event_loop.run_until_complete(self._play())
@@ -175,142 +165,85 @@ class MidiInteractiveSingleTrackPlayer(Player):
     # /Player API
 
 
-# class MidiInteractiveMultitrackPlayer(Player, MidiPlayerBase):
-#    """Broadcasts messages from a single Omnisound Track to multiple Midi ports"""
-#
-#    DEFAULT_PORT_NAME = 'MidiInteractiveMultitrackPlayer_port'
-#
-#    def __init__(self,
-#                 song: Optional[Song] = None,
-#                 append_mode: MidiPlayerAppendMode = None,
-#                 port_names: Optional[Sequence[str]] = None):
-#        validate_type('append_mode', append_mode, MidiPlayerAppendMode)
-#        validate_optional_type('song', song, Song)
-#        validate_optional_sequence_of_type('port_names', port_names, str)
-#        if port_names:
-#            assert len(port_names) == len(song)
-#            self.port_names = deepcopy(port_names)
-#        else:
-#            self.port_names = [(f'{song.name or "song"}_'
-#                                f'{song[i].name or MidiInteractiveMultitrackPlayer.DEFAULT_PORT_NAME}_{i}')
-#                               for i in range(len(song))]
-#        super(MidiInteractiveMultitrackPlayer, self).__init__(song=song, append_mode=append_mode)
-#
-#        ports = [open_output(port_name) for port_name in self.port_names]
-#
-#        # noinspection PyAsyncCall
-#        async def _play_note_on_off(note, track=None, port=None):
-#            note_on = Message('note_on', velocity=note.amplitude, note=note.pitch, channel=track.channel)
-#            note_off = Message('note_off', velocity=note.amplitude, note=note.pitch, channel=track.channel)
-#            port.send(note_on)
-#            asyncio.sleep(note.duration)
-#            port.send(note_off)
-#        self._play_callbacks = [partial(_play_note_on_off, track=self.song[i], port=ports[i])
-#                                for i in range(len(self.song))]
-#
-#    # BasePlayer Properties
-#    @property
-#    def song(self):
-#        return self._song
-#
-#    @song.setter
-#    def song(self, song: Song):
-#        validate_type('song', song, Song)
-#        self._song = song
-#    # /BasePlayer Properties
-#
-#    # Player API
-#    async def play(self):
-#        await self._play()
-#
-#    async def play_each(self):
-#        await self._play()
-#
-#    async def loop(self):
-#        while True:
-#            await self._play()
-#
-#    def improvise(self):
-#        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
-#    # /Player API
-#
-#    async def _play(self):
-#        # Loop until we have consumed all notes in all tracks in the song.
-#        # On each iteration find the track whose current start position (sum of all note durations played for that
-#        # track) is the minimum. Get the next note in that track, increment it's offset, and play that note. Each
-#        # track has a dedicated partial which binds the play callback function to play notes to its own mido
-#        # MIDI port. So this design combined with async tasks lets us concurrently send messages for each track to
-#        # its own port, always sending the next one in order across all the tracks.
-#        has_notes = [True] * len(self.song)
-#        track_start_offsets = [0.0] * len(self.song)
-#        while any(has_notes):
-#            track_idx = int(argmin(track_start_offsets))
-#            track = self.song.track_list[track_idx]
-#            try:
-#                note = next(track.next_note())
-#                track_start_offsets[track_idx] += note.duration
-#                task = asyncio.create_task(self._play_callbacks[track_idx](note))
-#                await task
-#            except StopIteration:
-#                has_notes[track_idx] = False
-#                # Finished playing track, ensure that this track isn't picked as having the minimum offset value
-#                track_start_offsets[track_idx] = maxsize
+class MidiInteractiveMultitrackPlayer(Player):
+    """Broadcasts messages from a single Omnisound Track to multiple Midi ports"""
+    def __init__(self,
+                 append_mode: MidiPlayerAppendMode = None,
+                 port_name: Optional[str] = None):
+        validate_type('append_mode', append_mode, MidiPlayerAppendMode)
+        validate_optional_type('port_name', port_name, str)
+        super(MidiInteractiveMultitrackPlayer, self).__init__()
+        self.append_mode = append_mode
+        self.midi_track_tick_relative = self.append_mode == MidiPlayerAppendMode.AppendAfterPreviousNote
+        self.port_name = port_name or f'{self.__class__.__name__}_port'
 
+    def play(self):
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_until_complete(self._play())
 
-# class MidiInteractiveMulticastPlayer(Player, MidiPlayerBase):
-#     def __init__(self,
-#                  song: Optional[Song] = None,
-#                  append_mode: MidiPlayerAppendMode = None,
-#                  num_ports: int = None,
-#                  port_names: Optional[Sequence[str]] = None):
-#         validate_types(('append_mode', append_mode, MidiPlayerAppendMode), ('num_ports', num_ports, int))
-#         validate_optional_type('song', song, Song)
-#         validate_optional_sequence_of_type('port_names', port_names, str)
-#         if port_names:
-#             assert num_ports == len(port_names)
-#             self.port_names = deepcopy(port_names)
-#         else:
-#             self.port_names = [f'{self.__class__.__name__}_{i}'
-#                                for i in range(num_ports)]
-#         super(MidiInteractiveMulticastPlayer, self).__init__(song=song, append_mode=append_mode)
-#         ports = [open_output(port_name) for port_name in self.port_names]
-#         self._multi_port = MultiPort(ports)
-#
-#     # BasePlayer Properties
-#     @property
-#     def song(self):
-#         return self._song
-#
-#     @song.setter
-#     def song(self, song: Song):
-#         validate_type('song', song, Song)
-#         self._song = song
-#     # /BasePlayer Properties
-#
-#     # Player API
-#     async def play(self):
-#         # Single-track multicast to multiple ports player so only process the first track in the song
-#         track = self.song.track_list[0]
-#         messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
-#         for i in range(len(notes)):
-#             await MidiPlayerBase._play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), self._multi_port)
-#
-#     async def play_each(self):
-#         track = self.song.track_list[0]
-#         messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
-#         for i in range(len(notes)):
-#             await MidiPlayerBase._play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]), self._multi_port)
-#
-#     async def loop(self):
-#         track = self.song.track_list[0]
-#         messages, notes = MidiPlayerBase.get_midi_messages_and_notes_for_track(track)
-#         try:
-#             while True:
-#                 for i in range(len(notes)):
-#                     await MidiPlayerBase._play_note_on_off(notes[i].duration, (messages[i], messages[i + 1]),
-#                                                            self._multi_port)
-#         except KeyboardInterrupt:
-#             pass
-#
-#     def improvise(self):
-#         raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
+    def play_each(self):
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_until_complete(self._play())
+
+    async def _play(self):  # sourcery skip: for-index-replacement, for-index-underscore, hoist-statement-from-loop
+        # Single-track player so only process the first track in the song
+
+        # For each track we get back a tuple of two lists, one of mido MIDI Messages to sent to the output port
+        #  and the other of durations for each Message.
+        messages_durations_list: Sequence[Tuple[Sequence[Message], Sequence[int]]] = \
+                [get_midi_messages_and_notes_for_track(track) for track in self._song]
+
+        port = open_output(self.port_name, True)
+        # TODO NEED SOME INTERACTIVE WAY TO PAUSE AND CONNECT TO VIRTUAL PORT IN LISTENING APP OR DO IT DYNAMICALLY
+        # breakpoint()
+
+        play_track_tasks = [asyncio.create_task(MidiInteractiveMultitrackPlayer._play_track(messages, durations, port))
+                            for messages, durations in messages_durations_list]
+        for task in play_track_tasks:
+            await task
+
+    @staticmethod
+    async def _play_track(messages, durations, port):
+        with port:
+            loop_duration = messages[-1].time
+            for i in range(0, len(messages), 2):
+                messages[i].time += loop_duration
+                port.send(messages[i])
+                await asyncio.sleep(durations[int(i / 2)])
+                port.send(messages[i + 1])
+
+    def loop(self):
+        event_loop = asyncio.get_event_loop()
+        event_loop.run_until_complete(self._loop())
+
+    async def _loop(self):  # sourcery skip: move-assign
+        messages_durations_list: Sequence[Tuple[Sequence[Message], Sequence[int]]] = \
+            [get_midi_messages_and_notes_for_track(track) for track in self._song]
+
+        port = open_output(self.port_name, True)
+        # TODO NEED SOME INTERACTIVE WAY TO PAUSE AND CONNECT TO VIRTUAL PORT IN LISTENING APP OR DO IT DYNAMICALLY
+        # breakpoint()
+
+        play_track_tasks = [asyncio.create_task(MidiInteractiveMultitrackPlayer._loop_track(messages, durations, port))
+                            for messages, durations in messages_durations_list]
+        for task in play_track_tasks:
+            await task
+
+    @staticmethod
+    async def _loop_track(messages, durations, port):
+        try:
+            with port:
+                loop_duration = messages[-1].time
+                j = 0
+                while True:
+                    for i in range(0, len(messages), 2):
+                        messages[i].time += (j * loop_duration)
+                        port.send(messages[i])
+                        await asyncio.sleep(durations[int(i / 2)])
+                        port.send(messages[i + 1])
+                    j += 1
+        except KeyboardInterrupt:
+            pass
+
+    def improvise(self):
+        raise NotImplementedError(f'{self.__class__.__name__}.{currentframe().f_code.co_name} not implemented')
