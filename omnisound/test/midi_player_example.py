@@ -119,5 +119,4 @@ if __name__ == '__main__':
     song = Song(to_add=tracks, name=SONG_NAME)
     writer = MidiWriter(song=song, append_mode=APPEND_MODE,
                         midi_file_path='/Users/markweiss/Documents/projects/omnisound/omnisound/test/test_song.mid')
-    writer.generate()
-    writer.write()
+    writer.generate_and_write()
