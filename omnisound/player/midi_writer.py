@@ -24,6 +24,7 @@ class MidiWriter(Writer):
         # Type 1 - multiple synchronous tracks, all starting at the same time
         # https://mido.readthedocs.io/en/latest/midi_files.html
         self.midi_file = MidiFile(type=1)
+        super(MidiWriter, self).__init__(song=song)
 
     # BasePlayer Properties
     @property
@@ -65,4 +66,8 @@ class MidiWriter(Writer):
                                       channel=channel)
                     midi_track.append(message)
         return event_list
+
+    def generate_and_write(self) -> None:
+        self.generate()
+        self.write()
     # /Writer API

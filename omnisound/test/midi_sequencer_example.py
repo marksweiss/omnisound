@@ -4,7 +4,7 @@ from omnisound.note.adapters.midi_note import MidiInstrument
 from omnisound.note.containers.measure import Meter
 from omnisound.note.containers.track import MidiTrack
 from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.midi_sequencer import (MidiSingleTrackSequencer,
+from omnisound.note.generators.midi_sequencer import (MidiSingleTrackSequencer, MidiMultitrackSequencer,
                                                       MidiWriterSequencer)
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.note.modifiers.swing import Swing
@@ -49,35 +49,30 @@ if __name__ == '__main__':
     writer_sequencer.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
                                               instrument=MidiInstrument.Vibraphone.value,
                                               track_type=MidiTrack).channel = 1
-
     track_name = 'chord'
     pattern = f'C:2:MajorTriad:{BASE_VELOCITY - 10}:1.0'
     writer_sequencer.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
                                               instrument=MidiInstrument.Acoustic_Grand_Piano.value,
                                               track_type=MidiTrack).channel = 2
-
     track_name = 'arpeggiator'
     pattern = f'F:6::{BASE_VELOCITY}:0.25 B:6::{BASE_VELOCITY}:0.25 E:6::{BASE_VELOCITY}:0.25 A:6::{BASE_VELOCITY}:0.25'
     writer_sequencer.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
                                               instrument=MidiInstrument.Violin.value,
                                               track_type=MidiTrack,
                                               arpeggiate=True, arpeggiator_chord=HarmonicChord.MajorSeventh).channel = 3
-
-    # Now render all tracks into one multi-track MIDI file
     writer_sequencer.apply_swing()
-    writer_sequencer.player.generate()
-    # noinspection PyUnresolvedReferences
-    writer_sequencer.player.write()
+    writer_sequencer.player.generate_and_write()
 
     # Now send song to interactive midi player which sends all note events on MIDI channel 1 to any listening devices
     single_track_rt_sequencer = MidiSingleTrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
                                                          meter=METER, swing=SWING)
     single_track_rt_sequencer.extend(to_add=writer_sequencer.track_list)
     # single_track_rt_sequencer.loop()
-    single_track_rt_sequencer.play()
+    # single_track_rt_sequencer.play()
 
     # Now send song to interactive midi player which sends note events for each track to a separate MIDI channel
-    # multi_track_rt_sequencer = MidiMultitrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-    #                                                    meter=METER, swing=SWING)
-    # multi_track_rt_sequencer.append(writer_sequencer[0])
-    # asyncio.run(multi_track_rt_sequencer.loop())
+    multi_track_rt_sequencer = MidiMultitrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
+                                                       meter=METER, swing=SWING)
+    multi_track_rt_sequencer.extend(to_add=writer_sequencer.track_list)
+    multi_track_rt_sequencer.loop()
+    multi_track_rt_sequencer.play()

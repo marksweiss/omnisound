@@ -93,11 +93,13 @@ def get_midi_messages_and_notes_for_track(track: MidiTrack) -> Tuple[Sequence[Me
             pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
             durations.append(note.duration)
             messages.append(Message('note_on', time=tick,
-                                    velocity=amplitude, note=pitch, channel=track.channel))
+                                    velocity=amplitude, note=pitch,
+                                    channel=track.channel))
             # noinspection PyTypeChecker
             tick += MidiPlayerEvent.get_tick(measure, note.duration)
             messages.append(Message('note_off', time=tick,
-                                    velocity=amplitude, note=pitch, channel=track.channel))
+                                    velocity=amplitude, note=pitch,
+                                    channel=track.channel))
 
     return messages, durations
 

@@ -116,3 +116,10 @@ class Writer(PlayerBase):
         this is a MIDI file, for the CSoundWriter its a CSound CSD file, etc.
         """
         raise NotImplementedError()
+
+    @abstractmethod
+    def generate_and_write(self) -> None:
+        """Intended as a convenience method that simply calls generate() and then write(). Implementers are free
+        to include other logic or side effects etc. as desired, but they should preserve the semantics of providing
+        a single call that performs both steps, to simplify the API."""
+        raise NotImplementedError()
