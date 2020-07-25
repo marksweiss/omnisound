@@ -85,8 +85,6 @@ class Sequencer(Song):
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
         self.player = player
-        # Sequencer assigns itself as the song of its player. Sequencer subclasses song and in fact fills its own
-        # song tracks with generated notes. As it does this the reference to it in its player.song reflects the change.
         self.player.song = self
         self.arpeggiator_chord = arpeggiator_chord or Sequencer.DEFAULT_ARPEGGIATOR_CHORD
         self.mn = mn
