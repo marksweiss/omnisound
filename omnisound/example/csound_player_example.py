@@ -110,6 +110,7 @@ if __name__ == '__main__':
     # Play song with CSD player
     player = CSoundCSDPlayer(csound_orchestra=orchestra, song=song)
     player.set_score_header_lines(SCORE_HEADER_LINES)
+    player.play()
 
     # Play song with interactive player
     player = CSoundInteractivePlayer(csound_orchestra=orchestra)
