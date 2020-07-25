@@ -67,8 +67,8 @@ if __name__ == '__main__':
     single_track_rt_sequencer = MidiSingleTrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
                                                          meter=METER, swing=SWING)
     single_track_rt_sequencer.extend(to_add=writer_sequencer.track_list)
-    # single_track_rt_sequencer.loop()
-    # single_track_rt_sequencer.play()
+    single_track_rt_sequencer.loop()
+    single_track_rt_sequencer.play()
 
     # Now send song to interactive midi player which sends note events for each track to a separate MIDI channel
     multi_track_rt_sequencer = MidiMultitrackSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
