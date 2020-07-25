@@ -6,9 +6,9 @@ import numpy as np
 
 from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
 from omnisound.note.generators.scale_globals import (NUM_NOTES_IN_OCTAVE, MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
-                                   validate_sequence_of_type, validate_type, validate_type_choice)
-
+from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
+    validate_sequence_of_type, validate_type, \
+    validate_type_choice
 
 CLASS_NAME = 'CSoundNote'
 

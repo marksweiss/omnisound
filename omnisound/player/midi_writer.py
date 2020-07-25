@@ -3,7 +3,7 @@
 from typing import Any, Optional, Sequence
 
 from mido.midifiles.midifiles import Message, MidiFile, MidiTrack
-from omnisound.utils.utils import validate_optional_path, validate_optional_type, validate_type
+from omnisound.utils.validation_utils import validate_optional_path, validate_optional_type, validate_type
 
 from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.containers.song import Song

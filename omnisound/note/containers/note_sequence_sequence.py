@@ -3,8 +3,8 @@
 from typing import List, Sequence, Tuple
 
 from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.utils.utils import (validate_optional_sequence_of_type, validate_sequence_of_type,
-                                   validate_type, validate_types)
+from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_sequence_of_type, validate_type, \
+    validate_types
 
 
 class NoteSequenceSequence(object):

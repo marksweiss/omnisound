@@ -8,9 +8,7 @@ from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.note_sequence_sequence import NoteSequenceSequence
 from omnisound.note.modifiers.meter import Meter
 from omnisound.note.modifiers.swing import Swing
-from omnisound.utils.utils import (validate_optional_sequence_of_type,
-                                   validate_optional_types,
-                                   validate_type)
+from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_types, validate_type
 
 
 class Section(NoteSequenceSequence):

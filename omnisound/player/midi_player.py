@@ -14,7 +14,7 @@ from omnisound.note.containers.measure import Measure
 from omnisound.note.containers.track import MidiTrack
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.player.player import Player
-from omnisound.utils.utils import validate_optional_type, validate_type, validate_types
+from omnisound.utils.validation_utils import validate_optional_type, validate_type, validate_types
 
 MIDI_TICKS_PER_QUARTER_NOTE = 960
 MIDI_QUARTER_NOTES_PER_BEAT = 4

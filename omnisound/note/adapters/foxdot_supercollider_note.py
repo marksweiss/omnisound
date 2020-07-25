@@ -7,9 +7,8 @@ from numpy import ndarray
 from omnisound.note.adapters.note import add_base_attr_name_indexes, getter, setter
 from omnisound.note.generators.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                      MajorKey, MinorKey)
-from omnisound.utils.utils import (validate_optional_type, validate_optional_sequence_of_type,
-                                   validate_sequence_of_type, validate_type)
-
+from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
+    validate_sequence_of_type, validate_type
 
 # TODO FIX TO USE DUMMY 0th INDEX FOR INSTRUMENT, SO CORE ATTRS ARE AT SAME INDEX`
 

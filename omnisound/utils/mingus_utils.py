@@ -3,8 +3,7 @@
 from typing import Any, Dict, Mapping, Sequence
 
 from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.utils.utils import (validate_sequence_of_type,
-                                   validate_types)
+from omnisound.utils.validation_utils import validate_sequence_of_type, validate_types
 
 
 def set_note_pitch_to_mingus_key(mingus_key: str,

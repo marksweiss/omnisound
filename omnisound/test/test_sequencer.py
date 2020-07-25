@@ -5,7 +5,7 @@ import pytest
 from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.measure import Meter, NoteDur, Swing
-from omnisound.note.generators.sequencer import Sequencer
+from omnisound.note.generators.sequencer.sequencer import Sequencer
 import omnisound.note.adapters.csound_note as csound_note
 
 INSTRUMENT = 1

@@ -4,7 +4,7 @@ from enum import Enum
 
 import mingus.core.chords as m_chords
 
-from omnisound.utils.utils import enum_to_str_key_dict
+from omnisound.utils.enum_utils import enum_to_str_key_dict
 
 
 class Caller(object):

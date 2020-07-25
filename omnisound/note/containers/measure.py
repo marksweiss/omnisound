@@ -15,8 +15,7 @@ from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.note_sequence import NoteSequence
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
-from omnisound.utils.utils import (validate_optional_types,
-                                   validate_type, validate_types)
+from omnisound.utils.validation_utils import validate_optional_types, validate_type, validate_types
 
 
 class MeasureSwingNotEnabledException(Exception):

@@ -8,7 +8,7 @@ from omnisound.note.generators.chord_globals import HarmonicChord
 from omnisound.note.generators.scale_globals import MajorKey, MinorKey
 from omnisound.note.generators.scale import Scale
 from omnisound.utils.mingus_utils import set_notes_pitches_to_mingus_keys
-from omnisound.utils.utils import validate_type, validate_type_choice, validate_types
+from omnisound.utils.validation_utils import validate_type, validate_type_choice, validate_types
 from mingus.core.chords import first_inversion as m_first_inversion
 from mingus.core.chords import second_inversion as m_second_inversion
 from mingus.core.chords import third_inversion as m_third_inversion

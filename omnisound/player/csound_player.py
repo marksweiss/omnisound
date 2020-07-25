@@ -9,9 +9,10 @@ from omnisound.note.adapters.note import as_list
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
 from omnisound.player.player import Player
-from omnisound.utils.utils import (validate_type, validate_types, validate_optional_type, validate_optional_types,
-                                   validate_optional_sequence_of_type, validate_sequence_of_type,
-                                   validate_sequence_of_type_choice)
+from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
+    validate_optional_types, validate_sequence_of_type, \
+    validate_sequence_of_type_choice, validate_type, \
+    validate_types
 
 
 class InvalidScoreError(Exception):

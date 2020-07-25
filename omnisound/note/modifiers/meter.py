@@ -7,7 +7,7 @@ from typing import Union
 import pytest
 
 from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.utils.utils import validate_optional_types, validate_type, validate_type_choice
+from omnisound.utils.validation_utils import validate_optional_types, validate_type, validate_type_choice
 
 
 class NoteDur(Enum):

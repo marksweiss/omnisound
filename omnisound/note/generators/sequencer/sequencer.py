@@ -16,8 +16,9 @@ from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DI
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
 from omnisound.player.player import Player, Writer
-from omnisound.utils.utils import (validate_optional_type_choice, validate_optional_types,
-                                   validate_type, validate_type_reference, validate_type_choice, validate_types)
+from omnisound.utils.validation_utils import validate_optional_type_choice, validate_optional_types, validate_type, \
+    validate_type_choice, \
+    validate_type_reference, validate_types
 
 
 class InvalidPatternException(Exception):
@@ -85,7 +86,8 @@ class Sequencer(Song):
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
         self.player = player
-        self.player.song = self
+        if self.player:
+            self.player.song = self
         self.arpeggiator_chord = arpeggiator_chord or Sequencer.DEFAULT_ARPEGGIATOR_CHORD
         self.mn = mn
 

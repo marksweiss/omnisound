@@ -4,7 +4,7 @@ from typing import Sequence
 
 from omnisound.note.containers.song import Song
 from omnisound.player.player import Writer
-from omnisound.utils.utils import validate_optional_type, validate_types
+from omnisound.utils.validation_utils import validate_optional_type, validate_types
 
 
 class CSoundWriter(Writer):

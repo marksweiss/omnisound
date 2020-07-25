@@ -1,14 +1,13 @@
-# Copyright 2018 Mark S. Weiss
-
-from collections import KeysView, ValuesView
-from math import copysign
-from os import access, W_OK
+from os import W_OK, access
 from os.path import dirname
-from random import random
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, KeysView, Optional, Tuple, ValuesView
 
 
-# TODO MOVE ALL VALIDATORS INTO A validators.py
+def validate_not_none(arg_name, val) -> bool:
+    if val is None:
+        raise ValueError(f'`{arg_name}` must not be None')
+    return True
+
 
 def validate_type(arg_name, val, val_type) -> bool:
     if not isinstance(val, val_type):
@@ -54,12 +53,6 @@ def validate_optional_types(*val_type_tuples) -> bool:
         ret = validate_optional_type(arg_name, val, val_type)
         matched = matched or ret
     return matched
-
-
-def validate_not_none(arg_name, val) -> bool:
-    if val is None:
-        raise ValueError(f'`{arg_name}` must not be None')
-    return True
 
 
 def validate_not_falsey(arg_name, val) -> bool:
@@ -120,7 +113,6 @@ def validate_type_reference_choice(arg_name, type_ref_val, val_types) -> Tuple[b
     return matched, matched_type
 
 
-# TODO UNIT TEST
 def validate_path(arg_name, val):
     if not isinstance(val, str):
         raise ValueError(f'arg: `{arg_name}` must be type `str` but is type: `{type(val)}`')
@@ -129,24 +121,7 @@ def validate_path(arg_name, val):
     return True
 
 
-# TODO UNIT TEST
 def validate_optional_path(arg_name, val):
     if not val:
         return True
     return validate_path(arg_name, val)
-
-
-def sign() -> float:
-    return copysign(1.0, random() - 0.5)
-
-
-def enum_to_dict(enum_cls: Any) -> Dict:
-    return {e: e.value for e in enum_cls}
-
-
-def enum_to_str_key_dict(enum_cls: Any) -> Dict:
-    return {e.name: e for e in enum_cls}
-
-
-def enum_to_dict_reverse_mapping(enum_cls) -> Dict:
-    return {e.value: e for e in enum_cls}

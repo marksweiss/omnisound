@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from omnisound.utils.utils import validate_not_none, validate_type
+from omnisound.utils.validation_utils import validate_not_none, validate_type
 
 
 class PerformanceAttrsFrozenException(Exception):

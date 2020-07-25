@@ -10,9 +10,10 @@ from numpy import array as np_array, array_equal as np_array_equal, concatenate 
     copyto as np_copyto, delete as np_delete, insert as np_insert
 
 from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.utils.utils import (validate_optional_sequence_of_type, validate_optional_type,
-                                   validate_optional_type_choice, validate_sequence_of_type,
-                                   validate_sequence_of_type_choice, validate_type, validate_types)
+from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
+    validate_optional_type_choice, \
+    validate_sequence_of_type, validate_sequence_of_type_choice, validate_type, \
+    validate_types
 
 
 class NoteSequenceInvalidAppendException(Exception):

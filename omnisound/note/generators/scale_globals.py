@@ -5,8 +5,7 @@ from enum import Enum
 import ext.python_mingus.mingus.core.scales as m_scales
 from ext.python_mingus.mingus.core.keys import major_keys, minor_keys
 
-from omnisound.utils.utils import enum_to_str_key_dict
-
+from omnisound.utils.enum_utils import enum_to_str_key_dict
 
 NUM_NOTES_IN_OCTAVE = 11
 NUM_INTERVALS_IN_OCTAVE = 12

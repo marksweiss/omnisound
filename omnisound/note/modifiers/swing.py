@@ -6,9 +6,10 @@ from random import random
 import pytest
 
 from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.utils.utils import (sign, validate_optional_type,
-                                   validate_optional_types, validate_type,
-                                   validate_types)
+from omnisound.utils.math_utils import (sign)
+from omnisound.utils.validation_utils import validate_optional_type, validate_optional_types, validate_type, \
+    validate_types
+
 
 # TODO THIS LOGIC IS ALL WRONG. SHOULD NOT USE A FACTOR PROPORTIONAL TO START!! SHOULD USE JITTER RANGE
 #  and either fixed or randomly jitter (start +- swing) within that range, without moving start time more than that.
