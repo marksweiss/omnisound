@@ -15,7 +15,7 @@ from omnisound.note.generators.chord_globals import HarmonicChord, HARMONIC_CHOR
 from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.note.modifiers.meter import Meter, NoteDur
 from omnisound.note.modifiers.swing import Swing
-from omnisound.player.player import Player
+from omnisound.player.player import Player, Writer
 from omnisound.utils.utils import (validate_optional_type_choice, validate_optional_types,
                                    validate_type, validate_type_reference, validate_type_choice, validate_types)
 
@@ -70,14 +70,14 @@ class Sequencer(Song):
                  num_measures: int = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
-                 player: Optional[Player] = None,
+                 player: Optional[Union[Player, Writer]] = None,
                  arpeggiator_chord: Optional[Chord] = None,
                  mn: MakeNoteConfig = None):
         validate_types(('num_measures', num_measures, int), ('mn', mn, MakeNoteConfig))
         validate_optional_types(('name', name, str),
                                 ('swing', swing, Swing),
-                                ('player', player, Player),
                                 ('arpeggiator_chord', arpeggiator_chord, Chord))
+        validate_optional_type_choice('player', player, (Player, Writer))
 
         # Sequencer wraps song but starts with no Tracks. It provides an alternate API for generating and adding Tracks.
         to_add = []
@@ -85,6 +85,7 @@ class Sequencer(Song):
         super(Sequencer, self).__init__(to_add, name=name, meter=meter, swing=swing)
 
         self.player = player
+        self.player.song = self
         self.arpeggiator_chord = arpeggiator_chord or Sequencer.DEFAULT_ARPEGGIATOR_CHORD
         self.mn = mn
 
@@ -245,7 +246,7 @@ class Sequencer(Song):
         # We already have a section of the length of the pattern, so subtract that
         quotient, remainder = divmod(self.num_measures - len(section), len(section))
         section_cpy = Section.copy(section)
-        for i in range(quotient):
+        for _ in range(quotient):
             section.extend(Section.copy(section_cpy).measure_list)
         section.extend(Section.copy(section_cpy).measure_list[:remainder])
 
@@ -367,8 +368,7 @@ class Sequencer(Song):
         validate_types(('track_name', track_name, str), ('player', player, Player))
         self._track_name_player_map[track_name] = player
 
-    def play_track(self,
-                   track_name: str = None):
+    async def play_track(self, track_name: str = None):
         """Plays a track with a track-mapped Player, if present, otherwise plays using self.Player"""
         validate_type('track_name', track_name, str)
         track = self._track_name_idx_map[track_name]
@@ -378,7 +378,7 @@ class Sequencer(Song):
         if not player:
             raise InvalidPlayerException(f'No track player or self.player found to play track {track_name}')
         player.song = song
-        player.play()
+        await player.play()
 
     def play(self):
         # noinspection PyArgumentList

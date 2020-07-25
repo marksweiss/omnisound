@@ -1,6 +1,6 @@
 # Copyright 2018 Mark S. Weiss
 
-from typing import Iterable, List, Mapping, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 from omnisound.note.adapters.performance_attrs import PerformanceAttrs
 from omnisound.note.containers.measure import Measure
@@ -46,7 +46,7 @@ class Track(Section):
         validate_optional_type_choice('instrument', instrument, (float, int))
 
         # Get the measure_list from either List[Measure] or Section
-        self._section_map: Mapping[str, Section] = {}
+        self._section_map: Dict[str, Section] = {}
         measure_list = []
         if to_add:
             try:
@@ -107,6 +107,11 @@ class Track(Section):
         self.meter.tempo = tempo
         for measure in self.measure_list:
             measure.tempo = tempo
+
+    def next_note(self) -> Union[Any, None]:
+        for measure in self:
+            yield from measure
+
     # /Properties
 
     # Measure list management
@@ -156,14 +161,14 @@ class Track(Section):
     def copy(source_track: 'Track') -> 'Track':
         measure_list = None
         if source_track.measure_list:
+            # noinspection PyTypeChecker
             measure_list = [Measure.copy(measure) for measure in source_track.measure_list]
-        new_track = Track(to_add=measure_list,
-                          name=source_track.name,
-                          instrument=source_track.instrument,
-                          meter=source_track._meter,
-                          swing=source_track._swing,
-                          performance_attrs=source_track._performance_attrs)
-        return new_track
+        return Track(to_add=measure_list,
+                     name=source_track.name,
+                     instrument=source_track.instrument,
+                     meter=source_track._meter,
+                     swing=source_track._swing,
+                     performance_attrs=source_track._performance_attrs)
 
 
 class MidiTrack(Track):

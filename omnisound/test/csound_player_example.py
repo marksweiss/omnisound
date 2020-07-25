@@ -2,14 +2,16 @@
 
 import sys
 
+from omnisound.note.adapters.csound_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
+                                                 NUM_ATTRIBUTES, get_pitch_for_key, make_note)
+from omnisound.note.adapters.note import MakeNoteConfig
 from omnisound.note.containers.measure import (Measure,
                                                Meter, NoteDur,
                                                Swing)
 from omnisound.note.containers.song import Song
 from omnisound.note.containers.track import Track
 from omnisound.player.csound_player import (CSoundCSDPlayer, CSoundEventType, CSoundInteractivePlayer, CSoundOrchestra,
-                                            CSoundScore, CSoundScoreEvent)
-import omnisound.note.adapters.csound_note as csound_note
+                                            CSoundScoreEvent)
 
 # Song Params
 SONG_NAME = 'Your Song'
@@ -20,8 +22,6 @@ START = 0.0
 DUR = float(NoteDur.QUARTER.value)
 AMP = 100.0
 PITCH = 9.01
-ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
-NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 #
 BASE_AMP = 10000
 AMP_FACTOR = 5
@@ -80,16 +80,19 @@ SCORE_HEADER = '''; Function 1
 f 1		    0		    8193		10		1'''
 SCORE_HEADER_LINES = [SCORE_HEADER]
 
+NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
+                             num_attributes=NUM_ATTRIBUTES,
+                             make_note=make_note,
+                             get_pitch_for_key=get_pitch_for_key,
+                             attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                             attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
 
 if __name__ == '__main__':
     meter = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
     swing = Swing(swing_range=SWING_RANGE)
     measure = Measure(meter=meter,
                       swing=swing,
-                      make_note=csound_note.make_note,
-                      num_notes=NUM_NOTES,
-                      num_attributes=NUM_ATTRIBUTES,
-                      attr_name_idx_map=ATTR_NAME_IDX_MAP)
+                      mn=NOTE_CONFIG)
     for i in range(NUM_NOTES):
         measure[i].instrument = INSTRUMENT_1_ID
         measure[i].start = (i % NUM_NOTES) * DUR
@@ -104,8 +107,8 @@ if __name__ == '__main__':
                                 sampling_rate=SR, ksmps=KSMPS, num_channels=NCHNLS)
 
     # Play song with CSD player
-    player = CSoundCSDPlayer(csound_orchestra=orchestra)
-    player.play_song(song, score_header_lines=SCORE_HEADER_LINES)
+    player = CSoundCSDPlayer(csound_orchestra=orchestra, song=song)
+    player.set_score_header_lines(SCORE_HEADER_LINES)
 
     # Play song with interactive player
     player = CSoundInteractivePlayer(csound_orchestra=orchestra)
@@ -121,7 +124,7 @@ if __name__ == '__main__':
     # Now add an end event event of type 'e' that stops the performance and closes writing the output
     player.add_end_score_event(beats_to_wait=10)
     # Perform the score events on the Orchestra bound to the Player
-    ret = player.play_all()
+    ret = player.play()
     # NOTE: Must explicitly call sys.exit or CSound interactive Py API doesn't close the file handle on the file it's
     # writing and just leaks by writing more and more to the file until you manually kill the parent process.
     sys.exit(ret)

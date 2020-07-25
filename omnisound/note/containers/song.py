@@ -229,7 +229,7 @@ class Song:
     def __eq__(self, other: 'Song') -> bool:
         if not other or len(self) != len(other):
             return False
-        return all([self.track_list[i] == other.track_list[i] for i in range(len(self.track_list))])
+        return all(self.track_list[i] == other.track_list[i] for i in range(len(self.track_list)))
     # /Iter / slice support
 
     @staticmethod
@@ -238,9 +238,8 @@ class Song:
         if source.track_list:
             track_list = [Track.copy(track) for track in source.track_list]
 
-        new_song = Song(to_add=track_list,
-                        name=source.name,
-                        meter=source._meter,
-                        swing=source._swing,
-                        performance_attrs=source._performance_attrs)
-        return new_song
+        return Song(to_add=track_list,
+                    name=source.name,
+                    meter=source._meter,
+                    swing=source._swing,
+                    performance_attrs=source._performance_attrs)
