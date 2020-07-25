@@ -2,20 +2,20 @@
 
 from pathlib import Path
 
-from omnisound.note.adapters.midi_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, ATTR_NAMES, CLASS_NAME,
-                                               NUM_ATTRIBUTES, get_pitch_for_key, make_note, MidiInstrument)
-from omnisound.note.adapters.note import MakeNoteConfig, NoteValues
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.measure import Measure, Meter
-from omnisound.note.containers.song import Song
-from omnisound.note.containers.track import MidiTrack
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.generators.chord import Chord
-from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.scale import Scale
-from omnisound.note.generators.scale_globals import HarmonicScale, MajorKey
-from omnisound.note.modifiers.meter import NoteDur
-from omnisound.note.modifiers.swing import Swing
+from omnisound.note.adapter.midi_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, ATTR_NAMES, CLASS_NAME,
+                                              NUM_ATTRIBUTES, get_pitch_for_key, make_note, MidiInstrument)
+from omnisound.note.adapter.note import MakeNoteConfig, NoteValues
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.measure import Measure, Meter
+from omnisound.note.container.song import Song
+from omnisound.note.container.track import MidiTrack
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.generator.chord import Chord
+from omnisound.note.generator.chord_globals import HarmonicChord
+from omnisound.note.generator.scale import Scale
+from omnisound.note.generator.scale_globals import HarmonicScale, MajorKey
+from omnisound.note.modifier.meter import NoteDur
+from omnisound.note.modifier.swing import Swing
 from omnisound.player.midi_player import MidiPlayerAppendMode
 from omnisound.player.midi_writer import MidiWriter
 
@@ -54,7 +54,7 @@ VELOCITY_FACTOR = 2
 if __name__ == '__main__':
     performance_attrs = PerformanceAttrs()
 
-    # Declare track containers
+    # Declare track container
     ostinato_track = MidiTrack(name='ostinato',
                                instrument=MidiInstrument.Vibraphone.value,
                                channel=1)

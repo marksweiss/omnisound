@@ -2,15 +2,15 @@
 
 import pytest
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.containers.measure import (Measure,
-                                               Meter, NoteDur,
-                                               Swing)
-from omnisound.note.containers.section import Section
-from omnisound.note.containers.track import Track
-import omnisound.note.adapters.csound_note as csound_note
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.container.measure import (Measure,
+                                              Meter, NoteDur,
+                                              Swing)
+from omnisound.note.container.section import Section
+from omnisound.note.container.track import Track
+import omnisound.note.adapter.csound_note as csound_note
 
 TRACK_NAME = 'track'
 

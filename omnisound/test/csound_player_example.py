@@ -2,14 +2,14 @@
 
 import sys
 
-from omnisound.note.adapters.csound_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
-                                                 NUM_ATTRIBUTES, get_pitch_for_key, make_note)
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.measure import (Measure,
-                                               Meter, NoteDur,
-                                               Swing)
-from omnisound.note.containers.song import Song
-from omnisound.note.containers.track import Track
+from omnisound.note.adapter.csound_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
+                                                NUM_ATTRIBUTES, get_pitch_for_key, make_note)
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.container.measure import (Measure,
+                                              Meter, NoteDur,
+                                              Swing)
+from omnisound.note.container.song import Song
+from omnisound.note.container.track import Track
 from omnisound.player.csound_player import (CSoundCSDPlayer, CSoundEventType, CSoundInteractivePlayer, CSoundOrchestra,
                                             CSoundScoreEvent)
 

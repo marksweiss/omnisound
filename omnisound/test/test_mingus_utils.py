@@ -2,13 +2,13 @@
 
 import pytest
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.generators.scale import Scale
-from omnisound.note.generators.scale_globals import HarmonicScale, MajorKey
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.generator.scale import Scale
+from omnisound.note.generator.scale_globals import HarmonicScale, MajorKey
 from omnisound.utils.mingus_utils import (set_note_pitch_to_mingus_key,
                                           set_notes_pitches_to_mingus_keys)
-import omnisound.note.adapters.csound_note as csound_note
+import omnisound.note.adapter.csound_note as csound_note
 
 
 MINGUS_KEY = 'C'

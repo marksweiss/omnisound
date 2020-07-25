@@ -10,11 +10,11 @@ from typing import Any, List, Tuple
 from numpy import copy as np_copy
 import pytest
 
-from omnisound.note.adapters.note import as_list, MakeNoteConfig, START_I
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.modifiers.meter import Meter, NoteDur
-from omnisound.note.modifiers.swing import Swing
+from omnisound.note.adapter.note import as_list, MakeNoteConfig, START_I
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.modifier.meter import Meter, NoteDur
+from omnisound.note.modifier.swing import Swing
 from omnisound.utils.validation_utils import validate_optional_types, validate_type, validate_types
 
 

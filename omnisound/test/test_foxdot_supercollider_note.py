@@ -5,11 +5,11 @@ from typing import List
 
 import pytest
 
-from omnisound.note.adapters.note import MakeNoteConfig
-import omnisound.note.adapters.foxdot_supercollider_note as foxdot_note
-from omnisound.note.adapters.note import NoteValues
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.note_sequence import NoteSequence
+from omnisound.note.adapter.note import MakeNoteConfig
+import omnisound.note.adapter.foxdot_supercollider_note as foxdot_note
+from omnisound.note.adapter.note import NoteValues
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.note_sequence import NoteSequence
 
 STARTS: List[float] = [1.0, 0.5, 1.5]
 INT_STARTS: List[int] = [1, 5, 10]

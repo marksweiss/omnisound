@@ -5,11 +5,11 @@ from typing import List
 
 import pytest
 
-from omnisound.note.adapters.note import MakeNoteConfig
-import omnisound.note.adapters.midi_note as midi_note
-from omnisound.note.adapters.note import AMP_I, DUR_I, NoteValues
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.note_sequence import NoteSequence
+from omnisound.note.adapter.note import MakeNoteConfig
+import omnisound.note.adapter.midi_note as midi_note
+from omnisound.note.adapter.note import AMP_I, DUR_I, NoteValues
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.note_sequence import NoteSequence
 
 MIDI_INSTRUMENT = midi_note.MidiInstrument.Accordion
 STARTS: List[float] = [1.0, 0.5, 1.5]

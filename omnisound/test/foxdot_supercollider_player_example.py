@@ -5,11 +5,11 @@ from time import sleep
 # noinspection PyProtectedMember
 from FoxDot.lib.SCLang._SynthDefs import sinepad as fd_sc_synth
 
-from omnisound.note.adapters.foxdot_supercollider_note import (ATTR_NAMES,
-                                                               FoxDotSupercolliderNote)
-from omnisound.note.adapters.note import NoteValues
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.note_sequence import NoteSequence
+from omnisound.note.adapter.foxdot_supercollider_note import (ATTR_NAMES,
+                                                              FoxDotSupercolliderNote)
+from omnisound.note.adapter.note import NoteValues
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.note_sequence import NoteSequence
 from omnisound.player.foxdot_supercollider_player import \
     FoxDotSupercolliderPlayer
 

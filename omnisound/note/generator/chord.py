@@ -2,11 +2,11 @@
 
 from typing import Any, Union
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.scale_globals import MajorKey, MinorKey
-from omnisound.note.generators.scale import Scale
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.generator.chord_globals import HarmonicChord
+from omnisound.note.generator.scale_globals import MajorKey, MinorKey
+from omnisound.note.generator.scale import Scale
 from omnisound.utils.mingus_utils import set_notes_pitches_to_mingus_keys
 from omnisound.utils.validation_utils import validate_type, validate_type_choice, validate_types
 from mingus.core.chords import first_inversion as m_first_inversion

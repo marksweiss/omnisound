@@ -9,10 +9,10 @@ import asyncio
 from mido import Message, open_output
 from mido.backends.rtmidi import Output
 
-from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
-from omnisound.note.containers.measure import Measure
-from omnisound.note.containers.track import MidiTrack
-from omnisound.note.modifiers.meter import NoteDur
+from omnisound.note.adapter.midi_note import ATTR_GET_TYPE_CAST_MAP
+from omnisound.note.container.measure import Measure
+from omnisound.note.container.track import MidiTrack
+from omnisound.note.modifier.meter import NoteDur
 from omnisound.player.player import Player
 from omnisound.utils.validation_utils import validate_optional_type, validate_type, validate_types
 

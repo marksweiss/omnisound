@@ -2,12 +2,12 @@
 
 from typing import Optional, Union
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.adapters.csound_note import (ATTR_NAME_IDX_MAP, ATTR_GET_TYPE_CAST_MAP, CLASS_NAME,
-                                                 get_pitch_for_key, make_note, NUM_ATTRIBUTES)
-from omnisound.note.generators.sequencer import Sequencer
-from omnisound.note.modifiers.meter import Meter, NoteDur
-from omnisound.note.modifiers.swing import Swing
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.adapter.csound_note import (ATTR_NAME_IDX_MAP, ATTR_GET_TYPE_CAST_MAP, CLASS_NAME,
+                                                get_pitch_for_key, make_note, NUM_ATTRIBUTES)
+from omnisound.note.generator.sequencer import Sequencer
+from omnisound.note.modifier.meter import Meter, NoteDur
+from omnisound.note.modifier.swing import Swing
 from omnisound.player.csound_player import CSoundCSDPlayer, CSoundInteractivePlayer
 
 

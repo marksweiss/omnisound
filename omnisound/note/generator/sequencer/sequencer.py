@@ -4,17 +4,17 @@ from typing import Any, Optional, Union
 
 import pytest
 
-from omnisound.note.generators.chord_globals import harmonic_chord_to_str
-from omnisound.note.adapters.note import MakeNoteConfig, NoteValues, set_attr_vals_from_note_values
-from omnisound.note.containers.measure import Measure
-from omnisound.note.containers.section import Section
-from omnisound.note.containers.song import Song
-from omnisound.note.containers.track import Track
-from omnisound.note.generators.chord import Chord
-from omnisound.note.generators.chord_globals import HarmonicChord, HARMONIC_CHORD_DICT
-from omnisound.note.generators.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
-from omnisound.note.modifiers.meter import Meter, NoteDur
-from omnisound.note.modifiers.swing import Swing
+from omnisound.note.generator.chord_globals import harmonic_chord_to_str
+from omnisound.note.adapter.note import MakeNoteConfig, NoteValues, set_attr_vals_from_note_values
+from omnisound.note.container.measure import Measure
+from omnisound.note.container.section import Section
+from omnisound.note.container.song import Song
+from omnisound.note.container.track import Track
+from omnisound.note.generator.chord import Chord
+from omnisound.note.generator.chord_globals import HarmonicChord, HARMONIC_CHORD_DICT
+from omnisound.note.generator.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
+from omnisound.note.modifier.meter import Meter, NoteDur
+from omnisound.note.modifier.swing import Swing
 from omnisound.player.player import Player, Writer
 from omnisound.utils.validation_utils import validate_optional_type_choice, validate_optional_types, validate_type, \
     validate_type_choice, \

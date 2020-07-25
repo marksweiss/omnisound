@@ -4,13 +4,13 @@ from typing import List
 
 import pytest
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.generators.chord import Chord
-from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.scale import Scale
-from omnisound.note.generators.scale_globals import HarmonicScale, MajorKey
-import omnisound.note.adapters.csound_note as csound_note
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.generator.chord import Chord
+from omnisound.note.generator.chord_globals import HarmonicChord
+from omnisound.note.generator.scale import Scale
+from omnisound.note.generator.scale_globals import HarmonicScale, MajorKey
+import omnisound.note.adapter.csound_note as csound_note
 
 KEY = MajorKey.C
 OCTAVE = 4

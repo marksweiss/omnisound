@@ -2,10 +2,10 @@
 
 from typing import List, Optional, Tuple, Union
 
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.track import Track
-from omnisound.note.modifiers.meter import Meter
-from omnisound.note.modifiers.swing import Swing
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.track import Track
+from omnisound.note.modifier.meter import Meter
+from omnisound.note.modifier.swing import Swing
 from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
     validate_optional_types, validate_sequence_of_type, \
     validate_type

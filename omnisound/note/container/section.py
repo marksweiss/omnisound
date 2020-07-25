@@ -3,11 +3,11 @@
 from itertools import chain
 from typing import Any, List, Optional
 
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.measure import Measure
-from omnisound.note.containers.note_sequence_sequence import NoteSequenceSequence
-from omnisound.note.modifiers.meter import Meter
-from omnisound.note.modifiers.swing import Swing
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.measure import Measure
+from omnisound.note.container.note_sequence_sequence import NoteSequenceSequence
+from omnisound.note.modifier.meter import Meter
+from omnisound.note.modifier.swing import Swing
 from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_types, validate_type
 
 

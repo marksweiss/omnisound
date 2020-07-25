@@ -5,11 +5,11 @@ from typing import List
 
 import pytest
 
-import omnisound.note.adapters.csound_note as csound_note
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.adapters.note import AMP_I, DUR_I, NoteValues
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
-from omnisound.note.containers.note_sequence import NoteSequence
+import omnisound.note.adapter.csound_note as csound_note
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.adapter.note import AMP_I, DUR_I, NoteValues
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.note.container.note_sequence import NoteSequence
 
 
 INSTRUMENT = 1

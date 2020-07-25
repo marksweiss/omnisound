@@ -1,13 +1,13 @@
 
 import pytest
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.generators.scale import Scale
-from omnisound.note.generators.scale_globals import (HarmonicScale, MajorKey,
-                                                     MinorKey)
-import omnisound.note.adapters.csound_note as csound_note
-import omnisound.note.adapters.midi_note as midi_note
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.generator.scale import Scale
+from omnisound.note.generator.scale_globals import (HarmonicScale, MajorKey,
+                                                    MinorKey)
+import omnisound.note.adapter.csound_note as csound_note
+import omnisound.note.adapter.midi_note as midi_note
 
 INSTRUMENT = 1
 START = 0.0

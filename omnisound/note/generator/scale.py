@@ -11,10 +11,10 @@ Pitch - a key translated to a (numerical) value that can be used by a back end. 
 
 from typing import Union
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.generators.scale_globals import (HarmonicScale, MajorKey,
-                                                     MinorKey)
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.generator.scale_globals import (HarmonicScale, MajorKey,
+                                                    MinorKey)
 from omnisound.utils.mingus_utils import set_notes_pitches_to_mingus_keys
 from omnisound.utils.enum_utils import enum_to_dict_reverse_mapping
 from omnisound.utils.validation_utils import validate_type_choice, validate_type_reference_choice, validate_types

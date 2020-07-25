@@ -5,7 +5,7 @@ from random import random
 
 import pytest
 
-from omnisound.note.containers.note_sequence import NoteSequence
+from omnisound.note.container.note_sequence import NoteSequence
 from omnisound.utils.math_utils import (sign)
 from omnisound.utils.validation_utils import validate_optional_type, validate_optional_types, validate_type, \
     validate_types

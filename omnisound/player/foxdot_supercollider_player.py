@@ -5,7 +5,7 @@ from time import sleep
 from FoxDot import Player as FD_SC_Player
 
 # noinspection PyProtectedMember
-from omnisound.note.containers.note_sequence import NoteSequence
+from omnisound.note.container.note_sequence import NoteSequence
 from omnisound.player.player import Player, PlayerNoNotesException
 
 

@@ -9,7 +9,7 @@ from typing import Any, Iterator, Sequence, Tuple, Union
 from numpy import array as np_array, array_equal as np_array_equal, concatenate as np_concatenate, copy as np_copy, \
     copyto as np_copyto, delete as np_delete, insert as np_insert
 
-from omnisound.note.adapters.note import MakeNoteConfig
+from omnisound.note.adapter.note import MakeNoteConfig
 from omnisound.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
     validate_optional_type_choice, \
     validate_sequence_of_type, validate_sequence_of_type_choice, validate_type, \

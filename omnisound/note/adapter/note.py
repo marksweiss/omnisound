@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Mapping, Union
 
 from numpy import array as np_array
 
-from omnisound.note.generators.scale_globals import MajorKey, MinorKey
+from omnisound.note.generator.scale_globals import MajorKey, MinorKey
 from omnisound.utils.validation_utils import validate_type, validate_type_choice
 
 INSTRUMENT_I = 0

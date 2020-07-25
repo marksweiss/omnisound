@@ -6,8 +6,8 @@ from typing import Any, Optional, Sequence
 from mido.midifiles.midifiles import Message, MidiFile, MidiTrack
 from omnisound.utils.validation_utils import validate_optional_types, validate_type
 
-from omnisound.note.adapters.midi_note import ATTR_GET_TYPE_CAST_MAP
-from omnisound.note.containers.song import Song
+from omnisound.note.adapter.midi_note import ATTR_GET_TYPE_CAST_MAP
+from omnisound.note.container.song import Song
 from omnisound.player.midi_player import MidiEventType, MidiPlayerEvent, MidiPlayerAppendMode
 from omnisound.player.player import Writer
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from omnisound.note.adapters.performance_attrs import PerformanceAttrs
+from omnisound.note.adapter.performance_attrs import PerformanceAttrs
 
 ATTR_NAME = 'test_attr'
 ATTR_VAL = 100

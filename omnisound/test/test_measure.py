@@ -4,13 +4,13 @@ from typing import List, Tuple
 
 import pytest
 
-from omnisound.note.adapters.note import MakeNoteConfig
-from omnisound.note.containers.note_sequence import NoteSequence
-from omnisound.note.containers.measure import (Measure,
-                                               MeasureSwingNotEnabledException,
-                                               Meter, NoteDur,
-                                               Swing)
-import omnisound.note.adapters.csound_note as csound_note
+from omnisound.note.adapter.note import MakeNoteConfig
+from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.note.container.measure import (Measure,
+                                              MeasureSwingNotEnabledException,
+                                              Meter, NoteDur,
+                                              Swing)
+import omnisound.note.adapter.csound_note as csound_note
 
 BEATS_PER_MEASURE = 4
 BEAT_DUR = NoteDur.QRTR

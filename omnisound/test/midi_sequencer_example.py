@@ -2,14 +2,14 @@
 
 from pathlib import Path
 
-from omnisound.note.adapters.midi_note import MidiInstrument
-from omnisound.note.containers.measure import Meter
-from omnisound.note.containers.track import MidiTrack
-from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.sequencer.midi_sequencer import (MidiSingleTrackSequencer, MidiMultitrackSequencer,
-                                                                MidiWriterSequencer)
-from omnisound.note.modifiers.meter import NoteDur
-from omnisound.note.modifiers.swing import Swing
+from omnisound.note.adapter.midi_note import MidiInstrument
+from omnisound.note.container.measure import Meter
+from omnisound.note.container.track import MidiTrack
+from omnisound.note.generator.chord_globals import HarmonicChord
+from omnisound.note.generator.sequencer.midi_sequencer import (MidiSingleTrackSequencer, MidiMultitrackSequencer,
+                                                               MidiWriterSequencer)
+from omnisound.note.modifier.meter import NoteDur
+from omnisound.note.modifier.swing import Swing
 
 # Meter
 BEATS_PER_MEASURE = 4
