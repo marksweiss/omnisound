@@ -1,5 +1,6 @@
 ctcsound
 mido
 numpy
+pysimplegui
 pytest
 python-rtmidi
