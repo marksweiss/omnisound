@@ -111,7 +111,8 @@ if __name__ == '__main__':
     player = CSoundCSDPlayer(csound_orchestra=orchestra, song=song)
     player.set_score_header_lines(SCORE_HEADER_LINES)
     player.play()
-    player.loop()
+    # Comment this out to test code below it
+    # player.loop()
 
     # Play song with interactive player
     player = CSoundInteractivePlayer(csound_orchestra=orchestra)
@@ -127,8 +128,10 @@ if __name__ == '__main__':
     # Now add an end event event of type 'e' that stops the performance and closes writing the output
     player.add_end_score_event(beats_to_wait=10)
     # Perform the score events on the Orchestra bound to the Player
-    # ret = player.play()
-    # ret = player.loop()
+    ret = player.play()
+    print(f'Return code from play() {ret}')
+    ret = player.cleanup()
+    print(f'Return code from cleanup() {ret}')
     # NOTE: Must explicitly call sys.exit or CSound interactive Py API doesn't close the file handle on the file it's
     # writing and just leaks by writing more and more to the file until you manually kill the parent process.
-    # sys.exit(ret)
+    sys.exit(ret)

@@ -1,5 +1,6 @@
 # Copyright 2020 Mark S. Weiss
 
+from copy import deepcopy
 from enum import Enum
 from typing import Any, Optional, Sequence, Union
 
@@ -256,19 +257,14 @@ class CSoundInteractivePlayer(Player):
 
         super(CSoundInteractivePlayer, self).__init__()
         self._orchestra = csound_orchestra
+        self._song = song
         self._cs = ctcsound.Csound()
         self._cs.setOption('-d')
         self._cs.setOption('-odac')
         self._cs.setOption('-m0')
         if self._cs.compileOrc(str(self._orchestra)) != ctcsound.CSOUND_SUCCESS:
             raise InvalidOrchestraError('ctcsound.compileOrc() failed for {}'.format(self._orchestra))
-        self._song = song
-
-    def __del__(self):
-        try:
-            del self._cs
-        except Exception:
-            pass
+        self._played = False
 
     # Properties
     # TODO SUPPORT MULTIPLE ORCHESTRAS
@@ -295,16 +291,24 @@ class CSoundInteractivePlayer(Player):
     # /BasePlayer Properties
     # /Properties
 
-    # Player API
-    def play(self) -> int:
-        self._cs.start()
-        while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
-            pass
-        # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
-        # holding the file handle open and leaking by continuing to write to that file.
+    def cleanup(self) -> int:
         result: int = self._cs.cleanup()
         self._cs.reset()
         del self._cs
+        return result
+
+    # Player API
+    def play(self) -> int:
+        cs = deepcopy(self._cs)
+        cs.start()
+        while cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
+            pass
+
+        # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object,
+        # holding the file handle open and leaking by continuing to write to that file.
+        result: int = cs.cleanup()
+        cs.reset()
+        del cs
         return result
 
     def play_each(self):
@@ -313,20 +317,25 @@ class CSoundInteractivePlayer(Player):
     def improvise(self):
         raise NotImplementedError(f'{self.__class__.__name__} does not support improvising')
 
+    # TODO THIS SHOULD WORK BUT IT SEGFAULTS IN CSOUND
     def loop(self) -> int:
-        result = 0
-        while True:
-            try:
-                self._cs.start()
-                while self._cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
-                    pass
-                # self._cs.rewindScore()
-                self._cs.setScoreOffsetSeconds(0)
-                self._cs.reset()
-            except KeyboardInterrupt:
-                self._cs.reset()
-                result: int = self._cs.cleanup()
-                return result
+        raise NotImplementedError(f'{self.__class__.__name__} does not support loop')
+        # result = 0
+        # try:
+        #     while True:
+        #         cs = deepcopy(self._cs)
+        #         # noinspection PyUnboundLocalVariable
+        #         cs.start()
+        #         while cs.performKsmps() == ctcsound.CSOUND_SUCCESS:
+        #             pass
+        #         # NOTE: Must follow this order of operations for cleanup to avoid failing to close the CSound object
+        #         # holding the file handle open and leaking by continuing to write to that file.
+        #         result: int = cs.cleanup()
+        #         cs.rewindScore()
+        #         cs.reset()
+        #         del cs
+        # except KeyboardInterrupt:
+        #     return result
     # /Player API
 
     def add_score_event(self, event: CSoundScoreEvent):
