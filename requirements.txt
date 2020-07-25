@@ -1,5 +1,5 @@
 ctcsound == 6.14
 mido
 numpy
-pytest >= 5.4.3
+pytest >= 6.0.0rc1
 python-rtmidi
