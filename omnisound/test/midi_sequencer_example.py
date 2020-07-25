@@ -4,8 +4,8 @@ from omnisound.note.adapters.midi_note import MidiInstrument
 from omnisound.note.containers.measure import Meter
 from omnisound.note.containers.track import MidiTrack
 from omnisound.note.generators.chord_globals import HarmonicChord
-from omnisound.note.generators.midi_sequencer import (MidiSingleTrackSequencer, MidiMultitrackSequencer,
-                                                      MidiWriterSequencer)
+from omnisound.note.generators.sequencer.midi_sequencer import (MidiSingleTrackSequencer, MidiMultitrackSequencer,
+                                                                MidiWriterSequencer)
 from omnisound.note.modifiers.meter import NoteDur
 from omnisound.note.modifiers.swing import Swing
 
