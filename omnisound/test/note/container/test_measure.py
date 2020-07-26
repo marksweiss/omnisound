@@ -49,8 +49,7 @@ def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None,
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
-    return note_sequence
+    return NoteSequence(num_notes=NUM_NOTES, mn=mn)
 
 
 @pytest.fixture
@@ -111,8 +110,7 @@ def _setup_test_swing(measure, swing_direction, swing_on=True) -> Tuple[Swing, M
 
 def _apply_swing_and_get_note_starts(measure) -> List[float]:
     measure.apply_swing()
-    actual_note_starts = [note.start for note in measure]
-    return actual_note_starts
+    return [note.start for note in measure]
 
 
 def test_measure(measure, meter, swing):
@@ -269,7 +267,7 @@ def test_quantize_to_beat(make_note_config, measure, meter):
         assert note.start == pytest.approx(measure[i].start)
 
 
-def test_beat(measure):
+def test_beat(measure):  # sourcery skip: hoist-statement-from-loop
     """Beat management logic is in Measure class, but it relies on Meter attribute helper class for state
        of what is beats per measure for the Measure. This test tests the interaction between the classes.
     """
@@ -285,7 +283,7 @@ def test_beat(measure):
     assert measure.beat == 0
     measure.decrement_beat()
     assert measure.beat == 0
-    for i in range(measure.meter.beats_per_measure + 10):
+    for _ in range(measure.meter.beats_per_measure + 10):
         assert measure.beat <= measure.meter.beats_per_measure
 
 
