@@ -9,9 +9,9 @@ from omnisound.note.adapter.midi_note import (ATTR_NAME_IDX_MAP, ATTR_GET_TYPE_C
 from omnisound.note.generator.sequencer.sequencer import Sequencer
 from omnisound.note.modifier.meter import Meter
 from omnisound.note.modifier.swing import Swing
-from omnisound.player.midi_player import (MidiInteractiveSingleTrackPlayer, MidiInteractiveMultitrackPlayer,
-                                          MidiPlayerAppendMode)
-from omnisound.player.midi_writer import MidiWriter
+from omnisound.player.midi.midi_player import (MidiInteractiveSingleTrackPlayer, MidiInteractiveMultitrackPlayer,
+                                               MidiPlayerAppendMode)
+from omnisound.player.midi.midi_writer import MidiWriter
 
 
 class MidiSingleTrackSequencer(Sequencer):

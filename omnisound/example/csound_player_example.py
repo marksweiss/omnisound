@@ -10,8 +10,8 @@ from omnisound.note.container.measure import (Measure,
                                               Swing)
 from omnisound.note.container.song import Song
 from omnisound.note.container.track import Track
-from omnisound.player.csound_player import (CSoundCSDPlayer, CSoundEventType, CSoundInteractivePlayer, CSoundOrchestra,
-                                            CSoundScoreEvent)
+from omnisound.player.csound.csound_player import (CSoundCSDPlayer, CSoundEventType, CSoundInteractivePlayer, CSoundOrchestra,
+                                                   CSoundScoreEvent)
 
 # Song Params
 SONG_NAME = 'Your Song'

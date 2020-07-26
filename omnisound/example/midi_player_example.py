@@ -16,8 +16,8 @@ from omnisound.note.generator.scale import Scale
 from omnisound.note.generator.scale_globals import HarmonicScale, MajorKey
 from omnisound.note.modifier.meter import NoteDur
 from omnisound.note.modifier.swing import Swing
-from omnisound.player.midi_player import MidiPlayerAppendMode
-from omnisound.player.midi_writer import MidiWriter
+from omnisound.player.midi.midi_player import MidiPlayerAppendMode
+from omnisound.player.midi.midi_writer import MidiWriter
 
 
 SONG_NAME = 'example_midi_song'

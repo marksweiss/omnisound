@@ -8,7 +8,7 @@ from omnisound.utils.validation_utils import validate_optional_types, validate_t
 
 from omnisound.note.adapter.midi_note import ATTR_GET_TYPE_CAST_MAP
 from omnisound.note.container.song import Song
-from omnisound.player.midi_player import MidiEventType, MidiPlayerEvent, MidiPlayerAppendMode
+from omnisound.player.midi.midi_player import MidiEventType, MidiPlayerEvent, MidiPlayerAppendMode
 from omnisound.player.player import Writer
 
 

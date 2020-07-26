@@ -10,7 +10,7 @@ from omnisound.note.adapter.foxdot_supercollider_note import (ATTR_NAMES,
 from omnisound.note.adapter.note import NoteValues
 from omnisound.note.adapter.performance_attrs import PerformanceAttrs
 from omnisound.note.container.note_sequence import NoteSequence
-from omnisound.player.foxdot_supercollider_player import \
+from omnisound.player.supercollider.foxdot_supercollider_player import \
     FoxDotSupercolliderPlayer
 
 if __name__ == '__main__':
