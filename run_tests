@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-pytest omnisound/test/ -W ignore::UserWarning -W ignore::DeprecationWarning --code-highlight=yes --no-header

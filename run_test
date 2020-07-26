@@ -1,2 +1,13 @@
 #!/usr/bin/env bash
-pytest omnisound/test/$1.py::$2 -W ignore::UserWarning -W ignore::DeprecationWarning
+
+run_test () {
+    pytest omnisound/test/$1.py::$2 -W ignore::UserWarning -W ignore::DeprecationWarning
+}
+
+run_test_file () {
+    pytest omnisound/test/$1.py -W ignore::UserWarning -W ignore::DeprecationWarning
+}
+
+run_tests () {
+    pytest omnisound/test/ -W ignore::UserWarning -W ignore::DeprecationWarning --code-highlight=yes --no-header
+}
