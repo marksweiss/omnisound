@@ -2,16 +2,16 @@
 
 import sys
 
-from omnisound.note.adapter.csound_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
-                                                NUM_ATTRIBUTES, get_pitch_for_key, make_note)
-from omnisound.note.adapter.note import MakeNoteConfig
-from omnisound.note.container.measure import (Measure,
-                                              Meter, NoteDur,
-                                              Swing)
-from omnisound.note.container.song import Song
-from omnisound.note.container.track import Track
-from omnisound.player.csound.csound_player import (CSoundCSDPlayer, CSoundEventType, CSoundInteractivePlayer, CSoundOrchestra,
-                                                   CSoundScoreEvent)
+from omnisound.src.note.adapter.csound_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
+                                                    NUM_ATTRIBUTES, get_pitch_for_key, make_note)
+from omnisound.src.note.adapter.note import MakeNoteConfig
+from omnisound.src.container.measure import Measure
+from omnisound.src.modifier.meter import Meter, NoteDur
+from omnisound.src.modifier.swing import Swing
+from omnisound.src.container.song import Song
+from omnisound.src.container.track import Track
+from omnisound.src.player.csound.csound_player import (CSoundCSDPlayer, CSoundEventType, CSoundInteractivePlayer,
+                                                       CSoundOrchestra, CSoundScoreEvent)
 
 # Song Params
 SONG_NAME = 'Your Song'

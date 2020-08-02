@@ -2,7 +2,7 @@
 
 import pytest
 
-from omnisound.utils.math_utils import *
+from omnisound.src.utils.math_utils import sign
 
 
 def test_sign():

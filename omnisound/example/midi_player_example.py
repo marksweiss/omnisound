@@ -2,22 +2,22 @@
 
 from pathlib import Path
 
-from omnisound.note.adapter.midi_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, ATTR_NAMES, CLASS_NAME,
-                                              NUM_ATTRIBUTES, get_pitch_for_key, make_note, MidiInstrument)
-from omnisound.note.adapter.note import MakeNoteConfig, NoteValues
-from omnisound.note.adapter.performance_attrs import PerformanceAttrs
-from omnisound.note.container.measure import Measure, Meter
-from omnisound.note.container.song import Song
-from omnisound.note.container.track import MidiTrack
-from omnisound.note.container.note_sequence import NoteSequence
-from omnisound.note.generator.chord import Chord
-from omnisound.note.generator.chord_globals import HarmonicChord
-from omnisound.note.generator.scale import Scale
-from omnisound.note.generator.scale_globals import HarmonicScale, MajorKey
-from omnisound.note.modifier.meter import NoteDur
-from omnisound.note.modifier.swing import Swing
-from omnisound.player.midi.midi_player import MidiPlayerAppendMode
-from omnisound.player.midi.midi_writer import MidiWriter
+from omnisound.src.note.adapter.midi_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, ATTR_NAMES, CLASS_NAME,
+                                                  NUM_ATTRIBUTES, get_pitch_for_key, make_note, MidiInstrument)
+from omnisound.src.note.adapter.note import MakeNoteConfig, NoteValues
+from omnisound.src.note.adapter.performance_attrs import PerformanceAttrs
+from omnisound.src.container.measure import Measure
+from omnisound.src.container.song import Song
+from omnisound.src.container.track import MidiTrack
+from omnisound.src.container.note_sequence import NoteSequence
+from omnisound.src.generator.chord import Chord
+from omnisound.src.generator.chord_globals import HarmonicChord
+from omnisound.src.generator.scale import Scale
+from omnisound.src.generator.scale_globals import HarmonicScale, MajorKey
+from omnisound.src.modifier.meter import Meter, NoteDur
+from omnisound.src.modifier.swing import Swing
+from omnisound.src.player.midi.midi_player import MidiPlayerAppendMode
+from omnisound.src.player.midi.midi_writer import MidiWriter
 
 
 SONG_NAME = 'example_midi_song'

@@ -1,4 +1,5 @@
 ctcsound == 6.14
+FoxDot
 mido
 numpy
 pysimplegui

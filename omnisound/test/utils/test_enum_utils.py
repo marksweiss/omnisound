@@ -2,7 +2,7 @@ from enum import Enum
 
 import pytest
 
-from omnisound.utils.enum_utils import enum_to_dict, enum_to_dict_reverse_mapping, enum_to_str_key_dict
+from omnisound.src.utils.enum_utils import enum_to_dict, enum_to_dict_reverse_mapping, enum_to_str_key_dict
 
 
 class TestEnum(Enum):

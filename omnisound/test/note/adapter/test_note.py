@@ -4,10 +4,10 @@ from typing import List
 
 import pytest
 
-from omnisound.note.adapter.note import MakeNoteConfig
-import omnisound.note.adapter.csound_note as csound_note
-from omnisound.note.adapter.note import as_dict, as_list, make_rest_note
-from omnisound.note.container.note_sequence import NoteSequence
+from omnisound.src.note.adapter.note import MakeNoteConfig
+import omnisound.src.note.adapter.csound_note as csound_note
+from omnisound.src.note.adapter.note import as_dict, as_list, make_rest_note
+from omnisound.src.container.note_sequence import NoteSequence
 
 
 INSTRUMENT = 1

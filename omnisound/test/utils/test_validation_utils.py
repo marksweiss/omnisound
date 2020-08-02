@@ -1,10 +1,10 @@
 import pytest
 
-from omnisound.utils.validation_utils import (validate_not_falsey, validate_not_none,
-                                              validate_optional_sequence_of_type, validate_optional_type,
-                                              validate_optional_types, validate_sequence_of_type,
-                                              validate_sequence_of_type_choice, validate_type_choice,
-                                              validate_type_reference, validate_type_reference_choice)
+from omnisound.src.utils.validation_utils import (validate_not_falsey, validate_not_none,
+                                                  validate_optional_sequence_of_type, validate_optional_type,
+                                                  validate_optional_types, validate_sequence_of_type,
+                                                  validate_sequence_of_type_choice, validate_type_choice,
+                                                  validate_type_reference, validate_type_reference_choice)
 
 
 ARG_NAME = 'arg'
