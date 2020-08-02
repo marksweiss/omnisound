@@ -1,6 +1,6 @@
-ctcsound
+ctcsound == 6.14
 mido
 numpy
 pysimplegui
-pytest
+pytest >= 6.0.0rc1
 python-rtmidi

@@ -3,8 +3,8 @@
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Sequence
 
-from omnisound.note.containers.song import Song
-from omnisound.utils.utils import validate_type
+from omnisound.note.container.song import Song
+from omnisound.utils.validation_utils import validate_type
 
 
 class PlayerNoNotesException(Exception):
