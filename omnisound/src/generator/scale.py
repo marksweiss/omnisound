@@ -20,6 +20,8 @@ from omnisound.src.utils.enum_utils import enum_to_dict_reverse_mapping
 from omnisound.src.utils.validation_utils import validate_type_choice, validate_type_reference_choice, validate_types
 
 
+# TODO NEEDS obvious methods like get_root(), get_whatever()
+
 class Scale(NoteSequence):
     """Encapsulates a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
        and a root key. Uses mingus.scale to then retrieve the notes in the scale and provide methods to manage

@@ -36,6 +36,9 @@ ATTR_GET_TYPE_CAST_MAP = {
 }
 NUM_ATTRIBUTES = len(ATTR_NAMES)
 
+MIDI_PARAM_MIN_VAL = 0
+MIDI_PARAM_MAX_VAL = 127
+
 
 class MidiInstrument(Enum):
     Acoustic_Grand_Piano = 0
