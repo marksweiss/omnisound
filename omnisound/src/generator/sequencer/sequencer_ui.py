@@ -60,6 +60,7 @@ LAYOUT = []
 def generate_measures_and_buttons():
     for i in range(NUM_TRACKS):
         TRACKS.append([])
+        LAYOUT.append([])
         layout_measures = []
         for j in range(NUM_MEASURES):
             measure = Measure.copy(MEASURE)
@@ -73,7 +74,8 @@ def generate_measures_and_buttons():
                 # This scheme means each trapped button event will return as its key the index to the note to modify
                 layout_notes.append(sg.Button((i, j, k)))
             layout_measures.append(sg.Frame(f'Measure {j}', [layout_notes]))
-        LAYOUT[i].append(f'Track {i}', layout_measures)
+        breakpoint()
+        LAYOUT[i].append(sg.Frame(f'Track {i}', [layout_measures]))
 
 
 # TODO NEXT
@@ -92,6 +94,7 @@ def generate_measures_and_buttons():
 
 
 # Create the window
+generate_measures_and_buttons()
 window = sg.Window('Omnisound Sequencer', LAYOUT, size=(1200, 800))
 
 # Create an event loop, necessary or the first event trapped closes the window
