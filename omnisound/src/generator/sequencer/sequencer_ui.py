@@ -1,46 +1,33 @@
 # noinspection PyPep8Naming
 import PySimpleGUI as sg
 
-from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, MakeNoteConfig
+from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, NoteValues, MakeNoteConfig
 from omnisound.src.container.measure import Measure
 from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.generator.scale import HarmonicScale, MajorKey, MinorKey, Scale
 import omnisound.src.note.adapter.midi_note as midi_note
 
+NOTE_DUR = NoteDur.QRTR
+OCTAVE = 4
+
+ATTR_VALS_DEFAULTS_MAP = NoteValues(midi_note.ATTR_NAMES)
+ATTR_VALS_DEFAULTS_MAP.instrument = midi_note.MidiInstrument.Acoustic_Grand_Piano.value
+ATTR_VALS_DEFAULTS_MAP.time = 0
+ATTR_VALS_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
+ATTR_VALS_DEFAULTS_MAP.velocity = midi_note.MIDI_PARAM_MAX_VAL  # 127
+ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 "Middle C"
+note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
+note_config.attr_vals_defaults_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
+
 NUM_TRACKS = 1
 NUM_MEASURES = 4
-NOTE_DUR = NoteDur.QRTR
 METER = Meter(beats_per_measure=4, beat_note_dur=NOTE_DUR, tempo=120, quantizing=True)
 NOTES_PER_MEASURE = METER.quarter_notes_per_beat_note * METER.beats_per_measure
-MEASURE_PROTOTYPE = Measure(meter=METER, num_notes=NOTES_PER_MEASURE)
-
-# TODO ADD make_default_note() factory method to each note module to get rid of boilerplate
-# TODO NEED a copy_note() so we can for example use a Scale as a note factory
-MIDI_INSTRUMENT = midi_note.MidiInstrument.Acoustic_Grand_Piano
-NUM_ATTRIBUTES = midi_note.NUM_ATTRIBUTES
-ATTR_NAME_IDX_MAP = midi_note.ATTR_NAME_IDX_MAP
-START = 0
-DUR = NOTE_DUR.QUARTER.value
-AMP = midi_note.MIDI_PARAM_MAX_VAL
-OCTAVE = 4
-PITCH = midi_note.get_pitch_for_key(MajorKey.C, OCTAVE)
-ATTR_VALS_DEFAULTS_MAP = {'instrument': float(MIDI_INSTRUMENT.value),
-                          'time': START,
-                          'duration': DUR,
-                          'velocity': AMP,
-                          'pitch': PITCH}
-
+MEASURE = Measure(meter=METER, num_notes=NOTES_PER_MEASURE, mn=note_config)
 
 HARMONIC_SCALE = HarmonicScale.Major
 KEY = MajorKey
-SCALE = Scale(KEY, OCTAVE, HARMONIC_SCALE,
-              MakeNoteConfig(cls_name=midi_note.CLASS_NAME,
-                             num_attributes=NUM_ATTRIBUTES,
-                             make_note=midi_note.make_note,
-                             get_pitch_for_key=midi_note.get_pitch_for_key,
-                             attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                             attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
-                             attr_get_type_cast_map={}))
+SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_config)
 
 TRACKS = []
 LAYOUT = []
@@ -75,17 +62,17 @@ def generate_measures_and_buttons():
         TRACKS.append([])
         layout_measures = []
         for j in range(NUM_MEASURES):
-            measure = Measure.copy(MEASURE_PROTOTYPE)
+            measure = Measure.copy(MEASURE)
             TRACKS[i].append(measure)
             layout_notes = []
             for k in range(NOTES_PER_MEASURE):
+                # Set each note to the params of the root note in the Scale
                 set_attr_vals_from_dict(measure[k], as_dict(SCALE[0]))
                 # Key each button to it's (track, measure, note) index into TRACKS list.
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
+                # This scheme means each trapped button event will return as its key the index to the note to modify
                 layout_notes.append(sg.Button((i, j, k)))
-
-            measure_frame = sg.Frame(f'Measure {j}', [layout_notes])
-            layout_measures.append(measure_frame)
+            layout_measures.append(sg.Frame(f'Measure {j}', [layout_notes]))
         LAYOUT[i].append(f'Track {i}', layout_measures)
 
 
@@ -120,6 +107,9 @@ while True:
 
     if event:
         note = TRACKS[event[0]][event[1]][event[2]]
-        note.amplitude = 0 if note.amplitude == midi_note.MIDI_PARAM_MAX_VAL else note.amplitude = 0
+        if note.amplitude == 0:
+            note.amplitude = midi_note.MIDI_PARAM_MAX_VAL
+        else:
+            note.amplitude = 0
 
 window.close()
