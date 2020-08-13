@@ -14,7 +14,7 @@ DUR = 1.0
 AMP = 100.0
 PITCH = 9.01
 
-KEY = MajorKey.C
+KEY = MajorKey
 OCTAVE = 4
 HARMONIC_SCALE = HarmonicScale.Major
 
@@ -92,7 +92,7 @@ def test_is_major_key_is_minor_key(make_note_config, note, scale):
     assert scale.is_major_key
     assert (not scale.is_minor_key)
     # MinorKey case
-    scale_minor = _scale(mn=make_note_config, key=MinorKey.C)
+    scale_minor = _scale(mn=make_note_config, key=MinorKey)
     assert not scale_minor.is_major_key
     assert scale_minor.is_minor_key
 
@@ -106,7 +106,7 @@ def test_get_pitch_for_key_csound(make_note_config, note, scale):
         assert expected_pitch == pytest.approx(pitches[i])
 
     # MinorKey case, HarmonicMinor class in Mingus
-    scale_minor = _scale(mn=make_note_config, key=MinorKey.C, harmonic_scale=HarmonicScale.HarmonicMinor)
+    scale_minor = _scale(mn=make_note_config, key=MinorKey, harmonic_scale=HarmonicScale.HarmonicMinor)
     expected_pitches = (4.01, 4.03, 4.04, 4.06, 4.08, 4.09, 4.12)
     pitches = [n.pitch for n in scale_minor]
     for i, expected_pitch in enumerate(expected_pitches):
@@ -114,7 +114,7 @@ def test_get_pitch_for_key_csound(make_note_config, note, scale):
 
 
 def test_get_pitch_for_key_midi(make_note_config):
-    key = MajorKey.C
+    key = MajorKey
     make_note_config.cls_name = midi_note.CLASS_NAME
     make_note_config.make_note = midi_note.make_note
     make_note_config.get_pitch_for_key = midi_note.get_pitch_for_key
@@ -124,7 +124,7 @@ def test_get_pitch_for_key_midi(make_note_config):
     for i, expected_pitch in enumerate(expected_pitches):
         assert expected_pitch == pitches[i]
 
-    key = MinorKey.C
+    key = MinorKey
     scale_minor = _scale(mn=make_note_config, key=key, harmonic_scale=HarmonicScale.HarmonicMinor)
     expected_pitches = (60, 62, 63, 65, 67, 68, 71)
     pitches = [n.pitch for n in scale_minor]
