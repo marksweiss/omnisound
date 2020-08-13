@@ -74,7 +74,6 @@ def generate_measures_and_buttons():
                 # This scheme means each trapped button event will return as its key the index to the note to modify
                 layout_notes.append(sg.Button((i, j, k)))
             layout_measures.append(sg.Frame(f'Measure {j}', [layout_notes]))
-        breakpoint()
         LAYOUT[i].append(sg.Frame(f'Track {i}', [layout_measures]))
 
 
@@ -109,6 +108,8 @@ while True:
         break
 
     if event:
+        # key comes back as PySimpleGUI type that has a sane str, so str() it and eval that to get the tuple key
+        event = eval(str(event))
         note = TRACKS[event[0]][event[1]][event[2]]
         if note.amplitude == 0:
             note.amplitude = midi_note.MIDI_PARAM_MAX_VAL
