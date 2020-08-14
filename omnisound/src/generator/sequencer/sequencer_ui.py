@@ -60,9 +60,9 @@ def generate_measures_and_buttons():
                 # Key each button to it's (track, measure, note) index into TRACKS list.
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
                 # This scheme means each trapped button event will return as its key the index to the note to modify
-                layout_notes.append(sg.Button(str(k + 1), key=(i, j, k)))
-            layout_measures.append(sg.Frame(f'Measure {j + 1}', [layout_notes]))
-        LAYOUT[i].append(sg.Frame(f'Track {i + 1}', [layout_measures]))
+                layout_notes.append(sg.Checkbox(text=str(k + 1), key=(i, j, k)))
+            layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
+        LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
 
 
 async def loop():
@@ -101,6 +101,7 @@ async def _loop_track(messages: Sequence[Message], durations: Sequence[int], por
                 for i in range(0, len(messages), 2):
                     messages[i].time += (j * loop_duration)
                     update_notes_for_events()
+                    print(messages[i])
                     port.send(messages[i])
                     await asyncio.sleep(durations[int(i / 2)])
                     update_notes_for_events()
