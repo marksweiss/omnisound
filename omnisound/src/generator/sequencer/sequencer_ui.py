@@ -1,4 +1,8 @@
+from itertools import chain
+from time import sleep
 from typing import List, Sequence, Tuple
+from queue import Queue
+import threading
 import asyncio
 
 # noinspection PyProtectedMember
@@ -40,7 +44,8 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_con
 
 TRACKS = []
 LAYOUT = []
-
+# Used by the window event loop thread to communicate captured note events from the GUI to the Midi playback thread
+QUEUE = Queue()
 PORT_NAME = 'omnisound_sequencer'
 
 
@@ -57,64 +62,89 @@ def generate_measures_and_buttons():
             for k in range(NOTES_PER_MEASURE):
                 # Set each note to the params of the root note in the Scale
                 set_attr_vals_from_dict(measure[k], as_dict(SCALE[0]))
-                # Key each button to it's (track, measure, note) index into TRACKS list.
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
-                # This scheme means each trapped button event will return as its key the index to the note to modify
-                layout_notes.append(sg.Checkbox(text=str(k + 1), key=(i, j, k)))
+                # Key each button to it's offset (track, measure, note) index into the flattened Messages list.
+                # Offset is track number * number of measures * notes per measure + note offset in measure.
+                # Example: 2 tracks, 4 measures, 4 notes per measure,
+                #  second note in second measure of track 2 == (1 * 4 * 4) + (1 * 4) + 1 = idx 21 in 0-based note list
+                layout_notes.append(
+                    sg.Checkbox(text=str(k + 1),
+                                key=((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
             layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
 
 
-async def loop():
-    messages_durations_list: Sequence[Tuple[Sequence[Message], Sequence[int]]] = \
-        [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
+# noinspection PyBroadException
+async def _loop_track(messages, durations, port):
+    print('loop_track')
+
+    with port:
+        loop_duration = messages[-1].time
+        j = 0
+        while True:
+            for i in range(0, len(messages), 2):
+                messages[i].time += (j * loop_duration)
+                try:
+                    # Drain the queue and apply all note changes put their by the GUI thread
+                    while i := QUEUE.get ():
+                        messages[i].velocity = midi_note.MIDI_PARAM_MAX_VAL if messages[i].velocity == 0 else 0
+                except Exception:
+                    pass
+                port.send(messages[i])
+                await asyncio.sleep(durations[int(i / 2)])
+                port.send(messages[i + 1])
+            j += 1
+
+
+async def _loop():
+    print('_loop')
+    messages_durations_list = [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
     port: Output = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
-    play_track_tasks: List[asyncio.Task] = [asyncio.create_task(_loop_track(messages, durations, port))
-                                            for messages, durations in messages_durations_list]
+    play_track_tasks = [asyncio.create_task(_loop_track(messages, durations, port))
+                        for messages, durations in messages_durations_list]
     for task in play_track_tasks:
         await task
 
 
-async def _loop_track(messages: Sequence[Message], durations: Sequence[int], port: Output):
-    try:
-        window = sg.Window('Omnisound Sequencer', LAYOUT)
-        with port:
-            loop_duration = messages[-1].time
-            j = 0
-            # Create an event loop, necessary or the first event trapped closes the window
-            while True:
+def loop():
+    print('loop')
+    event_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+    event_loop.run_until_complete(_loop())
 
-                def update_notes_for_events():
-                    # This is the framework mechanism for polling the window for events and status
-                    event, values = window.read()
-                    # Exit event loop if user closes window, going immediately to window.close()
-                    # Not following this pattern crashes the application.
-                    if event == sg.WIN_CLOSED:
-                        raise KeyboardInterrupt()
-                    if event:
-                        note = TRACKS[event[0]][event[1]][event[2]]
-                        if note.amplitude == 0:
-                            note.amplitude = midi_note.MIDI_PARAM_MAX_VAL
-                        else:
-                            note.amplitude = 0
 
-                for i in range(0, len(messages), 2):
-                    messages[i].time += (j * loop_duration)
-                    update_notes_for_events()
-                    print(messages[i])
-                    port.send(messages[i])
-                    await asyncio.sleep(durations[int(i / 2)])
-                    update_notes_for_events()
-                    port.send(messages[i + 1])
-                j += 1
-    except KeyboardInterrupt:
-        pass
+# noinspection PyBroadException
+def start():
+    print('start')
+    window = sg.Window('Omnisound Sequencer', LAYOUT)
+    print('after window')
+    # Create an event loop, necessary or the first event trapped closes the window
+    while True:
+        print('in event loop')
+        # This is the framework mechanism for polling the window for events and status
+        event, values = window.read()
+        print('after window.read()')
+        # Exit event loop if user closes window, going immediately to window.close()
+        # Not following this pattern crashes the application.
+        if event == sg.WIN_CLOSED:
+            print('close event')
+            break
+
+        print('spawning player thread')
+        threading.Thread(target=loop, daemon=True).start()
+
+        if event:
+            print('other event')
+            try:
+                QUEUE.put(event)
+            except Exception:
+                pass
+
+    window.close()
 
 
 if __name__ == '__main__':
     generate_measures_and_buttons()
-    event_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-    event_loop.run_until_complete(loop())
+    start()
 
 
 # layout = [
