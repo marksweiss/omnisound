@@ -68,42 +68,51 @@ def generate_measures_and_buttons():
                 # Example: 2 tracks, 4 measures, 4 notes per measure,
                 #  second note in second measure of track 2 == (1 * 4 * 4) + (1 * 4) + 1 = idx 21 in 0-based note list
                 layout_notes.append(
-                    sg.Checkbox(text=str(k + 1),
-                                key=((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
+                    sg.Button(str(k + 1),
+                              key=((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
             layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
 
 
 # noinspection PyBroadException
-async def _loop_track(messages, durations, port):
+# async def _loop_track(messages, durations, port):
+def _loop_track():
     print('loop_track')
 
+    messages_durations_list = [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
+
+    messages = list(chain([messages for messages, _ in messages_durations_list]))[0]
+    loop_duration = messages[-1].time
+    print(messages[-1].velocity)
+    durations = list(chain([durations for _, durations in messages_durations_list]))[0]
+    port: Output = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     with port:
-        loop_duration = messages[-1].time
         j = 0
         while True:
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
                 try:
                     # Drain the queue and apply all note changes put their by the GUI thread
-                    while i := QUEUE.get ():
+                    while i := QUEUE.get():
                         messages[i].velocity = midi_note.MIDI_PARAM_MAX_VAL if messages[i].velocity == 0 else 0
                 except Exception:
                     pass
                 port.send(messages[i])
-                await asyncio.sleep(durations[int(i / 2)])
+                # await asyncio.sleep(durations[int(i / 2)])
+                sleep(durations[int(i / 2)])
                 port.send(messages[i + 1])
             j += 1
 
 
-async def _loop():
+# async def _loop():
+def _loop():
     print('_loop')
     messages_durations_list = [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
     port: Output = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
-    play_track_tasks = [asyncio.create_task(_loop_track(messages, durations, port))
-                        for messages, durations in messages_durations_list]
-    for task in play_track_tasks:
-        await task
+    # play_track_tasks = [asyncio.create_task(_loop_track(messages, durations, port))
+    #                     for messages, durations in messages_durations_list]
+    # for task in play_track_tasks:
+    #     await task
 
 
 def loop():
@@ -117,20 +126,23 @@ def start():
     print('start')
     window = sg.Window('Omnisound Sequencer', LAYOUT)
     print('after window')
+
+    threading.Thread (target=_loop_track, daemon=True).start()
+    print('spawned player thread')
+
     # Create an event loop, necessary or the first event trapped closes the window
     while True:
         print('in event loop')
         # This is the framework mechanism for polling the window for events and status
         event, values = window.read()
         print('after window.read()')
+        print(f'values {values}')
+        print(f'event {event}')
         # Exit event loop if user closes window, going immediately to window.close()
         # Not following this pattern crashes the application.
         if event == sg.WIN_CLOSED:
             print('close event')
             break
-
-        print('spawning player thread')
-        threading.Thread(target=loop, daemon=True).start()
 
         if event:
             print('other event')
