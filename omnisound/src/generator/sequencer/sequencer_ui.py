@@ -12,6 +12,8 @@
 # Then allow choosing instrument per track
 # Then make event loop the async event loop from midi player so timing is controlled
 
+# TO RUN: python -m omnisound.src.generator.sequencer.sequencer_ui
+
 from itertools import chain, count
 from time import sleep
 import threading
