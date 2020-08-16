@@ -68,7 +68,7 @@ LAYOUT = []
 QUEUE = []
 
 
-def generate_measures_and_buttons():
+def generate_tracks_and_layout():
     for i in range(NUM_TRACKS):
         track = MidiTrack(meter=METER, channel=i + 1, instrument=INSTRUMENT)
         TRACKS.append(track)
@@ -136,5 +136,5 @@ def start():
 
 
 if __name__ == '__main__':
-    generate_measures_and_buttons()
+    generate_tracks_and_layout()
     start()
