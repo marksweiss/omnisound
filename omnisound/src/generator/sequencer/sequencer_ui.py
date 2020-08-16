@@ -91,17 +91,14 @@ def _loop_track():
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     with port:
         for j in count():
-            lock = threading.Lock ()
-            lock.acquire(blocking=True)
             # Drain the queue and apply all note changes put their by the GUI thread
             # TODO See note below about replacing this terrible GUI framework. We have to update every note
             #  on every loop. OMG.
             i = 0
             while QUEUE and i < (NUM_MEASURES * NOTES_PER_MEASURE * 2):  # .not_empty:
-                velocity = QUEUE.pop()  # .get_nowait()
+                velocity = QUEUE.pop()
                 messages[i].velocity = velocity
                 i += 2
-            lock.release()
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
@@ -138,11 +135,8 @@ def start():
             #  of buttons clicked, which since a human is doing it and the window is 50 ms is basically one or two.
             #  So, terrible and must be replaced. Also the documentation is really annoying, and the examples suck.
             notes_on_off = (midi_note.MIDI_PARAM_MAX_VAL if v else 0 for v in values.values())
-            lock = threading.Lock()
-            lock.acquire(blocking=True)
             for velocity in notes_on_off:
                 QUEUE.append(velocity)
-            lock.release()
 
     window.close()
 
