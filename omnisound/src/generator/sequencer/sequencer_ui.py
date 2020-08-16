@@ -1,7 +1,7 @@
-from itertools import chain
-from time import sleep
+from itertools import chain, count
+from time import sleep, time
 # from typing import List, Sequence, Tuple
-from queue import Queue
+import queue
 import threading
 # import asyncio
 
@@ -46,11 +46,12 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_con
 TRACKS = []
 LAYOUT = []
 # Used by the window event loop thread to communicate captured note events from the GUI to the Midi playback thread
-QUEUE = Queue()
+QUEUE = queue.LifoQueue(maxsize=NUM_MEASURES * NOTES_PER_MEASURE)
 PORT_NAME = 'omnisound_sequencer'
 
 
 def generate_measures_and_buttons():
+    track_idx = 0
     for i in range(NUM_TRACKS):
         track = MidiTrack(meter=METER, channel=i + 1, instrument=INSTRUMENT)
         TRACKS.append(track)
@@ -64,12 +65,9 @@ def generate_measures_and_buttons():
                 # Set each note to the params of the root note in the Scale
                 set_attr_vals_from_dict(measure[k], as_dict(SCALE[0]))
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
-                # Key each button to it's offset (track, measure, note) index into the flattened Messages list.
-                # Offset is track number * number of measures * notes per measure + note offset in measure.
-                # Example: 2 tracks, 4 measures, 4 notes per measure,
-                #  second note in second measure of track 2 == (1 * 4 * 4) + (1 * 4) + 1 = idx 21 in 0-based note list
+                # Key each button to it's index in the flattened Messages list.
                 layout_notes.append(
-                    sg.Checkbox(str(k + 1), default=True,
+                    sg.Checkbox(str(k + 1), default=True, enable_events=True,
                                 key=((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
             layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
@@ -78,34 +76,62 @@ def generate_measures_and_buttons():
 # noinspection PyBroadException
 # async def _loop_track(messages, durations, port):
 def _loop_track():
-    print('loop_track')
-
     messages_durations_list = [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
-    messages = list(chain([messages for messages, _ in messages_durations_list]))[0]
+    messages = list(chain(*[messages for messages, _ in messages_durations_list]))
     loop_duration = messages[-1].time
-    durations = list(chain([durations for _, durations in messages_durations_list]))[0]
+    durations = list(chain(*[durations for _, durations in messages_durations_list]))
 
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     with port:
-        j = 0
-        while True:
+        for j in count():
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
                 try:
                     # Drain the queue and apply all note changes put their by the GUI thread
-                    while i := QUEUE.get():
-                        messages[i].velocity = midi_note.MIDI_PARAM_MAX_VAL if messages[i].velocity == 0 else 0
-                except Exception:
+                    while QUEUE.not_empty:
+                        event = QUEUE.get_nowait()
+                        print(f'Pulled message {event} off the queue, velocity before change {messages[event].velocity}')
+                        messages[event].velocity = midi_note.MIDI_PARAM_MAX_VAL if messages[event].velocity == 0 else 0
+                        print(f'Velocity after change {messages[event].velocity}')
+                except queue.Empty:
                     pass
-                breakpoint()
                 port.send(messages[i])
-                print('sent midi note on')
                 # await asyncio.sleep(durations[int(i / 2)])
                 sleep(durations[int(i / 2)])
-                print('woke up')
                 port.send(messages[i + 1])
-                print('sent midi note off')
-            j += 1
+
+
+# noinspection PyBroadException
+def start():
+    window = sg.Window('Omnisound Sequencer', LAYOUT)
+    threading.Thread(target=_loop_track, daemon=True).start()
+
+    # Create an event loop, necessary or the first event trapped closes the window
+    while True:
+        # This is the framework mechanism for polling the window for events and status
+        # timeout arg is needed with Checkbox or the event loop stalls here, i.e. doesn't read any events
+        event, values = window.read(timeout=500)  # timeout is in milliseconds
+        # Exit event loop if user closes window, going immediately to window.close()
+        # Not following this pattern crashes the application.
+        if event == sg.WIN_CLOSED:
+            break
+
+        if event:
+            try:
+                # Cast of '__TIMEOUT__' events will throw, so only string ints will get added to queue
+                QUEUE.put_nowait(int(event))
+                # print(f'put {event}')
+            except ValueError:
+                pass
+            except queue.Full:
+                pass
+
+    window.close()
+
+
+if __name__ == '__main__':
+    generate_measures_and_buttons()
+    start()
 
 
 # async def _loop():
@@ -123,45 +149,6 @@ def loop():
     print('loop')
     # event_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
     # event_loop.run_until_complete(_loop())
-
-
-# noinspection PyBroadException
-def start():
-    print('start')
-    window = sg.Window('Omnisound Sequencer', LAYOUT)
-    print('after window')
-
-    # Create an event loop, necessary or the first event trapped closes the window
-    while True:
-        print('in event loop')
-        # This is the framework mechanism for polling the window for events and status
-        event, values = window.read(timeout=0)
-        print('after window.read()')
-        print(f'values {values}')
-        print(f'event {event}')
-        # Exit event loop if user closes window, going immediately to window.close()
-        # Not following this pattern crashes the application.
-        if event == sg.WIN_CLOSED:
-            print('close event')
-            break
-
-        threading.Thread (target=_loop_track, daemon=True).start ()
-        print ('spawned player thread')
-
-        if event:
-            print('other event')
-            try:
-                QUEUE.put(event)
-                print(QUEUE)
-            except Exception:
-                pass
-
-    window.close()
-
-
-if __name__ == '__main__':
-    generate_measures_and_buttons()
-    start()
 
 
 # layout = [
