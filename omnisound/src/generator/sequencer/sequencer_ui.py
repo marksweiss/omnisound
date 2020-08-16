@@ -46,7 +46,7 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_con
 TRACKS = []
 LAYOUT = []
 # Used by the window event loop thread to communicate captured note events from the GUI to the Midi playback thread
-QUEUE = queue.LifoQueue(maxsize=NUM_MEASURES * NOTES_PER_MEASURE)
+QUEUE = [] # queue.LifoQueue(maxsize=NUM_MEASURES * NOTES_PER_MEASURE)
 PORT_NAME = 'omnisound_sequencer'
 
 
@@ -81,34 +81,36 @@ def _loop_track():
     loop_duration = messages[-1].time
     durations = list(chain(*[durations for _, durations in messages_durations_list]))
 
+    # print(len(messages))
+
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     with port:
         for j in count():
             lock = threading.Lock ()
             lock.acquire(blocking=True)
-            try:
-                # Drain the queue and apply all note changes put their by the GUI thread
-                # TODO See note below about replacing this terrible GUI framework. We have to update every note
-                #  on every loop. OMG.
-                # Counter is valid because queue is filled up for all notes
-                i = 0
-                while QUEUE.not_empty:
-                    velocity = QUEUE.get_nowait()
-                    print(f'velocity from queue {velocity}')
-                    messages[i].velocity = velocity
-                    print(f'messages[i].velocity {messages[i].velocity}')
-                    i += 2
-            except queue.Empty:
-                pass
+            # try:
+            # Drain the queue and apply all note changes put their by the GUI thread
+            # TODO See note below about replacing this terrible GUI framework. We have to update every note
+            #  on every loop. OMG.
+            # Counter is valid because queue is filled up for all notes
+            i = 0
+            while QUEUE and i < (NUM_MEASURES * NOTES_PER_MEASURE * 2):  # .not_empty:
+                velocity = QUEUE.pop()  # .get_nowait()
+                # print(f'velocity from queue {velocity}')
+                messages[i].velocity = velocity
+                # print(f'messages[i].velocity {messages[i].velocity}')
+                i += 2
+            # except queue.Empty:
+            #    pass
+            lock.release()
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
-                print(f'sent note on {i}   {messages[i].velocity}')
+                # print(f'sent note on {i}   {messages[i].velocity}')
                 port.send(messages[i])
                 # await asyncio.sleep(durations[int(i / 2)])
                 sleep(durations[int(i / 2)])
                 port.send(messages[i + 1])
-            lock.release()
 
 
 # noinspection PyBroadException
@@ -120,34 +122,34 @@ def start():
     while True:
         # This is the framework mechanism for polling the window for events and status
         # timeout arg is needed with Checkbox or the event loop stalls here, i.e. doesn't read any events
-        event, values = window.read(timeout=50)  # timeout is in milliseconds
+        event, values = window.read(timeout=5)  # timeout is in milliseconds
         # Exit event loop if user closes window, going immediately to window.close()
         # Not following this pattern crashes the application.
         if event == sg.WIN_CLOSED:
             break
 
         if event:
-            try:
-                # TODO This GUI framework is terrible and must be replaced. Note that the event handling paradigm
-                #  only returns two things, a single-value string indicating that some event has occurred in the
-                #  timeout window (which one if more than one has occurred, who knows?), and the array of values
-                #  which lets you access the current value for every object in the layout by index. Which means
-                #  there is no way to support the use case for a Sequencer, which is to get the list of buttons
-                #  which *changed state* in the last time window, i.e. get a *list of events by id*. This means
-                #  we have to loop over all the buttons in every cycle and send all note ons to the queue. Which means
-                #  latency scales with the length of the sequence, instead of being constant proportional to the number
-                #  of buttons clicked, which since a human is doing it and the window is 50 ms is basically one or two.
-                #  So, terrible and must be replaced. Also the documentation is really annoying, and the examples suck.
-                notes_on_off = (midi_note.MIDI_PARAM_MAX_VAL if v else 0 for v in values.values())
-                lock = threading.Lock()
-                lock.acquire(blocking=True)
-                for velocity in notes_on_off:
-                    QUEUE.put_nowait(velocity)
-                lock.release()
-            except ValueError:
-                pass
-            except queue.Full:
-                pass
+            # try:
+            # TODO This GUI framework is terrible and must be replaced. Note that the event handling paradigm
+            #  only returns two things, a single-value string indicating that some event has occurred in the
+            #  timeout window (which one if more than one has occurred, who knows?), and the array of values
+            #  which lets you access the current value for every object in the layout by index. Which means
+            #  there is no way to support the use case for a Sequencer, which is to get the list of buttons
+            #  which *changed state* in the last time window, i.e. get a *list of events by id*. This means
+            #  we have to loop over all the buttons in every cycle and send all note ons to the queue. Which means
+            #  latency scales with the length of the sequence, instead of being constant proportional to the number
+            #  of buttons clicked, which since a human is doing it and the window is 50 ms is basically one or two.
+            #  So, terrible and must be replaced. Also the documentation is really annoying, and the examples suck.
+            notes_on_off = (midi_note.MIDI_PARAM_MAX_VAL if v else 0 for v in values.values())
+            lock = threading.Lock()
+            lock.acquire(blocking=True)
+            for velocity in notes_on_off:
+                QUEUE.append(velocity)  # .put_nowait(velocity)
+            lock.release()
+            # except ValueError:
+            #     pass
+            # except queue.Full:
+            #     pass
 
     window.close()
 
