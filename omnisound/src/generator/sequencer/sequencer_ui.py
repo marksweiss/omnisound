@@ -10,15 +10,14 @@
 # Then allow choosing duration of track
 # Then allow choosing meter
 # Then allow choosing instrument per track
-# Then make event loop the async event loop from midiplayer so timing is controlled
+# Then make event loop the async event loop from midi player so timing is controlled
 
 from itertools import chain, count
-from time import sleep, time
+from time import sleep
 import threading
 
 # noinspection PyProtectedMember
-from mido import open_output  # Message
-
+from mido import open_output
 # noinspection PyPep8Naming
 import PySimpleGUI as sg
 
@@ -30,34 +29,41 @@ from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.player.midi.midi_player import get_midi_messages_and_notes_for_track
 import omnisound.src.note.adapter.midi_note as midi_note
 
+# Note config
 NOTE_DUR = NoteDur.QRTR
 OCTAVE = 4
 INSTRUMENT = midi_note.MidiInstrument.Acoustic_Grand_Piano.value
-
 ATTR_VALS_DEFAULTS_MAP = NoteValues(midi_note.ATTR_NAMES)
 ATTR_VALS_DEFAULTS_MAP.instrument = INSTRUMENT
 ATTR_VALS_DEFAULTS_MAP.time = 0
 ATTR_VALS_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
 ATTR_VALS_DEFAULTS_MAP.velocity = 0
-ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 "Middle C"
+ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
 note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
 note_config.attr_vals_defaults_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
 
+# Measure config
 NUM_TRACKS = 1
 NUM_MEASURES = 4
-METER = Meter(beats_per_measure=4, beat_note_dur=NOTE_DUR, tempo=120, quantizing=True)
+BEATS_PER_MEASURE = int(1 / NOTE_DUR.value)
+TEMPO = 120
+METER = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=NOTE_DUR, tempo=TEMPO, quantizing=True)
 NOTES_PER_MEASURE = METER.quarter_notes_per_beat_note * METER.beats_per_measure
 MEASURE = Measure(meter=METER, num_notes=NOTES_PER_MEASURE, mn=note_config)
 
+# Scale config
 HARMONIC_SCALE = HarmonicScale.Major
 KEY = MajorKey
 SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_config)
 
+# Mido config
+PORT_NAME = 'omnisound_sequencer'
+
+# Globals
 TRACKS = []
 LAYOUT = []
-# Used by the window event loop thread to communicate captured note events from the GUI to the Midi playback thread
+# Used by the window event loop thread to communicate captured note events to the Midi playback thread
 QUEUE = []
-PORT_NAME = 'omnisound_sequencer'
 
 
 def generate_measures_and_buttons():
@@ -75,6 +81,7 @@ def generate_measures_and_buttons():
                 set_attr_vals_from_dict(measure[k], as_dict(SCALE[0]))
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
                 # Key each button to it's index in the flattened Messages list.
+                # key * 2 because the index into Messages is even indexes, because Messages are note_on/note_off pairs.
                 layout_notes.append(
                     sg.Checkbox(str(k + 1), default=False, enable_events=True,
                                 key=2 * ((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
@@ -85,30 +92,21 @@ def generate_measures_and_buttons():
 def _loop_track():
     messages_durations_list = [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
     messages = list(chain(*[messages for messages, _ in messages_durations_list]))
-    loop_duration = messages[-1].time
     durations = list(chain(*[durations for _, durations in messages_durations_list]))
+    loop_duration = messages[-1].time
 
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     with port:
         for j in count():
-            # Drain the queue and apply all note changes put their by the GUI thread
-            # TODO See note below about replacing this terrible GUI framework. We have to update every note
-            #  on every loop. OMG.
-            # i = 0
-            # lock = threading.Lock()
-            # lock.acquire(blocking=True)
-            while QUEUE: # and i < (NUM_MEASURES * NOTES_PER_MEASURE * 2):  # .not_empty:
+            while QUEUE:
                 i, velocity = QUEUE.pop()
                 messages[i].velocity = velocity
-                print(f'in midi loop {i} {velocity}')
-                # i += 2
-            # lock.release()
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
                 if messages[i].velocity:
                     port.send(messages[i])
-                    print (f'in midi send block {i} {velocity}')
+                    print(f'in midi send block {i} {velocity}')
                     sleep(durations[int(i / 2)])
                     port.send(messages[i + 1])
                 else:
@@ -123,32 +121,14 @@ def start():
     # Create an event loop, necessary or the first event trapped closes the window
     while True:
         # This is the framework mechanism for polling the window for events and status
-        # timeout arg is needed with Checkbox or the event loop stalls here, i.e. doesn't read any events
-        event, values = window.read(timeout=5)  # timeout is in milliseconds
-        # Exit event loop if user closes window, going immediately to window.close()
-        # Not following this pattern crashes the application.
+        # Tune responsiveness with the timeout arg (in milliseconds), 0 means no timeout
+        event, values = window.read(timeout=5)
+        # Exit event loop if user closes window, going immediately to window.close(). Any other pattern crashes.
         if event == sg.WIN_CLOSED:
             break
 
         if event != '__TIMEOUT__':
-            # try:
-            # TODO This GUI framework is terrible and must be replaced. Note that the event handling paradigm
-            #  only returns two things, a single-value string indicating that some event has occurred in the
-            #  timeout window (which one if more than one has occurred, who knows?), and the array of values
-            #  which lets you access the current value for every object in the layout by index. Which means
-            #  there is no way to support the use case for a Sequencer, which is to get the list of buttons
-            #  which *changed state* in the last time window, i.e. get a *list of events by id*. This means
-            #  we have to loop over all the buttons in every cycle and send all note ons to the queue. Which means
-            #  latency scales with the length of the sequence, instead of being constant proportional to the number
-            #  of buttons clicked, which since a human is doing it and the window is 50 ms is basically one or two.
-            #  So, terrible and must be replaced. Also the documentation is really annoying, and the examples suck.
-            # notes_on_off = (midi_note.MIDI_PARAM_MAX_VAL if v else 0 for v in values.values())
-            # for velocity in notes_on_off:
-            # lock = threading.Lock()
-            # lock.acquire(blocking=True)
             QUEUE.append((event, midi_note.MIDI_PARAM_MAX_VAL if values[event] else 0))
-            print(f'in window loop {event}')
-            # lock.release()
 
     window.close()
 
