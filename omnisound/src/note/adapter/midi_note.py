@@ -6,7 +6,7 @@ from typing import Any, Mapping, Union
 # TODO SHOULD THIS BE numpy.array? THAT IS USED IN note.py
 from numpy import ndarray
 
-from omnisound.src.note.adapter.note import add_base_attr_name_indexes, getter, setter
+from omnisound.src.note.adapter.note import add_base_attr_name_indexes, getter, setter, MakeNoteConfig
 from omnisound.src.generator.scale_globals import (NUM_INTERVALS_IN_OCTAVE,
                                                    MajorKey, MinorKey)
 from omnisound.src.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
@@ -35,6 +35,9 @@ ATTR_GET_TYPE_CAST_MAP = {
     'pitch': int,
 }
 NUM_ATTRIBUTES = len(ATTR_NAMES)
+
+MIDI_PARAM_MIN_VAL = 0
+MIDI_PARAM_MAX_VAL = 127
 
 
 class MidiInstrument(Enum):
@@ -421,8 +424,7 @@ def _make_cls(attr_name_idx_map):
     # noinspection PyTypeChecker
     methods['channel'] = property(g_channel, s_channel)
 
-    cls = MidiNoteMeta(CLASS_NAME, cls_bases, methods)
-    return cls
+    return MidiNoteMeta(CLASS_NAME, cls_bases, methods)
 
 
 def make_note(note_attr_vals: ndarray,
@@ -455,3 +457,13 @@ def make_note(note_attr_vals: ndarray,
     note.attr_get_type_cast_map['channel'] = int
 
     return note
+
+
+# TODO Do this for CSoundNote, FoxDotSupercollider
+DEFAULT_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
+                                     num_attributes=NUM_ATTRIBUTES,
+                                     make_note=make_note,
+                                     get_pitch_for_key=get_pitch_for_key,
+                                     attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                                     attr_vals_defaults_map={},
+                                     attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)

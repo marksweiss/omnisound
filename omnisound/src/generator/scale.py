@@ -14,11 +14,13 @@ from typing import Union
 from omnisound.src.note.adapter.note import MakeNoteConfig
 from omnisound.src.container.note_sequence import NoteSequence
 from omnisound.src.generator.scale_globals import (HarmonicScale, MajorKey,
-                                                   MinorKey)
+                                                   MinorKey, MAJOR_KEY_DICT, MINOR_KEY_DICT)
 from omnisound.src.utils.mingus_utils import set_notes_pitches_to_mingus_keys
 from omnisound.src.utils.enum_utils import enum_to_dict_reverse_mapping
-from omnisound.src.utils.validation_utils import validate_type_choice, validate_type_reference_choice, validate_types
+from omnisound.src.utils.validation_utils import validate_type_reference_choice, validate_types
 
+
+# TODO NEEDS obvious methods like get_root(), get_whatever()
 
 class Scale(NoteSequence):
     """Encapsulates a musical Scale, which is a type of scale (an organization of intervals offset from a root key)
@@ -39,7 +41,7 @@ class Scale(NoteSequence):
                        ('mn', mn, MakeNoteConfig))
         # Use return value to detect which type of enum `key` is. Use this to determine which KEY_MAPPING
         # to use to convert the mingus key value (a string) to the enum key value (a member of MajorKey or MinorKey)
-        _, matched_key_type = validate_type_choice('key', key, (MajorKey, MinorKey))
+        _, matched_key_type = validate_type_reference_choice('key', key, (MajorKey, MinorKey))
         self.is_major_key = matched_key_type is MajorKey
         self.is_minor_key = matched_key_type is MinorKey
 
@@ -48,7 +50,8 @@ class Scale(NoteSequence):
         self.harmonic_scale = harmonic_scale
 
         # Get the mingus keys (pitches) for the musical scale (`scale_type`) with its root at `key`
-        mingus_keys = harmonic_scale.value(key.name).ascending()
+        str_key_dict = MAJOR_KEY_DICT if self.is_major_key else MINOR_KEY_DICT
+        mingus_keys = harmonic_scale.value(list(str_key_dict.keys())[0]).ascending()
         # Trim the last element because mingus returns the first note in the next octave along with all the
         # notes in the scale of the octave requested. This behavior is observed and not exhaustively tested
         # so check and only remove if the first and last note returned are the same.
