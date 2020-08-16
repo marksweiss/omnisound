@@ -28,7 +28,7 @@ ATTR_VALS_DEFAULTS_MAP = NoteValues(midi_note.ATTR_NAMES)
 ATTR_VALS_DEFAULTS_MAP.instrument = INSTRUMENT
 ATTR_VALS_DEFAULTS_MAP.time = 0
 ATTR_VALS_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
-ATTR_VALS_DEFAULTS_MAP.velocity = midi_note.MIDI_PARAM_MAX_VAL  # 127
+ATTR_VALS_DEFAULTS_MAP.velocity = 0 # midi_note.MIDI_PARAM_MAX_VAL  # 127
 ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 "Middle C"
 note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
 note_config.attr_vals_defaults_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
@@ -67,7 +67,7 @@ def generate_measures_and_buttons():
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
                 # Key each button to it's index in the flattened Messages list.
                 layout_notes.append(
-                    sg.Checkbox(str(k + 1), default=True, enable_events=True,
+                    sg.Checkbox(str(k + 1), default=False, enable_events=True,
                                 key=((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
             layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
@@ -91,7 +91,7 @@ def _loop_track():
                     while QUEUE.not_empty:
                         event = QUEUE.get_nowait()
                         print(f'Pulled message {event} off the queue, velocity before change {messages[event].velocity}')
-                        messages[event].velocity = midi_note.MIDI_PARAM_MAX_VAL if messages[event].velocity == 0 else 0
+                        messages[event].velocity = midi_note.MIDI_PARAM_MAX_VAL
                         print(f'Velocity after change {messages[event].velocity}')
                 except queue.Empty:
                     pass
@@ -110,7 +110,7 @@ def start():
     while True:
         # This is the framework mechanism for polling the window for events and status
         # timeout arg is needed with Checkbox or the event loop stalls here, i.e. doesn't read any events
-        event, values = window.read(timeout=500)  # timeout is in milliseconds
+        event, values = window.read(timeout=50)  # timeout is in milliseconds
         # Exit event loop if user closes window, going immediately to window.close()
         # Not following this pattern crashes the application.
         if event == sg.WIN_CLOSED:
@@ -118,9 +118,19 @@ def start():
 
         if event:
             try:
-                # Cast of '__TIMEOUT__' events will throw, so only string ints will get added to queue
-                QUEUE.put_nowait(int(event))
-                # print(f'put {event}')
+                # TODO This GUI framework is terrible and must be replaced. Note that the event handling paradigm
+                #  only returns two things, a single-value string indicating that some event has occurred in the
+                #  timeout window (which one if more than one has occurred, who knows?), and the array of values
+                #  which lets you access the current value for every object in the layout by index. Which means
+                #  there is no way to support the use case for a Sequencer, which is to get the list of buttons
+                #  which *changed state* in the last time window, i.e. get a *list of events by id*. This means
+                #  we have to loop over all the buttons in every cycle and send all note ons to the queue. Which means
+                #  latency scales with the length of the sequence, instead of being constant proportional to the number
+                #  of buttons clicked, which since a human is doing it and the window is 50 ms is basically one or two.
+                #  So, terrible and must be replaced. Also the documentation is really annoying, and the examples suck.
+                notes_on = (i for i in range(len(values)) if values[i])
+                for note_on in notes_on:
+                    QUEUE.put_nowait(note_on)
             except ValueError:
                 pass
             except queue.Full:
