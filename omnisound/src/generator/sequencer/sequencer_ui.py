@@ -28,7 +28,7 @@ ATTR_VALS_DEFAULTS_MAP = NoteValues(midi_note.ATTR_NAMES)
 ATTR_VALS_DEFAULTS_MAP.instrument = INSTRUMENT
 ATTR_VALS_DEFAULTS_MAP.time = 0
 ATTR_VALS_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
-ATTR_VALS_DEFAULTS_MAP.velocity = 0 # midi_note.MIDI_PARAM_MAX_VAL  # 127
+ATTR_VALS_DEFAULTS_MAP.velocity = 0  # midi_note.MIDI_PARAM_MAX_VAL  # 127
 ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 "Middle C"
 note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
 note_config.attr_vals_defaults_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
@@ -84,21 +84,31 @@ def _loop_track():
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     with port:
         for j in count():
+            lock = threading.Lock ()
+            lock.acquire(blocking=True)
+            try:
+                # Drain the queue and apply all note changes put their by the GUI thread
+                # TODO See note below about replacing this terrible GUI framework. We have to update every note
+                #  on every loop. OMG.
+                # Counter is valid because queue is filled up for all notes
+                i = 0
+                while QUEUE.not_empty:
+                    velocity = QUEUE.get_nowait()
+                    print(f'velocity from queue {velocity}')
+                    messages[i].velocity = velocity
+                    print(f'messages[i].velocity {messages[i].velocity}')
+                    i += 2
+            except queue.Empty:
+                pass
+
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
-                try:
-                    # Drain the queue and apply all note changes put their by the GUI thread
-                    while QUEUE.not_empty:
-                        event = QUEUE.get_nowait()
-                        print(f'Pulled message {event} off the queue, velocity before change {messages[event].velocity}')
-                        messages[event].velocity = midi_note.MIDI_PARAM_MAX_VAL
-                        print(f'Velocity after change {messages[event].velocity}')
-                except queue.Empty:
-                    pass
+                print(f'sent note on {i}   {messages[i].velocity}')
                 port.send(messages[i])
                 # await asyncio.sleep(durations[int(i / 2)])
                 sleep(durations[int(i / 2)])
                 port.send(messages[i + 1])
+            lock.release()
 
 
 # noinspection PyBroadException
@@ -128,9 +138,12 @@ def start():
                 #  latency scales with the length of the sequence, instead of being constant proportional to the number
                 #  of buttons clicked, which since a human is doing it and the window is 50 ms is basically one or two.
                 #  So, terrible and must be replaced. Also the documentation is really annoying, and the examples suck.
-                notes_on = (i for i in range(len(values)) if values[i])
-                for note_on in notes_on:
-                    QUEUE.put_nowait(note_on)
+                notes_on_off = (midi_note.MIDI_PARAM_MAX_VAL if v else 0 for v in values.values())
+                lock = threading.Lock()
+                lock.acquire(blocking=True)
+                for velocity in notes_on_off:
+                    QUEUE.put_nowait(velocity)
+                lock.release()
             except ValueError:
                 pass
             except queue.Full:
