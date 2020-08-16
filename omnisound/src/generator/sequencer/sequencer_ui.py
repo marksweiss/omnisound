@@ -77,7 +77,7 @@ def generate_measures_and_buttons():
                 # Key each button to it's index in the flattened Messages list.
                 layout_notes.append(
                     sg.Checkbox(str(k + 1), default=False, enable_events=True,
-                                key=((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
+                                key=2 * ((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
             layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
 
@@ -94,17 +94,25 @@ def _loop_track():
             # Drain the queue and apply all note changes put their by the GUI thread
             # TODO See note below about replacing this terrible GUI framework. We have to update every note
             #  on every loop. OMG.
-            i = 0
-            while QUEUE and i < (NUM_MEASURES * NOTES_PER_MEASURE * 2):  # .not_empty:
-                velocity = QUEUE.pop()
+            # i = 0
+            # lock = threading.Lock()
+            # lock.acquire(blocking=True)
+            while QUEUE: # and i < (NUM_MEASURES * NOTES_PER_MEASURE * 2):  # .not_empty:
+                i, velocity = QUEUE.pop()
                 messages[i].velocity = velocity
-                i += 2
+                print(f'in midi loop {i} {velocity}')
+                # i += 2
+            # lock.release()
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
-                port.send(messages[i])
-                sleep(durations[int(i / 2)])
-                port.send(messages[i + 1])
+                if messages[i].velocity:
+                    port.send(messages[i])
+                    print (f'in midi send block {i} {velocity}')
+                    sleep(durations[int(i / 2)])
+                    port.send(messages[i + 1])
+                else:
+                    sleep(durations[int(i / 2)])
 
 
 # noinspection PyBroadException
@@ -122,7 +130,7 @@ def start():
         if event == sg.WIN_CLOSED:
             break
 
-        if event:
+        if event != '__TIMEOUT__':
             # try:
             # TODO This GUI framework is terrible and must be replaced. Note that the event handling paradigm
             #  only returns two things, a single-value string indicating that some event has occurred in the
@@ -134,9 +142,13 @@ def start():
             #  latency scales with the length of the sequence, instead of being constant proportional to the number
             #  of buttons clicked, which since a human is doing it and the window is 50 ms is basically one or two.
             #  So, terrible and must be replaced. Also the documentation is really annoying, and the examples suck.
-            notes_on_off = (midi_note.MIDI_PARAM_MAX_VAL if v else 0 for v in values.values())
-            for velocity in notes_on_off:
-                QUEUE.append(velocity)
+            # notes_on_off = (midi_note.MIDI_PARAM_MAX_VAL if v else 0 for v in values.values())
+            # for velocity in notes_on_off:
+            # lock = threading.Lock()
+            # lock.acquire(blocking=True)
+            QUEUE.append((event, midi_note.MIDI_PARAM_MAX_VAL if values[event] else 0))
+            print(f'in window loop {event}')
+            # lock.release()
 
     window.close()
 
