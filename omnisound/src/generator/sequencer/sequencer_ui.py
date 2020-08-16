@@ -1,20 +1,30 @@
+# TODO NEXT
+# Start a sequence looping here and then test that te loop below turns notes on and off
+# Then add a Start button to trigger starting the sequence
+# Then expose UI elements to choose note and change pitch by mapping UI index to SCALE index and using that pitch
+# Then expose UI element for amplitude
+# Then make UI element for note toggle element like radio button or checkbox
+# Then expose Swing and apply to all notes
+# Then expose reset to normalized
+# Then expose chords instead of just notes in each position
+# Then allow choosing duration of track
+# Then allow choosing meter
+# Then allow choosing instrument per track
+# Then make event loop the async event loop from midiplayer so timing is controlled
+
 from itertools import chain, count
 from time import sleep, time
-# from typing import List, Sequence, Tuple
-import queue
 import threading
-# import asyncio
 
 # noinspection PyProtectedMember
 from mido import open_output  # Message
 
-# from mido.backends.rtmidi import Output
 # noinspection PyPep8Naming
 import PySimpleGUI as sg
 
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.track import MidiTrack
-from omnisound.src.generator.scale import HarmonicScale, MajorKey, Scale  # , MinorKey
+from omnisound.src.generator.scale import HarmonicScale, MajorKey, Scale
 from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, NoteValues, MakeNoteConfig
 from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.player.midi.midi_player import get_midi_messages_and_notes_for_track
@@ -28,7 +38,7 @@ ATTR_VALS_DEFAULTS_MAP = NoteValues(midi_note.ATTR_NAMES)
 ATTR_VALS_DEFAULTS_MAP.instrument = INSTRUMENT
 ATTR_VALS_DEFAULTS_MAP.time = 0
 ATTR_VALS_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
-ATTR_VALS_DEFAULTS_MAP.velocity = 0  # midi_note.MIDI_PARAM_MAX_VAL  # 127
+ATTR_VALS_DEFAULTS_MAP.velocity = 0
 ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 "Middle C"
 note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
 note_config.attr_vals_defaults_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
@@ -46,12 +56,11 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_con
 TRACKS = []
 LAYOUT = []
 # Used by the window event loop thread to communicate captured note events from the GUI to the Midi playback thread
-QUEUE = [] # queue.LifoQueue(maxsize=NUM_MEASURES * NOTES_PER_MEASURE)
+QUEUE = []
 PORT_NAME = 'omnisound_sequencer'
 
 
 def generate_measures_and_buttons():
-    track_idx = 0
     for i in range(NUM_TRACKS):
         track = MidiTrack(meter=METER, channel=i + 1, instrument=INSTRUMENT)
         TRACKS.append(track)
@@ -73,42 +82,30 @@ def generate_measures_and_buttons():
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
 
 
-# noinspection PyBroadException
-# async def _loop_track(messages, durations, port):
 def _loop_track():
     messages_durations_list = [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
     messages = list(chain(*[messages for messages, _ in messages_durations_list]))
     loop_duration = messages[-1].time
     durations = list(chain(*[durations for _, durations in messages_durations_list]))
 
-    # print(len(messages))
-
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     with port:
         for j in count():
             lock = threading.Lock ()
             lock.acquire(blocking=True)
-            # try:
             # Drain the queue and apply all note changes put their by the GUI thread
             # TODO See note below about replacing this terrible GUI framework. We have to update every note
             #  on every loop. OMG.
-            # Counter is valid because queue is filled up for all notes
             i = 0
             while QUEUE and i < (NUM_MEASURES * NOTES_PER_MEASURE * 2):  # .not_empty:
                 velocity = QUEUE.pop()  # .get_nowait()
-                # print(f'velocity from queue {velocity}')
                 messages[i].velocity = velocity
-                # print(f'messages[i].velocity {messages[i].velocity}')
                 i += 2
-            # except queue.Empty:
-            #    pass
             lock.release()
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
-                # print(f'sent note on {i}   {messages[i].velocity}')
                 port.send(messages[i])
-                # await asyncio.sleep(durations[int(i / 2)])
                 sleep(durations[int(i / 2)])
                 port.send(messages[i + 1])
 
@@ -144,12 +141,8 @@ def start():
             lock = threading.Lock()
             lock.acquire(blocking=True)
             for velocity in notes_on_off:
-                QUEUE.append(velocity)  # .put_nowait(velocity)
+                QUEUE.append(velocity)
             lock.release()
-            # except ValueError:
-            #     pass
-            # except queue.Full:
-            #     pass
 
     window.close()
 
@@ -157,60 +150,3 @@ def start():
 if __name__ == '__main__':
     generate_measures_and_buttons()
     start()
-
-
-# async def _loop():
-def _loop():
-    print('_loop')
-    # messages_durations_list = [get_midi_messages_and_notes_for_track(track) for track in TRACKS]
-    # port: Output = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
-    # play_track_tasks = [asyncio.create_task(_loop_track(messages, durations, port))
-    #                     for messages, durations in messages_durations_list]
-    # for task in play_track_tasks:
-    #     await task
-
-
-def loop():
-    print('loop')
-    # event_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-    # event_loop.run_until_complete(_loop())
-
-
-# layout = [
-#     [sg.Frame(
-#             f'Track 1',
-#             [
-#                 [],
-#             ],
-#             title_color=None,
-#             background_color=None,
-#             title_location=None,
-#             relief="groove",
-#             size=(None, None),
-#             font=None,
-#             pad=None,
-#             border_width=None,
-#             key=None,
-#             k=None,
-#             tooltip=None,
-#             right_click_menu=None,
-#             visible=True,
-#             element_justification="left",
-#             metadata=None)
-#     ]
-# ]
-
-
-# TODO NEXT
-# Start a sequence looping here and then test that te loop below turns notes on and off
-# Then add a Start button to trigger starting the sequence
-# Then expose UI elements to choose note and change pitch by mapping UI index to SCALE index and using that pitch
-# Then expose UI element for amplitude
-# Then make UI element for note toggle element like radio button or checkbox
-# Then expose Swing and apply to all notes
-# Then expose reset to normalized
-# Then expose chords instead of just notes in each position
-# Then allow choosing duration of track
-# Then allow choosing meter
-# Then allow choosing instrument per track
-# Then make event loop the async event loop from midiplayer so timing is controlled
