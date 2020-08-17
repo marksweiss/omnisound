@@ -46,7 +46,7 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                          attr_val_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
 
 
 @pytest.fixture

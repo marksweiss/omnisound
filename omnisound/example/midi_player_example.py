@@ -41,7 +41,7 @@ NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                              make_note=make_note,
                              get_pitch_for_key=get_pitch_for_key,
                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                             attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                             attr_val_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
 SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE,
               mn=NOTE_CONFIG)
 NUM_NOTES_IN_SCALE = 7

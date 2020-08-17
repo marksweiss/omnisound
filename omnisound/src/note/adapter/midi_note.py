@@ -433,9 +433,9 @@ def make_note(note_attr_vals: ndarray,
     validate_type('note_attr_vals', note_attr_vals, ndarray)
     validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
     validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
-    validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
+    validate_optional_type('attr_val_type_cast_map', attr_get_type_cast_map, Mapping)
     if attr_get_type_cast_map:
-        validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
+        validate_optional_sequence_of_type('attr_val_type_cast_map', attr_get_type_cast_map.keys(), str)
 
     cls = _make_cls(attr_name_idx_map)
     note = cls()
@@ -445,16 +445,16 @@ def make_note(note_attr_vals: ndarray,
     note.attr_name_idx_map = attr_name_idx_map
 
     # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
-    note.attr_get_type_cast_map = attr_get_type_cast_map or {}
+    note.attr_val_type_cast_map = attr_get_type_cast_map or {}
     for attr_name in note.attr_name_idx_map:
-        if attr_name not in note.attr_get_type_cast_map:
-            note.attr_get_type_cast_map[attr_name] = lambda x: x
+        if attr_name not in note.attr_val_type_cast_map:
+            note.attr_val_type_cast_map[attr_name] = lambda x: x
     # These are always returned as an int
-    note.attr_get_type_cast_map['instrument'] = int
-    note.attr_get_type_cast_map['velocity'] = int
-    note.attr_get_type_cast_map['amplitude'] = int
-    note.attr_get_type_cast_map['pitch'] = int
-    note.attr_get_type_cast_map['channel'] = int
+    note.attr_val_type_cast_map['instrument'] = int
+    note.attr_val_type_cast_map['velocity'] = int
+    note.attr_val_type_cast_map['amplitude'] = int
+    note.attr_val_type_cast_map['pitch'] = int
+    note.attr_val_type_cast_map['channel'] = int
 
     return note
 
@@ -466,4 +466,4 @@ DEFAULT_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                                      get_pitch_for_key=get_pitch_for_key,
                                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                      attr_vals_defaults_map={},
-                                     attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                                     attr_val_type_cast_map=ATTR_GET_TYPE_CAST_MAP)

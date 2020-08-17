@@ -27,7 +27,7 @@ class MidiSingleTrackSequencer(Sequencer):
                                 make_note=make_note,
                                 get_pitch_for_key=get_pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                                attr_val_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
         super(MidiSingleTrackSequencer, self).__init__(
                 name=name,
                 num_measures=num_measures,
@@ -51,7 +51,7 @@ class MidiMultitrackSequencer(Sequencer):
                                 make_note=make_note,
                                 get_pitch_for_key=get_pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                                attr_val_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
         super(MidiMultitrackSequencer, self).__init__(
                 name=name,
                 num_measures=num_measures,
@@ -75,7 +75,7 @@ class MidiWriterSequencer(Sequencer):
                                 make_note=make_note,
                                 get_pitch_for_key=get_pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                                attr_val_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
         super(MidiWriterSequencer, self).__init__(
               name=name,
               num_measures=num_measures,
