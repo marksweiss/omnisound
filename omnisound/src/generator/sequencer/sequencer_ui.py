@@ -108,7 +108,6 @@ def _loop_track():
                 messages[i].time += (j * loop_duration)
                 if messages[i].velocity:
                     port.send(messages[i])
-                    print(f'in midi send block {i} {velocity}')
                     sleep(durations[int(i / 2)])
                     port.send(messages[i + 1])
                 else:
