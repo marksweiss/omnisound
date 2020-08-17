@@ -52,12 +52,12 @@ class NoteSequence:
                  mn: MakeNoteConfig = None):
         validate_types(('num_notes', num_notes, int), ('num_attributes', mn.num_attributes, int),
                        ('attr_name_idx_map', mn.attr_name_idx_map, dict))
-        validate_optional_type('attr_vals_defaults_map', mn.attr_vals_defaults_map, dict)
+        validate_optional_type('attr_val_default_map', mn.attr_val_default_map, dict)
         validate_sequence_of_type('attr_name_idx_map', mn.attr_name_idx_map.keys(), str)
         validate_sequence_of_type('attr_name_idx_map', mn.attr_name_idx_map.values(), int)
-        if mn.attr_vals_defaults_map:
-            validate_sequence_of_type('attr_vals_map', list(mn.attr_vals_defaults_map.keys()), str)
-            validate_sequence_of_type_choice('attr_vals_map', list(mn.attr_vals_defaults_map.values()), (float, int))
+        if mn.attr_val_default_map:
+            validate_sequence_of_type('attr_vals_map', list(mn.attr_val_default_map.keys()), str)
+            validate_sequence_of_type_choice('attr_vals_map', list(mn.attr_val_default_map.values()), (float, int))
         validate_optional_type_choice('child_sequences', child_sequences, (list, set))
         validate_optional_sequence_of_type('child_sequences', child_sequences, NoteSequence)
 
@@ -70,10 +70,10 @@ class NoteSequence:
             # THIS MUST NOT BE ALTERED
             self._num_attributes = self.note_attr_vals.shape[1]
 
-        if self.mn.attr_vals_defaults_map:
-            assert set(self.mn.attr_vals_defaults_map.keys()) <= set(self.mn.attr_name_idx_map.keys())
+        if self.mn.attr_val_default_map:
+            assert set(self.mn.attr_val_default_map.keys()) <= set(self.mn.attr_name_idx_map.keys())
             for note_attr in self.note_attr_vals:
-                for attr_name, attr_val in self.mn.attr_vals_defaults_map.items():
+                for attr_name, attr_val in self.mn.attr_val_default_map.items():
                     note_attr[self.mn.attr_name_idx_map[attr_name]] = attr_val
 
         self.child_sequences = child_sequences or []

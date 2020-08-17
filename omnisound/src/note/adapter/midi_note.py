@@ -465,5 +465,5 @@ DEFAULT_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                                      make_note=make_note,
                                      get_pitch_for_key=get_pitch_for_key,
                                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                     attr_vals_defaults_map={},
+                                     attr_val_default_map={},
                                      attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)

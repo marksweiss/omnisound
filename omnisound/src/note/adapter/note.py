@@ -37,7 +37,7 @@ class MakeNoteConfig:
                                      Any],
                  get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
                  attr_name_idx_map: Mapping[str, int],
-                 attr_vals_defaults_map: Optional[Mapping[str, Union[float, int]]] = None,
+                 attr_val_default_map: Optional[Mapping[str, Union[float, int]]] = None,
                  attr_get_type_cast_map: Optional[Mapping[str, Callable[[Union[float, int]],
                                                                         Union[float, int]]]] = None):
         self.cls_name = cls_name
@@ -45,21 +45,21 @@ class MakeNoteConfig:
         self.make_note = make_note
         self.get_pitch_for_key = get_pitch_for_key
         self.attr_name_idx_map = attr_name_idx_map
-        self._attr_vals_defaults_map = attr_vals_defaults_map or {}
+        self._attr_val_default_map = attr_val_default_map or {}
         self.attr_get_type_cast_map = attr_get_type_cast_map or {}
 
     @property
-    def attr_vals_defaults_map(self):
-        return self._attr_vals_defaults_map
+    def attr_val_default_map(self):
+        return self._attr_val_default_map
 
-    @attr_vals_defaults_map.setter
-    def attr_vals_defaults_map(self, av: Union[Mapping[str, Union[float, int]], np_array]):
+    @attr_val_default_map.setter
+    def attr_val_default_map(self, av: Union[Mapping[str, Union[float, int]], np_array]):
         # TODO `dict` more restrictive than `mapping`
         if isinstance(av, dict):
-            self._attr_vals_defaults_map = av
+            self._attr_val_default_map = av
         else:
             # noinspection PyTypeChecker
-            self._attr_vals_defaults_map = {attr_name: av[self.attr_name_idx_map[attr_name]]
+            self._attr_val_default_map = {attr_name: av[self.attr_name_idx_map[attr_name]]
                                             for attr_name in self.attr_name_idx_map.keys()}
 
     @staticmethod
@@ -69,7 +69,7 @@ class MakeNoteConfig:
                               make_note=source.make_note,
                               get_pitch_for_key=source.get_pitch_for_key,
                               attr_name_idx_map=source.attr_name_idx_map,
-                              attr_vals_defaults_map=source._attr_vals_defaults_map,
+                              attr_val_default_map=source._attr_val_default_map,
                               attr_get_type_cast_map=source.attr_get_type_cast_map)
 
 

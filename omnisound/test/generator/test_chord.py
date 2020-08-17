@@ -51,13 +51,13 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
                           attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
 
 
-def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
@@ -68,9 +68,9 @@ def note_sequence(make_note_config):
     return _note_sequence(mn=make_note_config)
 
 
-def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+def _note(mn, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
 

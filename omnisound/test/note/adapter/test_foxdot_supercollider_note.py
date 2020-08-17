@@ -50,13 +50,13 @@ def make_note_config():
                           make_note=foxdot_note.make_note,
                           get_pitch_for_key=foxdot_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
                           attr_get_type_cast_map={})
 
 
-def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
@@ -67,9 +67,9 @@ def note_sequence(make_note_config):
     return _note_sequence(mn=make_note_config)
 
 
-def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+def _note(mn, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
 
@@ -118,7 +118,7 @@ def test_foxdot_note_attrs(make_note_config, start, duration, amplitude, pitch):
                          'degree': 3,
                          'octave': 4}
     # Test assigning default values to each note created in the underlying NoteSequence
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'delay': start,
         'dur': duration,
         'amp': amplitude,
@@ -127,7 +127,7 @@ def test_foxdot_note_attrs(make_note_config, start, duration, amplitude, pitch):
     }
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
-                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 attr_val_default_map=attr_val_default_map,
                  num_attributes=len(attr_name_idx_map))
 
     assert note.delay == start
@@ -148,7 +148,7 @@ def test_foxdot_note_to_str(make_note_config, start, duration, amplitude, pitch)
                          'degree': 3,
                          'octave': 4}
     # Test assigning default values to each note created in the underlying NoteSequence
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'delay': start,
         'dur': duration,
         'amp': amplitude,
@@ -157,7 +157,7 @@ def test_foxdot_note_to_str(make_note_config, start, duration, amplitude, pitch)
     }
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
-                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 attr_val_default_map=attr_val_default_map,
                  num_attributes=len(attr_name_idx_map))
     note.scale = SCALE
 
@@ -177,7 +177,7 @@ def test_foxdot_note_attrs_fluent(make_note_config, start, duration, amplitude, 
                          'degree': 3,
                          'octave': 4}
     # Test assigning default values to each note created in the underlying NoteSequence
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'delay': 0.0,
         'dur': 0.0,
         'amp': 0.0,
@@ -186,7 +186,7 @@ def test_foxdot_note_attrs_fluent(make_note_config, start, duration, amplitude, 
     }
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
-                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 attr_val_default_map=attr_val_default_map,
                  num_attributes=len(attr_name_idx_map))
 
     assert note.delay != start
@@ -206,7 +206,7 @@ def test_foxdot_note_attrs_fluent(make_note_config, start, duration, amplitude, 
 
 def test_note_values(make_note_config):
     note_values = _setup_note_values()
-    make_note_config.attr_vals_defaults_map = note_values.as_dict()
+    make_note_config.attr_val_default_map = note_values.as_dict()
     note = _note(mn=make_note_config)
 
     # noinspection PyTypeChecker

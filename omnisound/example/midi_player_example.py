@@ -80,7 +80,7 @@ if __name__ == '__main__':
             note_values.duration = dur_val
             note_values.velocity = int(BASE_VELOCITY - ((i % notes_per_measure) / VELOCITY_FACTOR))
             note_values.pitch = SCALE[i % NUM_NOTES_IN_SCALE].pitch
-            note_config.attr_vals_defaults_map = note_values.as_dict()
+            note_config.attr_val_default_map = note_values.as_dict()
             note = NoteSequence.new_note(note_config)
             ostinato_measure.append(note)
         ostinato_measure.apply_swing()
@@ -106,7 +106,7 @@ if __name__ == '__main__':
             chord_root = SCALE[i % NUM_NOTES_IN_SCALE]
             note_values.pitch = chord_root.pitch
 
-            note_config.attr_vals_defaults_map = note_values.as_dict()
+            note_config.attr_val_default_map = note_values.as_dict()
 
             chord_note = NoteSequence.new_note(note_config)
             # Now get the chord for the current key

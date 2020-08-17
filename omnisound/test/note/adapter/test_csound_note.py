@@ -53,13 +53,13 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
                           attr_get_type_cast_map={})
 
 
-def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
@@ -72,7 +72,7 @@ def note_sequence(make_note_config):
 
 def _note(mn):
     mn.attr_name_idx_map = mn.attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = mn.attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = mn.attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = mn.num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
 
@@ -133,7 +133,7 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
     # Test using a custom cast function for an attribute, a custom attribute
     attr_get_type_cast_map = {'func_table': int}
     # Test assigning default values to each note created in the underlying NoteSequence
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'instrument': float(INSTRUMENT),
         'start': start,
         'duration': duration,
@@ -142,11 +142,11 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
         'func_table': float(func_table),
     }
     mn = MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
-                        num_attributes=len(attr_vals_defaults_map),
+                        num_attributes=len(attr_val_default_map),
                         make_note=csound_note.make_note,
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
-                        attr_vals_defaults_map=attr_vals_defaults_map,
+                        attr_val_default_map=attr_val_default_map,
                         attr_get_type_cast_map=attr_get_type_cast_map)
     note = _note(mn=mn)
 
@@ -178,7 +178,7 @@ def test_csound_note_to_str(start, duration, amplitude, pitch):
     # Test using a custom cast function for an attribute, a custom attribute
     attr_get_type_cast_map = {'func_table': int}
     # Test assigning default values to each note created in the underlying NoteSequence
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'instrument': float(INSTRUMENT),
         'start': start,
         'duration': duration,
@@ -187,11 +187,11 @@ def test_csound_note_to_str(start, duration, amplitude, pitch):
         'func_table': float(func_table),
     }
     mn = MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
-                        num_attributes=len(attr_vals_defaults_map),
+                        num_attributes=len(attr_val_default_map),
                         make_note=csound_note.make_note,
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
-                        attr_vals_defaults_map=attr_vals_defaults_map,
+                        attr_val_default_map=attr_val_default_map,
                         attr_get_type_cast_map=attr_get_type_cast_map)
     note = _note(mn)
     # Have to manually add the string formatter for additional custom note attributes
@@ -218,7 +218,7 @@ def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
     # Test using a custom cast function for an attribute, a custom attribute
     attr_get_type_cast_map = {'func_table': int}
     # Set the note value to not equal the values passed in to the test
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'instrument': float(INSTRUMENT + 1),
         'start': 0.0,
         'duration': 0.0,
@@ -226,13 +226,13 @@ def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
         'pitch': 0.0,
         'func_table': float(func_table),
     }
-    # Don't pass in attr_vals_defaults_map, so not creating a Note with the values passed in to each test
+    # Don't pass in attr_val_default_map, so not creating a Note with the values passed in to each test
     mn = MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
-                        num_attributes=len(attr_vals_defaults_map),
+                        num_attributes=len(attr_val_default_map),
                         make_note=csound_note.make_note,
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
-                        attr_vals_defaults_map=attr_vals_defaults_map,
+                        attr_val_default_map=attr_val_default_map,
                         attr_get_type_cast_map=attr_get_type_cast_map)
     note = _note(mn)
 
@@ -258,7 +258,7 @@ def test_csound_note_pitch_precision(note):
 
 def test_note_values(make_note_config):
     note_values = _setup_note_values()
-    make_note_config.attr_vals_defaults_map = note_values.as_dict()
+    make_note_config.attr_val_default_map = note_values.as_dict()
     note = _note(mn=make_note_config)
 
     assert note.instrument == INSTRUMENT

@@ -30,7 +30,7 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_vals_defaults_map={},
+                          attr_val_default_map={},
                           attr_get_type_cast_map={})
 
 
