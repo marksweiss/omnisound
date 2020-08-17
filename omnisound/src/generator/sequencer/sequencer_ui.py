@@ -106,6 +106,7 @@ def _loop_track():
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
+                # Only send midi messages if the note has positive volume (will make a sound)
                 if messages[i].velocity:
                     port.send(messages[i])
                     sleep(durations[int(i / 2)])
@@ -116,7 +117,9 @@ def _loop_track():
 
 # noinspection PyBroadException
 def start():
+    # This launches the parent thread / event loop
     window = sg.Window('Omnisound Sequencer', LAYOUT)
+    # This launches a second thread running the calls write to the Midi output port in parallel to the UI thread
     threading.Thread(target=_loop_track, daemon=True).start()
 
     # Create an event loop, necessary or the first event trapped closes the window
@@ -129,6 +132,12 @@ def start():
             break
 
         if event != '__TIMEOUT__':
+            # event is the key value for the sg checkbox that changed state, which we set to the index into the
+            # MIDI messages for the note being manipulated by the checkbox. values is a dict of {event: value}
+            # for the state of all UI elements by key value. In this case, for checkboxes, values is a dict of
+            # {event: True/False}. So if True, the checkbox is checked on and set the volume positive, else set to 0.
+            # Put a tuple on the queue so the MIDI event loop just pulls that off and sets the message at index event
+            # to the value for velocity (volume in MIDI parlance).
             QUEUE.append((event, midi_note.MIDI_PARAM_MAX_VAL if values[event] else 0))
 
     window.close()
