@@ -25,7 +25,7 @@ class CSoundSequencer(Sequencer):
                                 make_note=make_note,
                                 get_pitch_for_key=get_pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                attr_val_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                                attr_val_cast_map=ATTR_GET_TYPE_CAST_MAP)
         super(CSoundSequencer, self).__init__(name=name,
                                               num_measures=num_measures,
                                               meter=meter,

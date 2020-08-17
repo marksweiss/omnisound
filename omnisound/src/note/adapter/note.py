@@ -38,15 +38,15 @@ class MakeNoteConfig:
                  get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
                  attr_name_idx_map: Mapping[str, int],
                  attr_vals_defaults_map: Optional[Mapping[str, Union[float, int]]] = None,
-                 attr_val_type_cast_map: Optional[Mapping[str, Callable[[Union[float, int]],
-                                                                        Union[float, int]]]] = None):
+                 attr_val_cast_map: Optional[Mapping[str, Callable[[Union[float, int]],
+                                                                   Union[float, int]]]] = None):
         self.cls_name = cls_name
         self.num_attributes = num_attributes
         self.make_note = make_note
         self.get_pitch_for_key = get_pitch_for_key
         self.attr_name_idx_map = attr_name_idx_map
         self._attr_vals_defaults_map = attr_vals_defaults_map or {}
-        self.attr_val_type_cast_map = attr_val_type_cast_map or {}
+        self.attr_val_cast_map = attr_val_cast_map or {}
 
     @property
     def attr_vals_defaults_map(self):
@@ -70,7 +70,7 @@ class MakeNoteConfig:
                               get_pitch_for_key=source.get_pitch_for_key,
                               attr_name_idx_map=source.attr_name_idx_map,
                               attr_vals_defaults_map=source._attr_vals_defaults_map,
-                              attr_val_type_cast_map=source.attr_val_type_cast_map)
+                              attr_val_cast_map=source.attr_val_cast_map)
 
 
 class NoteValues(object):
@@ -100,7 +100,7 @@ def getter(attr_name: str):
     """Prototype of generic Note-attribute accessor. This is parameterized by attr_name and dynamically
     created when the class is constructed for the specific Note type."""
     def _getter(self) -> Any:
-        return self.attr_val_type_cast_map[attr_name](self.note_attr_vals[self.attr_name_idx_map[attr_name]])
+        return self.attr_val_cast_map[attr_name](self.note_attr_vals[self.attr_name_idx_map[attr_name]])
     return _getter
 
 

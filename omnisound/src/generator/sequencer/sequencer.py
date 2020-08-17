@@ -282,13 +282,13 @@ class Sequencer(Song):
             measure_duration = 0
             note_vals_lst = []
             for i, note_token in enumerate(note_tokens):
-                start = self.mn.attr_val_type_cast_map['start'](next_start)
+                start = self.mn.attr_val_cast_map['start'](next_start)
 
                 # It's a rest note
                 if note_token == Sequencer.REST_TOKEN:
                     # Dummy values
-                    amplitude = self.mn.attr_val_type_cast_map['amplitude'](0)
-                    pitch = self.mn.attr_val_type_cast_map['pitch'](1)
+                    amplitude = self.mn.attr_val_cast_map['amplitude'](0)
+                    pitch = self.mn.attr_val_cast_map['pitch'](1)
                     note_vals = _make_note_val(instrument, start, self.default_note_duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
                     measure_duration += note_vals.duration
@@ -302,9 +302,9 @@ class Sequencer(Song):
                         raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid key {key} token')
 
                     octave = int(octave)
-                    amplitude = self.mn.attr_val_type_cast_map['amplitude'](amplitude)
+                    amplitude = self.mn.attr_val_cast_map['amplitude'](amplitude)
                     if duration:
-                        duration = self.mn.attr_val_type_cast_map['duration'](duration)
+                        duration = self.mn.attr_val_cast_map['duration'](duration)
                     else:
                         duration = self.default_note_duration
 

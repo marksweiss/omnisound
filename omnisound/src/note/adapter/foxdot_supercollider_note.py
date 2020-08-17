@@ -233,9 +233,9 @@ def make_note(note_attr_vals: ndarray,
     validate_type('note_attr_vals', note_attr_vals, ndarray)
     validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
     validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
-    validate_optional_type('attr_val_type_cast_map', attr_get_type_cast_map, Mapping)
+    validate_optional_type('attr_val_cast_map', attr_get_type_cast_map, Mapping)
     if attr_get_type_cast_map:
-        validate_optional_sequence_of_type('attr_val_type_cast_map', attr_get_type_cast_map.keys(), str)
+        validate_optional_sequence_of_type('attr_val_cast_map', attr_get_type_cast_map.keys(), str)
 
     cls = _make_cls(attr_name_idx_map)
     note = cls()
@@ -245,12 +245,12 @@ def make_note(note_attr_vals: ndarray,
     note.attr_name_idx_map = attr_name_idx_map
 
     # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
-    note.attr_val_type_cast_map = attr_get_type_cast_map or {}
+    note.attr_val_cast_map = attr_get_type_cast_map or {}
     for attr_name in note.attr_name_idx_map:
-        if attr_name not in note.attr_val_type_cast_map:
-            note.attr_val_type_cast_map[attr_name] = lambda x: x
+        if attr_name not in note.attr_val_cast_map:
+            note.attr_val_cast_map[attr_name] = lambda x: x
 
     # Octave is always returned as an int
-    note.attr_val_type_cast_map['octave'] = int
+    note.attr_val_cast_map['octave'] = int
 
     return note

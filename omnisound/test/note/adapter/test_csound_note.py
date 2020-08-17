@@ -54,7 +54,7 @@ def make_note_config():
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
                           attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
-                          attr_val_type_cast_map={})
+                          attr_val_cast_map={})
 
 
 def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
@@ -147,7 +147,7 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
                         attr_vals_defaults_map=attr_vals_defaults_map,
-                        attr_val_type_cast_map=attr_get_type_cast_map)
+                        attr_val_cast_map=attr_get_type_cast_map)
     note = _note(mn=mn)
 
     assert note.instrument == note.i == int(INSTRUMENT)
@@ -192,7 +192,7 @@ def test_csound_note_to_str(start, duration, amplitude, pitch):
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
                         attr_vals_defaults_map=attr_vals_defaults_map,
-                        attr_val_type_cast_map=attr_get_type_cast_map)
+                        attr_val_cast_map=attr_get_type_cast_map)
     note = _note(mn)
     # Have to manually add the string formatter for additional custom note attributes
     note.set_attr_str_formatter('func_table', lambda x: str(x))
@@ -233,7 +233,7 @@ def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
                         attr_vals_defaults_map=attr_vals_defaults_map,
-                        attr_val_type_cast_map=attr_get_type_cast_map)
+                        attr_val_cast_map=attr_get_type_cast_map)
     note = _note(mn)
 
     # Assert the note does not have the expected attr values
