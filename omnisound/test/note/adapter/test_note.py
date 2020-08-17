@@ -22,7 +22,7 @@ AMP = AMPS[0]
 PITCHES: List[float] = [1.0, 1.5, 2.0]
 PITCH = PITCHES[0]
 
-ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
+NOTE_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
                           'start': START,
                           'duration': DUR,
                           'amplitude': AMP,
@@ -41,13 +41,13 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=NOTE_DEFAULTS_MAP,
                           attr_get_type_cast_map={})
 
 
 def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or NOTE_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
@@ -60,7 +60,7 @@ def note_sequence(make_note_config):
 
 def _note(mn, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or NOTE_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
 
@@ -71,12 +71,12 @@ def note(make_note_config):
 
 
 def test_as_dict(note):
-    expected = ATTR_VALS_DEFAULTS_MAP
+    expected = NOTE_DEFAULTS_MAP
     assert as_dict(note) == expected
 
 
 def test_as_list(note):
-    expected = list(ATTR_VALS_DEFAULTS_MAP.values())
+    expected = list(NOTE_DEFAULTS_MAP.values())
     assert as_list(note) == expected
 
 

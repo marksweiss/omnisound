@@ -35,14 +35,14 @@ import omnisound.src.note.adapter.midi_note as midi_note
 NOTE_DUR = NoteDur.QRTR
 OCTAVE = 4
 INSTRUMENT = midi_note.MidiInstrument.Acoustic_Grand_Piano.value
-ATTR_VALS_DEFAULTS_MAP = NoteValues(midi_note.ATTR_NAMES)
-ATTR_VALS_DEFAULTS_MAP.instrument = INSTRUMENT
-ATTR_VALS_DEFAULTS_MAP.time = 0
-ATTR_VALS_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
-ATTR_VALS_DEFAULTS_MAP.velocity = 0
-ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
+NOTE_DEFAULTS_MAP = NoteValues(midi_note.ATTR_NAMES)
+NOTE_DEFAULTS_MAP.instrument = INSTRUMENT
+NOTE_DEFAULTS_MAP.time = 0
+NOTE_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
+NOTE_DEFAULTS_MAP.velocity = 0
+NOTE_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
 note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
-note_config.attr_val_default_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
+note_config.attr_val_default_map = NOTE_DEFAULTS_MAP.as_dict()
 
 # Measure config
 NUM_TRACKS = 1

@@ -9,7 +9,7 @@ import asyncio
 from mido import Message, open_output
 from mido.backends.rtmidi import Output
 
-from omnisound.src.note.adapter.midi_note import ATTR_GET_TYPE_CAST_MAP
+from omnisound.src.note.adapter.midi_note import ATTR_VAL_CAST_MAP
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.track import MidiTrack
 from omnisound.src.modifier.meter import NoteDur
@@ -91,8 +91,8 @@ def get_midi_messages_and_notes_for_track(track: MidiTrack) -> Tuple[Sequence[Me
     durations = []
     for measure in track.measure_list:
         for note in measure:
-            amplitude = ATTR_GET_TYPE_CAST_MAP['velocity'](note.amplitude)
-            pitch = ATTR_GET_TYPE_CAST_MAP['pitch'](note.pitch)
+            amplitude = ATTR_VAL_CAST_MAP['velocity'](note.amplitude)
+            pitch = ATTR_VAL_CAST_MAP['pitch'](note.pitch)
             durations.append(note.duration)
             messages.append(Message('note_on', time=tick,
                                     velocity=amplitude, note=pitch,

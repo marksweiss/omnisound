@@ -6,7 +6,7 @@ from typing import Any, Optional, Sequence
 from mido.midifiles.midifiles import Message, MidiFile, MidiTrack
 from omnisound.src.utils.validation_utils import validate_optional_types, validate_type
 
-from omnisound.src.note.adapter.midi_note import ATTR_GET_TYPE_CAST_MAP
+from omnisound.src.note.adapter.midi_note import ATTR_VAL_CAST_MAP
 from omnisound.src.container.song import Song
 from omnisound.src.player.midi.midi_player import MidiEventType, MidiPlayerEvent, MidiPlayerAppendMode
 from omnisound.src.player.player import Writer
@@ -61,8 +61,8 @@ class MidiWriter(Writer):
                 MidiPlayerEvent.set_tick_deltas(event_list)
                 for event in event_list:
                     message = Message(event.event_type.value, time=event.tick_delta,
-                                      velocity=ATTR_GET_TYPE_CAST_MAP['velocity'](event.note.amplitude),
-                                      note=ATTR_GET_TYPE_CAST_MAP['pitch'](event.note.pitch),
+                                      velocity=ATTR_VAL_CAST_MAP['velocity'](event.note.amplitude),
+                                      note=ATTR_VAL_CAST_MAP['pitch'](event.note.pitch),
                                       channel=channel)
                     midi_track.append(message)
         return event_list

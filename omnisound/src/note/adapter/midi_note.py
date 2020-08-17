@@ -17,7 +17,7 @@ CLASS_NAME = 'MidiNote'
 
 # NOTE: Aliased names should NOT be added to ATTR_NAMES or ATTR_NAME_IDX_MAP, because this sets the field names
 # in the underlying numpy storage. Instead we dynamically create aliased accessors in the metaclass.
-# But they ARE hardcoded into the ATTR_GET_TYPE_CAST_MAP, because that is statically declared as a CONST.
+# But they ARE hardcoded into the ATTR_VAL_CAST_MAP, because that is statically declared as a CONST.
 ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
 # TODO RESTORE TEST COVERAGE FOR ALIASED NAMES
 ATTR_NAME_ALIASES = {
@@ -25,7 +25,7 @@ ATTR_NAME_ALIASES = {
     'velocity': 'amplitude'
 }
 ATTR_NAME_IDX_MAP = add_base_attr_name_indexes({attr_name: i for i, attr_name in enumerate(ATTR_NAMES)})
-ATTR_GET_TYPE_CAST_MAP = {
+ATTR_VAL_CAST_MAP = {
     'instrument': int,
     'time': float,
     'start': float,
@@ -466,4 +466,4 @@ DEFAULT_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                                      get_pitch_for_key=get_pitch_for_key,
                                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                      attr_val_default_map={},
-                                     attr_get_type_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                                     attr_get_type_cast_map=ATTR_VAL_CAST_MAP)
