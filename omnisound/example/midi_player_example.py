@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from omnisound.src.note.adapter.midi_note import (ATTR_VAL_CAST_MAP, ATTR_NAME_IDX_MAP, ATTR_NAMES, CLASS_NAME,
-                                                  NUM_ATTRIBUTES, get_pitch_for_key, make_note, MidiInstrument)
+                                                  NUM_ATTRIBUTES, pitch_for_key, make_note, MidiInstrument)
 from omnisound.src.note.adapter.note import MakeNoteConfig, NoteValues
 from omnisound.src.note.adapter.performance_attrs import PerformanceAttrs
 from omnisound.src.container.measure import Measure
@@ -39,9 +39,9 @@ NUM_NOTES_IN_CHORD = 3
 NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                              num_attributes=NUM_ATTRIBUTES,
                              make_note=make_note,
-                             get_pitch_for_key=get_pitch_for_key,
+                             pitch_for_key=pitch_for_key,
                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                             attr_get_type_cast_map=ATTR_VAL_CAST_MAP)
+                             attr_val_cast_map=ATTR_VAL_CAST_MAP)
 SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE,
               mn=NOTE_CONFIG)
 NUM_NOTES_IN_SCALE = 7

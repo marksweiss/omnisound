@@ -36,7 +36,7 @@ class Chord(NoteSequence):
         # attrs by using getattr(attr_name) after they have been assigned
         self.harmonic_chord = harmonic_chord
         self.octave = octave
-        self.get_pitch_for_key = mn.get_pitch_for_key
+        self.pitch_for_key = mn.pitch_for_key
         self.num_attributes = mn.num_attributes
         # Get the list of keys in the chord as string names from mingus
         self.key = key
@@ -50,7 +50,7 @@ class Chord(NoteSequence):
         set_notes_pitches_to_mingus_keys(self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.get_pitch_for_key,
+                                         self.pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -82,7 +82,7 @@ class Chord(NoteSequence):
         set_notes_pitches_to_mingus_keys(self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.get_pitch_for_key,
+                                         self.pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -92,7 +92,7 @@ class Chord(NoteSequence):
         set_notes_pitches_to_mingus_keys(self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.get_pitch_for_key,
+                                         self.pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -102,7 +102,7 @@ class Chord(NoteSequence):
         set_notes_pitches_to_mingus_keys(self.mingus_chord,
                                          self._mingus_key_to_key_enum_mapping,
                                          self,
-                                         self.get_pitch_for_key,
+                                         self.pitch_for_key,
                                          self.octave,
                                          validate=False)
 
@@ -116,7 +116,7 @@ class Chord(NoteSequence):
         set_notes_pitches_to_mingus_keys(m_first_inversion(source_chord.mingus_chord),
                                          source_chord._mingus_key_to_key_enum_mapping,
                                          chord,
-                                         source_chord.get_pitch_for_key,
+                                         source_chord.pitch_for_key,
                                          source_chord.octave,
                                          validate=False)
         return chord
@@ -131,7 +131,7 @@ class Chord(NoteSequence):
         set_notes_pitches_to_mingus_keys(m_second_inversion(source_chord.mingus_chord),
                                          source_chord._mingus_key_to_key_enum_mapping,
                                          chord,
-                                         source_chord.get_pitch_for_key,
+                                         source_chord.pitch_for_key,
                                          source_chord.octave,
                                          validate=False)
         return chord
@@ -146,7 +146,7 @@ class Chord(NoteSequence):
         set_notes_pitches_to_mingus_keys(m_third_inversion(source_chord.mingus_chord),
                                          source_chord._mingus_key_to_key_enum_mapping,
                                          chord,
-                                         source_chord.get_pitch_for_key,
+                                         source_chord.pitch_for_key,
                                          source_chord.octave,
                                          validate=False)
         return chord

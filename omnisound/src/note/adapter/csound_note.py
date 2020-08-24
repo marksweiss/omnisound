@@ -1,10 +1,11 @@
 # Copyright 2018 Mark S. Weiss
 
+from functools import partial
 from typing import Any, Mapping, Union
 
 import numpy as np
 
-from omnisound.src.note.adapter.note import add_base_attr_name_indexes, getter, setter
+from omnisound.src.note.adapter.note import add_base_attr_name_indexes, getter, setter, MakeNoteConfig
 from omnisound.src.generator.scale_globals import (NUM_NOTES_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.src.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
     validate_sequence_of_type, validate_type, \
@@ -118,7 +119,7 @@ def transpose(self, interval: int):
     self.pitch = round(new_octave + (new_pitch / 100.0), 2)
 
 
-def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
+def pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
     validate_type_choice('key', key, (MajorKey, MinorKey))
     validate_type('octave', octave, int)
     if not (MIN_OCTAVE < octave < MAX_OCTAVE):
@@ -234,7 +235,7 @@ class CSoundNoteMeta(type):
         # Attributes assigned by the caller
         cls.note_attr_vals = None
         cls.attr_name_idx_map = None
-        cls.attr_get_type_cast_map = None
+        cls.attr_val_cast_map = None
         cls.performance_attrs = None
 
         # Custom CSound attributes
@@ -271,20 +272,19 @@ def _make_cls(attr_name_idx_map):
     methods['set_scale_pitch_precision'] = set_scale_pitch_precision
     methods['set_attr_str_formatter'] = set_attr_str_formatter
 
-    cls = CSoundNoteMeta(CLASS_NAME, cls_bases, methods)
-    return cls
+    return CSoundNoteMeta(CLASS_NAME, cls_bases, methods)
 
 
 def make_note(note_attr_vals: np.array,
               attr_name_idx_map: Mapping[str, int],
-              attr_get_type_cast_map: Mapping[str, Any] = None) -> Any:
+              attr_val_cast_map: Mapping[str, Any] = None) -> Any:
     # TODO THIS VALIDATION BREAKS BECAUSE numpy.array IS A FUNCTION NOT A TYPE
     # validate_type('note_attr_vals', note_attr_vals, np.array)
     validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
     validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
-    validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
-    if attr_get_type_cast_map:
-        validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
+    validate_optional_type('attr_val_cast_map', attr_val_cast_map, Mapping)
+    if attr_val_cast_map:
+        validate_optional_sequence_of_type('attr_val_cast_map', attr_val_cast_map.keys(), str)
 
     cls = _make_cls(attr_name_idx_map)
     note = cls()
@@ -306,11 +306,21 @@ def make_note(note_attr_vals: np.array,
     note.set_attr_str_formatter('pitch', pitch_to_str(note.pitch_precision))
 
     # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
-    note.attr_get_type_cast_map = attr_get_type_cast_map or {}
+    note.attr_val_cast_map = attr_val_cast_map or {}
     for attr_name in note.attr_name_idx_map:
-        if attr_name not in note.attr_get_type_cast_map:
-            note.attr_get_type_cast_map[attr_name] = lambda x: x
+        if attr_name not in note.attr_val_cast_map:
+            note.attr_val_cast_map[attr_name] = lambda x: x
     # Instrument is always returned as an int
-    note.attr_get_type_cast_map['instrument'] = int
+    note.attr_val_cast_map['instrument'] = int
 
     return note
+
+
+DEFAULT_NOTE_CONFIG = partial(MakeNoteConfig,
+                              cls_name=CLASS_NAME,
+                              num_attributes=NUM_ATTRIBUTES,
+                              make_note=make_note,
+                              pitch_for_key=pitch_for_key,
+                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                              attr_val_default_map={},
+                              attr_val_cast_map=ATTR_VAL_CAST_MAP)

@@ -3,8 +3,8 @@
 from typing import List, Sequence, Tuple
 
 from omnisound.src.container.note_sequence import NoteSequence
-from omnisound.src.utils.validation_utils import validate_optional_sequence_of_type, validate_sequence_of_type, validate_type, \
-    validate_types
+from omnisound.src.utils.validation_utils import (validate_optional_sequence_of_type, validate_sequence_of_type,
+                                                  validate_type, validate_types)
 
 
 class NoteSequenceSequence(object):
@@ -75,7 +75,10 @@ class NoteSequenceSequence(object):
     def __eq__(self, other: 'NoteSequenceSequence') -> bool:
         if not other or len(self) != len(other):
             return False
-        return all([note_seq == other.note_seq_seq[i] for i, note_seq in enumerate(self.note_seq_seq)])
+        return all(
+            note_seq == other.note_seq_seq[i]
+            for i, note_seq in enumerate(self.note_seq_seq)
+        )
 
     @staticmethod
     def copy(other: 'NoteSequenceSequence'):

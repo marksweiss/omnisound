@@ -117,7 +117,7 @@ class NoteSequence:
         if index < len(self.note_attr_vals):
             return self.mn.make_note(self.note_attr_vals[index],
                                      self.mn.attr_name_idx_map,
-                                     attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
+                                     attr_val_cast_map=self.mn.attr_val_cast_map)
         # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
         # flattened sequence of child_sequences, or it's invalid
         else:
@@ -133,7 +133,7 @@ class NoteSequence:
                     adjusted_index = index - index_range_sum
                     return self.mn.make_note(note_attrs[adjusted_index],
                                              self.mn.attr_name_idx_map,
-                                             attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
+                                             attr_val_cast_map=self.mn.attr_val_cast_map)
                 index_range_sum += index_range
 
     def note(self, index: int):
@@ -145,7 +145,7 @@ class NoteSequence:
         for note_seq in self.range_map.values():
             notes.extend([self.mn.make_note(note_seq.note_attr_vals[i],
                                             self.mn.attr_name_idx_map,
-                                            attr_get_type_cast_map=self.mn.attr_get_type_cast_map)
+                                            attr_val_cast_map=self.mn.attr_val_cast_map)
                           for i in range(note_seq.note_attr_vals.shape[0])])
         return notes
 

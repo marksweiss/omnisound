@@ -1,6 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from enum import Enum
+from functools import partial
 from typing import Any, Mapping, Union
 
 # TODO SHOULD THIS BE numpy.array? THAT IS USED IN note.py
@@ -265,7 +266,7 @@ MAX_PITCH = 108
 DEFAULT_CHANNEL = 1
 
 
-def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
+def pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
     """MIDI pitches sequence from 21 A0 to 127, the 3 highest notes below C1 to the last note of C7.
        The algorithm is that we store the values for C1-12 as ints in the PITCH_MAP
        and thus increment by + 12 for every octave > 1, handle the special case for the 3 notes < C1 and
@@ -376,7 +377,7 @@ class MidiNoteMeta(type):
         cls.note_attr_vals = None
         cls.attr_name_idx_map = None
         cls.attr_name_aliases = None
-        cls.attr_get_type_cast_map = None
+        cls.attr_val_cast_map = None
         cls.performance_attrs = None
 
         # Custom Midi attributes
@@ -429,13 +430,13 @@ def _make_cls(attr_name_idx_map):
 
 def make_note(note_attr_vals: ndarray,
               attr_name_idx_map: Mapping[str, int],
-              attr_get_type_cast_map: Mapping[str, Any] = None):
+              attr_val_cast_map: Mapping[str, Any] = None):
     validate_type('note_attr_vals', note_attr_vals, ndarray)
     validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
     validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
-    validate_optional_type('attr_get_type_cast_map', attr_get_type_cast_map, Mapping)
-    if attr_get_type_cast_map:
-        validate_optional_sequence_of_type('attr_get_type_cast_map', attr_get_type_cast_map.keys(), str)
+    validate_optional_type('attr_val_cast_map', attr_val_cast_map, Mapping)
+    if attr_val_cast_map:
+        validate_optional_sequence_of_type('attr_val_cast_map', attr_val_cast_map.keys(), str)
 
     cls = _make_cls(attr_name_idx_map)
     note = cls()
@@ -445,25 +446,25 @@ def make_note(note_attr_vals: ndarray,
     note.attr_name_idx_map = attr_name_idx_map
 
     # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
-    note.attr_get_type_cast_map = attr_get_type_cast_map or {}
+    note.attr_val_cast_map = attr_val_cast_map or {}
     for attr_name in note.attr_name_idx_map:
-        if attr_name not in note.attr_get_type_cast_map:
-            note.attr_get_type_cast_map[attr_name] = lambda x: x
+        if attr_name not in note.attr_val_cast_map:
+            note.attr_val_cast_map[attr_name] = lambda x: x
     # These are always returned as an int
-    note.attr_get_type_cast_map['instrument'] = int
-    note.attr_get_type_cast_map['velocity'] = int
-    note.attr_get_type_cast_map['amplitude'] = int
-    note.attr_get_type_cast_map['pitch'] = int
-    note.attr_get_type_cast_map['channel'] = int
+    note.attr_val_cast_map['instrument'] = int
+    note.attr_val_cast_map['velocity'] = int
+    note.attr_val_cast_map['amplitude'] = int
+    note.attr_val_cast_map['pitch'] = int
+    note.attr_val_cast_map['channel'] = int
 
     return note
 
 
-# TODO Do this for CSoundNote, FoxDotSupercollider
-DEFAULT_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
-                                     num_attributes=NUM_ATTRIBUTES,
-                                     make_note=make_note,
-                                     get_pitch_for_key=get_pitch_for_key,
-                                     attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                     attr_val_default_map={},
-                                     attr_get_type_cast_map=ATTR_VAL_CAST_MAP)
+DEFAULT_NOTE_CONFIG = partial(MakeNoteConfig,
+                              cls_name=CLASS_NAME,
+                              num_attributes=NUM_ATTRIBUTES,
+                              make_note=make_note,
+                              pitch_for_key=pitch_for_key,
+                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                              attr_val_default_map={},
+                              attr_val_cast_map=ATTR_VAL_CAST_MAP)
