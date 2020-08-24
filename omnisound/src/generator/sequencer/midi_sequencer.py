@@ -53,12 +53,12 @@ class MidiMultitrackSequencer(Sequencer):
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                 attr_val_cast_map=ATTR_VAL_CAST_MAP)
         super(MidiMultitrackSequencer, self).__init__(
-                name=name,
-                num_measures=num_measures,
-                meter=meter,
-                swing=swing,
-                player=MidiInteractiveMultitrackPlayer(append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote),
-                mn=mn)
+              name=name,
+              num_measures=num_measures,
+              meter=meter,
+              swing=swing,
+              player=MidiInteractiveMultitrackPlayer(append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote),
+              mn=mn)
 
 
 class MidiWriterSequencer(Sequencer):

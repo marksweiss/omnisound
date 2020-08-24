@@ -25,10 +25,10 @@ DUR = 1.0
 AMP = 100.0
 PITCH = 9.01
 ATTR_VAL_DEFAULT_MAP = {'instrument': float(INSTRUMENT),
-                          'start': START,
-                          'duration': DUR,
-                          'amplitude': AMP,
-                          'pitch': PITCH}
+                        'start': START,
+                        'duration': DUR,
+                        'amplitude': AMP,
+                        'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
 NUM_NOTES = 2
@@ -50,8 +50,7 @@ def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, n
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     mn.attr_val_default_map = attr_val_default_map or ATTR_VAL_DEFAULT_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
-    return note_sequence
+    return NoteSequence(num_notes=NUM_NOTES, mn=mn)
 
 
 @pytest.fixture
@@ -94,7 +93,7 @@ def test_get_notes_for_mingus_keys(note_sequence):
     # Assert that the prototype note used to create the new note is not the expected pitch after
     # we get the note for the mingus_key.
     for i, expected_pitch in enumerate(expected_pitches):
-        assert not expected_pitch == pytest.approx(note_sequence[i].pitch)
+        assert expected_pitch != pytest.approx(note_sequence[i].pitch)
 
     set_notes_pitches_to_mingus_keys(MINGUS_KEY_LIST,
                                      MINGUS_KEY_TO_KEY_ENUM_MAPPING,

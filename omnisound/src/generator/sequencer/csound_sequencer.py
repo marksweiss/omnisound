@@ -4,7 +4,11 @@ from typing import Optional, Union
 
 from omnisound.src.note.adapter.note import MakeNoteConfig
 from omnisound.src.note.adapter.csound_note import (ATTR_NAME_IDX_MAP, ATTR_VAL_CAST_MAP, CLASS_NAME,
+<<<<<<< HEAD
                                                     pitch_for_key, make_note, NUM_ATTRIBUTES)
+=======
+                                                    get_pitch_for_key, make_note, NUM_ATTRIBUTES)
+>>>>>>> 125120ccb45427c148989f741747ba0ab687a475
 from omnisound.src.generator.sequencer.sequencer import Sequencer
 from omnisound.src.modifier.meter import Meter
 from omnisound.src.modifier.swing import Swing
@@ -25,7 +29,11 @@ class CSoundSequencer(Sequencer):
                                 make_note=make_note,
                                 pitch_for_key=pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
+<<<<<<< HEAD
                                 attr_val_cast_map=ATTR_VAL_CAST_MAP)
+=======
+                                attr_get_type_cast_map=ATTR_VAL_CAST_MAP)
+>>>>>>> 125120ccb45427c148989f741747ba0ab687a475
         super(CSoundSequencer, self).__init__(name=name,
                                               num_measures=num_measures,
                                               meter=meter,

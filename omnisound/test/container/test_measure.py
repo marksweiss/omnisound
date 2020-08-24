@@ -23,10 +23,10 @@ AMP = 100.0
 PITCH = 9.01
 
 ATTR_VAL_DEFAULT_MAP = {'instrument': float(INSTRUMENT),
-                          'start': START,
-                          'duration': DUR,
-                          'amplitude': AMP,
-                          'pitch': PITCH}
+                        'start': START,
+                        'duration': DUR,
+                        'amplitude': AMP,
+                        'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
 NUM_NOTES = 4

@@ -30,10 +30,10 @@ PITCHES: List[float] = [1.0, 1.5, 2.0]
 PITCH = PITCHES[0]
 
 ATTR_VAL_DEFAULT_MAP = {'instrument': float(INSTRUMENT),
-                          'start': START,
-                          'duration': DUR,
-                          'amplitude': AMP,
-                          'pitch': PITCH}
+                        'start': START,
+                        'duration': DUR,
+                        'amplitude': AMP,
+                        'pitch': PITCH}
 ATTR_VAL_CAST_MAP = csound_note.ATTR_VAL_CAST_MAP
 
 NOTE_SEQUENCE_IDX = 0
@@ -59,8 +59,7 @@ def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, n
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     mn.attr_val_default_map = attr_val_default_map or ATTR_VAL_DEFAULT_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
-    return note_sequence
+    return NoteSequence(num_notes=NUM_NOTES, mn=mn)
 
 
 @pytest.fixture

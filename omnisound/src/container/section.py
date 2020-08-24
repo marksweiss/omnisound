@@ -152,5 +152,4 @@ class Section(NoteSequenceSequence):
         if source.measure_list:
             measure_list = [Measure.copy(measure) for measure in source.measure_list]
 
-        new_section = Section(measure_list=measure_list, performance_attrs=source._performance_attrs)
-        return new_section
+        return Section(measure_list=measure_list, performance_attrs=source._performance_attrs)

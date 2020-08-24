@@ -37,8 +37,7 @@ def make_note_config():
 def _note_sequence(mn=None, attr_name_idx_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
-    return note_sequence
+    return NoteSequence(num_notes=NUM_NOTES, mn=mn)
 
 
 @pytest.fixture
@@ -139,8 +138,7 @@ def test_note_sequence_insert_remove_getitem(make_note_config):
     new_note_front_amp = new_note_front.amplitude
     # Assert that the new note inserted can be retrieved and is the expected new first note
     assert note_front_amp != new_note_front_amp
-    assert new_note_front.amplitude == new_amp
-
+    assert new_note_front_amp == new_amp
     # After removing a note, the new front note is the one added second to most recently
     expected_amp = note_sequence[1].amplitude
     note_sequence.remove((0, 1))

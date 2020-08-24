@@ -21,10 +21,10 @@ MEASURE_DUR = 1
 DEFAULT_IS_QUANTIZING = True
 
 ATTR_VAL_DEFAULT_MAP = {'instrument': float(INSTRUMENT),
-                          'start': START,
-                          'duration': DUR,
-                          'amplitude': AMP,
-                          'pitch': PITCH}
+                        'start': START,
+                        'duration': DUR,
+                        'amplitude': AMP,
+                        'pitch': PITCH}
 NOTE_SEQUENCE_IDX = 0
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
 NUM_NOTES = 4
@@ -46,8 +46,7 @@ def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, n
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     mn.attr_val_default_map = attr_val_default_map or ATTR_VAL_DEFAULT_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
-    note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
-    return note_sequence
+    return NoteSequence(num_notes=NUM_NOTES, mn=mn)
 
 
 @pytest.fixture
@@ -219,7 +218,7 @@ def test_quantize_to_beat(make_note_config, note_sequence, meter):
            [note.start for note in note_sequence]
 
 
-def test_tempo(meter):
+def test_tempo(meter):  # sourcery skip: use-assigned-variable
     assert meter.tempo == TEMPO_QPM
     quarter_note_dur_secs = meter.quarter_note_dur_secs
     note_dur_secs = meter.note_dur_secs

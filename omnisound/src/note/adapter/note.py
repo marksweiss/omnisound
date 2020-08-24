@@ -1,6 +1,5 @@
 # Copyright 2018 Mark S. Weiss
 
-from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Mapping, Union
 
 from numpy import array as np_array
@@ -60,7 +59,7 @@ class MakeNoteConfig:
         else:
             # noinspection PyTypeChecker
             self._attr_val_default_map = {attr_name: av[self.attr_name_idx_map[attr_name]]
-                                            for attr_name in self.attr_name_idx_map.keys()}
+                                          for attr_name in self.attr_name_idx_map.keys()}
 
     @staticmethod
     def copy(source: 'MakeNoteConfig') -> 'MakeNoteConfig':
