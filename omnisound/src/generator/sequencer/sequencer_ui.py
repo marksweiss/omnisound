@@ -1,4 +1,4 @@
- TODO NEXT
+# TODO NEXT
 # Start a sequence looping here and then test that te loop below turns notes on and off
 # Then add a Start button to trigger starting the sequence
 # Then expose UI elements to choose note and change pitch by mapping UI index to SCALE index and using that pitch
@@ -26,7 +26,7 @@ import PySimpleGUI as sg
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.track import MidiTrack
 from omnisound.src.generator.scale import HarmonicScale, MajorKey, Scale
-from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, NoteValues, MakeNoteConfig
+from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, NoteValues
 from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.player.midi.midi_player import get_midi_messages_and_notes_for_track
 import omnisound.src.note.adapter.midi_note as midi_note
@@ -41,7 +41,7 @@ ATTR_VAL_DEFAULT_MAP.time = 0
 ATTR_VAL_DEFAULT_MAP.duration = NOTE_DUR.QUARTER.value
 ATTR_VAL_DEFAULT_MAP.velocity = 0
 ATTR_VAL_DEFAULT_MAP.pitch = midi_note.pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
-note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
+note_config = midi_note.DEFAULT_NOTE_CONFIG()
 note_config.attr_val_default_map = ATTR_VAL_DEFAULT_MAP.as_dict()
 
 # Measure config

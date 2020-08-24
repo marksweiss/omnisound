@@ -1,6 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from enum import Enum
+from functools import partial
 from typing import Any, Mapping, Union
 
 # TODO SHOULD THIS BE numpy.array? THAT IS USED IN note.py
@@ -459,11 +460,11 @@ def make_note(note_attr_vals: ndarray,
     return note
 
 
-# TODO Do this for CSoundNote, FoxDotSupercollider
-DEFAULT_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
-                                     num_attributes=NUM_ATTRIBUTES,
-                                     make_note=make_note,
-                                     pitch_for_key=pitch_for_key,
-                                     attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                                     attr_val_default_map={},
-                                     attr_val_cast_map=ATTR_VAL_CAST_MAP)
+DEFAULT_NOTE_CONFIG = partial(MakeNoteConfig,
+                              cls_name=CLASS_NAME,
+                              num_attributes=NUM_ATTRIBUTES,
+                              make_note=make_note,
+                              pitch_for_key=pitch_for_key,
+                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                              attr_val_default_map={},
+                              attr_val_cast_map=ATTR_VAL_CAST_MAP)

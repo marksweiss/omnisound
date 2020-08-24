@@ -2,9 +2,7 @@
 
 import sys
 
-from omnisound.src.note.adapter.csound_note import (ATTR_VAL_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
-                                                    NUM_ATTRIBUTES, pitch_for_key, make_note)
-from omnisound.src.note.adapter.note import MakeNoteConfig
+from omnisound.src.note.adapter.csound_note import DEFAULT_NOTE_CONFIG
 from omnisound.src.container.measure import Measure
 from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.modifier.swing import Swing
@@ -80,20 +78,13 @@ SCORE_HEADER = '''; Function 1
 f 1		    0		    8193		10		1'''
 SCORE_HEADER_LINES = [SCORE_HEADER]
 
-NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
-                             num_attributes=NUM_ATTRIBUTES,
-                             make_note=make_note,
-                             pitch_for_key=pitch_for_key,
-                             attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                             attr_val_cast_map=ATTR_VAL_CAST_MAP)
-
 if __name__ == '__main__':
     meter = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)
     swing = Swing(swing_range=SWING_RANGE)
     measure = Measure(num_notes=NUM_NOTES,
                       meter=meter,
                       swing=swing,
-                      mn=NOTE_CONFIG)
+                      mn=DEFAULT_NOTE_CONFIG())
     for i in range(NUM_NOTES):
         measure[i].instrument = INSTRUMENT_1_ID
         measure[i].start = (i % NUM_NOTES) * DUR

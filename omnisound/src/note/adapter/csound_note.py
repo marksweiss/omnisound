@@ -1,10 +1,11 @@
 # Copyright 2018 Mark S. Weiss
 
+from functools import partial
 from typing import Any, Mapping, Union
 
 import numpy as np
 
-from omnisound.src.note.adapter.note import add_base_attr_name_indexes, getter, setter
+from omnisound.src.note.adapter.note import add_base_attr_name_indexes, getter, setter, MakeNoteConfig
 from omnisound.src.generator.scale_globals import (NUM_NOTES_IN_OCTAVE, MajorKey, MinorKey)
 from omnisound.src.utils.validation_utils import validate_optional_sequence_of_type, validate_optional_type, \
     validate_sequence_of_type, validate_type, \
@@ -271,8 +272,7 @@ def _make_cls(attr_name_idx_map):
     methods['set_scale_pitch_precision'] = set_scale_pitch_precision
     methods['set_attr_str_formatter'] = set_attr_str_formatter
 
-    cls = CSoundNoteMeta(CLASS_NAME, cls_bases, methods)
-    return cls
+    return CSoundNoteMeta(CLASS_NAME, cls_bases, methods)
 
 
 def make_note(note_attr_vals: np.array,
@@ -314,3 +314,13 @@ def make_note(note_attr_vals: np.array,
     note.attr_val_cast_map['instrument'] = int
 
     return note
+
+
+DEFAULT_NOTE_CONFIG = partial(MakeNoteConfig,
+                              cls_name=CLASS_NAME,
+                              num_attributes=NUM_ATTRIBUTES,
+                              make_note=make_note,
+                              pitch_for_key=pitch_for_key,
+                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                              attr_val_default_map={},
+                              attr_val_cast_map=ATTR_VAL_CAST_MAP)
