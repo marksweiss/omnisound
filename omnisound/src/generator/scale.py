@@ -66,7 +66,7 @@ class Scale(NoteSequence):
         set_notes_pitches_to_mingus_keys(mingus_keys,
                                          mingus_key_to_key_enum_mapping,
                                          self,
-                                         mn.get_pitch_for_key,
+                                         mn.pitch_for_key,
                                          self.octave,
                                          validate=False)
 

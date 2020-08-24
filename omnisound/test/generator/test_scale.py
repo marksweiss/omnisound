@@ -18,7 +18,7 @@ KEY = MajorKey
 OCTAVE = 4
 HARMONIC_SCALE = HarmonicScale.Major
 
-ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
+ATTR_VAL_DEFAULT_MAP = {'instrument': float(INSTRUMENT),
                           'start': START,
                           'duration': DUR,
                           'amplitude': AMP,
@@ -34,15 +34,15 @@ def make_note_config():
     return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
                           num_attributes=NUM_ATTRIBUTES,
                           make_note=csound_note.make_note,
-                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          pitch_for_key=csound_note.pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=ATTR_VAL_DEFAULT_MAP,
                           attr_val_cast_map={})
 
 
 def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VAL_DEFAULT_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence(num_notes=NUM_NOTES, mn=mn)
 
@@ -54,7 +54,7 @@ def note_sequence(make_note_config):
 
 def _note(mn, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VAL_DEFAULT_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
 
@@ -97,7 +97,7 @@ def test_is_major_key_is_minor_key(make_note_config, note, scale):
     assert scale_minor.is_minor_key
 
 
-def test_get_pitch_for_key_csound(make_note_config, note, scale):
+def test_pitch_for_key_csound(make_note_config, note, scale):
     # Expect that Scale.__init__() will populate the underlying NoteSequence with the notes for the `scale_cls`
     # and `key` (type of scale and root key), starting at the value of `octave` arg passed to Scale.__init__()
     expected_pitches = (4.01, 4.03, 4.05, 4.06, 4.08, 4.10, 4.12)
@@ -113,11 +113,11 @@ def test_get_pitch_for_key_csound(make_note_config, note, scale):
         assert expected_pitch == pytest.approx(pitches[i])
 
 
-def test_get_pitch_for_key_midi(make_note_config):
+def test_pitch_for_key_midi(make_note_config):
     key = MajorKey
     make_note_config.cls_name = midi_note.CLASS_NAME
     make_note_config.make_note = midi_note.make_note
-    make_note_config.get_pitch_for_key = midi_note.get_pitch_for_key
+    make_note_config.pitch_for_key = midi_note.pitch_for_key
     scale_major = _scale(mn=make_note_config, key=key)
     expected_pitches = (60, 62, 64, 65, 67, 69, 71)
     pitches = [n.pitch for n in scale_major]

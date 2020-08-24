@@ -17,7 +17,7 @@ PITCH = 9.01
 
 SWING_RANGE = 0.1
 
-ATTR_VALS_DEFAULTS_MAP = {'instrument': float(INSTRUMENT),
+ATTR_VAL_DEFAULT_MAP = {'instrument': float(INSTRUMENT),
                           'start': START,
                           'duration': DUR,
                           'amplitude': AMP,
@@ -33,9 +33,9 @@ def make_note_config():
     return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
                           num_attributes=NUM_ATTRIBUTES,
                           make_note=csound_note.make_note,
-                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          pitch_for_key=csound_note.pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=ATTR_VAL_DEFAULT_MAP,
                           attr_val_cast_map={})
 
 

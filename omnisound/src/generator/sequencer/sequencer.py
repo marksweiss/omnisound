@@ -321,7 +321,7 @@ class Sequencer(Song):
                         measure_duration += duration
                     # It's a single sounding note. Converted into arpeggiated chords if `arpeggiate=True`.
                     else:
-                        pitch = self.mn.get_pitch_for_key(key, octave)
+                        pitch = self.mn.pitch_for_key(key, octave)
 
                         if not arpeggiate:
                             note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)

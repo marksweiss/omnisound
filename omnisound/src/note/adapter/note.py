@@ -35,7 +35,7 @@ class MakeNoteConfig:
                                       Mapping[str, int],
                                       Mapping[str, Callable[[Union[float, int]], Union[float, int]]]],
                                      Any],
-                 get_pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
+                 pitch_for_key: Callable[[Union[MajorKey, MinorKey], int], Union[float, int]],
                  attr_name_idx_map: Mapping[str, int],
                  attr_val_default_map: Optional[Mapping[str, Union[float, int]]] = None,
                  attr_val_cast_map: Optional[Mapping[str, Callable[[Union[float, int]],
@@ -43,7 +43,7 @@ class MakeNoteConfig:
         self.cls_name = cls_name
         self.num_attributes = num_attributes
         self.make_note = make_note
-        self.get_pitch_for_key = get_pitch_for_key
+        self.pitch_for_key = pitch_for_key
         self.attr_name_idx_map = attr_name_idx_map
         self._attr_val_default_map = attr_val_default_map or {}
         self.attr_val_cast_map = attr_val_cast_map or {}
@@ -67,7 +67,7 @@ class MakeNoteConfig:
         return MakeNoteConfig(cls_name=source.cls_name,
                               num_attributes=source.num_attributes,
                               make_note=source.make_note,
-                              get_pitch_for_key=source.get_pitch_for_key,
+                              pitch_for_key=source.pitch_for_key,
                               attr_name_idx_map=source.attr_name_idx_map,
                               attr_val_default_map=source._attr_val_default_map,
                               attr_val_cast_map=source.attr_val_cast_map)

@@ -118,7 +118,7 @@ def transpose(self, interval: int):
     self.pitch = round(new_octave + (new_pitch / 100.0), 2)
 
 
-def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
+def pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> float:
     validate_type_choice('key', key, (MajorKey, MinorKey))
     validate_type('octave', octave, int)
     if not (MIN_OCTAVE < octave < MAX_OCTAVE):

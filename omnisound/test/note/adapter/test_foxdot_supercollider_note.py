@@ -24,7 +24,7 @@ PITCH = PITCHES[0]
 SCALE = 'chromatic'
 OCTAVE = 4
 
-ATTR_VALS_DEFAULTS_MAP = {'delay': START,
+ATTR_VAL_DEFAULT_MAP = {'delay': START,
                           'dur': DUR,
                           'amp': AMP,
                           'degree': PITCH,
@@ -48,15 +48,15 @@ def make_note_config():
     return MakeNoteConfig(cls_name=foxdot_note.CLASS_NAME,
                           num_attributes=NUM_ATTRIBUTES,
                           make_note=foxdot_note.make_note,
-                          get_pitch_for_key=foxdot_note.get_pitch_for_key,
+                          pitch_for_key=foxdot_note.pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=ATTR_VAL_DEFAULT_MAP,
                           attr_val_cast_map={})
 
 
 def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VAL_DEFAULT_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
@@ -69,7 +69,7 @@ def note_sequence(make_note_config):
 
 def _note(mn, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VAL_DEFAULT_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
 

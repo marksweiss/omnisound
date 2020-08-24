@@ -3,7 +3,7 @@
 import sys
 
 from omnisound.src.note.adapter.csound_note import (ATTR_VAL_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
-                                                    NUM_ATTRIBUTES, get_pitch_for_key, make_note)
+                                                    NUM_ATTRIBUTES, pitch_for_key, make_note)
 from omnisound.src.note.adapter.note import MakeNoteConfig
 from omnisound.src.container.measure import Measure
 from omnisound.src.modifier.meter import Meter, NoteDur
@@ -83,7 +83,7 @@ SCORE_HEADER_LINES = [SCORE_HEADER]
 NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                              num_attributes=NUM_ATTRIBUTES,
                              make_note=make_note,
-                             get_pitch_for_key=get_pitch_for_key,
+                             pitch_for_key=pitch_for_key,
                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
                              attr_val_cast_map=ATTR_VAL_CAST_MAP)
 

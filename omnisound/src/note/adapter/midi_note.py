@@ -265,7 +265,7 @@ MAX_PITCH = 108
 DEFAULT_CHANNEL = 1
 
 
-def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
+def pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
     """MIDI pitches sequence from 21 A0 to 127, the 3 highest notes below C1 to the last note of C7.
        The algorithm is that we store the values for C1-12 as ints in the PITCH_MAP
        and thus increment by + 12 for every octave > 1, handle the special case for the 3 notes < C1 and
@@ -463,7 +463,7 @@ def make_note(note_attr_vals: ndarray,
 DEFAULT_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                                      num_attributes=NUM_ATTRIBUTES,
                                      make_note=make_note,
-                                     get_pitch_for_key=get_pitch_for_key,
+                                     pitch_for_key=pitch_for_key,
                                      attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                      attr_val_default_map={},
                                      attr_val_cast_map=ATTR_VAL_CAST_MAP)

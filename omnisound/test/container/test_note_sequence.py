@@ -28,7 +28,7 @@ def make_note_config():
     return MakeNoteConfig(cls_name=csound_note.CLASS_NAME,
                           num_attributes=NUM_ATTRIBUTES,
                           make_note=csound_note.make_note,
-                          get_pitch_for_key=csound_note.get_pitch_for_key,
+                          pitch_for_key=csound_note.pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
                           attr_val_default_map={},
                           attr_val_cast_map={})

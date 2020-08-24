@@ -5,7 +5,7 @@ from typing import Optional
 
 from omnisound.src.note.adapter.note import MakeNoteConfig
 from omnisound.src.note.adapter.midi_note import (ATTR_NAME_IDX_MAP, ATTR_VAL_CAST_MAP, CLASS_NAME,
-                                                  get_pitch_for_key, make_note, NUM_ATTRIBUTES)
+                                                  pitch_for_key, make_note, NUM_ATTRIBUTES)
 from omnisound.src.generator.sequencer.sequencer import Sequencer
 from omnisound.src.modifier.meter import Meter
 from omnisound.src.modifier.swing import Swing
@@ -25,7 +25,7 @@ class MidiSingleTrackSequencer(Sequencer):
             mn = MakeNoteConfig(cls_name=CLASS_NAME,
                                 num_attributes=NUM_ATTRIBUTES,
                                 make_note=make_note,
-                                get_pitch_for_key=get_pitch_for_key,
+                                pitch_for_key=pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                 attr_val_cast_map=ATTR_VAL_CAST_MAP)
         super(MidiSingleTrackSequencer, self).__init__(
@@ -49,7 +49,7 @@ class MidiMultitrackSequencer(Sequencer):
             mn = MakeNoteConfig(cls_name=CLASS_NAME,
                                 num_attributes=NUM_ATTRIBUTES,
                                 make_note=make_note,
-                                get_pitch_for_key=get_pitch_for_key,
+                                pitch_for_key=pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                 attr_val_cast_map=ATTR_VAL_CAST_MAP)
         super(MidiMultitrackSequencer, self).__init__(
@@ -73,7 +73,7 @@ class MidiWriterSequencer(Sequencer):
             mn = MakeNoteConfig(cls_name=CLASS_NAME,
                                 num_attributes=NUM_ATTRIBUTES,
                                 make_note=make_note,
-                                get_pitch_for_key=get_pitch_for_key,
+                                pitch_for_key=pitch_for_key,
                                 attr_name_idx_map=ATTR_NAME_IDX_MAP,
                                 attr_val_cast_map=ATTR_VAL_CAST_MAP)
         super(MidiWriterSequencer, self).__init__(

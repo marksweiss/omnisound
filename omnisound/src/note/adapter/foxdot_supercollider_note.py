@@ -66,7 +66,7 @@ def transpose(self, interval: int):
 
 
 # noinspection PyUnusedLocal
-def get_pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
+def pitch_for_key(key: Union[MajorKey, MinorKey], octave: int) -> int:
     return PITCH_MAP[key]
 
 
