@@ -2,7 +2,7 @@
 
 import sys
 
-from omnisound.src.note.adapter.csound_note import (ATTR_GET_TYPE_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
+from omnisound.src.note.adapter.csound_note import (ATTR_VAL_CAST_MAP, ATTR_NAME_IDX_MAP, CLASS_NAME,
                                                     NUM_ATTRIBUTES, get_pitch_for_key, make_note)
 from omnisound.src.note.adapter.note import MakeNoteConfig
 from omnisound.src.container.measure import Measure
@@ -85,7 +85,7 @@ NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
                              make_note=make_note,
                              get_pitch_for_key=get_pitch_for_key,
                              attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                             attr_val_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                             attr_val_cast_map=ATTR_VAL_CAST_MAP)
 
 if __name__ == '__main__':
     meter = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=BEAT_DUR, tempo=TEMPO_QPM)

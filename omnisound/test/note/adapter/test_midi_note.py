@@ -52,13 +52,13 @@ def make_note_config():
                           make_note=midi_note.make_note,
                           get_pitch_for_key=midi_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_vals_defaults_map=ATTR_VALS_DEFAULTS_MAP,
+                          attr_val_default_map=ATTR_VALS_DEFAULTS_MAP,
                           attr_val_cast_map={})
 
 
-def _note_sequence(mn=None, attr_name_idx_map=None, attr_vals_defaults_map=None, num_attributes=None):
+def _note_sequence(mn=None, attr_name_idx_map=None, attr_val_default_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     note_sequence = NoteSequence(num_notes=NUM_NOTES, mn=mn)
     return note_sequence
@@ -69,9 +69,9 @@ def note_sequence(make_note_config):
     return _note_sequence(mn=make_note_config)
 
 
-def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, attr_val_cast_map=None, num_attributes=None):
+def _note(mn, attr_name_idx_map=None, attr_val_default_map=None, attr_val_cast_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
-    mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
+    mn.attr_val_default_map = attr_val_default_map or ATTR_VALS_DEFAULTS_MAP
     mn.attr_val_cast_map = attr_val_cast_map or {}
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
@@ -140,7 +140,7 @@ def test_midi_note_attrs(make_note_config, start, duration, amplitude, pitch):
                          'p': 4, 'pitch': 4}
     # Test assigning default s to each note created in the underlying NoteSequence
     # noinspection PyTypeChecker
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'instrument': float(MIDI_INSTRUMENT.value),
         'time': start,
         'duration': duration,
@@ -150,7 +150,7 @@ def test_midi_note_attrs(make_note_config, start, duration, amplitude, pitch):
     attr_val_cast_map = {'p': int, 'v': int}
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
-                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 attr_val_default_map=attr_val_default_map,
                  attr_val_cast_map=attr_val_cast_map,
                  num_attributes=len(attr_name_idx_map.keys()))
 
@@ -176,7 +176,7 @@ def test_midi_note_to_str(make_note_config, start, duration, amplitude, pitch):
                          'pitch': 4}
     # Test assigning default s to each note created in the underlying NoteSequence
     # noinspection PyTypeChecker
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'instrument': float(MIDI_INSTRUMENT.value),
         'time': start,
         'duration': duration,
@@ -185,8 +185,8 @@ def test_midi_note_to_str(make_note_config, start, duration, amplitude, pitch):
     }
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
-                 attr_vals_defaults_map=attr_vals_defaults_map,
-                 num_attributes=len(attr_vals_defaults_map))
+                 attr_val_default_map=attr_val_default_map,
+                 num_attributes=len(attr_val_default_map))
 
     expected_str_note = (f'instrument: {MIDI_INSTRUMENT.value} time: {start} duration: {duration} '
                          f'velocity: {int(amplitude)} pitch: {int(pitch)} channel: {midi_note.DEFAULT_CHANNEL}')
@@ -206,7 +206,7 @@ def test_midi_note_attrs_fluent(make_note_config, start, duration, amplitude, pi
                          'p': 4, 'pitch': 4}
     # Set the note  to not equal the values passed in to the test
     # noinspection PyTypeChecker
-    attr_vals_defaults_map = {
+    attr_val_default_map = {
         'instrument': float(MIDI_INSTRUMENT.value + 1),
         'time': 0.0,
         'duration': 0.0,
@@ -214,12 +214,12 @@ def test_midi_note_attrs_fluent(make_note_config, start, duration, amplitude, pi
         'pitch': 0.0,
     }
     attr_val_cast_map = {'p': int, 'v': int}
-    # Don't pass in attr_vals_defaults_map, so not creating a Note with the s passed in to each test
+    # Don't pass in attr_val_default_map, so not creating a Note with the s passed in to each test
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
-                 attr_vals_defaults_map=attr_vals_defaults_map,
+                 attr_val_default_map=attr_val_default_map,
                  attr_val_cast_map=attr_val_cast_map,
-                 num_attributes=len(attr_vals_defaults_map))
+                 num_attributes=len(attr_val_default_map))
 
     # Assert the note does not have the expected attr s
     assert note.time == note.t != start
@@ -243,7 +243,7 @@ def test_midi_note_channel(note):
 
 def test_note_values(make_note_config):
     note_values = _setup_note_values()
-    note = _note(mn=make_note_config, attr_vals_defaults_map=note_values.as_dict())
+    note = _note(mn=make_note_config, attr_val_default_map=note_values.as_dict())
 
     # noinspection PyTypeChecker
     assert note.instrument == float(MIDI_INSTRUMENT.value)

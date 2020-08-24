@@ -42,7 +42,7 @@ ATTR_VALS_DEFAULTS_MAP.duration = NOTE_DUR.QUARTER.value
 ATTR_VALS_DEFAULTS_MAP.velocity = 0
 ATTR_VALS_DEFAULTS_MAP.pitch = midi_note.get_pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
 note_config = MakeNoteConfig.copy(midi_note.DEFAULT_NOTE_CONFIG)
-note_config.attr_vals_defaults_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
+note_config.attr_val_default_map = ATTR_VALS_DEFAULTS_MAP.as_dict()
 
 # Measure config
 NUM_TRACKS = 1

@@ -17,7 +17,7 @@ PITCH = 9.01
 
 NOTE_SEQUENCE_IDX = 0
 ATTR_NAME_IDX_MAP = csound_note.ATTR_NAME_IDX_MAP
-ATTR_GET_TYPE_CAST_MAP = csound_note.ATTR_GET_TYPE_CAST_MAP
+ATTR_VAL_CAST_MAP = csound_note.ATTR_VAL_CAST_MAP
 NUM_NOTES = 4
 NUM_ATTRIBUTES = len(csound_note.ATTR_NAMES)
 
@@ -46,7 +46,7 @@ def make_note_config():
                           make_note=csound_note.make_note,
                           get_pitch_for_key=csound_note.get_pitch_for_key,
                           attr_name_idx_map=ATTR_NAME_IDX_MAP,
-                          attr_val_cast_map=ATTR_GET_TYPE_CAST_MAP)
+                          attr_val_cast_map=ATTR_VAL_CAST_MAP)
 
 
 @pytest.fixture
