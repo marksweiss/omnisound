@@ -69,10 +69,10 @@ def note_sequence(make_note_config):
     return _note_sequence(mn=make_note_config)
 
 
-def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, attr_get_type_cast_map=None, num_attributes=None):
+def _note(mn, attr_name_idx_map=None, attr_vals_defaults_map=None, attr_val_cast_map=None, num_attributes=None):
     mn.attr_name_idx_map = attr_name_idx_map or ATTR_NAME_IDX_MAP
     mn.attr_vals_defaults_map = attr_vals_defaults_map or ATTR_VALS_DEFAULTS_MAP
-    mn.attr_val_cast_map = attr_get_type_cast_map or {}
+    mn.attr_val_cast_map = attr_val_cast_map or {}
     mn.num_attributes = num_attributes or NUM_ATTRIBUTES
     return NoteSequence.new_note(mn)
 
@@ -147,11 +147,11 @@ def test_midi_note_attrs(make_note_config, start, duration, amplitude, pitch):
         'velocity': amplitude,
         'pitch': pitch,
     }
-    attr_get_type_cast_map = {'p': int, 'v': int}
+    attr_val_cast_map = {'p': int, 'v': int}
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
-                 attr_get_type_cast_map=attr_get_type_cast_map,
+                 attr_val_cast_map=attr_val_cast_map,
                  num_attributes=len(attr_name_idx_map.keys()))
 
     # noinspection PyTypeChecker
@@ -213,12 +213,12 @@ def test_midi_note_attrs_fluent(make_note_config, start, duration, amplitude, pi
         'velocity': 0.0,
         'pitch': 0.0,
     }
-    attr_get_type_cast_map = {'p': int, 'v': int}
+    attr_val_cast_map = {'p': int, 'v': int}
     # Don't pass in attr_vals_defaults_map, so not creating a Note with the s passed in to each test
     note = _note(mn=make_note_config,
                  attr_name_idx_map=attr_name_idx_map,
                  attr_vals_defaults_map=attr_vals_defaults_map,
-                 attr_get_type_cast_map=attr_get_type_cast_map,
+                 attr_val_cast_map=attr_val_cast_map,
                  num_attributes=len(attr_vals_defaults_map))
 
     # Assert the note does not have the expected attr s

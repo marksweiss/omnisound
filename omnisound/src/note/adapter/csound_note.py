@@ -234,7 +234,7 @@ class CSoundNoteMeta(type):
         # Attributes assigned by the caller
         cls.note_attr_vals = None
         cls.attr_name_idx_map = None
-        cls.attr_get_type_cast_map = None
+        cls.attr_val_cast_map = None
         cls.performance_attrs = None
 
         # Custom CSound attributes
@@ -277,14 +277,14 @@ def _make_cls(attr_name_idx_map):
 
 def make_note(note_attr_vals: np.array,
               attr_name_idx_map: Mapping[str, int],
-              attr_get_type_cast_map: Mapping[str, Any] = None) -> Any:
+              attr_val_cast_map: Mapping[str, Any] = None) -> Any:
     # TODO THIS VALIDATION BREAKS BECAUSE numpy.array IS A FUNCTION NOT A TYPE
     # validate_type('note_attr_vals', note_attr_vals, np.array)
     validate_type('attr_name_idx_map', attr_name_idx_map, Mapping)
     validate_sequence_of_type('attr_name_idx_map', attr_name_idx_map.keys(), str)
-    validate_optional_type('attr_val_cast_map', attr_get_type_cast_map, Mapping)
-    if attr_get_type_cast_map:
-        validate_optional_sequence_of_type('attr_val_cast_map', attr_get_type_cast_map.keys(), str)
+    validate_optional_type('attr_val_cast_map', attr_val_cast_map, Mapping)
+    if attr_val_cast_map:
+        validate_optional_sequence_of_type('attr_val_cast_map', attr_val_cast_map.keys(), str)
 
     cls = _make_cls(attr_name_idx_map)
     note = cls()
@@ -306,7 +306,7 @@ def make_note(note_attr_vals: np.array,
     note.set_attr_str_formatter('pitch', pitch_to_str(note.pitch_precision))
 
     # Set mapping of attribute names to functions that cast return type of get() calls, e.g. cast instrument to int
-    note.attr_val_cast_map = attr_get_type_cast_map or {}
+    note.attr_val_cast_map = attr_val_cast_map or {}
     for attr_name in note.attr_name_idx_map:
         if attr_name not in note.attr_val_cast_map:
             note.attr_val_cast_map[attr_name] = lambda x: x

@@ -131,7 +131,7 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
                          'p': 4, 'pitch': 4,
                          'func_table': 5}
     # Test using a custom cast function for an attribute, a custom attribute
-    attr_get_type_cast_map = {'func_table': int}
+    attr_val_cast_map = {'func_table': int}
     # Test assigning default values to each note created in the underlying NoteSequence
     attr_vals_defaults_map = {
         'instrument': float(INSTRUMENT),
@@ -147,7 +147,7 @@ def test_csound_note_attrs(start, duration, amplitude, pitch):
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
                         attr_vals_defaults_map=attr_vals_defaults_map,
-                        attr_val_cast_map=attr_get_type_cast_map)
+                        attr_val_cast_map=attr_val_cast_map)
     note = _note(mn=mn)
 
     assert note.instrument == note.i == int(INSTRUMENT)
@@ -176,7 +176,7 @@ def test_csound_note_to_str(start, duration, amplitude, pitch):
                          'pitch': 4,
                          'func_table': 5}
     # Test using a custom cast function for an attribute, a custom attribute
-    attr_get_type_cast_map = {'func_table': int}
+    attr_val_cast_map = {'func_table': int}
     # Test assigning default values to each note created in the underlying NoteSequence
     attr_vals_defaults_map = {
         'instrument': float(INSTRUMENT),
@@ -192,7 +192,7 @@ def test_csound_note_to_str(start, duration, amplitude, pitch):
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
                         attr_vals_defaults_map=attr_vals_defaults_map,
-                        attr_val_cast_map=attr_get_type_cast_map)
+                        attr_val_cast_map=attr_val_cast_map)
     note = _note(mn)
     # Have to manually add the string formatter for additional custom note attributes
     note.set_attr_str_formatter('func_table', lambda x: str(x))
@@ -216,7 +216,7 @@ def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
                          'p': 4, 'pitch': 4,
                          'func_table': 5}
     # Test using a custom cast function for an attribute, a custom attribute
-    attr_get_type_cast_map = {'func_table': int}
+    attr_val_cast_map = {'func_table': int}
     # Set the note value to not equal the values passed in to the test
     attr_vals_defaults_map = {
         'instrument': float(INSTRUMENT + 1),
@@ -233,7 +233,7 @@ def test_csound_note_attrs_fluent(start, duration, amplitude, pitch):
                         get_pitch_for_key=csound_note.get_pitch_for_key,
                         attr_name_idx_map=attr_name_idx_map,
                         attr_vals_defaults_map=attr_vals_defaults_map,
-                        attr_val_cast_map=attr_get_type_cast_map)
+                        attr_val_cast_map=attr_val_cast_map)
     note = _note(mn)
 
     # Assert the note does not have the expected attr values
