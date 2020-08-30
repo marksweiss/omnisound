@@ -15,6 +15,10 @@
 # TO RUN:  python -m omnisound.src.generator.sequencer.sequencer_ui \
 #               --num-tracks 2 --measures-per-track 4 --tempo 120 --meter 13/4
 
+# TODO Fix timing issues. Try other PySimpleGUI backend toolkits (other than current one Tk) and see if they work
+# with using the multitrack player which uses async/await. Otherwise we need to look at different GUI toolkits
+# to find one that use/is compatible with async/await and then we need rewrite the layout/messaging part of this.
+
 from itertools import count
 from optparse import OptionParser
 from time import sleep
