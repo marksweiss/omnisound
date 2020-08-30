@@ -15,10 +15,6 @@
 # TO RUN:  python -m omnisound.src.generator.sequencer.sequencer_ui \
 #               --num-tracks 2 --measures-per-track 4 --tempo 120 --meter 13/4
 
-# TODO Fix timing issues. Try other PySimpleGUI backend toolkits (other than current one Tk) and see if they work
-# with using the multitrack player which uses async/await. Otherwise we need to look at different GUI toolkits
-# to find one that use/is compatible with async/await and then we need rewrite the layout/messaging part of this.
-
 from itertools import count
 from optparse import OptionParser
 from time import sleep
@@ -31,32 +27,26 @@ import PySimpleGUI as sg
 
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.track import MidiTrack
-# from omnisound.src.generator.sequencer.midi_sequencer import MidiMultitrackSequencer
 from omnisound.src.generator.scale import HarmonicScale, MajorKey, Scale
 from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, NoteValues
-from omnisound.src.modifier.meter import Meter, NoteDur
+from omnisound.src.modifier.meter import Meter
 from omnisound.src.player.midi.midi_player import get_midi_messages_and_notes_for_track
 import omnisound.src.note.adapter.midi_note as midi_note
 
 # Note config
-NOTE_DUR = NoteDur.QRTR
+# TODO Make configurable in the UI
 OCTAVE = 4
+# TODO Make configurable in the UI
 INSTRUMENT = midi_note.MidiInstrument.Acoustic_Grand_Piano.value
-ATTR_VAL_DEFAULT_MAP = NoteValues(midi_note.ATTR_NAMES)
-ATTR_VAL_DEFAULT_MAP.instrument = INSTRUMENT
-ATTR_VAL_DEFAULT_MAP.time = 0
-ATTR_VAL_DEFAULT_MAP.duration = NOTE_DUR.QUARTER.value
-ATTR_VAL_DEFAULT_MAP.velocity = 0
-ATTR_VAL_DEFAULT_MAP.pitch = midi_note.pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
-NOTE_CONFIG = midi_note.DEFAULT_NOTE_CONFIG()
-NOTE_CONFIG.attr_val_default_map = ATTR_VAL_DEFAULT_MAP.as_dict()
 
 # Scale config
+# TODO Make configurable in the UI
 HARMONIC_SCALE = HarmonicScale.Major
+# TODO Make configurable in the UI
 KEY = MajorKey
-SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=NOTE_CONFIG)
 
 # Mido config
+# TODO Make configurable in the UI
 PORT_NAME = 'omnisound_sequencer'
 
 # Globals
@@ -66,31 +56,52 @@ LAYOUT = []
 CHANNELS = []
 
 
-def generate_tracks_and_layout(num_tracks, measures_per_track, meter):
+def _get_note_config_and_scale(meter):
+    attr_val_default_map = NoteValues(midi_note.ATTR_NAMES)
+    # TODO Make configurable from UI
+    attr_val_default_map.instrument = INSTRUMENT
+    attr_val_default_map.time = 0
+    attr_val_default_map.duration = meter.beat_note_dur_secs
+    # TODO Make configurable from UI
+    attr_val_default_map.velocity = 0
+    # TODO Make configurable from UI
+    attr_val_default_map.pitch = midi_note.pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
+    note_config = midi_note.DEFAULT_NOTE_CONFIG()
+    note_config.attr_val_default_map = attr_val_default_map.as_dict()
+    # TODO Make Scale configurable in the UI
+    scale = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_config)
+    return note_config, scale
+
+
+# TODO Swing support in UI
+def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
+    note_config, scale = _get_note_config_and_scale(meter)
+
     for i in range(num_tracks):
         track = MidiTrack(meter=meter, channel=i + 1, instrument=INSTRUMENT)
         TRACKS.append(track)
+
         CHANNELS.append([])
         LAYOUT.append([])
-        layout_measures = []
+        layout_measures_row = []
+
         for j in range(measures_per_track):
-            measure = Measure(meter=meter, num_notes=meter.beats_per_measure, mn=NOTE_CONFIG)
+            measure = Measure(meter=meter, num_notes=meter.beats_per_measure, mn=note_config)
             track.append(measure)
 
             layout_notes = []
             for k in range(meter.beats_per_measure):
-                # Set each note to the params of the root note in the Scale
-                set_attr_vals_from_dict(measure[k], as_dict(SCALE[0]))
+                # Initialize each note to the params of the root note in the Scale
+                set_attr_vals_from_dict(measure[k], as_dict(scale[0]))
 
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
-                # Key each button to it's index in the flattened Messages list.
-                # key * 2 because the index into Messages is even indexes, because Messages are note_on/note_off pairs.
-                key = 2 * ((j * meter.beats_per_measure) + k)
-                # Prepend key with track number, this is the channel for the queue of messages from the UI to this track
-                key = f'{i}_{key}'
+                # Prepend key with track num, this is the channel for the queue of messages from the UI to this track.
+                # Key each button to it's index in the flattened Messages list, key * 2 because the
+                # index into Messages is even indexes, because Messages are note_on/note_off pairs.
+                key = f'{i}_{2 * ((j * meter.beats_per_measure) + k)}'
                 layout_notes.append(sg.Checkbox(str(k + 1), default=False, enable_events=True, key=key))
-            layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
-        LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
+            layout_measures_row.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
+        LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures_row]))
 
 
 def _loop_track(track, track_idx, port):
@@ -110,6 +121,20 @@ def _loop_track(track, track_idx, port):
                     port.send(messages[i + 1])
                 else:
                     sleep(durations[int(i / 2)])
+
+
+def _parse_args():
+    parser = OptionParser()
+    parser.add_option('-n', '--num-tracks', dest='num_tracks', type="int", help="Number of sequencer tracks")
+    parser.add_option('-l', '--measures-per-track', dest='measures_per_track', type="int",
+                      help="Number of measures per sequencer track")
+    parser.add_option('-t', '--tempo', dest='tempo', type="int",
+                      help="Tempo in beats per minute of all sequencer tracks")
+    parser.add_option("-m", "--meter",
+                      action="store", dest="meter", default='4/4', type="string",
+                      help="Meter of sequencer tracks. Default is 4/4.")
+
+    return parser.parse_args()
 
 
 # noinspection PyBroadException
@@ -142,23 +167,10 @@ def start():
     window.close()
 
 
-def _parse_args():
-    parser = OptionParser()
-    parser.add_option('-n', '--num-tracks', dest='num_tracks', type="int", help="Number of sequencer tracks")
-    parser.add_option('-l', '--measures-per-track', dest='measures_per_track', type="int",
-                      help="Number of measures per sequencer track")
-    parser.add_option('-t', '--tempo', dest='tempo', type="int",
-                      help="Tempo in beats per minute of all sequencer tracks")
-    parser.add_option("-m", "--meter",
-                      action="store", dest="meter", default='4/4', type="string",
-                      help="Meter of sequencer tracks. Default is 4/4.")
-
-    return parser.parse_args()
-
-
 if __name__ == '__main__':
     options, _ = _parse_args()
     beats_per_measure, beat_note_dur = Meter.get_bpm_and_duration_from_meter_string(options.meter)
-    generate_tracks_and_layout(options.num_tracks, options.measures_per_track,
-                               Meter(beats_per_measure=beats_per_measure, beat_note_dur=beat_note_dur))
+    _generate_tracks_and_layout(options.num_tracks, options.measures_per_track,
+                                Meter(beats_per_measure=beats_per_measure, beat_note_dur=beat_note_dur,
+                                      tempo=options.tempo))
     start()
