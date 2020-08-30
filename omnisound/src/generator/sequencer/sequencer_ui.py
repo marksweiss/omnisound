@@ -80,7 +80,7 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
     note_config, scale = _get_note_config_and_scale(meter)
 
     for i in range(num_tracks):
-        track = MidiTrack(meter=meter, channel=i + 1, instrument=INSTRUMENT)
+        track = MidiTrack(meter=meter, channel=i, instrument=INSTRUMENT)
         TRACKS.append(track)
 
         CHANNELS.append([])
