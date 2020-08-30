@@ -122,11 +122,6 @@ class Meter:
 
     tempo = property(_get_tempo, _set_tempo)
 
-    def _get_notes_per_measure(self):
-        return self.quarter_notes_per_beat_note * self.beats_per_measure
-
-    notes_per_measure = property(_get_tempo)
-
     def get_secs_for_note_time(self, note_time_val: Union[float, int, NoteDur]):
         """Helper to convert a note time in NoteDur or float that represents either a note start_time or
            note duration within a measure in the measure's meter into an absolute floating point value in

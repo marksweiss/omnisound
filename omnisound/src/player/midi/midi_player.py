@@ -37,7 +37,7 @@ class MidiEventType(Enum):
     NOTE_OFF = 'note_off'
 
 
-class MidiPlayerEvent(object):
+class MidiPlayerEvent:
     """
     Small type to handle the business logic of creating a sequence of ordered MIDI events,
     ordered by absolute time of the event, and annotated with their delta time (the offset

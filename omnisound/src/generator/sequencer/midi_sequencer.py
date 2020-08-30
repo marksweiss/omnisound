@@ -6,6 +6,7 @@ from typing import Optional
 from omnisound.src.note.adapter.note import MakeNoteConfig
 from omnisound.src.note.adapter.midi_note import (ATTR_NAME_IDX_MAP, ATTR_VAL_CAST_MAP, CLASS_NAME,
                                                   pitch_for_key, make_note, NUM_ATTRIBUTES)
+from omnisound.src.generator.chord import Chord
 from omnisound.src.generator.sequencer.sequencer import Sequencer
 from omnisound.src.modifier.meter import Meter
 from omnisound.src.modifier.swing import Swing
@@ -20,6 +21,7 @@ class MidiSingleTrackSequencer(Sequencer):
                  num_measures: int = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 arpeggiator_chord: Optional[Chord] = None,
                  mn: MakeNoteConfig = None):
         if not mn:
             mn = MakeNoteConfig(cls_name=CLASS_NAME,
@@ -33,7 +35,7 @@ class MidiSingleTrackSequencer(Sequencer):
                 num_measures=num_measures,
                 meter=meter,
                 swing=swing,
-                # TODO THIS IS WRONG - A SEQUENCER IS A SONG, DON'T PASS IN SONG
+                arpeggiator_chord=arpeggiator_chord,
                 player=MidiInteractiveSingleTrackPlayer(append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote),
                 mn=mn)
 
@@ -44,6 +46,7 @@ class MidiMultitrackSequencer(Sequencer):
                  num_measures: int = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
+                 arpeggiator_chord: Optional[Chord] = None,
                  mn: MakeNoteConfig = None):
         if not mn:
             mn = MakeNoteConfig(cls_name=CLASS_NAME,
@@ -57,6 +60,7 @@ class MidiMultitrackSequencer(Sequencer):
               num_measures=num_measures,
               meter=meter,
               swing=swing,
+              arpeggiator_chord=arpeggiator_chord,
               player=MidiInteractiveMultitrackPlayer(append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote),
               mn=mn)
 
