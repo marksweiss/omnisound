@@ -10,6 +10,10 @@ from omnisound.src.container.note_sequence import NoteSequence
 from omnisound.src.utils.validation_utils import validate_optional_types, validate_type, validate_type_choice
 
 
+class InvalidMeterStringException(Exception):
+    pass
+
+
 class NoteDur(Enum):
     _1_0 = 1.0
     _0_5 = 0.5
@@ -32,6 +36,17 @@ class NoteDur(Enum):
     THIRTYSECOND = _0_03125
     SXTYFRTH = _0_015625
     SIXTYFOURTH = _0_015625
+
+
+METER_BEATS_NOTE_DUR_MAP = {
+    1: NoteDur.WHOLE,
+    2: NoteDur.HALF,
+    4: NoteDur.QUARTER,
+    8: NoteDur.EIGHTH,
+    16: NoteDur.SIXTEENTH,
+    32: NoteDur.THIRTYSECOND,
+    64: NoteDur.SIXTYFOURTH
+}
 
 
 class InvalidQuantizationDurationException(Exception):
@@ -95,9 +110,9 @@ class Meter:
     def _set_tempo_attributes(self, tempo: int):
         self.tempo_qpm = tempo or Meter.DEFAULT_QUARTER_NOTES_PER_MINUTE
         self.quarter_note_dur_secs = Meter.SECS_PER_MINUTE / self.tempo_qpm
-        self.note_dur_secs = self.quarter_notes_per_beat_note * self.quarter_note_dur_secs
-        self.measure_dur_secs = self.note_dur_secs * self.beats_per_measure
-        self.beat_start_times_secs = [self.note_dur_secs * i for i in range(self.beats_per_measure)]
+        self.beat_note_dur_secs = self.quarter_notes_per_beat_note * self.quarter_note_dur_secs
+        self.measure_dur_secs = self.beat_note_dur_secs * self.beats_per_measure
+        self.beat_start_times_secs = [self.beat_note_dur_secs * i for i in range(self.beats_per_measure)]
 
     def _get_tempo(self):
         return self.tempo_qpm
@@ -106,6 +121,11 @@ class Meter:
         self._set_tempo_attributes(tempo)
 
     tempo = property(_get_tempo, _set_tempo)
+
+    def _get_notes_per_measure(self):
+        return self.quarter_notes_per_beat_note * self.beats_per_measure
+
+    notes_per_measure = property(_get_tempo)
 
     def get_secs_for_note_time(self, note_time_val: Union[float, int, NoteDur]):
         """Helper to convert a note time in NoteDur or float that represents either a note start_time or
@@ -120,7 +140,17 @@ class Meter:
                 and note_time_val in NoteDur:
             dur = note_time_val.value
         # noinspection PyTypeChecker
-        return self.note_dur_secs * dur
+        return self.beat_note_dur_secs * dur
+
+    @staticmethod
+    def get_bpm_and_duration_from_meter_string(meter_string: str):
+        if '/' not in meter_string:
+            raise InvalidMeterStringException('Meter string must be in the form \\d+/\\d+')
+        try:
+            beats_per_measure, beat_note_duration = meter_string.split('/')
+            return int(beats_per_measure), METER_BEATS_NOTE_DUR_MAP[int(beat_note_duration)]
+        except Exception:
+            raise InvalidMeterStringException('Meter string must be in the form \\d+/\\d+')
 
     def is_quantizing(self):
         return self.quantizing
@@ -176,8 +206,9 @@ class Meter:
         """
         validate_type('note_sequence', note_sequence, NoteSequence)
 
+        # noinspection SpellCheckingInspection
         if self.quantizing:
-            notes_dur = max([note.start + note.duration for note in note_sequence])
+            notes_dur = max(note.start + note.duration for note in note_sequence)
             if notes_dur == self.measure_dur_secs:
                 return
 
@@ -202,6 +233,7 @@ class Meter:
                         note.start = 1.0 - note.duration
 
     def quantize_to_beat(self, note_sequence: NoteSequence):
+        # sourcery skip: assign-if-exp
         """Adjusts each note start_time to the closest beat time, so that each note will start on a beat.
         """
         validate_type('note_sequence', note_sequence, NoteSequence)

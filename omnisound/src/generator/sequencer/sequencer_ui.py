@@ -15,6 +15,7 @@
 # TO RUN: python -m omnisound.src.generator.sequencer.sequencer_ui
 
 from itertools import chain, count
+from optparse import OptionParser
 from time import sleep
 import threading
 
@@ -41,8 +42,8 @@ ATTR_VAL_DEFAULT_MAP.time = 0
 ATTR_VAL_DEFAULT_MAP.duration = NOTE_DUR.QUARTER.value
 ATTR_VAL_DEFAULT_MAP.velocity = 0
 ATTR_VAL_DEFAULT_MAP.pitch = midi_note.pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
-note_config = midi_note.DEFAULT_NOTE_CONFIG()
-note_config.attr_val_default_map = ATTR_VAL_DEFAULT_MAP.as_dict()
+NOTE_CONFIG = midi_note.DEFAULT_NOTE_CONFIG()
+NOTE_CONFIG.attr_val_default_map = ATTR_VAL_DEFAULT_MAP.as_dict()
 
 # Measure config
 NUM_TRACKS = 1
@@ -51,12 +52,12 @@ BEATS_PER_MEASURE = int(1 / NOTE_DUR.value)
 TEMPO = 120
 METER = Meter(beats_per_measure=BEATS_PER_MEASURE, beat_note_dur=NOTE_DUR, tempo=TEMPO, quantizing=True)
 NOTES_PER_MEASURE = METER.quarter_notes_per_beat_note * METER.beats_per_measure
-MEASURE = Measure(meter=METER, num_notes=NOTES_PER_MEASURE, mn=note_config)
+MEASURE = Measure(meter=METER, num_notes=NOTES_PER_MEASURE, mn=NOTE_CONFIG)
 
 # Scale config
 HARMONIC_SCALE = HarmonicScale.Major
 KEY = MajorKey
-SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=note_config)
+SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=NOTE_CONFIG)
 
 # Mido config
 PORT_NAME = 'omnisound_sequencer'
@@ -68,25 +69,26 @@ LAYOUT = []
 QUEUE = []
 
 
-def generate_tracks_and_layout():
-    for i in range(NUM_TRACKS):
+def generate_tracks_and_layout(num_tracks, measures_per_track, meter):
+    for i in range(num_tracks):
         track = MidiTrack(meter=METER, channel=i + 1, instrument=INSTRUMENT)
         TRACKS.append(track)
         LAYOUT.append([])
         layout_measures = []
-        for j in range(NUM_MEASURES):
-            measure = Measure.copy(MEASURE)
+        for j in range(measures_per_track):
+            measure = Measure(meter=meter, num_notes=meter.notes_per_measure, mn=NOTE_CONFIG)
             track.append(measure)
             layout_notes = []
-            for k in range(NOTES_PER_MEASURE):
+            for k in range(meter.beats_per_measure):
                 # Set each note to the params of the root note in the Scale
                 set_attr_vals_from_dict(measure[k], as_dict(SCALE[0]))
                 # PySimpleGUI refers to UI objects by "key" and returns this key when events are trapped on the UI.
                 # Key each button to it's index in the flattened Messages list.
                 # key * 2 because the index into Messages is even indexes, because Messages are note_on/note_off pairs.
                 layout_notes.append(
-                    sg.Checkbox(str(k + 1), default=False, enable_events=True,
-                                key=2 * ((i * NUM_MEASURES * NOTES_PER_MEASURE) + (j * NOTES_PER_MEASURE) + k)))
+                        sg.Checkbox(str(k + 1), default=False, enable_events=True,
+                                    key=2 * ((i * measures_per_track * meter.notes_per_measure) +
+                                             (j * meter.notes_per_measure) + k)))
             layout_measures.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures]))
 
@@ -106,7 +108,7 @@ def _loop_track():
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
-                # Only send midi messages if the note has positive volume (will make a sound)
+                # Only send midi messages if the note has positive volume(will make a sound)
                 if messages[i].velocity:
                     port.send(messages[i])
                     sleep(durations[int(i / 2)])
@@ -125,7 +127,7 @@ def start():
     # Create an event loop, necessary or the first event trapped closes the window
     while True:
         # This is the framework mechanism for polling the window for events and status
-        # Tune responsiveness with the timeout arg (in milliseconds), 0 means no timeout
+        # Tune responsiveness with the timeout arg(in milliseconds), 0 means no timeout
         event, values = window.read(timeout=5)
         # Exit event loop if user closes window, going immediately to window.close(). Any other pattern crashes.
         if event == sg.WIN_CLOSED:
@@ -137,12 +139,29 @@ def start():
             # for the state of all UI elements by key value. In this case, for checkboxes, values is a dict of
             # {event: True/False}. So if True, the checkbox is checked on and set the volume positive, else set to 0.
             # Put a tuple on the queue so the MIDI event loop just pulls that off and sets the message at index event
-            # to the value for velocity (volume in MIDI parlance).
+            # to the value for velocity(volume in MIDI parlance).
             QUEUE.append((event, midi_note.MIDI_PARAM_MAX_VAL if values[event] else 0))
 
     window.close()
 
 
+def _parse_args():
+    parser = OptionParser()
+    parser.add_option('-n', '--num-tracks', dest='num_tracks', type="int", help="Number of sequencer tracks")
+    parser.add_option('-l', '--measures-per-track', dest='measures_per_track', type="int",
+                      help="Number of measures per sequencer track")
+    parser.add_option('-t', '--tempo', dest='tempo', type="int",
+                      help="Tempo in beats per minute of all sequencer tracks")
+    parser.add_option("-m", "--meter",
+                      action="store", dest="meter", default='4/4', type="string",
+                      help="Meter of sequencer tracks. Default is 4/4.")
+
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    generate_tracks_and_layout()
+    options, _ = _parse_args()
+    beats_per_measure, beat_note_dur = Meter.get_bpm_and_duration_from_meter_string(options.meter)
+    generate_tracks_and_layout(options.num_tracks, options.measures_per_track,
+                               Meter(beats_per_measure=beats_per_measure, beat_note_dur=beat_note_dur))
     start()

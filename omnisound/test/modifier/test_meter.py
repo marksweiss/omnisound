@@ -3,7 +3,7 @@
 import pytest
 
 from omnisound.src.note.adapter.note import MakeNoteConfig
-from omnisound.src.modifier.meter import Meter, NoteDur
+from omnisound.src.modifier.meter import InvalidMeterStringException, Meter, NoteDur
 from omnisound.src.container.note_sequence import NoteSequence
 import omnisound.src.note.adapter.csound_note as csound_note
 
@@ -84,7 +84,7 @@ def test_meter():
     assert meter.tempo_qpm == TEMPO_QPM
     assert meter.quarter_note_dur_secs == pytest.approx(Meter.SECS_PER_MINUTE / TEMPO_QPM)
     assert meter.quarter_notes_per_beat_note == pytest.approx(beat_note_dur / Meter.QUARTER_NOTE_DUR)
-    assert meter.note_dur_secs == pytest.approx(meter.quarter_notes_per_beat_note * meter.quarter_note_dur_secs)
+    assert meter.beat_note_dur_secs == pytest.approx(meter.quarter_notes_per_beat_note * meter.quarter_note_dur_secs)
     assert meter.measure_dur_secs == pytest.approx(MEASURE_DUR)
     # 4/4
     # 4 quarter note beats per measure
@@ -221,15 +221,29 @@ def test_quantize_to_beat(make_note_config, note_sequence, meter):
 def test_tempo(meter):  # sourcery skip: use-assigned-variable
     assert meter.tempo == TEMPO_QPM
     quarter_note_dur_secs = meter.quarter_note_dur_secs
-    note_dur_secs = meter.note_dur_secs
+    note_dur_secs = meter.beat_note_dur_secs
     measure_dur_secs = meter.measure_dur_secs
 
     new_tempo = TEMPO_QPM / 2
     meter.tempo = new_tempo
     assert meter.tempo == new_tempo
     assert meter.quarter_note_dur_secs == pytest.approx(2 * quarter_note_dur_secs)
-    assert meter.note_dur_secs == pytest.approx(2 * note_dur_secs)
+    assert meter.beat_note_dur_secs == pytest.approx(2 * note_dur_secs)
     assert meter.measure_dur_secs == pytest.approx(2 * measure_dur_secs)
+
+
+def test_get_bpm_and_duration_from_meter_string():  # sourcery skip: move-assign
+    valid_meter_string = '3/8'
+    beats_per_measure, beat_note_duration = Meter.get_bpm_and_duration_from_meter_string(valid_meter_string)
+    assert beats_per_measure == 3 and beat_note_duration == NoteDur.EIGHTH
+
+    invalid_meter_string = '38'
+    with pytest.raises(InvalidMeterStringException):
+        _, _ = Meter.get_bpm_and_duration_from_meter_string(invalid_meter_string)
+
+    invalid_meter_string = '3.8'
+    with pytest.raises(InvalidMeterStringException):
+        _, _ = Meter.get_bpm_and_duration_from_meter_string(invalid_meter_string)
 
 
 if __name__ == '__main__':
