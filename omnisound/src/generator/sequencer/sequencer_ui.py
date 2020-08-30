@@ -96,25 +96,17 @@ def generate_tracks_and_layout(num_tracks, measures_per_track, meter):
 
 def _loop_track(track, track_idx, port):
     with port:
-        messages, durations = get_midi_messages_and_notes_for_track (track)
+        messages, durations = get_midi_messages_and_notes_for_track(track)
         loop_duration = messages[-1].time
         for j in count():
             while CHANNELS[track_idx]:
                 i, velocity = CHANNELS[track_idx].pop()
-
-                # TEMP DEBUG
-                print(i)
-
                 messages[i].velocity = velocity
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
                 # Only send midi messages if the note has positive volume(will make a sound)
                 if messages[i].velocity:
-
-                    # TEMP DEBUG
-                    print(f'Sending velocity {messages[i].velocity} to track {track_idx} message {i}')
-
                     port.send(messages[i])
                     sleep(durations[int(i / 2)])
                     port.send(messages[i + 1])
@@ -150,10 +142,6 @@ def start():
             # Parse the event for the track that generated it and the note idx into the measures for the track,
             # push (note_idx, note changes) onto the queue (channel) for the track
             track_idx, note_idx = event.split('_')
-
-            # TEMP DEBUG
-            print(f'channel {track_idx}, note {note_idx}')
-
             CHANNELS[int(track_idx)].append((int(note_idx), midi_note.MIDI_PARAM_MAX_VAL if values[event] else 0))
 
     window.close()
