@@ -15,7 +15,7 @@
 # TO RUN:  python -m omnisound.src.generator.sequencer.sequencer_ui \
 #               --num-tracks 2 --measures-per-track 4 --tempo 120 --meter 13/4
 
-from itertools import chain, count
+from itertools import count
 from optparse import OptionParser
 from time import sleep
 import threading
@@ -56,7 +56,6 @@ SCALE = Scale(key=KEY, octave=OCTAVE, harmonic_scale=HARMONIC_SCALE, mn=NOTE_CON
 PORT_NAME = 'omnisound_sequencer'
 
 # Globals
-# SEQUENCER = None
 TRACKS = []
 LAYOUT = []
 # Used by the window event loop thread to communicate captured note events to the Midi playback thread
@@ -64,10 +63,6 @@ CHANNELS = []
 
 
 def generate_tracks_and_layout(num_tracks, measures_per_track, meter):
-    # global SEQUENCER
-    # SEQUENCER = MidiMultitrackSequencer(name='UI Sequencer', num_measures=num_tracks * measures_per_track,
-    #                                     meter=meter, swing=None, arpeggiator_chord=None, mn=NOTE_CONFIG)
-
     for i in range(num_tracks):
         track = MidiTrack(meter=meter, channel=i + 1, instrument=INSTRUMENT)
         TRACKS.append(track)
@@ -105,7 +100,6 @@ def _loop_track(track, track_idx, port):
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
-                # Only send midi messages if the note has positive volume(will make a sound)
                 if messages[i].velocity:
                     port.send(messages[i])
                     sleep(durations[int(i / 2)])
@@ -118,9 +112,6 @@ def _loop_track(track, track_idx, port):
 def start():
     # This launches the parent thread / event loop
     window = sg.Window('Omnisound Sequencer', LAYOUT)
-    # This launches a second thread running the calls write to the Midi output port in parallel to the UI thread
-    # noinspection PyUnresolvedReferences
-    # SEQUENCER.loop()
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
     for i, track in enumerate(TRACKS):
         threading.Thread(target=_loop_track, args=(track, i, port), daemon=True).start()
