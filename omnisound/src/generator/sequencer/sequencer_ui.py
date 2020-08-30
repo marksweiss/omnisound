@@ -61,6 +61,8 @@ def _get_note_config_and_scale(meter):
     # TODO Make configurable from UI
     attr_val_default_map.instrument = INSTRUMENT
     attr_val_default_map.time = 0
+    # We can use beat_note_dur_secs because sequencer currently supports only all notes being beat duration
+    # If we allow note duration to be configured we would use `meter.get_secs_for_note_time(note_dur)`
     attr_val_default_map.duration = meter.beat_note_dur_secs
     # TODO Make configurable from UI
     attr_val_default_map.velocity = 0

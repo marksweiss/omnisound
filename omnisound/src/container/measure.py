@@ -66,7 +66,6 @@ class Measure(NoteSequence):
         self.beat = 0
         # Support adding notes offset from end of previous note
         self.next_note_start = 0.0
-        # TODO Changed to self.meter.beat_note_dur_secs, ensure tests pass
         self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur_secs
 
     def _sort_notes_by_start_time(self):
