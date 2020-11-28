@@ -91,7 +91,7 @@ class Sequencer(Song):
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
-        self.default_note_duration = self.meter.beat_note_dur.value
+        self.default_note_duration: float = self.meter.beat_note_dur.value
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
@@ -273,12 +273,12 @@ class Sequencer(Song):
         measure_tokens = [t.strip() for t in pattern.split(Sequencer.MEASURE_TOKEN_DELIMITER)]
         for measure_token in measure_tokens:
             note_tokens = [t.strip() for t in measure_token.split()]
-            next_start = 0
+            next_start = 0.0
             duration = self.default_note_duration
             # Sum up the duration of all note positions to validate that the notes fit in the measure. We look at
             # "note positions" because for chords we only count the duration of all the notes in the chord once,
             # because they sound simultaneously so that duration only contributes to the total duration once.
-            measure_duration = 0
+            measure_duration = 0.0
             note_vals_lst = []
             for i, note_token in enumerate(note_tokens):
                 start = self.mn.attr_val_cast_map['start'](next_start)
@@ -294,14 +294,13 @@ class Sequencer(Song):
                 # It's a sounding note or chord, parse the pattern and collect the note/chord parameters
                 else:
                     key, octave, chord, amplitude, duration = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
-
                     # Only major or minor notes supported
                     key = MAJOR_KEY_DICT.get(key) or MINOR_KEY_DICT.get(key)
                     if not key:
                         raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid key {key} token')
-
                     octave = int(octave)
                     amplitude = self.mn.attr_val_cast_map['amplitude'](amplitude)
+                    duration = float(duration)
 
                     # It's a chord. `arpeggiate=True` is ignored.
                     if chord:
