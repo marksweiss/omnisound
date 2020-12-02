@@ -34,8 +34,8 @@ PATTERN_RESOLUTION = NoteDur.QUARTER
 ARPEGGIATOR_CHORD = HarmonicChord.MinorTriad
 
 TRACK_NAME = 'Track 1'
-PATTERN = ('C:4::100: D:4::100: E:4::100: F:4::100:|C:4::100: D:4::100: E:4::100: F:4::100:|'
-           'C:4::100: D:4::100: E:4::100: F:4::100:|C:4::100: D:4::100: E:4::100: F:4::100:')
+PATTERN = ('C:4::100:0.25 D:4::100:0.25 E:4::100:0.25 F:4::100:0.25|C:4::100:0.25 D:4::100:0.25 E:4::100:0.25 F:4::100:0.25|'
+           'C:4::100:0.25 D:4::100:0.25 E:4::100:0.25 F:4::100:0.25|C:4::100:0.25 D:4::100:0.25 E:4::100:0.25 F:4::100:0.25')
 
 
 @pytest.fixture
@@ -124,10 +124,10 @@ def test_add_pattern_as_new_track(make_note_config, sequencer, meter, swing):
 
 
 def test_add_pattern_wth_chords_as_new_track(sequencer, meter, swing):
-    chord_pattern = ('C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
-                     'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
-                     'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:|'
-                     'C:4::100: C:4:MajorTriad:100: C:4::100: C:4:MajorTriad:100:')
+    chord_pattern = ('C:4::100:0.25 C:4:MajorTriad:100:0.25 C:4::100:0.25 C:4:MajorTriad:100:0.25|'
+                     'C:4::100:0.25 C:4:MajorTriad:100:0.25 C:4::100:0.25 C:4:MajorTriad:100:0.25|'
+                     'C:4::100:0.25 C:4:MajorTriad:100:0.25 C:4::100:0.25 C:4:MajorTriad:100:0.25|'
+                     'C:4::100:0.25 C:4:MajorTriad:100:0.25 C:4::100:0.25 C:4:MajorTriad:100:0.25')
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=chord_pattern, instrument=INSTRUMENT)
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
     # Assert that there are notes in the measure for each single note and each note that is part of a chord
@@ -144,7 +144,7 @@ def test_add_pattern_wth_chords_as_new_track(sequencer, meter, swing):
 def test_fill_pattern_to_track_length(sequencer):
     # Make a pattern that is one measure long, load into sequencer set to have 4-measure tracks, verify the length
     #  of the track and that notes in it. There should be four measures identical to the one defined by `short_pattern`
-    short_pattern = 'C:4::100: D:4::100: E:4::100: F:4::100:'
+    short_pattern = 'C:4::100:0.25 D:4::100:0.25 E:4::100:0.25 F:4::100:0.25'
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=short_pattern, instrument=INSTRUMENT)
     assert NUM_MEASURES == len(sequencer.track(TRACK_NAME))
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
@@ -157,9 +157,9 @@ def test_fill_pattern_to_track_length(sequencer):
     # Test the case where the pattern does not divide the track length evenly
     # Three-measure pattern into 4-measure track, so the first measure should repeat in the fourth measure
     new_track_name = 'new track'
-    three_measure_pattern = ('C:4::100: D:4::100: E:4::100: F:4::100:|'
-                             'C:5::100: D:5::100: E:5::100: F:5::100:|'
-                             'C:6::100: D:6::100: E:6::100: F:6::100:')
+    three_measure_pattern = ('C:4::100:0.25 D:4::100:0.25 E:4::100:0.25 F:4::100:0.25|'
+                             'C:5::100:0.25 D:5::100:0.25 E:5::100:0.25 F:5::100:0.25|'
+                             'C:6::100:0.25 D:6::100:0.25 E:6::100:0.25 F:6::100:0.25')
     sequencer.add_pattern_as_new_track(track_name=new_track_name, pattern=three_measure_pattern, instrument=INSTRUMENT)
     assert NUM_MEASURES == len(sequencer.track(new_track_name))
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]

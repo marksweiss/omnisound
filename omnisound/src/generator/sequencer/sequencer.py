@@ -300,7 +300,9 @@ class Sequencer(Song):
                         raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid key {key} token')
                     octave = int(octave)
                     amplitude = self.mn.attr_val_cast_map['amplitude'](amplitude)
-                    duration = float(duration)
+                    # If no duration provided we already assigned default note duration (quarter note)
+                    if duration:
+                        duration = float(duration)
 
                     # It's a chord. `arpeggiate=True` is ignored.
                     if chord:
