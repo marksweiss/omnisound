@@ -34,19 +34,21 @@ if __name__ == '__main__':
     def get_velocity(j, notes_per_measure):
         return int(BASE_VELOCITY - ((j % notes_per_measure) / VELOCITY_FACTOR))
 
+    writer_sequencer = MidiWriterSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
+                                           meter=METER, swing=SWING,
+                                           midi_file_path=MIDI_FILE_PATH)
+
+    root_chord = HarmonicChord.AugmentedMinorSeventh
     track_name = 'ostinato'
     notes_per_measure = int(1 / NoteDur.THIRTYSECOND.value)
     pattern_phrases = []
     for j in range(0, notes_per_measure, 4):
         pattern_phrase = (f'C:4::{get_velocity (j, notes_per_measure)}:0.03125 '
-                          f'E:4::{get_velocity (j + 1, notes_per_measure)}:0.03125 '
+                          f'E_f:4::{get_velocity (j + 1, notes_per_measure)}:0.03125 '
                           f'G:4::{get_velocity (j + 2, notes_per_measure)}:0.03125 '
                           f'E:4::{get_velocity (j + 3, notes_per_measure)}:0.03125')
         pattern_phrases.append(pattern_phrase)
     pattern = ' '.join(pattern_phrases)
-    writer_sequencer = MidiWriterSequencer(name=SEQUENCER_NAME, num_measures=NUM_MEASURES,
-                                           meter=METER, swing=SWING,
-                                           midi_file_path=MIDI_FILE_PATH)
     writer_sequencer.add_pattern_as_new_track(track_name=track_name, pattern=pattern,
                                               instrument=MidiInstrument.Vibraphone.value,
                                               track_type=MidiTrack).channel = 1
