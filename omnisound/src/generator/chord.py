@@ -71,7 +71,7 @@ class Chord(NoteSequence):
         return matched_key_type
 
     @staticmethod
-    def get_mingus_chord_for_harmonic_chord(key: Any = None, harmonic_chord: Any = None):
+    def get_mingus_chord_for_harmonic_chord(key: Any = None, harmonic_chord: Any = None) -> str:
         validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type('harmonic_chord', harmonic_chord, HarmonicChord)
         return harmonic_chord.value(key.name)

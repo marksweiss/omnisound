@@ -27,10 +27,14 @@ import PySimpleGUI as sg
 
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.track import MidiTrack
+from omnisound.src.generator.chord import Chord
+from omnisound.src.generator.chord_globals import HarmonicChord
 from omnisound.src.generator.scale import HarmonicScale, MajorKey, Scale
 from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, NoteValues
+from omnisound.src.note.adapter.midi_note import pitch_for_key
 from omnisound.src.modifier.meter import Meter
 from omnisound.src.player.midi.midi_player import get_midi_messages_and_notes_for_track
+from omnisound.src.utils.mingus_utils import get_chord_pitches
 import omnisound.src.note.adapter.midi_note as midi_note
 
 # Note config
@@ -87,6 +91,14 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
         LAYOUT.append([])
         layout_measures_row = []
 
+        prototype_chord = Chord(harmonic_chord=HarmonicChord.MajorTriad, octave=OCTAVE, key=KEY.D, mn=note_config)
+        mingus_keys = Chord.get_mingus_chord_for_harmonic_chord(key=KEY, harmonic_chord=HarmonicChord.MajorTriad)
+        mingus_key_to_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(KEY)
+        chord_pitches = tuple(get_chord_pitches(mingus_keys=mingus_keys,
+                                                mingus_key_to_key_enum_mapping=mingus_key_to_enum_mapping,
+                                                pitch_for_key=pitch_for_key,
+                                                octave=OCTAVE))
+
         for j in range(measures_per_track):
             measure = Measure(meter=meter, num_notes=meter.beats_per_measure, mn=note_config)
             track.append(measure)
@@ -102,6 +114,7 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
                 # index into Messages is even indexes, because Messages are note_on/note_off pairs.
                 key = f'{i}_{2 * ((j * meter.beats_per_measure) + k)}'
                 layout_notes.append(sg.Checkbox(str(k + 1), default=False, enable_events=True, key=key))
+                sg.DropDown(values=Chord.copy(prototype_chord), key=chord_pitches, enable_events=True,)
             layout_measures_row.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures_row]))
 
