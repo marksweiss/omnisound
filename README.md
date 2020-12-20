@@ -5,8 +5,10 @@ Installation
 install [supercollider](https://supercollider.github.io/download)
 install [csound](https://csound.com/download.html)
 
-`git clone https://github.com/marksweiss/omnisound.git`
-`cd omnisound`
-`./install.sh`
-`d=$(pwd)``
-`ln -s "$d/ext/python_mingus/mingus/" "$d/mingus"`
+```bash
+git clone https://github.com/marksweiss/omnisound.git
+cd omnisound
+./install.sh
+d=$(pwd)
+ln -s "$d/ext/python_mingus/mingus/" "$d/mingus"
+```
