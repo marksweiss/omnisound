@@ -14,6 +14,11 @@ def validate_type(arg_name, val, val_type) -> bool:
 
 
 def validate_type_choice(arg_name, val, val_types) -> Tuple[bool, Optional[Any]]:
+    """
+    Validator for a value that must be an instance of one of a choice of types.
+    NOTE: This works for plain types and enum types. In the latter case the value must
+    be a value in the set of values in one of a set of enum types
+    """
     matched = False
     matched_type = None
     for val_type in val_types:
@@ -79,10 +84,9 @@ def validate_optional_sequence_of_type(arg_name, seq_val, val_type) -> bool:
     """Can be None or an empty collection and return True. Else if not empty each value must match val_type."""
     if not seq_val:
         return True
-    else:
-        validate_type_choice(arg_name, seq_val, (KeysView, ValuesView, list, tuple, set))
-        for val in seq_val:
-            validate_type(arg_name, val, val_type)
+    validate_type_choice(arg_name, seq_val, (KeysView, ValuesView, list, tuple, set))
+    for val in seq_val:
+        validate_type(arg_name, val, val_type)
     return True
 
 

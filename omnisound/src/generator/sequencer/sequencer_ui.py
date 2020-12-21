@@ -12,7 +12,7 @@
 # Then allow choosing instrument per track
 # Then make event loop the async event loop from midi player so timing is controlled
 
-# TO RUN:  python -m omnisound.src.generator.sequencer.sequencer_ui \
+# TO RUN:  python3 -m omnisound.src.generator.sequencer.sequencer_ui \
 #               --num-tracks 2 --measures-per-track 4 --tempo 120 --meter 13/4
 
 from itertools import count
@@ -30,6 +30,7 @@ from omnisound.src.container.track import MidiTrack
 from omnisound.src.generator.chord import Chord
 from omnisound.src.generator.chord_globals import HarmonicChord
 from omnisound.src.generator.scale import HarmonicScale, MajorKey, Scale
+from omnisound.src.generator.scale_globals import MAJOR_KEY_DICT
 from omnisound.src.note.adapter.note import as_dict, set_attr_vals_from_dict, NoteValues
 from omnisound.src.note.adapter.midi_note import pitch_for_key
 from omnisound.src.modifier.meter import Meter
@@ -46,8 +47,11 @@ INSTRUMENT = midi_note.MidiInstrument.Acoustic_Grand_Piano.value
 # Scale config
 # TODO Make configurable in the UI
 HARMONIC_SCALE = HarmonicScale.Major
+HARMONIC_CHORD = HarmonicChord.MajorTriad
 # TODO Make configurable in the UI
 KEY = MajorKey
+KEY_PITCH = KEY.C
+KEY_DICT = MAJOR_KEY_DICT
 
 # Mido config
 # TODO Make configurable in the UI
@@ -71,7 +75,7 @@ def _get_note_config_and_scale(meter):
     # TODO Make configurable from UI
     attr_val_default_map.velocity = 0
     # TODO Make configurable from UI
-    attr_val_default_map.pitch = midi_note.pitch_for_key(key=MajorKey.C, octave=OCTAVE)  # C4 60 "Middle C"
+    attr_val_default_map.pitch = midi_note.pitch_for_key(key=KEY_PITCH, octave=OCTAVE)  # C4 60 "Middle C"
     note_config = midi_note.DEFAULT_NOTE_CONFIG()
     note_config.attr_val_default_map = attr_val_default_map.as_dict()
     # TODO Make Scale configurable in the UI
@@ -91,13 +95,16 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
         LAYOUT.append([])
         layout_measures_row = []
 
-        prototype_chord = Chord(harmonic_chord=HarmonicChord.MajorTriad, octave=OCTAVE, key=KEY.D, mn=note_config)
-        mingus_keys = Chord.get_mingus_chord_for_harmonic_chord(key=KEY, harmonic_chord=HarmonicChord.MajorTriad)
+        mingus_keys = Chord.get_mingus_chord_for_harmonic_chord(key=KEY_PITCH, harmonic_chord=HarmonicChord.MajorTriad)
         mingus_key_to_enum_mapping = Scale.get_mingus_key_to_key_enum_mapping(KEY)
-        chord_pitches = tuple(get_chord_pitches(mingus_keys=mingus_keys,
-                                                mingus_key_to_key_enum_mapping=mingus_key_to_enum_mapping,
-                                                pitch_for_key=pitch_for_key,
-                                                octave=OCTAVE))
+
+        chord_label = \
+            f'{KEY_PITCH.name}.{HARMONIC_CHORD.name}:.{"-".join(mingus_key_to_enum_mapping[mingus_key].name for mingus_key in mingus_keys)}'
+        chord_pitches = '_'.join(str(pitch) for pitch in
+                                 get_chord_pitches(mingus_keys=mingus_keys,
+                                                   mingus_key_to_key_enum_mapping=mingus_key_to_enum_mapping,
+                                                   pitch_for_key=pitch_for_key,
+                                                   octave=OCTAVE))
 
         for j in range(measures_per_track):
             measure = Measure(meter=meter, num_notes=meter.beats_per_measure, mn=note_config)
@@ -112,21 +119,32 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
                 # Prepend key with track num, this is the channel for the queue of messages from the UI to this track.
                 # Key each button to it's index in the flattened Messages list, key * 2 because the
                 # index into Messages is even indexes, because Messages are note_on/note_off pairs.
-                key = f'{i}_{2 * ((j * meter.beats_per_measure) + k)}'
-                layout_notes.append(sg.Checkbox(str(k + 1), default=False, enable_events=True, key=key))
-                sg.DropDown(values=Chord.copy(prototype_chord), key=chord_pitches, enable_events=True,)
+                # NOTE: 'key' is overloaded and here means unique id referring to PySimpleGUI object.
+                # key must be unique. For note on_off the value is unique on each iteration so don't need key
+                event_id = f'{i}_{2 * ((j * meter.beats_per_measure) + k)}'
+                start_key = f'note_on_off|{event_id}|{event_id}'
+                layout_notes.append(sg.Checkbox(str(k + 1), default=False, enable_events=True, key=start_key))
+                # chord_key needs a unique key id and a value, because values can repeat
+                chord_key = f'chord|{event_id}|{str(chord_pitches)}'
+                layout_notes.append(sg.DropDown(values=str(chord_label), key=chord_key,
+                                                enable_events=True, size=(20, 20)))
             layout_measures_row.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures_row]))
 
 
 def _loop_track(track, track_idx, port):
     with port:
+        # TODO THIS ONLY RETURNS NOTE ON/OFF, NOT ACTUAL NOTES
         messages, durations = get_midi_messages_and_notes_for_track(track)
         loop_duration = messages[-1].time
         for j in count():
             while CHANNELS[track_idx]:
-                i, velocity = CHANNELS[track_idx].pop()
-                messages[i].velocity = velocity
+                note_index, event_type, event_data = CHANNELS[track_idx].pop()
+
+                if event_type == 'note_on_off':
+                    messages[note_index].velocity = event_data
+                elif event_type == 'chord':
+                    messages[note_index].pitch = event_data
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
@@ -136,20 +154,6 @@ def _loop_track(track, track_idx, port):
                     port.send(messages[i + 1])
                 else:
                     sleep(durations[int(i / 2)])
-
-
-def _parse_args():
-    parser = OptionParser()
-    parser.add_option('-n', '--num-tracks', dest='num_tracks', type="int", help="Number of sequencer tracks")
-    parser.add_option('-l', '--measures-per-track', dest='measures_per_track', type="int",
-                      help="Number of measures per sequencer track")
-    parser.add_option('-t', '--tempo', dest='tempo', type="int",
-                      help="Tempo in beats per minute of all sequencer tracks")
-    parser.add_option("-m", "--meter",
-                      action="store", dest="meter", default='4/4', type="string",
-                      help="Meter of sequencer tracks. Default is 4/4.")
-
-    return parser.parse_args()
 
 
 # noinspection PyBroadException
@@ -170,16 +174,45 @@ def start():
             break
 
         if event != '__TIMEOUT__':
-            # event is the key value for the sg checkbox that changed state, which we set to the index into the
-            # MIDI messages for the note being manipulated by the checkbox. values is a dict of {event: value}
-            # for the state of all UI elements by key value. In this case, for checkboxes, values is a dict of
-            # {event: True/False}. So if True, the checkbox is checked on and set the volume positive, else set to 0.
-            # Parse the event for the track that generated it and the note idx into the measures for the track,
-            # push (note_idx, note changes) onto the queue (channel) for the track
-            track_idx, note_idx = event.split('_')
-            CHANNELS[int(track_idx)].append((int(note_idx), midi_note.MIDI_PARAM_MAX_VAL if values[event] else 0))
+            event_type, event_id, event_data = event.split('|')
+            track_idx, note_idx = event_id.split('_')
+
+            if event_type == 'note_on_off':
+                # event is the key value for the sg checkbox that changed state, which we set to the index into the
+                # MIDI messages for the note being manipulated by the checkbox. values is a dict of {event: value}
+                # for the state of all UI elements by key value. In this case, for checkboxes, values is a dict of
+                # {event: True/False}. So if True, the checkbox is checked on and set the volume positive, else set to 0.
+                # Parse the event for the track that generated it and the note idx into the measures for the track,
+                # push (note_idx, note changes) onto the queue (channel) for the track
+                CHANNELS[int(track_idx)].append(
+                    (int(note_idx),
+                     event_type,
+                     midi_note.MIDI_PARAM_MAX_VAL if values[event] else 0)
+                )
+            elif event_type == 'chord':
+                chord_pitches = [int(pitch) for pitch in event_data.split('_')]
+                CHANNELS[int(track_idx)].append(
+                        (int(note_idx),
+                         event_type,
+                         # TODO ACTUALLY SUPPORT CHORD. SHOULD BE ABLE TO STACK 3 NOTES HERE
+                         int(chord_pitches[0]) if values[event] else 0)
+                )
 
     window.close()
+
+
+def _parse_args():
+    parser = OptionParser()
+    parser.add_option('-n', '--num-tracks', dest='num_tracks', type="int", help="Number of sequencer tracks")
+    parser.add_option('-l', '--measures-per-track', dest='measures_per_track', type="int",
+                      help="Number of measures per sequencer track")
+    parser.add_option('-t', '--tempo', dest='tempo', type="int",
+                      help="Tempo in beats per minute of all sequencer tracks")
+    parser.add_option("-m", "--meter",
+                      action="store", dest="meter", default='4/4', type="string",
+                      help="Meter of sequencer tracks. Default is 4/4.")
+
+    return parser.parse_args()
 
 
 if __name__ == '__main__':

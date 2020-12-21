@@ -8,11 +8,17 @@ from omnisound.src.generator.chord_globals import HarmonicChord
 from omnisound.src.generator.scale_globals import MajorKey, MinorKey
 from omnisound.src.generator.scale import Scale
 from omnisound.src.utils.mingus_utils import set_notes_pitches_to_mingus_keys
-from omnisound.src.utils.validation_utils import validate_type, validate_type_choice, validate_types
+from omnisound.src.utils.validation_utils import validate_type, validate_type_choice,\
+    validate_types
 from mingus.core.chords import first_inversion as m_first_inversion
 from mingus.core.chords import second_inversion as m_second_inversion
 from mingus.core.chords import third_inversion as m_third_inversion
 
+
+# TODO Modify arg names that take a Harmonic Key enum value, e.g. MajorKey.C to be named
+#  'key_pitch' instead of 'key'. Also, Chord __init__ takes arg 'key_pitch'. This is to
+#  disambiguate between Chord arg 'key' which is an enum value and Scale arg 'key' which
+#  is one of the two Harmonic Chord enum *types* (MajorKey, MinorKey)
 
 # TODO SUPPORT FOR ARBITRARY CLUSTERS THAT AREN'T PART OF A SCALE
 class Chord(NoteSequence):
@@ -71,7 +77,8 @@ class Chord(NoteSequence):
         return matched_key_type
 
     @staticmethod
-    def get_mingus_chord_for_harmonic_chord(key: Any = None, harmonic_chord: Any = None) -> str:
+    def get_mingus_chord_for_harmonic_chord(key: Union[MajorKey, MinorKey] = None,
+                                            harmonic_chord: HarmonicChord = None) -> str:
         validate_type_choice('key', key, (MajorKey, MinorKey))
         validate_type('harmonic_chord', harmonic_chord, HarmonicChord)
         return harmonic_chord.value(key.name)
