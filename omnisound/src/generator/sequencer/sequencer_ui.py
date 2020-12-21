@@ -132,28 +132,36 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures_row]))
 
 
+# noinspection PyUnresolvedReferences
 def _loop_track(track, track_idx, port):
     with port:
-        messages, durations = get_midi_messages_and_notes_for_track(track)
-        loop_duration = messages[-1].time
+        messages_0, durations_0 = get_midi_messages_and_notes_for_track(track)
+        messages_1, durations_1 = get_midi_messages_and_notes_for_track(track)
+        messages_2, durations_2 = get_midi_messages_and_notes_for_track(track)
+        messages_list = (messages_0, messages_1, messages_2)
+        durations_list = (durations_0, durations_1, durations_2)
+        loop_duration = messages_0[-1].time
         for j in count():
             while CHANNELS[track_idx]:
                 note_index, event_type, event_data = CHANNELS[track_idx].pop()
 
                 if event_type == 'note_on_off':
-                    messages[note_index].velocity = event_data
+                    for messages in messages_list:
+                        messages[note_index].velocity = event_data
                 elif event_type == 'chord':
                     # noinspection PyUnresolvedReferences
-                    messages[note_index].note = event_data
+                    for chord_note_index, messages in enumerate(messages_list):
+                        messages[note_index].note = event_data[chord_note_index]
 
-            for i in range(0, len(messages), 2):
-                messages[i].time += (j * loop_duration)
-                if messages[i].velocity:
-                    port.send(messages[i])
-                    sleep(durations[int(i / 2)])
-                    port.send(messages[i + 1])
-                else:
-                    sleep(durations[int(i / 2)])
+            for i in range(0, len(messages_0), 2):
+                for duration_list_index, messages in enumerate(messages_list):
+                    messages[i].time += (j * loop_duration)
+                    if messages[i].velocity:
+                        port.send(messages[i])
+                        sleep(durations_list[duration_list_index][int(i / 2)])
+                        port.send(messages[i + 1])
+                    else:
+                        sleep(durations_list[duration_list_index][int(i / 2)])
 
 
 # noinspection PyBroadException
@@ -194,8 +202,7 @@ def start():
                 CHANNELS[int(track_idx)].append(
                         (int(note_idx),
                          event_type,
-                         # TODO ACTUALLY SUPPORT CHORD. SHOULD BE ABLE TO STACK 3 NOTES HERE
-                         int(chord_pitches[0]) if values[event] else 0)
+                         [int(p) for p in chord_pitches] if values[event] else (0, 0, 0))
                 )
 
     window.close()
