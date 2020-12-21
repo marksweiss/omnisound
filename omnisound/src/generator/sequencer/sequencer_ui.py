@@ -134,7 +134,6 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
 
 def _loop_track(track, track_idx, port):
     with port:
-        # TODO THIS ONLY RETURNS NOTE ON/OFF, NOT ACTUAL NOTES
         messages, durations = get_midi_messages_and_notes_for_track(track)
         loop_duration = messages[-1].time
         for j in count():
@@ -144,7 +143,8 @@ def _loop_track(track, track_idx, port):
                 if event_type == 'note_on_off':
                     messages[note_index].velocity = event_data
                 elif event_type == 'chord':
-                    messages[note_index].pitch = event_data
+                    # noinspection PyUnresolvedReferences
+                    messages[note_index].note = event_data
 
             for i in range(0, len(messages), 2):
                 messages[i].time += (j * loop_duration)
