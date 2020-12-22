@@ -62,7 +62,9 @@ TRACKS = []
 LAYOUT = []
 # Used by the window event loop thread to communicate captured note events to the Midi playback thread
 CHANNELS = []
-
+# Used by the window event loop to hightligh current playing note
+NOTE_ELEMENTS = []
+THREAD_COUNTER = []
 
 def _get_note_config_and_scale(meter):
     attr_val_default_map = NoteValues(midi_note.ATTR_NAMES)
@@ -123,17 +125,21 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
                 # key must be unique. For note on_off the value is unique on each iteration so don't need key
                 event_id = f'{i}_{2 * ((j * meter.beats_per_measure) + k)}'
                 start_key = f'note_on_off|{event_id}|{event_id}'
-                layout_notes.append(sg.Checkbox(str(k + 1), default=False, enable_events=True, key=start_key))
-                # chord_key needs a unique key id and a value, because values can repeat
                 chord_key = f'chord|{event_id}|{str(chord_pitches)}'
+
+                note_checkbox = sg.Checkbox(str (k + 1), default=False, enable_events=True, key=start_key)
+                layout_notes.append(note_checkbox)
+                NOTE_ELEMENTS.append(note_checkbox)
+                # chord_key needs a unique key id and a value, because values (i.e. which chord a note is) can repeat
                 layout_notes.append(sg.DropDown(values=str(chord_label), key=chord_key,
-                                                enable_events=True, size=(20, 20)))
+                                                enable_events=True, size=(15, 15)))
             layout_measures_row.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
         LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures_row]))
 
 
 # noinspection PyUnresolvedReferences
-def _loop_track(track, track_idx, port):
+def _loop_track(track, track_idx, num_notes, port):
+    # sourcery skip: hoist-statement-from-loop
     with port:
         messages_0, durations_0 = get_midi_messages_and_notes_for_track(track)
         messages_1, durations_1 = get_midi_messages_and_notes_for_track(track)
@@ -143,39 +149,53 @@ def _loop_track(track, track_idx, port):
         loop_duration = messages_0[-1].time
         for j in count():
             while CHANNELS[track_idx]:
-                note_index, event_type, event_data = CHANNELS[track_idx].pop()
+                note_idx, event_type, event_data = CHANNELS[track_idx].pop()
 
                 if event_type == 'note_on_off':
                     for messages in messages_list:
-                        messages[note_index].velocity = event_data
+                        messages[note_idx].velocity = event_data
                 elif event_type == 'chord':
-                    # noinspection PyUnresolvedReferences
-                    for chord_note_index, messages in enumerate(messages_list):
-                        messages[note_index].note = event_data[chord_note_index]
+                    for chord_note_idx, messages in enumerate(messages_list):
+                        messages[note_idx].note = event_data[chord_note_idx]
 
             for i in range(0, len(messages_0), 2):
-                for duration_list_index, messages in enumerate(messages_list):
+                for duration_list_idx, messages in enumerate(messages_list):
                     messages[i].time += (j * loop_duration)
                     if messages[i].velocity:
                         port.send(messages[i])
-                        sleep(durations_list[duration_list_index][int(i / 2)])
+                        # Sleep for note duration: this essentially controls tempo
+                        sleep(durations_list[duration_list_idx][int(i / 2)])
                         port.send(messages[i + 1])
                     else:
-                        sleep(durations_list[duration_list_index][int(i / 2)])
+                        sleep(durations_list[duration_list_idx][int(i / 2)])
+
+                    # Update current note indicator by changing text color. Should be its own function but not for performance.
+                    last_counter = THREAD_COUNTER[track_idx]
+                    NOTE_ELEMENTS[last_counter].update(text_color='black')
+                    counter = last_counter + 1 if last_counter + 1 < num_notes else 0
+                    NOTE_ELEMENTS[counter].update(text_color='red')
+                    THREAD_COUNTER[track_idx] = counter
 
 
 # noinspection PyBroadException
-def start():
+def start(measures_per_track, notes_per_measure):
     # This launches the parent thread / event loop
     window = sg.Window('Omnisound Sequencer', LAYOUT)
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
-    for i, track in enumerate(TRACKS):
-        threading.Thread(target=_loop_track, args=(track, i, port), daemon=True).start()
+
+    # Init state for updating display in the track event handler loops
+    num_notes = len(NOTE_ELEMENTS)
+    for track_idx, track in enumerate(TRACKS):
+        THREAD_COUNTER.append(0)  # per-thread counter
+        # This binds a thread per track to handle events (interactive, not timing events) to function _loop_track()
+        threading.Thread(target=_loop_track,
+                         args=(track, track_idx, num_notes, port),
+                         daemon=True).start()
 
     # Create an event loop, necessary or the first event trapped closes the window
     while True:
         # This is the framework mechanism for polling the window for events and status
-        # Tune responsiveness with the timeout arg(in milliseconds), 0 means no timeout
+        # Tune responsiveness with the timeout arg (in milliseconds), 0 means no timeout but can be unstable
         event, values = window.read(timeout=5)
         # Exit event loop if user closes window, going immediately to window.close(). Any other pattern crashes.
         if event == sg.WIN_CLOSED:
@@ -228,4 +248,4 @@ if __name__ == '__main__':
     _generate_tracks_and_layout(options.num_tracks, options.measures_per_track,
                                 Meter(beats_per_measure=beats_per_measure, beat_note_dur=beat_note_dur,
                                       tempo=options.tempo))
-    start()
+    start(options.measures_per_track, beats_per_measure)
