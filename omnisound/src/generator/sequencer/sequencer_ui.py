@@ -15,6 +15,7 @@
 # TO RUN:  python3 -m omnisound.src.generator.sequencer.sequencer_ui \
 #               --num-tracks 2 --measures-per-track 4 --tempo 120 --meter 13/4
 
+from collections import defaultdict
 from itertools import count
 from optparse import OptionParser
 from time import sleep
@@ -63,7 +64,7 @@ LAYOUT = []
 # Used by the window event loop thread to communicate captured note events to the Midi playback thread
 CHANNELS = []
 # Used by the window event loop to hightligh current playing note
-NOTE_ELEMENTS = []
+NOTE_ELEMENTS = defaultdict(list)
 THREAD_COUNTER = []
 
 def _get_note_config_and_scale(meter):
@@ -89,8 +90,8 @@ def _get_note_config_and_scale(meter):
 def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
     note_config, scale = _get_note_config_and_scale(meter)
 
-    for i in range(num_tracks):
-        track = MidiTrack(meter=meter, channel=i, instrument=INSTRUMENT)
+    for track_idx in range(num_tracks):
+        track = MidiTrack(meter=meter, channel=track_idx, instrument=INSTRUMENT)
         TRACKS.append(track)
 
         CHANNELS.append([])
@@ -108,7 +109,7 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
                                                    pitch_for_key=pitch_for_key,
                                                    octave=OCTAVE))
 
-        for j in range(measures_per_track):
+        for measure_idx in range(measures_per_track):
             measure = Measure(meter=meter, num_notes=meter.beats_per_measure, mn=note_config)
             track.append(measure)
 
@@ -123,18 +124,18 @@ def _generate_tracks_and_layout(num_tracks, measures_per_track, meter):
                 # index into Messages is even indexes, because Messages are note_on/note_off pairs.
                 # NOTE: 'key' is overloaded and here means unique id referring to PySimpleGUI object.
                 # key must be unique. For note on_off the value is unique on each iteration so don't need key
-                event_id = f'{i}_{2 * ((j * meter.beats_per_measure) + k)}'
+                event_id = f'{track_idx}_{2 * ((measure_idx * meter.beats_per_measure) + k)}'
                 start_key = f'note_on_off|{event_id}|{event_id}'
                 chord_key = f'chord|{event_id}|{str(chord_pitches)}'
 
                 note_checkbox = sg.Checkbox(str (k + 1), default=False, enable_events=True, key=start_key)
                 layout_notes.append(note_checkbox)
-                NOTE_ELEMENTS.append(note_checkbox)
+                NOTE_ELEMENTS[track_idx].append(note_checkbox)
                 # chord_key needs a unique key id and a value, because values (i.e. which chord a note is) can repeat
                 layout_notes.append(sg.DropDown(values=str(chord_label), key=chord_key,
                                                 enable_events=True, size=(15, 15)))
-            layout_measures_row.append(sg.Frame(title=f'Measure {j + 1}', layout=[layout_notes]))
-        LAYOUT[i].append(sg.Frame(title=f'Track {i + 1}', layout=[layout_measures_row]))
+            layout_measures_row.append(sg.Frame(title=f'Measure {measure_idx + 1}', layout=[layout_notes]))
+        LAYOUT[track_idx].append(sg.Frame(title=f'Track {track_idx + 1}', layout=[layout_measures_row]))
 
 
 # noinspection PyUnresolvedReferences
@@ -171,25 +172,25 @@ def _loop_track(track, track_idx, num_notes, port):
 
                     # Update current note indicator by changing text color. Should be its own function but not for performance.
                     last_counter = THREAD_COUNTER[track_idx]
-                    NOTE_ELEMENTS[last_counter].update(text_color='black')
+                    NOTE_ELEMENTS[track_idx][last_counter].update(text_color='black')
                     counter = last_counter + 1 if last_counter + 1 < num_notes else 0
-                    NOTE_ELEMENTS[counter].update(text_color='red')
+                    NOTE_ELEMENTS[track_idx][counter].update(text_color='red')
                     THREAD_COUNTER[track_idx] = counter
 
 
 # noinspection PyBroadException
-def start(measures_per_track, notes_per_measure):
+def start(notes_per_measure, measures_per_track):
     # This launches the parent thread / event loop
     window = sg.Window('Omnisound Sequencer', LAYOUT)
     port = open_output(PORT_NAME, True)  # flag is virtual=True to create a MIDI virtual port
 
     # Init state for updating display in the track event handler loops
-    num_notes = len(NOTE_ELEMENTS)
+    notes_per_track = notes_per_measure * measures_per_track
     for track_idx, track in enumerate(TRACKS):
         THREAD_COUNTER.append(0)  # per-thread counter
         # This binds a thread per track to handle events (interactive, not timing events) to function _loop_track()
         threading.Thread(target=_loop_track,
-                         args=(track, track_idx, num_notes, port),
+                         args=(track, track_idx, notes_per_track, port),
                          daemon=True).start()
 
     # Create an event loop, necessary or the first event trapped closes the window
@@ -230,14 +231,14 @@ def start(measures_per_track, notes_per_measure):
 
 def _parse_args():
     parser = OptionParser()
-    parser.add_option('-n', '--num-tracks', dest='num_tracks', type="int", help="Number of sequencer tracks")
-    parser.add_option('-l', '--measures-per-track', dest='measures_per_track', type="int",
-                      help="Number of measures per sequencer track")
-    parser.add_option('-t', '--tempo', dest='tempo', type="int",
-                      help="Tempo in beats per minute of all sequencer tracks")
-    parser.add_option("-m", "--meter",
-                      action="store", dest="meter", default='4/4', type="string",
-                      help="Meter of sequencer tracks. Default is 4/4.")
+    parser.add_option('-n', '--num-tracks', dest='num_tracks', type='int', help='Number of sequencer tracks')
+    parser.add_option('-l', '--measures-per-track', dest='measures_per_track', type='int',
+                      help='Number of measures per sequencer track')
+    parser.add_option('-t', '--tempo', dest='tempo', type='int',
+                      help='Tempo in beats per minute of all sequencer tracks')
+    parser.add_option('-m', '--meter',
+                      action='store', dest='meter', default='4/4', type='string',
+                      help='Meter of sequencer tracks. Default is 4/4.')
 
     return parser.parse_args()
 
@@ -248,4 +249,4 @@ if __name__ == '__main__':
     _generate_tracks_and_layout(options.num_tracks, options.measures_per_track,
                                 Meter(beats_per_measure=beats_per_measure, beat_note_dur=beat_note_dur,
                                       tempo=options.tempo))
-    start(options.measures_per_track, beats_per_measure)
+    start(beats_per_measure, options.measures_per_track)
