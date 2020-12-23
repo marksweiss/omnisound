@@ -143,10 +143,10 @@ def _loop_track(track, track_idx, num_notes, port):
     # sourcery skip: hoist-statement-from-loop
     with port:
         messages_0, durations_0 = get_midi_messages_and_notes_for_track(track)
-        messages_1, durations_1 = get_midi_messages_and_notes_for_track(track)
-        messages_2, durations_2 = get_midi_messages_and_notes_for_track(track)
-        messages_list = (messages_0, messages_1, messages_2)
-        durations_list = (durations_0, durations_1, durations_2)
+        # messages_1, durations_1 = get_midi_messages_and_notes_for_track(track)
+        # messages_2, durations_2 = get_midi_messages_and_notes_for_track(track)
+        messages_list = [messages_0]  #, messages_1, messages_2)
+        durations_list = [durations_0]  #, durations_1, durations_2)
         loop_duration = messages_0[-1].time
         for j in count():
             while CHANNELS[track_idx]:
@@ -197,7 +197,7 @@ def start(notes_per_measure, measures_per_track):
     while True:
         # This is the framework mechanism for polling the window for events and status
         # Tune responsiveness with the timeout arg (in milliseconds), 0 means no timeout but can be unstable
-        event, values = window.read(timeout=5)
+        event, values = window.read(timeout=1)
         # Exit event loop if user closes window, going immediately to window.close(). Any other pattern crashes.
         if event == sg.WIN_CLOSED:
             break
