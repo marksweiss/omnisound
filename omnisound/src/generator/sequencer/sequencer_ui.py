@@ -143,10 +143,10 @@ def _loop_track(track, track_idx, num_notes, port):
     # sourcery skip: hoist-statement-from-loop
     with port:
         messages_0, durations_0 = get_midi_messages_and_notes_for_track(track)
-        # messages_1, durations_1 = get_midi_messages_and_notes_for_track(track)
-        # messages_2, durations_2 = get_midi_messages_and_notes_for_track(track)
-        messages_list = [messages_0]  #, messages_1, messages_2)
-        durations_list = [durations_0]  #, durations_1, durations_2)
+        messages_1, durations_1 = get_midi_messages_and_notes_for_track(track)
+        messages_2, durations_2 = get_midi_messages_and_notes_for_track(track)
+        messages_list = [messages_0, messages_1, messages_2]
+        durations_list = [durations_0, durations_1, durations_2]
         loop_duration = messages_0[-1].time
         for j in count():
             while CHANNELS[track_idx]:
@@ -158,17 +158,16 @@ def _loop_track(track, track_idx, num_notes, port):
                 elif event_type == 'chord':
                     for chord_note_idx, messages in enumerate(messages_list):
                         messages[note_idx].note = event_data[chord_note_idx]
-
-            for i in range(0, len(messages_0), 2):
-                for duration_list_idx, messages in enumerate(messages_list):
-                    messages[i].time += (j * loop_duration)
-                    if messages[i].velocity:
-                        port.send(messages[i])
+            for duration_list_idx, messages in enumerate(messages_list):
+                for message_idx in range(0, len(messages), 2):
+                    messages[message_idx].time += (j * loop_duration)
+                    if messages[message_idx].velocity:
+                        port.send(messages[message_idx])
                         # Sleep for note duration: this essentially controls tempo
-                        sleep(durations_list[duration_list_idx][int(i / 2)])
-                        port.send(messages[i + 1])
+                        sleep(durations_list[duration_list_idx][int(message_idx / 2)])
+                        port.send(messages[message_idx + 1])
                     else:
-                        sleep(durations_list[duration_list_idx][int(i / 2)])
+                        sleep(durations_list[duration_list_idx][int(message_idx / 2)])
 
                     # Update current note indicator by changing text color. Should be its own function but not for performance.
                     last_counter = THREAD_COUNTER[track_idx]
