@@ -16,9 +16,8 @@ from omnisound.src.generator.scale_globals import MAJOR_KEY_DICT, MINOR_KEY_DICT
 from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.modifier.swing import Swing
 from omnisound.src.player.player import Player, Writer
-from omnisound.src.utils.validation_utils import validate_optional_type_choice, validate_optional_types, validate_type, \
-    validate_type_choice, \
-    validate_type_reference, validate_types
+from omnisound.src.utils.validation_utils import (validate_optional_type_choice, validate_optional_types, validate_type,
+                                                  validate_type_choice, validate_type_reference, validate_types)
 
 
 class InvalidPatternException(Exception):
@@ -92,7 +91,7 @@ class Sequencer(Song):
         self.mn = mn
 
         self.num_measures = num_measures or Sequencer.DEFAULT_NUM_MEASURES
-        self.default_note_duration = self.meter.beat_note_dur.value
+        self.default_note_duration: float = self.meter.beat_note_dur.value
 
         self.num_tracks = 0
         # Internal index to the next track to create when add_track() or add_pattern_as_track() are called
@@ -262,7 +261,7 @@ class Sequencer(Song):
         section = Section([])
         swing = swing or self.swing
 
-        def _make_note_val(_instrument, _start, _duration, _amplitude, _pitch):
+        def _make_note_vals(_instrument, _start, _duration, _amplitude, _pitch):
             _note_vals = NoteValues(self.mn.attr_name_idx_map.keys())
             _note_vals.instrument = _instrument
             _note_vals.start = _start
@@ -274,12 +273,12 @@ class Sequencer(Song):
         measure_tokens = [t.strip() for t in pattern.split(Sequencer.MEASURE_TOKEN_DELIMITER)]
         for measure_token in measure_tokens:
             note_tokens = [t.strip() for t in measure_token.split()]
-            next_start = 0
+            next_start = 0.0
             duration = self.default_note_duration
             # Sum up the duration of all note positions to validate that the notes fit in the measure. We look at
             # "note positions" because for chords we only count the duration of all the notes in the chord once,
             # because they sound simultaneously so that duration only contributes to the total duration once.
-            measure_duration = 0
+            measure_duration = 0.0
             note_vals_lst = []
             for i, note_token in enumerate(note_tokens):
                 start = self.mn.attr_val_cast_map['start'](next_start)
@@ -289,24 +288,21 @@ class Sequencer(Song):
                     # Dummy values
                     amplitude = self.mn.attr_val_cast_map['amplitude'](0)
                     pitch = self.mn.attr_val_cast_map['pitch'](1)
-                    note_vals = _make_note_val(instrument, start, self.default_note_duration, amplitude, pitch)
+                    note_vals = _make_note_vals(instrument, start, duration, amplitude, pitch)
                     note_vals_lst.append(note_vals)
-                    measure_duration += note_vals.duration
+                    measure_duration += duration
                 # It's a sounding note or chord, parse the pattern and collect the note/chord parameters
                 else:
                     key, octave, chord, amplitude, duration = note_token.split(Sequencer.NOTE_TOKEN_DELIMITER)
-
                     # Only major or minor notes supported
                     key = MAJOR_KEY_DICT.get(key) or MINOR_KEY_DICT.get(key)
                     if not key:
                         raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid key {key} token')
-
                     octave = int(octave)
                     amplitude = self.mn.attr_val_cast_map['amplitude'](amplitude)
+                    # If no duration provided we already assigned default note duration (quarter note)
                     if duration:
-                        duration = self.mn.attr_val_cast_map['duration'](duration)
-                    else:
-                        duration = self.default_note_duration
+                        duration = float(duration)
 
                     # It's a chord. `arpeggiate=True` is ignored.
                     if chord:
@@ -316,7 +312,7 @@ class Sequencer(Song):
                             raise InvalidPatternException(f'Pattern \'{pattern}\' has invalid chord {chord} token')
                         chord_sequence = Chord(harmonic_chord=harmonic_chord, octave=octave, key=key, mn=self.mn)
                         for note in chord_sequence:
-                            note_vals_lst.append(_make_note_val(instrument, start, duration, amplitude, note.pitch))
+                            note_vals_lst.append(_make_note_vals(instrument, start, duration, amplitude, note.pitch))
                         # Only count duration of the chord once in the total for the measure
                         measure_duration += duration
                     # It's a single sounding note. Converted into arpeggiated chords if `arpeggiate=True`.
@@ -324,7 +320,7 @@ class Sequencer(Song):
                         pitch = self.mn.pitch_for_key(key, octave)
 
                         if not arpeggiate:
-                            note_vals = _make_note_val(instrument, start, duration, amplitude, pitch)
+                            note_vals = _make_note_vals(instrument, start, duration, amplitude, pitch)
                             note_vals_lst.append(note_vals)
                         else:
                             harmonic_chord = arpeggiator_chord or self.arpeggiator_chord
@@ -334,7 +330,7 @@ class Sequencer(Song):
                             # Duration of arpeggiated notes are fit into the duration of the notated note
                             arpeggiated_note_duration = duration / len(chord_sequence)
                             for note in chord_sequence:
-                                note_vals_lst.append(_make_note_val(
+                                note_vals_lst.append(_make_note_vals(
                                         instrument, note.start, arpeggiated_note_duration, amplitude, note.pitch))
 
                         measure_duration += duration

@@ -51,6 +51,9 @@ class Measure(NoteSequence):
                                 ('performance_attrs', performance_attrs, PerformanceAttrs))
         super(Measure, self).__init__(num_notes=num_notes, mn=mn)
 
+        # TODO Enforce duration of meter bpm and tempo and add unit test coverage, currently the onus is on
+        #  the caller to put correct duration in note_config, as that is what is used to create notes, ignoring tempo
+
         # Maintain the invariant that notes are sorted ascending by start
         self._sort_notes_by_start_time()
 
@@ -63,7 +66,7 @@ class Measure(NoteSequence):
         self.beat = 0
         # Support adding notes offset from end of previous note
         self.next_note_start = 0.0
-        self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur.value
+        self.max_duration = self.meter.beats_per_measure * self.meter.beat_note_dur_secs
 
     def _sort_notes_by_start_time(self):
         # Sort notes by start time to manage adding on beat
