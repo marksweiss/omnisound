@@ -153,7 +153,6 @@ def test_fill_pattern_to_track_length(sequencer):
     assert pytest.approx(first_measure[2].pitch, 4.05)
     assert pytest.approx(first_measure[3].pitch, 4.06)
 
-    # TODO THIS CASE IS UNTESTED BUT SHOULD PASS
     # Test the case where the pattern does not divide the track length evenly
     # Three-measure pattern into 4-measure track, so the first measure should repeat in the fourth measure
     new_track_name = 'new track'
