@@ -3,6 +3,7 @@
 from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Sequence
 
+from omnisound.src.player.play_hook import PlayHook
 from omnisound.src.container.song import Song
 from omnisound.src.utils.validation_utils import validate_type
 
@@ -11,14 +12,11 @@ class PlayerNoNotesException(Exception):
     pass
 
 
-class PlayerBase:
+class PlayerBase(PlayHook):
     def __init__(self, song: Song = None):
+        super().__init__()
         self._song = song
         self.improvising = False
-        self.pre_play_hooks: Dict[str, Callable] = {}
-        self.pre_play_hooks_list: List[Callable] = []
-        self.post_play_hooks: Dict[str, Callable] = {}
-        self.post_play_hooks_list: List[Callable] = []
 
     @property
     def song(self):
@@ -29,40 +27,10 @@ class PlayerBase:
         validate_type('song', song, Song)
         self._song = song
 
-    def add_pre_play_hook(self, name: str, hook: Any):
-        self._add_hook(name, hook, self.pre_play_hooks, self.pre_play_hooks_list)
-
-    def add_post_play_hook(self, name: str, hook: Any):
-        self._add_hook(name, hook, self.post_play_hooks, self.post_play_hooks_list)
-
-    @staticmethod
-    def _add_hook(name, hook, hooks, hooks_list):
-        if not (
-                name and isinstance(name, str) and hook and '__call__' in dir(hook)
-        ):
-            raise ValueError(f'args `name` must be a non-empty string and `hook` must be a callable')
-        hooks[name] = hook
-        hooks_list.append(hook)
-
-    def remove_pre_play_hook(self, name: str):
-        self._remove_hook(name, self.pre_play_hooks, self.pre_play_hooks_list)
-
-    def remove_post_play_hook(self, name: str):
-        self._remove_hook(name, self.post_play_hooks, self.post_play_hooks_list)
-
-    @staticmethod
-    def _remove_hook(name, hooks, hooks_list):
-        if not (name and isinstance(name, str)):
-            raise ValueError(f'arg `name` must be a non-empty string')
-        hook = hooks.get(name)
-        if hook:
-            hooks_list.remove(hook)
-            del hooks[name]
-
 
 class Player(PlayerBase):
     def __init__(self, song: Song = None):
-        super(Player, self).__init__(song=song)
+        super().__init__(song=song)
 
     @abstractmethod
     def play_each(self) -> Any:
