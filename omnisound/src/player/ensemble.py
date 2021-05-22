@@ -38,11 +38,13 @@ class Ensemble(PlayHook):
     def append(self, to_add: Player) -> 'Ensemble':
         validate_type('to_add', to_add, Player)
         self._players.append(to_add)
+        return self
 
     def extend(self, to_add: Sequence[Player]) -> 'Ensemble':
         validate_sequence_of_type('to_add', to_add, Player)
         for ta in to_add:
             self._players.append(ta)
+        return self
 
     def __add__(self, to_add: Player) -> 'Ensemble':
         validate_type('to_add', to_add, Player)
