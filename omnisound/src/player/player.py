@@ -1,7 +1,7 @@
 # Copyright 2018 Mark S. Weiss
 
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Sequence
+from typing import Any, Sequence
 
 from omnisound.src.player.play_hook import PlayHook
 from omnisound.src.container.song import Song

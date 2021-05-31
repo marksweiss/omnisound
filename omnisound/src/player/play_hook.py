@@ -35,6 +35,12 @@ class PlayHook:
     def remove_post_play_hook(self, name: str):
         self._remove_hook(name, self.post_play_hooks, self.post_play_hooks_list)
 
+    def call_pre_play_hook(self, name: str) -> Callable:
+        return self.pre_play_hooks[name]
+
+    def call_post_play_hook(self, name: str) -> Callable:
+        return self.post_play_hooks[name]
+
     @staticmethod
     def _remove_hook(name, hooks, hooks_list):
         if not (name and isinstance(name, str)):

@@ -1,76 +1,69 @@
 # Copyright 2021 Mark S. Weiss
 
-from typing import Iterator, Optional, Sequence, Union
+from typing import Generic, Iterator, Optional, Sequence, TypeVar, Union
 
-from omnisound.src.player.player import Player
 from omnisound.src.player.play_hook import PlayHook
-from omnisound.src.utils.validation_utils import validate_sequence_of_type, validate_type
 
+# Each composition defines its own Player class
+T = TypeVar('T')
 
 class Ensemble(PlayHook):
-    def __init__(self, to_add: Optional[Sequence[Player]]):
+    def __init__(self, to_add: Optional[Sequence[Generic[T]]]):
         super().__init__()
-        self._players = list(to_add)
+        self.players = list(to_add)
         self.index = 0
 
     # Manage iter/slice
     def __len__(self) -> int:
-        return len(self._players)
+        return len(self.players)
 
-    def __getitem__(self, index: Union[int, slice]) -> Player:
+    def __getitem__(self, index: Union[int, slice]) -> T:
         if isinstance(index, int):
-            return self._players.__getitem__(index)
+            return self.players.__getitem__(index)
         # This amazing hack from here: https://stackoverflow.com/questions/2936863/implementing-slicing-in-getitem
         if isinstance(index, slice):
             return [self.__getitem__(i) for i in range(*index.indices(len(self)))]
 
-    def __iter__(self) -> Iterator[Player]:
+    def __iter__(self) -> Iterator[T]:
         self.index = 0
         return self
 
-    def __next__(self) -> Player:
+    def __next__(self) -> T:
         if self.index == len(self):
             raise StopIteration
         player = self.__getitem__(self.index)
         self.index += 1
         return player
 
-    def append(self, to_add: Player) -> 'Ensemble':
-        validate_type('to_add', to_add, Player)
-        self._players.append(to_add)
+    def append(self, to_add: T) -> 'Ensemble':
+        self.players.append(to_add)
         return self
 
-    def extend(self, to_add: Sequence[Player]) -> 'Ensemble':
-        validate_sequence_of_type('to_add', to_add, Player)
+    def extend(self, to_add: Sequence[T]) -> 'Ensemble':
         for ta in to_add:
-            self._players.append(ta)
+            self.players.append(ta)
         return self
 
-    def __add__(self, to_add: Player) -> 'Ensemble':
-        validate_type('to_add', to_add, Player)
+    def __add__(self, to_add: T) -> 'Ensemble':
         if isinstance(to_add, Ensemble):
             return self.extend(to_add)
         else:
             return self.append(to_add)
 
-    def __lshift__(self, to_add: Player) -> 'Ensemble':
+    def __lshift__(self, to_add: T) -> 'Ensemble':
         return self.__add__(to_add)
 
-    def insert(self, index: int, to_insert: Player) -> 'Ensemble':
-        validate_type('index', index, int)
-        validate_type('to_insert', to_insert, Player)
-        self._players.insert(index, to_insert)
+    def insert(self, index: int, to_insert: T) -> 'Ensemble':
+        self.players.insert(index, to_insert)
         return self
 
-    def remove(self, to_remove: Player) -> 'Ensemble':
-        validate_type('to_remove', to_remove, Player)
-        self._players.remove(to_remove)
+    def remove(self, to_remove: T) -> 'Ensemble':
+        self.players.remove(to_remove)
         return self
 
     @staticmethod
     def copy(source: 'Ensemble') -> 'Ensemble':
-        validate_type('source', source, Ensemble)
-        copy = Ensemble(to_add=source._players)
+        copy = Ensemble(to_add=source.players)
         copy.index = source.index
         copy_play_hook = PlayHook.copy(source)
         copy.pre_play_hooks = copy_play_hook.pre_play_hooks
@@ -78,4 +71,3 @@ class Ensemble(PlayHook):
         copy.post_play_hooks = copy_play_hook.post_play_hooks
         copy.post_play_hooks_list = copy_play_hook.post_play_hooks_list
         return copy
-

@@ -1,11 +1,20 @@
 # Copyright 2018 Mark S. Weiss
 
+from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Mapping, Union
 
 from numpy import array as np_array
 
 from omnisound.src.generator.scale_globals import MajorKey, MinorKey
 from omnisound.src.utils.validation_utils import validate_type, validate_type_choice
+
+class BaseAttrNames(Enum):
+    INSTRUMENT = "instrument",
+    START = "start",
+    DURATION = "duration"
+    AMPLITUDE = "amplitude"
+    PITCH = "pitch"
+
 
 INSTRUMENT_I = 0
 START_I = 1

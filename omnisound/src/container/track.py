@@ -170,6 +170,8 @@ class Track(Section):
 
 
 class MidiTrack(Track):
+    MAX_NUM_MIDI_TRACKS: int = 16
+
     def __init__(self, to_add: Optional[Union[List[Measure], Section]] = None,
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
