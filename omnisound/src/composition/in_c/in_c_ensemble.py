@@ -6,7 +6,7 @@ from statistics import mean
 from typing import Callable, Generic, Optional, Sequence, Tuple, TypeVar
 
 from omnisound.src.composition.in_c.ensemble_settings import EnsembleSettings as es
-from omnisound.src.player.ensemble import Ensemble
+from omnisound.src.player.play_hook import PlayHook
 
 # Constructed with T = InCPlayer
 T = TypeVar('T')
@@ -17,8 +17,9 @@ class CrescendoDirection(Enum):
     DECRESCENDO = -1
 
 
-class InCEnsemble:
+class InCEnsemble(PlayHook):
     def __init__(self, to_add: Optional[Sequence[Generic[T]]]):
+        super().__init__()
         self.players = list(to_add)
         self._unison_count = 0
         self.perform_steps_count = 0

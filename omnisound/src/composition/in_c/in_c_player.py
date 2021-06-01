@@ -6,13 +6,16 @@ from typing import Any, Callable, List, Optional, Sequence, Union
 from omnisound.src.composition.in_c.player_settings import PlayerSettings as ps
 from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
 from omnisound.src.container.measure import Measure
+from omnisound.src.container.section import Section
 from omnisound.src.container.track import Track
 from omnisound.src.note.adapter.note import BaseAttrNames
+from omnisound.src.player.play_hook import PlayHook
+import omnisound.src.note.adapter.midi_note as midi_note
 
 
-class InCPlayer:
+class InCPlayer(PlayHook):
     # TODO
-    PHRASES: Sequence[Sequence[Measure]] = []
+    PHRASES: Sequence[Section] = []
 
     def __init__(self, track: Track):
         super().__init__()
@@ -26,9 +29,19 @@ class InCPlayer:
         # but the players need a reference to their ensemble. So first create players and pass them to Ensemble init,
         # then iterate players and set ensemble reference
         self.ensemble = None
+        self.output = None
 
     def set_ensemble(self, ensemble: InCEnsemble):
         self.ensemble = ensemble
+
+    def current_phrase(self) -> Section:
+        return InCPlayer.PHRASES[self.phrase_idx]
+
+    def reset_output(self) -> None:
+        self.output = Section(Measure(mn=midi_note.DEFAULT_NOTE_CONFIG))
+
+    def append_note_to_output(self, note: Any) -> None:
+        self.output.append(note)
 
     # TODO
     def perform_phrase(self) -> None:
@@ -38,7 +51,7 @@ class InCPlayer:
         # write measures to track
         pass
 
-    def should_play_next_phrase(self) -> bool:
+    def check_advance_to_next_phrase(self) -> bool:
         has_advanced = self.reached_last_phrase() or InCPlayer.advance_phrase_idx()
         self._check_has_advanced(has_advanced)
         return self.has_advanced
