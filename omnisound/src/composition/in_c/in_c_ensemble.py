@@ -2,13 +2,15 @@
 
 from enum import Enum
 from random import randint
-from statistics import mean
 from typing import Callable, Generic, Optional, Sequence, Tuple, TypeVar
 
 from omnisound.src.composition.in_c.ensemble_settings import EnsembleSettings as es
+from omnisound.src.container.note_sequence import NoteSequence
+from omnisound.src.modifier.meter import NoteDur
 from omnisound.src.player.play_hook import PlayHook
+import omnisound.src.note.adapter.midi_note as midi_note
 
-# Constructed with T = InCPlayer
+# Constructed with T = InCPlayer, typed this way to avoid a circular dependency
 T = TypeVar('T')
 
 
@@ -17,8 +19,8 @@ class CrescendoDirection(Enum):
     DECRESCENDO = -1
 
 
-class InCEnsemble(PlayHook):
-    def __init__(self, to_add: Optional[Sequence[Generic[T]]]):
+class InCEnsemble(PlayHook, Generic[T]):
+    def __init__(self, to_add: Optional[Sequence[T]], pulse_player: T):
         super().__init__()
         self.players = list(to_add)
         self._unison_count = 0
@@ -32,11 +34,7 @@ class InCEnsemble(PlayHook):
         self.in_crescendo_decrescendo = False
         self.in_decrescendo_crescendo = False
         self.crescendo_sign = 1
-
-    # TODO
-    def perform(self) -> None:
-        for player in self.players:
-            player.perform_phrase()
+        self.pulse_player = pulse_player
 
     def too_far_behind(self, phrase_idx: int) -> bool:
         return self._max_phrase_idx() - phrase_idx >= es.PHRASES_IDX_RANGE_THRESHOLD
@@ -52,7 +50,7 @@ class InCEnsemble(PlayHook):
         return self._reached_concluding_unison
 
     def reached_conclusion(self) -> bool:
-        return self._unison_count >= len(self)
+        return self._unison_count >= len(self.players)
 
     def seeking_crescendo(self) -> bool:
         return not self.in_crescendo_decrescendo and es.meets_condition(es.CRESCENDO_PROB)
@@ -107,12 +105,12 @@ class InCEnsemble(PlayHook):
         elif other_crescendo_flag and self.crescendo_step_count > 0:
             self.crescendo_step_count -= 1
         # Case 3: Just finished crescendo, switch to decrescendo to come back down
-        elif crescendo_flag and self.crescendo_step_count > self.max_crescendo_step_count:
+        elif crescendo_flag:
             other_crescendo_flag = True
             crescendo_flag = False
             self.crescendo_step_count -= 1
         # Case 4: Finished crescendo and then decrescendo, done with entire cycle, no amp adjustment
-        elif other_crescendo_flag and self.crescendo_step_count <= 0:
+        elif other_crescendo_flag:
             self.in_crescendo_decrescendo = False
             other_crescendo_flag = False
             crescendo_flag = False
@@ -120,25 +118,31 @@ class InCEnsemble(PlayHook):
 
         return crescendo_flag, other_crescendo_flag
 
-    def crescendo_amp_adjustment(self) -> float:
+    def get_crescendo_amp_adjustment(self) -> float:
         if self.in_crescendo_or_decrescendo():
             return self.crescendo_sign * self.crescendo_step_count * self.crescendo_amp_adj
         return 0.0
+
+    def output_pulse_phrase(self):
+        """
+        Implement Instruction 7, one player emits a repeating eighth-note pulse, precisely in time.
+        In order to always have this "backing" all other output, we get the longest phrase that any
+        player is current positioned at, and output that length in eighth notes.
+        """
+        longest_phrase_dur = max(player.phrase_aggregate_attr_val('duration', sum) for player in self.players)
+        # 8 1/8 notes per whole note
+        num_pulse_notes = int(1 / NoteDur.EIGHTH) * longest_phrase_dur
+        for _ in range(num_pulse_notes):
+            pulse_note = NoteSequence.new_note(midi_note.DEFAULT_NOTE_CONFIG)
+            pulse_note.duration = NoteDur.EIGHTH
+            pulse_note.volume = es.PULSE_AMPLITUDE
+            self.pulse_player.append_note_to_output(pulse_note)
 
     def max_amp(self) -> float:
         return max(player.amplitude for player in self.players)
 
     def aggregate_attr_val(self, attr_name: str, agg_func: Callable) -> float:
         agg_func(player.getatrr(attr_name) for player in self.players)
-
-    def min_attr_val(self, attr_name: str) -> float:
-        min(player.getatrr(attr_name) for player in self.players)
-
-    def max_attr_val(self, attr_name: str) -> float:
-        max(player.getatrr(attr_name) for player in self.players)
-
-    def mean_attr_val(self, attr_name: str) -> float:
-        mean(player.getatrr(attr_name) for player in self.players)
 
     def _min_phrase_idx(self) -> int:
         return min(player.phrase_idx for player in self.players)

@@ -55,7 +55,10 @@ class PerformanceAttrs(object):
         return self.frozen
 
     def __str__(self):
-        return ' '.join([f'{attr_name}: {getattr(self, attr_name)}' for attr_name in self.attr_type_map.keys()])
+        return ' '.join(
+            f'{attr_name}: {getattr(self, attr_name)}'
+            for attr_name in self.attr_type_map.keys()
+        )
 
     def as_dict(self):
         return {attr_name: getattr(self, attr_name) for attr_name in self.attr_type_map.keys()}

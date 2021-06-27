@@ -11,7 +11,6 @@ from omnisound.src.modifier.swing import Swing
 from omnisound.src.note.adapter.midi_note import MidiInstrument
 import omnisound.src.note.adapter.midi_note as midi_note
 
-
 BEATS_PER_MEASURE = 4
 BEAT_NOTE_DUR = NoteDur.QRTR
 TEMPO_QPM = 240
@@ -55,14 +54,7 @@ def instruction_13():
 # Performance Instructions
 ##########################
 
-# "Patterns are to be played consecutively with each performer having the freedom to determine how many
-#  times he or she will repeat each pattern before moving on to the next.  There is no fixed rule
-#  as to the number of repetitions a pattern may have, however, since performances normally average
-#  between 45 minutes and an hour and a half, it can be assumed that one would repeat each pattern
-#  from somewhere between 45 seconds and a minute and a half or longer."
-def instruction_3_player_preplay(player: InCPlayer) -> None:
-    player.check_advance_to_next_phrase()
-
+# Ensemble Pre-play
 
 # "It is very important that performers listen very carefully to one another and this means occasionally to drop
 # out and listen. ... As an ensemble, it is very desirable to play very softly as well as very loudly and to try to
@@ -77,85 +69,167 @@ def instruction_4_ensemble_preplay(ensemble: InCEnsemble) -> None:
     elif ensemble.seeking_decrescendo():
         ensemble.set_decrescendo_state()
 
+# Player Set Next Phrase
+
+# "Patterns are to be played consecutively with each performer having the freedom to determine how many
+#  times he or she will repeat each pattern before moving on to the next.  There is no fixed rule
+#  as to the number of repetitions a pattern may have, however, since performances normally average
+#  between 45 minutes and an hour and a half, it can be assumed that one would repeat each pattern
+#  from somewhere between 45 seconds and a minute and a half or longer."
+def instruction_3_player_set_next_phrase(player: InCPlayer) -> None:
+    if not player.has_advanced:
+        player.play_next_phrase()
+
+
+#  "... As the performance progresses, performers should stay within 2 or 3 patterns of each other. ..."
+def instruction_6_player_set_next_phrase(player: InCPlayer) -> None:
+    if not player.has_advanced:
+        player.play_next_phrase_too_far_behind()
+
+
+# "The group should aim to merge into a unison at least once or twice during the performance.
+# At the same time, if the players seem to be consistently too much in the same alignment of a pattern,
+# they should try shifting their alignment by an eighth note or quarter note with what’s going on in the rest of the ensemble."
+def instruction_10_player_set_next_phrase(player: InCPlayer) -> None:
+    if not player.has_advanced:
+        player.play_next_phrase_seeking_unison()
+
+# Player Set Output
 
 # This implements de/crescendo amp adjustment on each player after the ensemble handler sets whether
 #  or not the orchestra is in de/crescendo
-def instruction_4_player_preplay(player: InCPlayer) -> None:
+def instruction_4_player_set_output(player: InCPlayer) -> None:
     # Ensemble manages current state of whether all Players are in de/crescendo, and if so by how
     #  much each Player adjusts their volume. All each Player does is call this, if there is
     #  no current de/crescendo then crescendo_amp_adj() returns 0
     amp_adj = player.ensemble.crescendo_amp_adj()
-    for note in player.current_phrase():
-        note.volume = max(note.volume + amp_adj, 0)
+    for measure in player.output:
+        for note in measure:
+            note.volume = max(note.volume + amp_adj, 0)
 
-
-# This adjusts the state of the ensemble tracking what step in a de/crescendo it's in
-def instruction_4_ensemble_postplay(ensemble: InCEnsemble) -> None:
-    ensemble.crescendo_increment()
 
 # "Each pattern can be played in unison or canonically in any alignment with itself or with its neighboring patterns"
-def instruction_5_player_preplay(player: InCPlayer):
+def instruction_5_player_set_output(player: InCPlayer) -> None:
     # Construct the rest Note, which may have 0 duration. If it does not, prepend it to the next output to change
     # it's alignment
     rest_note_dur = player.get_phase_adjustment()
     if rest_note_dur > 0.0:
-        player.reset_output()
         rest_note = NoteSequence.new_note(midi_note.DEFAULT_NOTE_CONFIG)
         rest_note.duration = rest_note_dur
         rest_note.volume = 0
         player.append_note_to_output(rest_note)
 
 
+# "It is OK to transpose patterns by an octave, especially to transpose up.  Transposing down by octaves
+# works best on the patterns containing notes of long durations."
+# TODO HOW TO IMPLEMENT THIS PART OF THIS INSTRUCTION "Augmentation of rhythmic values can also be effective."
+def instruction_11_player_set_output(player: InCPlayer) -> None:
+    shift = player.transpose_shift()
+    for measure in player.output:
+        measure.transpose(interval=shift)
+
+
+# "The ensemble can be aided by the means of an eighth note pulse played on the high c’s of the piano or on a
+# mallet instrument. It is also possible to use improvised percussion in strict rhythm (drum set, cymbals, bells, etc.),
+# if it is carefully done and doesn’t overpower the ensemble."
+# NOTE: This must be run as the last preplay step as it relies on all players having selected their current phrase
+def instruction_7_special_preplay(ensemble: InCEnsemble):
+    ensemble.output_pulse_phrase()
+
+# Ensemble Post-play
+
+# This adjusts the state of the ensemble tracking what step in a de/crescendo it's in
+def instruction_4_ensemble_postplay(ensemble: InCEnsemble) -> None:
+    ensemble.crescendo_increment()
+
+
+# TODO MOVE TO player.reset_state_and_output()
+# Extra helper handler to set player post-play state -- whether they have advanced
+#  a phrase or not.  If not, increment player counter on current phrase
+# Depends on separate checks in instruction handlers for instructions 3, 6 and 10
+def instruction_3_6_10_player_postplay(player: InCPlayer) -> None:
+    if not player.has_advanced:
+        # TODO WHERE IS THIS USED?
+        player.cur_phrase_count += 1
+    else:
+        player.cur_phrase_count = 0
+
+
 class InCPerformance:
-    ENSEMBLE_PREPLAY_INSTRUCTIONS = {
-        instruction_4_ensemble_preplay.__name__: instruction_4_ensemble_preplay,
+    ENSEMBLE_PREPLAY_INSTRUCTIONS = [
+        instruction_4_ensemble_preplay,
+    ]
+
+    PLAYER_SET_NEXT_PHRASE_INSTRUCTIONS = [
+        instruction_3_player_set_next_phrase,
+        instruction_6_player_set_next_phrase,
+        instruction_10_player_set_next_phrase,
+    ]
+
+    PLAYER_SET_OUTPUT_INSTRUCTIONS = [
+        instruction_4_player_set_output,
+        instruction_5_player_set_output,
+        instruction_11_player_set_output,
+        instruction_7_special_preplay,
+    ]
+
+    SPECIAL_PREPLAY_INSTRUCTIONS = {
+        instruction_7_special_preplay,
     }
 
     ENSEMBLE_POSTPLAY_INSTRUCTIONS = {
-        instruction_4_ensemble_postplay.__name__: instruction_4_ensemble_postplay,
-    }
-
-    PLAYER_PREPLAY_INSTRUCTIONS = {
-        instruction_3_player_preplay.__name__: instruction_3_player_preplay,
-        instruction_4_player_preplay.__name__: instruction_4_player_preplay,
+        instruction_4_ensemble_postplay,
     }
 
     PLAYER_POSTPLAY_INSTRUCTIONS = {
-
+        instruction_3_6_10_player_postplay,
     }
 
     def __init__(self, ensemble: InCEnsemble):
         self.ensemble = ensemble
 
     def perform(self) -> None:
-        InCPerformance._register_hooks()
         while not self.ensemble.reached_conclusion():
-            pass
+            for instruction in InCPerformance.ENSEMBLE_PREPLAY_INSTRUCTIONS:
+                instruction(self.ensemble)
 
-    @staticmethod
-    def _register_hooks() -> None:
-        for name, instruction in InCPerformance.PLAYER_PREPLAY_INSTRUCTIONS.items():
+            for instruction in InCPerformance.PLAYER_SET_NEXT_PHRASE_INSTRUCTIONS:
+                map(instruction, self.ensemble.players)
+
+            # TODO
             for player in ensemble.players:
-                player.add_pre_play_hook(name, instruction)
-        for name, instruction in InCPerformance.PLAYER_POSTPLAY_INSTRUCTIONS.items():
+                player.copy_cur_phrase_to_output()
+            ensemble.pulse_player.copy_output()
+
+            for instruction in InCPerformance.PLAYER_SET_OUTPUT_INSTRUCTIONS:
+                map(instruction, self.ensemble.players)
+
+            # TODO
             for player in ensemble.players:
-                player.add_post_play_hook(name, instruction)
+                player.flush_output_and_reset_state()
+            # We only need to call this for the flush, but the other side effects are no-op in this case
+            ensemble.pulse_player.flush_output_and_reset_state()
 
-        for name, instruction in InCPerformance.ENSEMBLE_PREPLAY_INSTRUCTIONS.items():
-            ensemble.add_pre_play_hook(name, instruction)
-        for name, instruction in InCPerformance.ENSEMBLE_POSTPLAY_INSTRUCTIONS.items():
-            ensemble.add_post_play_hook(name, instruction)
+            for instruction in InCPerformance.SPECIAL_PREPLAY_INSTRUCTIONS:
+                instruction(self.ensemble)
+            for instruction in InCPerformance.ENSEMBLE_POSTPLAY_INSTRUCTIONS:
+                instruction(self.ensemble)
+        # TODO self.reset_ensemble_and_players()
 
 
-if __name__ == 'main':
-    players = []
-    for i in range(1, MidiTrack.MAX_NUM_MIDI_TRACKS + 1):
-        track = MidiTrack(to_add=None, swing=SWING, name=str(f'Channel {i} {INSTRUMENT}'), instrument=INSTRUMENT,
-                          channel=i)
-        players.append(InCPlayer(track))
-    ensemble = InCEnsemble(to_add=players)
+def make_track(i: int):
+    return MidiTrack(to_add=None, swing=SWING, name=str(f'Channel {i} {INSTRUMENT.name}'),
+                     instrument=INSTRUMENT.value, channel=i)
+
+
+if __name__ == '__main__':
+    players = [InCPlayer(make_track(i)) for i in range(1, MidiTrack.MAX_NUM_MIDI_TRACKS + 1)]
+    # Construct player to fulfill instruction 7 to produce a pulse
+    pulse_player = InCPlayer(make_track(MidiTrack.MAX_NUM_MIDI_TRACKS + 1))
+    ensemble = InCEnsemble(to_add=players, pulse_player=pulse_player)
 
     performance = InCPerformance(ensemble)
+
     performance.perform()
 
     song = Song(to_add=[MidiTrack.copy(player.track) for player in ensemble])
