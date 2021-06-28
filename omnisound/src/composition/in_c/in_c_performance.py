@@ -199,7 +199,7 @@ class InCPerformance:
             # TODO
             for player in ensemble.players:
                 player.copy_cur_phrase_to_output()
-            ensemble.pulse_player.copy_output()
+            ensemble.pulse_player.copy_cur_phrase_to_output()
 
             for instruction in InCPerformance.PLAYER_SET_OUTPUT_INSTRUCTIONS:
                 map(instruction, self.ensemble.players)

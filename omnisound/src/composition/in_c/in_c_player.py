@@ -30,7 +30,7 @@ class InCPlayer(PlayHook):
         # but the players need a reference to their ensemble. So first create players and pass them to Ensemble init,
         # then iterate players and set ensemble reference
         self.ensemble = None
-        self.output = None
+        self.output = []
 
     def set_ensemble(self, ensemble: InCEnsemble):
         self.ensemble = ensemble
