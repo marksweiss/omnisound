@@ -332,7 +332,7 @@ if __name__ == '__main__':
     scale_query = ScaleQuery()
     # block on user input and process queries for key and either scale or mode
     while True:
-        key = input("key: (wrap in double quotes)")
+        key = input("key (wrap in double quotes): ")
         query_type = input("scale ('s') or mode ('m') (wrap in double quotes): ")
         if query_type == '"s"':
             pprint(scale_query.scales[key[1:-1].strip().upper()])
