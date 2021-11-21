@@ -28,9 +28,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import pprint
 import re
 from collections import defaultdict
+from pprint import pprint
 
 
 # The musical ALPHABET consists of seven letter from A through G
@@ -335,6 +335,6 @@ if __name__ == '__main__':
         key = input("key: ")
         query_type = input("scale ('s') or mode ('m'): ")
         if query_type == 's':
-            print(scale_query.scales[key.strip().upper()])
+            pprint(scale_query.scales[key.strip().upper()])
         elif query_type == 'm':
-            print(scale_query.modes[key.strip().upper()])
+            pprint(scale_query.modes[key.strip().upper()])
