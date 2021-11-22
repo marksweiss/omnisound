@@ -101,7 +101,10 @@ class Measure(NoteSequence):
         """
         validate_type('increment_beat', increment_beat, bool)
         if len(self) + 1 > self.meter.beats_per_measure:
-            raise ValueError(f'Attempt to add a note to a measure greater than the the number of beats per measure')
+            raise ValueError(
+                'Attempt to add a note to a measure greater than the the number of beats per measure'
+            )
+
 
         note.start = self.meter.beat_start_times_secs[self.beat]
         self.append(note)
@@ -119,7 +122,9 @@ class Measure(NoteSequence):
         """
         validate_types(('to_add', to_add, NoteSequence))
         if len(to_add) > self.meter.beats_per_measure:
-            raise ValueError(f'Sequence `to_add` must have a number of notes <= to the number of beats per measure')
+            raise ValueError(
+                'Sequence `to_add` must have a number of notes <= to the number of beats per measure'
+            )
 
         # Now iterate the beats per measure and assign each note in note_list to the next start time on the beat
         for i, beat_start_time in enumerate(self.meter.beat_start_times_secs):
@@ -273,16 +278,15 @@ class Measure(NoteSequence):
            NOTE: At this time this only supports a fixed adjustment. Swing can support a random adjustment
            within a swing_range if measure would also set swing_jitter_type to Swing.SwingJitterType.Random
         """
-        if self.swing:
-            if len(self) > 1:
-                self[0].start += \
-                    self.swing.calculate_swing_adjust(swing_direction=Swing.SwingDirection.Forward,
-                                                      swing_jitter_type=Swing.SwingJitterType.Fixed)
-                self[-1].start -= \
-                    self.swing.calculate_swing_adjust(swing_direction=Swing.SwingDirection.Forward,
-                                                      swing_jitter_type=Swing.SwingJitterType.Fixed)
-        else:
+        if not self.swing:
             raise MeasureSwingNotEnabledException('Measure.apply_phrasing() called but swing is None in Measure')
+        if len(self) > 1:
+            self[0].start += \
+                self.swing.calculate_swing_adjust(swing_direction=Swing.SwingDirection.Forward,
+                                                  swing_jitter_type=Swing.SwingJitterType.Fixed)
+            self[-1].start -= \
+                self.swing.calculate_swing_adjust(swing_direction=Swing.SwingDirection.Forward,
+                                                  swing_jitter_type=Swing.SwingJitterType.Fixed)
     # /Apply Swing and Phrasing to notes
 
     # Apply to all notes

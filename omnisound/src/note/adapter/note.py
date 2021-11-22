@@ -81,7 +81,7 @@ class MakeNoteConfig:
                               attr_val_cast_map=source.attr_val_cast_map)
 
 
-class NoteValues(object):
+class NoteValues:
     """Convenience class to dynamically create, manipulate and retrieve collections of note attributes."""
     def __init__(self, attr_names):
         self._attr_names = attr_names

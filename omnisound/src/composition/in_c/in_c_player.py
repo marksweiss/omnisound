@@ -8,18 +8,28 @@ from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.section import Section
 from omnisound.src.container.track import Track
-from omnisound.src.note.adapter.note import BaseAttrNames
+from omnisound.src.generator.scale_globals import MajorKey, MinorKey
+from omnisound.src.note.adapter.note import BaseAttrNames, set_attr_vals_from_dict
+from omnisound.src.modifier.meter import NoteDur
+from omnisound.src.note.adapter.midi_note import ATTR_NAMES, MidiInstrument, PITCH_MAP, pitch_for_key
 from omnisound.src.player.play_hook import PlayHook
 import omnisound.src.note.adapter.midi_note as midi_note
+
+def make_measure(num_notes: int, note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
+    # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
+    measure = Measure(num_notes=num_notes)
+    for i, note_attr_vals in enumerate(note_attr_vals_lst):
+        set_attr_vals_from_dict(measure.note(i), dict(zip(ATTR_NAMES, note_attr_vals)))
+    return measure
 
 
 class InCPlayer(PlayHook):
     # TODO
-    PHRASES: Sequence[Section] = []
 
-    def __init__(self, track: Track):
+    def __init__(self, track: Track, instrument: MidiInstrument = MidiInstrument.Acoustic_Grand_Piano):
         super().__init__()
         self.track = track
+        self.instrument = instrument
         self.phrase_idx = 0
         self.cur_phrase_count = 0
         self.cur_start = 0.0
@@ -31,19 +41,41 @@ class InCPlayer(PlayHook):
         # then iterate players and set ensemble reference
         self.ensemble = None
         self.output = []
+        self.phrases: Section = self._load_phrases()
+
+    def _load_phrases(self) -> Section:  # sourcery skip: merge-list-append
+        # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
+        measures = []
+        measures.append(
+            make_measure(6, [
+                [self.instrument, 0, NoteDur.EITH, 100, pitch_for_key(PITCH_MAP[MajorKey.C], 4)],
+                [self.instrument, NoteDur.EITH, NoteDur.QRTR, 100, pitch_for_key (PITCH_MAP[MajorKey.E], 4)],
+                [self.instrument, NoteDur.EITH + NoteDur.QRTR, NoteDur.EITH, 100, pitch_for_key (PITCH_MAP[MajorKey.C], 4)],
+                [self.instrument, NoteDur.HLF, NoteDur.QRTR, 100, pitch_for_key (PITCH_MAP[MajorKey.E], 4)],
+                [self.instrument, NoteDur.HLF + NoteDur.QRTR, NoteDur.EITH, 100,
+                 pitch_for_key (PITCH_MAP[MajorKey.C], 4)],
+                [self.instrument, NoteDur.HLF +NoteDur.QRTR, NoteDur.QRTR, 100, pitch_for_key (PITCH_MAP[MajorKey.E], 4)],
+            ])
+        )
+        return Section(measure_list=measures)
+
 
     def set_ensemble(self, ensemble: InCEnsemble):
         self.ensemble = ensemble
 
     # TODO IS THIS NEEDED?
     def current_phrase(self) -> Section:
-        return InCPlayer.PHRASES[self.phrase_idx]
+        # TODO WON'T WORK AS class static, because notes need an Instrument, which we want to assign at Player level
+        return self.phrases[self.phrase_idx]
 
     def append_note_to_output(self, note: Any) -> None:
         self.output.append(note)
 
     def copy_cur_phrase_to_output(self) -> None:
-        for measure in InCPlayer.PHRASES[self.phrase_idx]:
+        # TEMP DEBUG
+        import pdb; pdb.set_trace()
+
+        for measure in self.phrases[self.phrase_idx]:
             self.output.append(measure)
 
     def flush_output_and_reset_state(self) -> None:
