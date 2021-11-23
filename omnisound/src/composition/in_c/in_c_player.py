@@ -13,7 +13,6 @@ from omnisound.src.note.adapter.note import BaseAttrNames, set_attr_vals_from_di
 from omnisound.src.modifier.meter import NoteDur
 from omnisound.src.note.adapter.midi_note import ATTR_NAMES, DEFAULT_NOTE_CONFIG, MidiInstrument, pitch_for_key
 from omnisound.src.player.play_hook import PlayHook
-import omnisound.src.note.adapter.midi_note as midi_note
 
 def make_measure(num_notes: int, note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
     # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
@@ -42,8 +41,8 @@ class InCPlayer(PlayHook):
         # but the players need a reference to their ensemble. So first create players and pass them to Ensemble init,
         # then iterate players and set ensemble reference
         self.ensemble = None
-        self.output = []
         self.phrases: Section = self._load_phrases()
+        self.output = []
 
     def _load_phrases(self) -> Section:  # sourcery skip: merge-list-append
         measures = []
@@ -52,7 +51,7 @@ class InCPlayer(PlayHook):
             make_measure(6, [
                 [self.instrument, 0, NoteDur.EITH, 100, pitch_for_key(MajorKey.C, 4)],
                 [self.instrument, NoteDur.EITH, NoteDur.QRTR, 100, pitch_for_key(MajorKey.E, 4)],
-                [self.instrument, NoteDur.EITH + NoteDur.QRTR, NoteDur.EITH, 100, pitch_for_key (MajorKey.C, 4)],
+                [self.instrument, NoteDur.EITH + NoteDur.QRTR, NoteDur.EITH, 100, pitch_for_key(MajorKey.C, 4)],
                 [self.instrument, NoteDur.HLF, NoteDur.QRTR, 100, pitch_for_key(MajorKey.E, 4)],
                 [self.instrument, NoteDur.HLF + NoteDur.QRTR, NoteDur.EITH, 100, pitch_for_key(MajorKey.C, 4)],
                 [self.instrument, NoteDur.HLF + NoteDur.QRTR, NoteDur.QRTR, 100, pitch_for_key(MajorKey.E, 4)]
@@ -65,20 +64,20 @@ class InCPlayer(PlayHook):
 
     # TODO IS THIS NEEDED?
     def current_phrase(self) -> Section:
-        # TODO WON'T WORK AS class static, because notes need an Instrument, which we want to assign at Player level
         return self.phrases[self.phrase_idx]
 
     def append_note_to_output(self, note: Any) -> None:
-        self.output.append(note)
+        self.output[:-1].append(note)
 
     def copy_cur_phrase_to_output(self) -> None:
         for measure in self.phrases[self.phrase_idx]:
-            self.output.append(measure)
+            self.output.append(Measure.copy(measure))
 
     def flush_output_and_reset_state(self) -> None:
         for measure in self.output:
             self.track.append(measure)
-        self.output = Section(Measure(mn=midi_note.DEFAULT_NOTE_CONFIG))
+        self.output = []
+        self.copy_cur_phrase_to_output()
         self.cur_start = 0.0
         self.has_advanced = False
 
@@ -146,14 +145,14 @@ class InCPlayer(PlayHook):
             else:
                 return ps.TRANSPOSE_SHIFT * ps.TRANSPOSE_SHIFT_UP_FACTOR
 
-    def num_plays_last_phrase(self) -> float:
-        phrase = InCPlayer.PHRASES[self.phrase_idx]
-        max_start = self.phrase_aggregate_attr_val(BaseAttrNames.START, max)
-        return (max_start - self.cur_start) / sum(len(measure) for measure in phrase)
+    # TODO return type is not correct
+    # TODO WHAT IS THIS?
+    # def num_plays_last_phrase(self) -> float:
+    #     max_start = self.phrase_aggregate_attr_val(BaseAttrNames.START, max)
+    #     return (max_start - self.cur_start) / sum(len(self.output[:-1]))
 
     def apply_swing(self):
-        phrase = InCPlayer.PHRASES[self.phrase_idx]
-        for measure in phrase:
+        for measure in self.output:
             measure.apply_swing()
 
     def phrase_aggregate_attr_val(self, attr_name: str, agg_func: Callable,
@@ -171,8 +170,11 @@ class InCPlayer(PlayHook):
         return [getattr(note, attr_name) for note in self._get_notes_for_phrase(phrase_idx)]
 
     def _get_notes_for_phrase(self, phrase_idx: Optional[int] = None) -> Sequence[Any]:
+        # Gets source notes, not modified notes from self.output
         phrase_idx = self.phrase_idx if phrase_idx is None else phrase_idx
-        phrase = InCPlayer.PHRASES[phrase_idx]
+        # TODO SHOULDN'T THIS BE USING self.output?
+        phrase = self.phrases[self.phrase_idx]
+        # ?
         yield [note for measure in phrase for note in measure]
 
     def _check_has_advanced(self, has_advanced: Union[bool, Callable]) -> None:

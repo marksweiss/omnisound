@@ -118,23 +118,20 @@ class NoteSequence:
             return self.mn.make_note(self.note_attr_vals[index],
                                      self.mn.attr_name_idx_map,
                                      attr_val_cast_map=self.mn.attr_val_cast_map)
-        # Index is above the range of self.note_attr_vals, so either it is in the range of one of the recursive
-        # flattened sequence of child_sequences, or it's invalid
-        else:
-            index_range_sum = len(self.note_attr_vals)
-            for index_range in self.range_map.keys():
-                # Dict keys are in order they were written, so ascending order, so each one is the max index
-                # for that range. So the first entry it is less than is the entry it is in range of.
-                if index < index_range:
-                    # Get the note attrs for the note_sequence for the range this index is in
-                    note_attrs = self.range_map[index_range]
-                    # Adjust index to access the note_attr_vals with offset of 0. The index entry from range_map
-                    # is the running sum of all the previous indexes so we need to subtract that from index
-                    adjusted_index = index - index_range_sum
-                    return self.mn.make_note(note_attrs[adjusted_index],
-                                             self.mn.attr_name_idx_map,
-                                             attr_val_cast_map=self.mn.attr_val_cast_map)
-                index_range_sum += index_range
+        index_range_sum = len(self.note_attr_vals)
+        for index_range in self.range_map.keys():
+            # Dict keys are in order they were written, so ascending order, so each one is the max index
+            # for that range. So the first entry it is less than is the entry it is in range of.
+            if index < index_range:
+                # Get the note attrs for the note_sequence for the range this index is in
+                note_attrs = self.range_map[index_range]
+                # Adjust index to access the note_attr_vals with offset of 0. The index entry from range_map
+                # is the running sum of all the previous indexes so we need to subtract that from index
+                adjusted_index = index - index_range_sum
+                return self.mn.make_note(note_attrs[adjusted_index],
+                                         self.mn.attr_name_idx_map,
+                                         attr_val_cast_map=self.mn.attr_val_cast_map)
+            index_range_sum += index_range
 
     def note(self, index: int):
         return self._get_note_for_index(index)

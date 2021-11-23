@@ -194,6 +194,7 @@ class InCPerformance:
                 instruction(self.ensemble)
 
             for instruction in InCPerformance.PLAYER_SET_NEXT_PHRASE_INSTRUCTIONS:
+                # TODO THIS SHOULD BE OPERATING ON self.output. IS IT?
                 map(instruction, self.ensemble.players)
 
             # TODO
