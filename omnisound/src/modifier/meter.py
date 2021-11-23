@@ -37,6 +37,12 @@ class NoteDur(Enum):
     SXTYFRTH = _0_015625
     SIXTYFOURTH = _0_015625
 
+    def __add__(self, other) -> float:
+        return self.value + other.value
+
+    def __float__(self) -> float:
+        return self.value
+
 
 METER_BEATS_NOTE_DUR_MAP = {
     1: NoteDur.WHOLE,
