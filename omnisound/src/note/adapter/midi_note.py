@@ -461,6 +461,14 @@ def make_note(note_attr_vals: ndarray,
     return note
 
 
+DEFAULT_MAKE_NOTE_CONFIG = MakeNoteConfig(cls_name=CLASS_NAME,
+                                          num_attributes=NUM_ATTRIBUTES,
+                                          make_note=make_note,
+                                          pitch_for_key=pitch_for_key,
+                                          attr_name_idx_map=ATTR_NAME_IDX_MAP,
+                                          attr_val_default_map={},
+                                          attr_val_cast_map={})
+
 DEFAULT_NOTE_CONFIG = partial(MakeNoteConfig,
                               cls_name=CLASS_NAME,
                               num_attributes=NUM_ATTRIBUTES,

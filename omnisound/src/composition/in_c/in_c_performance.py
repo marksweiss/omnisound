@@ -64,9 +64,9 @@ def instruction_13():
 # amp up/down one step each iteration, for the number of steps of the de/crescendo. The amount amp changes overall
 # is controlled in EnsembleSetting#max_amp_range_for_seeking_crescendo
 def instruction_4_ensemble_preplay(ensemble: InCEnsemble) -> None:
-    if ensemble.seeking_crescendo():
+    if ensemble.is_seeking_crescendo():
         ensemble.set_crescendo_state()
-    elif ensemble.seeking_decrescendo():
+    elif ensemble.is_seeking_decrescendo():
         ensemble.set_decrescendo_state()
 
 # Player Set Next Phrase
@@ -84,7 +84,7 @@ def instruction_3_player_set_next_phrase(player: InCPlayer) -> None:
 #  "... As the performance progresses, performers should stay within 2 or 3 patterns of each other. ..."
 def instruction_6_player_set_next_phrase(player: InCPlayer) -> None:
     if not player.has_advanced:
-        player.play_next_phrase_too_far_behind()
+        player.should_play_next_phrase_too_far_behind()
 
 
 # "The group should aim to merge into a unison at least once or twice during the performance.
@@ -140,7 +140,7 @@ def instruction_7_special_preplay(ensemble: InCEnsemble):
 
 # This adjusts the state of the ensemble tracking what step in a de/crescendo it's in
 def instruction_4_ensemble_postplay(ensemble: InCEnsemble) -> None:
-    ensemble.crescendo_increment()
+    ensemble.increment_crescendo()
 
 
 # TODO MOVE TO player.reset_state_and_output()
@@ -189,7 +189,7 @@ class InCPerformance:
         self.ensemble = ensemble
 
     def perform(self) -> None:
-        while not self.ensemble.reached_conclusion():
+        while not self.ensemble.has_reached_conclusion():
             for instruction in InCPerformance.ENSEMBLE_PREPLAY_INSTRUCTIONS:
                 instruction(self.ensemble)
 

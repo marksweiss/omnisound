@@ -1,7 +1,7 @@
 # Copyright 2021 Mark S. Weiss
 
 from statistics import mean
-from typing import Any, Callable, List, Optional, Sequence, Union
+from typing import Any, Callable, Generator, List, Optional, Union
 
 from omnisound.src.composition.in_c.player_settings import PlayerSettings as ps
 from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
@@ -11,12 +11,12 @@ from omnisound.src.container.track import Track
 from omnisound.src.generator.scale_globals import MajorKey, MinorKey
 from omnisound.src.note.adapter.note import BaseAttrNames, set_attr_vals_from_dict
 from omnisound.src.modifier.meter import NoteDur
-from omnisound.src.note.adapter.midi_note import ATTR_NAMES, DEFAULT_NOTE_CONFIG, MidiInstrument, pitch_for_key
+from omnisound.src.note.adapter.midi_note import ATTR_NAMES, DEFAULT_MAKE_NOTE_CONFIG, MidiInstrument, pitch_for_key
 from omnisound.src.player.play_hook import PlayHook
 
 def make_measure(num_notes: int, note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
     # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
-    measure = Measure(num_notes=num_notes, mn=DEFAULT_NOTE_CONFIG())
+    measure = Measure(num_notes=num_notes, mn=DEFAULT_MAKE_NOTE_CONFIG)
     for i, note_attr_vals in enumerate(note_attr_vals_lst):
         note_attr_vals[1] = float(note_attr_vals[1])
         note_attr_vals[2] = float(note_attr_vals[2])
@@ -41,10 +41,12 @@ class InCPlayer(PlayHook):
         # but the players need a reference to their ensemble. So first create players and pass them to Ensemble init,
         # then iterate players and set ensemble reference
         self.ensemble = None
-        self.phrases: Section = self._load_phrases()
-        self.output = []
+        self.source_phrases: List[Section] = self._load_phrases()
+        self.output: Section = self.source_phrases[0]
 
-    def _load_phrases(self) -> Section:  # sourcery skip: merge-list-append
+    def _load_phrases(self) -> List[Section]:  # sourcery skip: merge-list-append
+        sections = []
+
         measures = []
         measures.append(
             # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
@@ -56,27 +58,26 @@ class InCPlayer(PlayHook):
                 [self.instrument, NoteDur.HLF + NoteDur.QRTR, NoteDur.EITH, 100, pitch_for_key(MajorKey.C, 4)],
                 [self.instrument, NoteDur.HLF + NoteDur.QRTR, NoteDur.QRTR, 100, pitch_for_key(MajorKey.E, 4)]
             ])
+            # Make other measures in Sections (Phrases), one or more per Phrase
         )
-        return Section(measure_list=measures)
+        # Return list of phrases, each of which is a Section of one ore more Measures
+        sections.append(Section(measure_list=measures))
+
+        return sections
 
     def set_ensemble(self, ensemble: InCEnsemble):
         self.ensemble = ensemble
 
-    # TODO IS THIS NEEDED?
-    def current_phrase(self) -> Section:
-        return self.phrases[self.phrase_idx]
-
     def append_note_to_output(self, note: Any) -> None:
-        self.output[:-1].append(note)
+        self.output[-1].append(note)
 
     def copy_cur_phrase_to_output(self) -> None:
-        for measure in self.phrases[self.phrase_idx]:
-            self.output.append(Measure.copy(measure))
+        self.output = Section.copy(self.source_phrases[self.phrase_idx])
 
     def flush_output_and_reset_state(self) -> None:
         for measure in self.output:
             self.track.append(measure)
-        self.output = []
+        self.output = None
         self.copy_cur_phrase_to_output()
         self.cur_start = 0.0
         self.has_advanced = False
@@ -90,18 +91,18 @@ class InCPlayer(PlayHook):
         pass
 
     def play_next_phrase(self) -> bool:
-        has_advanced = self.reached_last_phrase() or InCPlayer._advance_phrase_idx()
+        has_advanced = self.has_reached_last_phrase() or InCPlayer._should_advance_phrase_idx()
         self._check_has_advanced(has_advanced)
         return self.has_advanced
 
-    def play_next_phrase_too_far_behind(self) -> bool:
-        if not self.has_advanced and not self.reached_last_phrase():
-            self._check_has_advanced(self._too_far_behind())
+    def should_play_next_phrase_too_far_behind(self) -> bool:
+        if not self.has_advanced and not self.has_reached_last_phrase():
+            self._check_has_advanced(self._is_too_far_behind())
         return self.has_advanced
 
     def play_next_phrase_seeking_unison(self) -> bool:
-        if not self.has_advanced and not self.reached_last_phrase():
-            self._check_has_advanced(self.seeking_unison())
+        if not self.has_advanced and not self.has_reached_last_phrase():
+            self._check_has_advanced(self.is_seeking_unison())
         return self.has_advanced
 
     def should_rest(self) -> bool:
@@ -119,22 +120,22 @@ class InCPlayer(PlayHook):
         ensemble_max_amp = self.ensemble.aggregate_attr_val(BaseAttrNames.AMPLITUDE.value, max) or 1
         phrase_max_amp = self.phrase_aggregate_attr_val(BaseAttrNames.AMPLITUDE.value, max)
         amp_ratio = phrase_max_amp / ensemble_max_amp
-        if self.seeking_crescendo() and amp_ratio < ps.AMP_ADJ_CRESCENDO_RATIO_THRESHOLD:
+        if self.is_seeking_crescendo() and amp_ratio < ps.AMP_ADJ_CRESCENDO_RATIO_THRESHOLD:
             return ps.AMP_CRESCENDO_ADJ_FACTOR
-        elif self.seeking_diminuendo() and amp_ratio < ps.AMP_ADJ_DIMINUENDO_RATIO_THRESHOLD:
+        elif self.is_seeking_diminuendo() and amp_ratio < ps.AMP_ADJ_DIMINUENDO_RATIO_THRESHOLD:
             return ps.AMP_DIMINUENDO_ADJ_FACTOR
         return ps.NO_FACTOR
 
-    def seeking_crescendo(self) -> bool:
-        return self.ensemble.seeking_crescendo() and ps.meets_condition(ps.CRESCENDO_PROB)
+    def is_seeking_crescendo(self) -> bool:
+        return self.ensemble.is_seeking_crescendo() and ps.meets_condition(ps.CRESCENDO_PROB)
 
-    def seeking_diminuendo(self) -> bool:
-        return self.ensemble.seeking_decrescendo() and ps.meets_condition(ps.DIMINUENDO_PROB)
+    def is_seeking_diminuendo(self) -> bool:
+        return self.ensemble.is_seeking_decrescendo() and ps.meets_condition(ps.DIMINUENDO_PROB)
 
-    def seeking_unison(self) -> bool:
-        return self.ensemble.seeking_unison() and ps.meets_condition(ps.UNISON_PROB)
+    def is_seeking_unison(self) -> bool:
+        return self.ensemble.is_seeking_unison() and ps.meets_condition(ps.UNISON_PROB)
 
-    def reached_last_phrase(self) -> bool:
+    def has_reached_last_phrase(self) -> bool:
         return self.phrase_idx == ps.NUM_PHRASES
 
     def transpose_shift(self) -> float:
@@ -151,7 +152,7 @@ class InCPlayer(PlayHook):
     #     max_start = self.phrase_aggregate_attr_val(BaseAttrNames.START, max)
     #     return (max_start - self.cur_start) / sum(len(self.output[:-1]))
 
-    def apply_swing(self):
+    def apply_swing(self) -> None:
         for measure in self.output:
             measure.apply_swing()
 
@@ -159,23 +160,23 @@ class InCPlayer(PlayHook):
                                   phrase_idx: Optional[int] = None) -> float:
         return agg_func(self._phrase_slice(attr_name, phrase_idx))
 
-    def _too_far_behind(self) -> bool:
-        return self.ensemble.too_far_behind(self.phrase_idx)
+    def _is_too_far_behind(self) -> bool:
+        return self.ensemble.is_too_far_behind(self.phrase_idx)
 
     @staticmethod
-    def _advance_phrase_idx() -> bool:
+    def _should_advance_phrase_idx() -> bool:
         return ps.meets_condition(ps.PHRASE_ADVANCE_PROB)
 
     def _phrase_slice(self, attr_name: str, phrase_idx: Optional[int] = None) -> List[float]:
         return [getattr(note, attr_name) for note in self._get_notes_for_phrase(phrase_idx)]
 
-    def _get_notes_for_phrase(self, phrase_idx: Optional[int] = None) -> Sequence[Any]:
+    def _get_notes_for_phrase(self, phrase_idx: Optional[int] = None) -> Generator:
         # Gets source notes, not modified notes from self.output
         phrase_idx = self.phrase_idx if phrase_idx is None else phrase_idx
         # TODO SHOULDN'T THIS BE USING self.output?
-        phrase = self.phrases[self.phrase_idx]
-        # ?
-        yield [note for measure in phrase for note in measure]
+        phrase = self.source_phrases[self.phrase_idx]
+        for measure in phrase:
+            yield from measure
 
     def _check_has_advanced(self, has_advanced: Union[bool, Callable]) -> None:
         if isinstance(has_advanced, bool) and has_advanced:

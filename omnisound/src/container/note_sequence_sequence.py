@@ -49,7 +49,7 @@ class NoteSequenceSequence(object):
 
     def __getitem__(self, index: int) -> NoteSequence:
         validate_type('index', index, int)
-        if abs(index) >= len(self.note_seq_seq):
+        if index >= len(self.note_seq_seq) or (index < 0 and abs(index) > len(self.note_seq_seq)):
             raise IndexError(f'`index` out of range index: {index} len(note_seq_seq): {len(self.note_seq_seq)}')
         return self.note_seq_seq[index]
 

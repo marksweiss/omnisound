@@ -36,29 +36,29 @@ class InCEnsemble(PlayHook, Generic[T]):
         self.crescendo_sign = 1
         self.pulse_player = pulse_player
 
-    def too_far_behind(self, phrase_idx: int) -> bool:
+    def is_too_far_behind(self, phrase_idx: int) -> bool:
         return self._max_phrase_idx() - phrase_idx >= es.PHRASES_IDX_RANGE_THRESHOLD
 
-    def seeking_unison(self) -> bool:
+    def is_seeking_unison(self) -> bool:
         return not self._reached_unison() and \
                self._phrase_idx_range() <= es.MAX_PHRASES_IDX_RANGE_FOR_SEEKING_UNISON and \
                es.meets_condition(es.UNISON_PROB)
 
-    def reached_concluding_unison(self) -> bool:
+    def has_reached_concluding_unison(self) -> bool:
         if not self._reached_concluding_unison:
             self._reached_concluding_unison = all(player.reached_last_phrase for player in self.players)
         return self._reached_concluding_unison
 
-    def reached_conclusion(self) -> bool:
+    def has_reached_conclusion(self) -> bool:
         return self._unison_count >= len(self.players)
 
-    def seeking_crescendo(self) -> bool:
+    def is_seeking_crescendo(self) -> bool:
         return not self.in_crescendo_decrescendo and es.meets_condition(es.CRESCENDO_PROB)
 
-    def seeking_decrescendo(self) -> bool:
+    def is_seeking_decrescendo(self) -> bool:
         return not self.in_crescendo_decrescendo and es.meets_condition(es.DECRESCENDO_PROB)
 
-    def in_crescendo_or_decrescendo(self) -> bool:
+    def is_in_crescendo_or_decrescendo(self) -> bool:
         return self.in_crescendo_decrescendo or self.in_decrescendo_crescendo
 
     # TODO Can we simplify all this code to just be "in crescendo" and "criscendo direction"
@@ -89,15 +89,15 @@ class InCEnsemble(PlayHook, Generic[T]):
             self.in_crescendo = False
 
     # TODO Can we simplify all this code to just be "in crescendo" and "criscendo direction"
-    def crescendo_increment(self) -> None:
+    def increment_crescendo(self) -> None:
         # Test increment step_count and test for boundary transitions
         #  from crescendo to decrescendo and exit from de/crescendo
         if self.in_crescendo_decrescendo:
-            self.in_crescendo, self.in_decrescendo = self._crescendo_increment(self.in_crescendo, self.in_decrescendo)
+            self.in_crescendo, self.in_decrescendo = self._increment_crescendo(self.in_crescendo, self.in_decrescendo)
         elif self.in_decrescendo_crescendo:
-            self.in_decrescendo, self.in_crescendo = self._crescendo_increment(self.in_decrescendo, self.in_crescendo)
+            self.in_decrescendo, self.in_crescendo = self._increment_crescendo(self.in_decrescendo, self.in_crescendo)
 
-    def _crescendo_increment(self, crescendo_flag: bool, other_crescendo_flag: bool) -> Tuple[bool, bool]:
+    def _increment_crescendo(self, crescendo_flag: bool, other_crescendo_flag: bool) -> Tuple[bool, bool]:
         # Case 1: In crescendo but not finished, no switch, just increment step count
         if crescendo_flag and self.crescendo_step_count <= self.max_crescendo_step_count:
             self.crescendo_step_count += 1
@@ -119,7 +119,7 @@ class InCEnsemble(PlayHook, Generic[T]):
         return crescendo_flag, other_crescendo_flag
 
     def get_crescendo_amp_adjustment(self) -> float:
-        if self.in_crescendo_or_decrescendo():
+        if self.is_in_crescendo_or_decrescendo():
             return self.crescendo_sign * self.crescendo_step_count * self.crescendo_amp_adj
         return 0.0
 
@@ -131,10 +131,10 @@ class InCEnsemble(PlayHook, Generic[T]):
         """
         longest_phrase_dur = max(player.phrase_aggregate_attr_val('duration', sum) for player in self.players)
         # 8 1/8 notes per whole note
-        num_pulse_notes = int(1 / NoteDur.EIGHTH) * longest_phrase_dur
+        num_pulse_notes = int((1. / NoteDur.EIGHTH.value) * longest_phrase_dur)
         for _ in range(num_pulse_notes):
-            pulse_note = NoteSequence.new_note(midi_note.DEFAULT_NOTE_CONFIG)
-            pulse_note.duration = NoteDur.EIGHTH
+            pulse_note = NoteSequence.new_note(midi_note.DEFAULT_MAKE_NOTE_CONFIG)
+            pulse_note.duration = NoteDur.EIGHTH.value
             pulse_note.volume = es.PULSE_AMPLITUDE
             self.pulse_player.append_note_to_output(pulse_note)
 
