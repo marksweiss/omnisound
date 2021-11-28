@@ -187,3 +187,17 @@ class MidiTrack(Track):
                                         name=name,
                                         instrument=instrument,
                                         performance_attrs=performance_attrs)
+
+    @staticmethod
+    def copy(source_track: 'MidiTrack') -> 'MidiTrack':
+        measure_list = None
+        if source_track.measure_list:
+            # noinspection PyTypeChecker
+            measure_list = [Measure.copy(measure) for measure in source_track.measure_list]
+        return MidiTrack(to_add=measure_list,
+                         meter=source_track.meter,
+                         swing=source_track.swing,
+                         name=source_track.name,
+                         instrument=source_track.instrument,
+                         channel=source_track.channel,
+                         performance_attrs=source_track._performance_attrs)

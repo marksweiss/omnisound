@@ -50,7 +50,13 @@ class InCEnsemble(PlayHook, Generic[T]):
         return self._reached_concluding_unison
 
     def has_reached_conclusion(self) -> bool:
-        return self._unison_count >= len(self.players)
+
+        # TEMP DEBUG
+        print(f'\n\n{self._unison_count = } {len(self.players) = }\n\n')
+
+        # TEMP DEBUG TODO RESTORE
+        # return self._unison_count >= len(self.players)
+        return True
 
     def is_seeking_crescendo(self) -> bool:
         return not self.in_crescendo_decrescendo and es.meets_condition(es.CRESCENDO_PROB)
@@ -73,8 +79,8 @@ class InCEnsemble(PlayHook, Generic[T]):
     def _set_crescendo_state(self, crescendo_direction: CrescendoDirection) -> None:
         if self.in_decrescendo_crescendo or self.in_crescendo_decrescendo:
             return
-        self.max_crescendo_step_count = randint(es.MIN_CRESCENDO_NUM_STEPS,
-                                                es.MAX_CRESCENDO_NUM_STEPS - es.MIN_CRESCENDO_NUM_STEPS + 1)
+        self.max_crescendo_step_count = es.MIN_CRESCENDO_NUM_STEPS + \
+            randint(1, (es.MAX_CRESCENDO_NUM_STEPS - es.MIN_CRESCENDO_NUM_STEPS) + 1)
         self.max_crescendo_step_count = min(self.max_crescendo_step_count, es.CRESCENDO_MAX_AMP_RANGE)
         self.crescendo_amp_adj = es.CRESCENDO_MAX_AMP_RANGE / self.max_crescendo_step_count
         self.crescendo_amp_adj = max(self.crescendo_amp_adj, es.DEFAULT_AMP)
@@ -155,3 +161,18 @@ class InCEnsemble(PlayHook, Generic[T]):
 
     def _reached_unison(self) -> bool:
         return self._unison_count >= len(self)
+
+    def __str__(self):
+        return (f'{self.players = } '
+                f'{self._unison_count = } '
+                f'{self.perform_steps_count = } '
+                f'{self._reached_concluding_unison = } '
+                f'{self.crescendo_amp_adj = } '
+                f'{self.in_crescendo = } '
+                f'{self.in_decrescendo = } '
+                f'{self.crescendo_step_count = } '
+                f'{self.max_crescendo_step_count = } '
+                f'{self.in_crescendo_decrescendo = } '
+                f'{self.in_decrescendo_crescendo = } '
+                f'{self.crescendo_sign = } '
+                f'{self.pulse_player = }\n\n')

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from mido.midifiles.midifiles import Message, MidiFile, MidiTrack
-from omnisound.src.utils.validation_utils import validate_optional_types, validate_type
+from omnisound.src.utils.validation_utils import validate_optional_type, validate_types
 
 from omnisound.src.note.adapter.midi_note import ATTR_VAL_CAST_MAP
 from omnisound.src.container.song import Song
@@ -13,12 +13,13 @@ from omnisound.src.player.player import Writer
 
 
 class MidiWriter(Writer):
+    # TODO Fix signature optional type before non-optional
     def __init__(self,
                  song: Optional[Song] = None,
                  append_mode: MidiPlayerAppendMode = None,
                  midi_file_path: Path = None):
-        validate_type('append_mode', append_mode, MidiPlayerAppendMode)
-        validate_optional_types(('song', song, Song), ('midi_file_path', midi_file_path, Path))
+        validate_types(('append_mode', append_mode, MidiPlayerAppendMode), ('midi_file_path', midi_file_path, Path))
+        validate_optional_type('song', song, Song)
         self._song = song
         self.midi_file_path = midi_file_path
         # Type 1 - multiple synchronous tracks, all starting at the same time

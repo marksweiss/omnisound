@@ -187,3 +187,16 @@ class InCPlayer(PlayHook):
             if has_advanced_ret:
                 self.has_advanced = has_advanced_ret
                 self.phrase_idx += 1
+
+    def __str__(self) -> str:
+        return (f'{self.track = } '
+                f'{self.instrument = } '
+                f'{self.phrase_idx = } '
+                f'{self.cur_phrase_count = } '
+                f'{self.cur_start = } '
+                f'{self.adjusted_phase_count = } '
+                f'{self.is_at_rest = } '
+                f'{self.has_advanced = } '
+                f'{self.ensemble = } '
+                f'{self.source_phrases = }\n\n')
+

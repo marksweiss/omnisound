@@ -1,5 +1,7 @@
 # Copyright 2021 Mark S. Weiss
 
+from pathlib import Path
+
 from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
 from omnisound.src.composition.in_c.in_c_player import InCPlayer
 from omnisound.src.container.note_sequence import NoteSequence
@@ -10,6 +12,7 @@ from omnisound.src.player.midi.midi_writer import MidiWriter
 from omnisound.src.modifier.swing import Swing
 from omnisound.src.note.adapter.midi_note import MidiInstrument
 import omnisound.src.note.adapter.midi_note as midi_note
+from omnisound.src.player.midi.midi_player import MidiPlayerAppendMode
 
 BEATS_PER_MEASURE = 4
 BEAT_NOTE_DUR = NoteDur.QRTR
@@ -24,7 +27,7 @@ NUM_ATTRIBUTES = len(midi_note.ATTR_NAMES)
 
 # TODO INSTRUMENT PER TRACK
 INSTRUMENT = MidiInstrument.Vibraphone
-MIDI_FILE_PATH = "Users/markweiss/in_c"
+MIDI_FILE_PATH = Path('/Users/markweiss/Documents/projects/omnisound/omnisound/src/composition/in_c/rendered/in_c.mid')
 
 PLAYER = 'player'
 ENSEMBLE = 'ensemble'
@@ -74,7 +77,7 @@ def instruction_4_ensemble_preplay(ensemble: InCEnsemble) -> None:
 # "Patterns are to be played consecutively with each performer having the freedom to determine how many
 #  times he or she will repeat each pattern before moving on to the next.  There is no fixed rule
 #  as to the number of repetitions a pattern may have, however, since performances normally average
-#  between 45 minutes and an hour and a half, it can be assumed that one would repeat each pattern
+#  between 45 minutes and an hour and a half, it can be assumed that one wuld repeat each pattern
 #  from somewhere between 45 seconds and a minute and a half or longer."
 def instruction_3_player_set_next_phrase(player: InCPlayer) -> None:
     if not player.has_advanced:
@@ -126,6 +129,7 @@ def instruction_5_player_set_output(player: InCPlayer) -> None:
 def instruction_11_player_set_output(player: InCPlayer) -> None:
     shift = player.transpose_shift()
     for measure in player.output:
+        # noinspection PyUnresolvedReferences
         measure.transpose(interval=shift)
 
 
@@ -191,6 +195,11 @@ class InCPerformance:
     def perform(self) -> None:
         while not self.ensemble.has_reached_conclusion():
             for instruction in InCPerformance.ENSEMBLE_PREPLAY_INSTRUCTIONS:
+
+                # TEMP DEBUG
+                # import pdb
+                # pdb.set_trace()
+
                 instruction(self.ensemble)
 
             for instruction in InCPerformance.PLAYER_SET_NEXT_PHRASE_INSTRUCTIONS:
@@ -215,6 +224,11 @@ class InCPerformance:
                 instruction(self.ensemble)
             for instruction in InCPerformance.ENSEMBLE_POSTPLAY_INSTRUCTIONS:
                 instruction(self.ensemble)
+
+            # TEMP DEBUG
+            print(ensemble)
+            for player in ensemble.players:
+                print(player)
         # TODO self.reset_ensemble_and_players()
 
 
@@ -224,7 +238,8 @@ def make_track(i: int):
 
 
 if __name__ == '__main__':
-    players = [InCPlayer(make_track(i)) for i in range(1, MidiTrack.MAX_NUM_MIDI_TRACKS + 1)]
+    # TODO RESTORE
+    players = [InCPlayer(make_track(i)) for i in range(1, 2)]  # MidiTrack.MAX_NUM_MIDI_TRACKS + 1)]
     # Construct player to fulfill instruction 7 to produce a pulse
     pulse_player = InCPlayer(make_track(MidiTrack.MAX_NUM_MIDI_TRACKS + 1))
     ensemble = InCEnsemble(to_add=players, pulse_player=pulse_player)
@@ -233,6 +248,7 @@ if __name__ == '__main__':
 
     performance.perform()
 
-    song = Song(to_add=[MidiTrack.copy(player.track) for player in ensemble])
-    writer = MidiWriter(song=song, midi_file_path=MIDI_FILE_PATH)
+    song = Song(to_add=[MidiTrack.copy(player.track) for player in ensemble.players])
+    writer = MidiWriter(song=song, midi_file_path=MIDI_FILE_PATH,
+                        append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote)
     writer.generate_and_write()

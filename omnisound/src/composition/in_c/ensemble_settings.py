@@ -23,8 +23,8 @@ class EnsembleSettings(SettingsBase):
     # Probability that the ensemble will de/crescendo in a unison (may be buggy)
     # TODO: bug is that code to build up crescendo over successive iterations isn't there
     #  and instead this just jumps the amplitude jarringly on one iteration
-    CRESCENDO_PROB = 0.0
-    DECRESCENDO_PROB = 0.0
+    CRESCENDO_PROB = 0.05
+    DECRESCENDO_PROB = 0.05
     # Maximum de/increase in volume (in CSound scale) that notes can gain in crescendo
     #  pursued during a unison or in the final Conclusion
     CRESCENDO_MAX_AMP_RANGE = 80
