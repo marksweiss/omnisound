@@ -195,40 +195,34 @@ class InCPerformance:
     def perform(self) -> None:
         while not self.ensemble.has_reached_conclusion():
             for instruction in InCPerformance.ENSEMBLE_PREPLAY_INSTRUCTIONS:
-
-                # TEMP DEBUG
-                # import pdb
-                # pdb.set_trace()
-
                 instruction(self.ensemble)
 
             for instruction in InCPerformance.PLAYER_SET_NEXT_PHRASE_INSTRUCTIONS:
                 # TODO THIS SHOULD BE OPERATING ON self.output. IS IT?
                 map(instruction, self.ensemble.players)
 
-            # TODO
-            for player in ensemble.players:
+            # TODO DO WE NEED play_phrase()?
+            for player in self.ensemble.players:
                 player.copy_cur_phrase_to_output()
-            ensemble.pulse_player.copy_cur_phrase_to_output()
+            self.ensemble.pulse_player.copy_cur_phrase_to_output()
 
             for instruction in InCPerformance.PLAYER_SET_OUTPUT_INSTRUCTIONS:
                 map(instruction, self.ensemble.players)
 
             # TODO
-            for player in ensemble.players:
+            for player in self.ensemble.players:
                 player.flush_output_and_reset_state()
             # We only need to call this for the flush, but the other side effects are no-op in this case
-            ensemble.pulse_player.flush_output_and_reset_state()
+            self.ensemble.pulse_player.flush_output_and_reset_state()
 
             for instruction in InCPerformance.SPECIAL_PREPLAY_INSTRUCTIONS:
                 instruction(self.ensemble)
             for instruction in InCPerformance.ENSEMBLE_POSTPLAY_INSTRUCTIONS:
                 instruction(self.ensemble)
 
-            # TEMP DEBUG
-            print(ensemble)
-            for player in ensemble.players:
-                print(player)
+            # print(self.ensemble)
+            # for player in self.ensemble.players:
+            #     print(player)
         # TODO self.reset_ensemble_and_players()
 
 
@@ -246,8 +240,11 @@ if __name__ == '__main__':
 
     performance = InCPerformance(ensemble)
 
-    performance.perform()
+    # TEMP DEBUG
+    # import pdb
+    # pdb.set_trace()
 
+    performance.perform()
     song = Song(to_add=[MidiTrack.copy(player.track) for player in ensemble.players])
     writer = MidiWriter(song=song, midi_file_path=MIDI_FILE_PATH,
                         append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote)

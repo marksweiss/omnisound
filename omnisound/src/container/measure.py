@@ -105,7 +105,6 @@ class Measure(NoteSequence):
                 'Attempt to add a note to a measure greater than the the number of beats per measure'
             )
 
-
         note.start = self.meter.beat_start_times_secs[self.beat]
         self.append(note)
         # Increment beat position if flag set and beat is not on last beat of the measure already

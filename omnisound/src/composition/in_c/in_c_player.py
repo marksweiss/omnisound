@@ -8,25 +8,31 @@ from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.section import Section
 from omnisound.src.container.track import Track
-from omnisound.src.generator.scale_globals import MajorKey, MinorKey
-from omnisound.src.note.adapter.note import BaseAttrNames, set_attr_vals_from_dict
+from omnisound.src.generator.scale_globals import M
 from omnisound.src.modifier.meter import NoteDur
 from omnisound.src.note.adapter.midi_note import ATTR_NAMES, DEFAULT_MAKE_NOTE_CONFIG, MidiInstrument, pitch_for_key
+from omnisound.src.note.adapter.note import BaseAttrNames, set_attr_vals_from_dict
+from omnisound.src.container.note_sequence import NoteSequence
 from omnisound.src.player.play_hook import PlayHook
 
-def make_measure(num_notes: int, note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
+
+def make_measure(instrument: MidiInstrument, octave: int,
+                 note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
     # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
-    measure = Measure(num_notes=num_notes, mn=DEFAULT_MAKE_NOTE_CONFIG)
-    for i, note_attr_vals in enumerate(note_attr_vals_lst):
-        note_attr_vals[1] = float(note_attr_vals[1])
-        note_attr_vals[2] = float(note_attr_vals[2])
-        set_attr_vals_from_dict(measure.note(i), dict(zip(ATTR_NAMES, note_attr_vals)))
+    measure = Measure(num_notes=0, mn=DEFAULT_MAKE_NOTE_CONFIG)
+    for note_attr_vals in note_attr_vals_lst:
+        note = NoteSequence.new_note(DEFAULT_MAKE_NOTE_CONFIG)
+        # pass in instrument and don't require notes passed in to include start ('time' in MIDI)
+        # because it is set automatically by #add_note_on_start(). Just cuts down on boilerplate defining notes.
+        # set pitch_for_key() here for same reason.
+        note_attr_vals = [instrument, 0.0] + note_attr_vals
+        note_attr_vals[4] = pitch_for_key(note_attr_vals[4], octave)
+        set_attr_vals_from_dict(note, dict(zip(ATTR_NAMES, note_attr_vals)))
+        measure.add_note_on_start(note)
     return measure
 
 
 class InCPlayer(PlayHook):
-    # TODO
-
     def __init__(self, track: Track, instrument: MidiInstrument = MidiInstrument.Acoustic_Grand_Piano):
         super().__init__()
         self.track = track
@@ -47,19 +53,31 @@ class InCPlayer(PlayHook):
     def _load_phrases(self) -> List[Section]:  # sourcery skip: merge-list-append
         sections = []
 
+        eighth_rest = [NoteDur.EITH, 0, M.C]
+        qrtr_rest = [NoteDur.QRTR, 0, M.C]
         measures = []
-        measures.append(
-            # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
-            make_measure(6, [
-                [self.instrument, 0, NoteDur.EITH, 100, pitch_for_key(MajorKey.C, 4)],
-                [self.instrument, NoteDur.EITH, NoteDur.QRTR, 100, pitch_for_key(MajorKey.E, 4)],
-                [self.instrument, NoteDur.EITH + NoteDur.QRTR, NoteDur.EITH, 100, pitch_for_key(MajorKey.C, 4)],
-                [self.instrument, NoteDur.HLF, NoteDur.QRTR, 100, pitch_for_key(MajorKey.E, 4)],
-                [self.instrument, NoteDur.HLF + NoteDur.QRTR, NoteDur.EITH, 100, pitch_for_key(MajorKey.C, 4)],
-                [self.instrument, NoteDur.HLF + NoteDur.QRTR, NoteDur.QRTR, 100, pitch_for_key(MajorKey.E, 4)]
-            ])
-            # Make other measures in Sections (Phrases), one or more per Phrase
-        )
+        # args: instrument, octave, [duration, velocity, pitch]
+        # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
+        measures.append(make_measure(self.instrument, 4, [
+            [NoteDur.EITH, 70, M.C],
+            [NoteDur.QRTR, 100, M.E],
+            [NoteDur.EITH, 70, M.C],
+            [NoteDur.QRTR, 100, M.E],
+            [NoteDur.EITH, 70, M.C],
+            [NoteDur.QRTR, 100, M.E],
+        ]))
+        measures.append(make_measure(self.instrument, 4, [
+            [NoteDur.EITH, 70, M.C],
+            [NoteDur.EITH, 100, M.E],
+            [NoteDur.EITH, 100, M.F],
+            [NoteDur.QRTR, 100, M.E],
+        ]))
+        measures.append(make_measure(self.instrument, 4, [
+            eighth_rest,
+            [NoteDur.EITH, 100, M.E],
+            [NoteDur.EITH, 100, M.F],
+            [NoteDur.EITH, 100, M.E],
+        ]))
         # Return list of phrases, each of which is a Section of one ore more Measures
         sections.append(Section(measure_list=measures))
 
@@ -75,6 +93,10 @@ class InCPlayer(PlayHook):
         self.output = Section.copy(self.source_phrases[self.phrase_idx])
 
     def flush_output_and_reset_state(self) -> None:
+        # TEMP DEBUG
+        # import pdb
+        # pdb.set_trace()
+
         for measure in self.output:
             self.track.append(measure)
         self.output = None
@@ -148,9 +170,9 @@ class InCPlayer(PlayHook):
 
     # TODO return type is not correct
     # TODO WHAT IS THIS?
-    # def num_plays_last_phrase(self) -> float:
-    #     max_start = self.phrase_aggregate_attr_val(BaseAttrNames.START, max)
-    #     return (max_start - self.cur_start) / sum(len(self.output[:-1]))
+    def num_plays_last_phrase(self) -> float:
+        max_start = self.phrase_aggregate_attr_val(BaseAttrNames.START, max)
+        return (max_start - self.cur_start) / sum(len(self.output[:-1]))
 
     def apply_swing(self) -> None:
         for measure in self.output:

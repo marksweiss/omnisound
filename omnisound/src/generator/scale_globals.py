@@ -37,6 +37,9 @@ class MajorKey(Enum):
     C_f = major_keys[0].upper()
 
 
+# alias
+M = MajorKey
+
 MAJOR_KEY_DICT = enum_to_str_key_dict(MajorKey)
 
 
@@ -58,6 +61,8 @@ class MinorKey(Enum):
     B_F = minor_keys[2].upper()
     B = minor_keys[9].upper()
 
+
+m = MinorKey
 
 MINOR_KEY_DICT = enum_to_str_key_dict(MinorKey)
 

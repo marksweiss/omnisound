@@ -54,9 +54,7 @@ class InCEnsemble(PlayHook, Generic[T]):
         # TEMP DEBUG
         print(f'\n\n{self._unison_count = } {len(self.players) = }\n\n')
 
-        # TEMP DEBUG TODO RESTORE
-        # return self._unison_count >= len(self.players)
-        return True
+        return self._unison_count >= len(self.players)
 
     def is_seeking_crescendo(self) -> bool:
         return not self.in_crescendo_decrescendo and es.meets_condition(es.CRESCENDO_PROB)
@@ -94,7 +92,7 @@ class InCEnsemble(PlayHook, Generic[T]):
             self.in_decrescendo = True
             self.in_crescendo = False
 
-    # TODO Can we simplify all this code to just be "in crescendo" and "criscendo direction"
+    # TODO Can we simplify all this code to just be "in crescendo" and "crescendo direction"
     def increment_crescendo(self) -> None:
         # Test increment step_count and test for boundary transitions
         #  from crescendo to decrescendo and exit from de/crescendo
@@ -157,7 +155,7 @@ class InCEnsemble(PlayHook, Generic[T]):
         return max(player.phrase_idx for player in self.players)
 
     def _phrase_idx_range(self) -> int:
-        return self._max_phrase_idx() - self._max_phrase_idx()
+        return self._max_phrase_idx() - self._min_phrase_idx()
 
     def _reached_unison(self) -> bool:
         return self._unison_count >= len(self)
