@@ -6,7 +6,6 @@ from typing import Any, Callable, Generator, List, Optional, Union
 from omnisound.src.composition.in_c.player_settings import PlayerSettings as ps
 from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
 from omnisound.src.container.measure import Measure
-from omnisound.src.container.section import Section
 from omnisound.src.container.track import Track
 from omnisound.src.generator.scale_globals import M
 from omnisound.src.modifier.meter import NoteDur
@@ -22,13 +21,17 @@ def make_measure(instrument: MidiInstrument, octave: int,
     measure = Measure(num_notes=0, mn=DEFAULT_MAKE_NOTE_CONFIG)
     for note_attr_vals in note_attr_vals_lst:
         note = NoteSequence.new_note(DEFAULT_MAKE_NOTE_CONFIG)
-        # pass in instrument and don't require notes passed in to include start ('time' in MIDI)
+        # Pass in instrument and don't require notes passed in to include start ('time' in MIDI)
         # because it is set automatically by #add_note_on_start(). Just cuts down on boilerplate defining notes.
         # set pitch_for_key() here for same reason.
         note_attr_vals = [instrument, 0.0] + note_attr_vals
+        note_attr_vals[2] = note_attr_vals[2].value
         note_attr_vals[4] = pitch_for_key(note_attr_vals[4], octave)
         set_attr_vals_from_dict(note, dict(zip(ATTR_NAMES, note_attr_vals)))
-        measure.add_note_on_start(note)
+        # Don't validate that we don't exceed measure duration for meter because this score is not written as a series
+        # of correct measures in terms of total duration, but rather as a series of independent measures in the same
+        # meter but with varying length -- this is the source of the phase evolutions that are the point of the piece.
+        measure.add_note_on_start(note, validating=False)
     return measure
 
 
@@ -47,10 +50,12 @@ class InCPlayer(PlayHook):
         # but the players need a reference to their ensemble. So first create players and pass them to Ensemble init,
         # then iterate players and set ensemble reference
         self.ensemble = None
-        self.source_phrases: List[Section] = self._load_phrases()
-        self.output: Section = self.source_phrases[0]
+        self.source_phrases: List[Measure] = self._load_phrases()
+        # TODO JUST MAKE THIS MEASURES
+        self.output: List[Measure] = []
+        self.output.append(self.source_phrases[0])
 
-    def _load_phrases(self) -> List[Section]:  # sourcery skip: merge-list-append
+    def _load_phrases(self) -> List[Measure]:  # sourcery skip: merge-list-append
         sections = []
 
         eighth_rest = [NoteDur.EITH, 0, M.C]
@@ -78,10 +83,7 @@ class InCPlayer(PlayHook):
             [NoteDur.EITH, 100, M.F],
             [NoteDur.EITH, 100, M.E],
         ]))
-        # Return list of phrases, each of which is a Section of one ore more Measures
-        sections.append(Section(measure_list=measures))
-
-        return sections
+        return measures
 
     def set_ensemble(self, ensemble: InCEnsemble):
         self.ensemble = ensemble
@@ -90,16 +92,12 @@ class InCPlayer(PlayHook):
         self.output[-1].append(note)
 
     def copy_cur_phrase_to_output(self) -> None:
-        self.output = Section.copy(self.source_phrases[self.phrase_idx])
+        self.output.append(Measure.copy(self.source_phrases[self.phrase_idx]))
 
     def flush_output_and_reset_state(self) -> None:
-        # TEMP DEBUG
-        # import pdb
-        # pdb.set_trace()
-
         for measure in self.output:
             self.track.append(measure)
-        self.output = None
+        self.output = []
         self.copy_cur_phrase_to_output()
         self.cur_start = 0.0
         self.has_advanced = False
@@ -195,10 +193,8 @@ class InCPlayer(PlayHook):
     def _get_notes_for_phrase(self, phrase_idx: Optional[int] = None) -> Generator:
         # Gets source notes, not modified notes from self.output
         phrase_idx = self.phrase_idx if phrase_idx is None else phrase_idx
-        # TODO SHOULDN'T THIS BE USING self.output?
-        phrase = self.source_phrases[self.phrase_idx]
-        for measure in phrase:
-            yield from measure
+        phrase = self.source_phrases[phrase_idx]
+        yield from phrase
 
     def _check_has_advanced(self, has_advanced: Union[bool, Callable]) -> None:
         if isinstance(has_advanced, bool) and has_advanced:
@@ -221,4 +217,3 @@ class InCPlayer(PlayHook):
                 f'{self.has_advanced = } '
                 f'{self.ensemble = } '
                 f'{self.source_phrases = }\n\n')
-

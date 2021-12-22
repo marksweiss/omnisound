@@ -237,13 +237,10 @@ if __name__ == '__main__':
     # Construct player to fulfill instruction 7 to produce a pulse
     pulse_player = InCPlayer(make_track(MidiTrack.MAX_NUM_MIDI_TRACKS + 1))
     ensemble = InCEnsemble(to_add=players, pulse_player=pulse_player)
-
+    for player in players:
+        player.ensemble = ensemble
+    pulse_player.ensemble = ensemble
     performance = InCPerformance(ensemble)
-
-    # TEMP DEBUG
-    # import pdb
-    # pdb.set_trace()
-
     performance.perform()
     song = Song(to_add=[MidiTrack.copy(player.track) for player in ensemble.players])
     writer = MidiWriter(song=song, midi_file_path=MIDI_FILE_PATH,

@@ -23,7 +23,7 @@ class Section(NoteSequenceSequence):
                  measure_list: List[Measure],
                  meter: Optional[Meter] = None,
                  swing: Optional[Swing] = None,
-                 name: str = None,
+                 name: Optional[str] = None,
                  performance_attrs: Optional[PerformanceAttrs] = None):
         validate_optional_types(('measure_list', measure_list, List),
                                 ('performance_attrs', performance_attrs, PerformanceAttrs),

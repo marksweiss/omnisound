@@ -163,7 +163,8 @@ class Measure(NoteSequence):
     # /Updating Tempo and resetting note start and duration
 
     # Adding notes in sequence from the current start time, one note immediately after another
-    def add_note_on_start(self, note: Any) -> 'Measure':
+    # TODO unit test for validating
+    def add_note_on_start(self, note: Any, validating: bool = True) -> 'Measure':
         """Modifies the note_sequence in place by setting its start_time to the value of measure.start.
            If increment_start == True then measure.start is also incremented, after the insertion. So this method
            is a convenience method for inserting multiple notes in sequence.
@@ -175,8 +176,8 @@ class Measure(NoteSequence):
         #  number of seconds, the ratio of note.duration to a quarter note is multiplied by the actual
         #  wall time of a quarter note derived from the tempo, which is the number of quarter notes per minute.
         actual_duration_secs = self._get_duration_for_tempo(note)
-        if self.next_note_start + actual_duration_secs > self.meter.measure_dur_secs:
-            raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.dur} > '
+        if validating and self.next_note_start + actual_duration_secs > self.meter.measure_dur_secs:
+            raise ValueError((f'measure.next_note_start {self.next_note_start} + note.duration {note.duration} > '
                               f'measure.max_duration {self.max_duration}'))
 
         note.duration = actual_duration_secs

@@ -53,7 +53,7 @@ class InCEnsemble(PlayHook, Generic[T]):
 
         # TEMP DEBUG
         print(f'\n\n{self._unison_count = } {len(self.players) = }\n\n')
-
+        self._unison_count = sum(player.is_seeking_unison() for player in self.players)
         return self._unison_count >= len(self.players)
 
     def is_seeking_crescendo(self) -> bool:
@@ -158,7 +158,7 @@ class InCEnsemble(PlayHook, Generic[T]):
         return self._max_phrase_idx() - self._min_phrase_idx()
 
     def _reached_unison(self) -> bool:
-        return self._unison_count >= len(self)
+        return self._unison_count >= len(self.players)
 
     def __str__(self):
         return (f'{self.players = } '
