@@ -8,12 +8,15 @@ from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
 from omnisound.src.container.measure import Measure
 from omnisound.src.container.track import Track
 from omnisound.src.generator.scale_globals import M
-from omnisound.src.modifier.meter import NoteDur
+from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.note.adapter.midi_note import ATTR_NAMES, DEFAULT_MAKE_NOTE_CONFIG, MidiInstrument, pitch_for_key
 from omnisound.src.note.adapter.note import BaseAttrNames, set_attr_vals_from_dict
 from omnisound.src.container.note_sequence import NoteSequence
 from omnisound.src.player.play_hook import PlayHook
 
+
+# 4/4, 120 bpm
+METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QRTR, tempo=120)
 
 def make_measure(instrument: MidiInstrument, octave: int,
                  note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
@@ -25,7 +28,7 @@ def make_measure(instrument: MidiInstrument, octave: int,
         # because it is set automatically by #add_note_on_start(). Just cuts down on boilerplate defining notes.
         # set pitch_for_key() here for same reason.
         note_attr_vals = [instrument, 0.0] + note_attr_vals
-        note_attr_vals[2] = note_attr_vals[2].value
+        note_attr_vals[2] = METER.get_secs_for_note_time(note_attr_vals[2])
         note_attr_vals[4] = pitch_for_key(note_attr_vals[4], octave)
         set_attr_vals_from_dict(note, dict(zip(ATTR_NAMES, note_attr_vals)))
         # Don't validate that we don't exceed measure duration for meter because this score is not written as a series

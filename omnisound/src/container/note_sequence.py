@@ -22,12 +22,12 @@ class NoteSequenceInvalidAppendException(Exception):
 
 class NoteSequence:
     """Provides an iterator abstraction over a collection of Notes. Also owns the storage for the collection
-       of Notes as a Numpy array of rank 2. The shape of the array is the number of note attributes and the
-       depth of it is the number of note_attr_vals.
+       of Notes as a Numpy array of rank 2. The shape of the array is the number of note attributes, i.e.
+       the number of note_attr_vals in mn, and the depth of it is num_notes.
 
        Because the underlying storage is fixed size, there is a default sequence length of 1, but the caller can
-       pre-allocate by providing a value for the `num_notes` argument. If note_attr_vals are added exceeding the size
-       of the array it is resized.
+       pre-allocate by providing a value for the `num_notes` argument. If note_attr_val rows (new notes) are added
+       exceeding the size of the array it is resized.
 
        Note that in this model a sequence of Notes exists upon the construction of a NoteSequence, even though
        no individual Note "objects" have been allocated. Each column in the array represents an attribute of a note.
@@ -64,11 +64,15 @@ class NoteSequence:
         self.mn = mn
 
         # Construct empty 2D numpy array of the specified dimensions. Each row stores a Note's values.
-        rows = [[0.0] * self.mn.num_attributes for _ in range(num_notes)]
-        self.note_attr_vals = np_array(rows)
-        if num_notes > 0:
-            # THIS MUST NOT BE ALTERED
-            self._num_attributes = self.note_attr_vals.shape[1]
+        rows_storage = [[0.0] * self.mn.num_attributes for _ in range(num_notes)]
+        # TODO THIS IS REALLY CONFUSING BECAUSE in Notes note_attr_vals is the dict of attr/vals for one note
+        #  but here it is an ndarray of those notes
+        self.note_attr_vals = np_array(rows_storage)
+        # TODO NOT REFERRED TO ANYWHERE, DESPITE THE WARNING COMMENT WITH NO EXPLANATION
+        #  CAN WE GET RID OF THIS?
+        # if num_notes > 0:
+        #     # THIS MUST NOT BE ALTERED
+        #     self._num_attributes = self.note_attr_vals.shape[1]
 
         if self.mn.attr_val_default_map:
             assert set(self.mn.attr_val_default_map.keys()) <= set(self.mn.attr_name_idx_map.keys())
@@ -192,10 +196,10 @@ class NoteSequence:
             return False
         if not np_array_equal(self.note_attr_vals, other.note_attr_vals):
             return False
-        for i, note_sequence in enumerate(self.child_sequences):
-            if not np_array_equal(note_sequence, other.child_sequences[i]):
-                return False
-        return True
+        return all(
+            np_array_equal(note_sequence, other.child_sequences[i])
+            for i, note_sequence in enumerate(self.child_sequences)
+        )
     # /Manage iter / slice
 
     # Manage note list
@@ -209,8 +213,11 @@ class NoteSequence:
         # Either this is the first note in the sequence, or it's not and we validated its shape conforms
         num_attributes = note.note_attr_vals.shape[0]
         new_note_idx = len(self.note_attr_vals)
-        # noinspection PyTypeChecker
-        self.note_attr_vals.resize(new_note_idx + 1, num_attributes)
+        # refcheck=False if we are sure the memory of this array hasn't been used elsewhere
+        # shape is number of notes/rows (dimension 0) increases by 1, with same number
+        # of columns/note attributes (dimension 1) as before
+        self.note_attr_vals.resize((new_note_idx + 1, num_attributes), refcheck=False)
+        # Now copy the data at the offset of new_note_idx, this is the new "row" we just appended
         np_copyto(self.note_attr_vals[new_note_idx], note.note_attr_vals)
         self.update_range_map()
         return self

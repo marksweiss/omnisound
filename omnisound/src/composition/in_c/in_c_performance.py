@@ -220,9 +220,8 @@ class InCPerformance:
             for instruction in InCPerformance.ENSEMBLE_POSTPLAY_INSTRUCTIONS:
                 instruction(self.ensemble)
 
-            # print(self.ensemble)
-            # for player in self.ensemble.players:
-            #     print(player)
+        for player in self.ensemble.players:
+            print(player.track.measure_list)
         # TODO self.reset_ensemble_and_players()
 
 
@@ -232,17 +231,25 @@ def make_track(i: int):
 
 
 if __name__ == '__main__':
-    # TODO RESTORE
-    players = [InCPlayer(make_track(i)) for i in range(1, 2)]  # MidiTrack.MAX_NUM_MIDI_TRACKS + 1)]
-    # Construct player to fulfill instruction 7 to produce a pulse
-    pulse_player = InCPlayer(make_track(MidiTrack.MAX_NUM_MIDI_TRACKS + 1))
-    ensemble = InCEnsemble(to_add=players, pulse_player=pulse_player)
-    for player in players:
-        player.ensemble = ensemble
-    pulse_player.ensemble = ensemble
-    performance = InCPerformance(ensemble)
-    performance.perform()
-    song = Song(to_add=[MidiTrack.copy(player.track) for player in ensemble.players])
-    writer = MidiWriter(song=song, midi_file_path=MIDI_FILE_PATH,
-                        append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote)
-    writer.generate_and_write()
+    measure_list = []
+    while not measure_list:
+        # TODO RESTORE
+        players = [InCPlayer(make_track(i)) for i in range(1, 2)]  # MidiTrack.MAX_NUM_MIDI_TRACKS + 1)]
+        # Construct player to fulfill instruction 7 to produce a pulse
+        pulse_player = InCPlayer(make_track(MidiTrack.MAX_NUM_MIDI_TRACKS + 1))
+        ensemble = InCEnsemble(to_add=players, pulse_player=pulse_player)
+        for player in players:
+            player.ensemble = ensemble
+        pulse_player.ensemble = ensemble
+        performance = InCPerformance(ensemble)
+        performance.perform()
+        song = Song(to_add=[MidiTrack.copy(player.track) for player in ensemble.players])
+
+        measure_list = song.track_list[0].measure_list
+        if measure_list:
+            # TEMP DEBUG
+            print(measure_list)
+
+            writer = MidiWriter(song=song, midi_file_path=MIDI_FILE_PATH,
+                                append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote)
+            writer.generate_and_write()

@@ -104,6 +104,7 @@ def add_base_attr_name_indexes(attr_name_idx_map: Dict[str, int]):
     return attr_name_idx_map
 
 
+# TODO THIS IS NOT CORRECT. ALSO THEREFORE NEEDS TESTS
 def getter(attr_name: str):
     """Prototype of generic Note-attribute accessor. This is parameterized by attr_name and dynamically
     created when the class is constructed for the specific Note type."""
@@ -112,6 +113,7 @@ def getter(attr_name: str):
     return _getter
 
 
+# TODO THIS IS NOT CORRECT. ALSO THEREFORE NEEDS TESTS
 def setter(attr_name: str):
     """Prototype of generic Note-attribute accessor. This is parameterized by attr_name and dynamically
     created when the class is constructed for the specific Note type."""
@@ -129,6 +131,7 @@ def as_list(note) -> List[float]:
     return [note.note_attr_vals[i] for i in range(note.note_attr_vals.shape[0])]
 
 
+# TODO THIS IS NOT CORRECT. ALSO THEREFORE NEEDS TESTS
 def as_dict(note) -> Dict[str, float]:
     attr_names = list(note.attr_name_idx_map.keys())
     return {attr_names[i]: note.note_attr_vals[i] for i in range(note.note_attr_vals.shape[0])}
