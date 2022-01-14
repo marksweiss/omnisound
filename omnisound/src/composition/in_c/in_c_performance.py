@@ -249,6 +249,8 @@ if __name__ == '__main__':
         if measure_list:
             # TEMP DEBUG
             print(measure_list)
+            # import pdb
+            # pdb.set_trace()
 
             writer = MidiWriter(song=song, midi_file_path=MIDI_FILE_PATH,
                                 append_mode=MidiPlayerAppendMode.AppendAfterPreviousNote)

@@ -21,7 +21,7 @@ METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QRTR, tempo=120)
 def make_measure(instrument: MidiInstrument, octave: int,
                  note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
     # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
-    measure = Measure(num_notes=0, mn=DEFAULT_MAKE_NOTE_CONFIG)
+    measure = Measure(meter=METER, num_notes=0, mn=DEFAULT_MAKE_NOTE_CONFIG)
     for note_attr_vals in note_attr_vals_lst:
         note = NoteSequence.new_note(DEFAULT_MAKE_NOTE_CONFIG)
         # Pass in instrument and don't require notes passed in to include start ('time' in MIDI)
