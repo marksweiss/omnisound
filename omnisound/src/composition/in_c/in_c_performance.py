@@ -11,8 +11,8 @@ from omnisound.src.modifier.meter import Meter, NoteDur
 from omnisound.src.player.midi.midi_writer import MidiWriter
 from omnisound.src.modifier.swing import Swing
 from omnisound.src.note.adapter.midi_note import MidiInstrument
-import omnisound.src.note.adapter.midi_note as midi_note
 from omnisound.src.player.midi.midi_player import MidiPlayerAppendMode
+import omnisound.src.note.adapter.midi_note as midi_note
 
 BEATS_PER_MEASURE = 4
 BEAT_NOTE_DUR = NoteDur.QRTR
@@ -22,8 +22,6 @@ SWING_RANGE = 0.001
 # TODO MODIFY PER TRACK?
 SWING = Swing(swing_range=SWING_RANGE, swing_direction=Swing.SwingDirection.Both,
               swing_jitter_type=Swing.SwingJitterType.Random)
-
-NUM_ATTRIBUTES = len(midi_note.ATTR_NAMES)
 
 # TODO INSTRUMENT PER TRACK
 INSTRUMENT = MidiInstrument.Vibraphone
@@ -77,11 +75,11 @@ def instruction_4_ensemble_preplay(ensemble: InCEnsemble) -> None:
 # "Patterns are to be played consecutively with each performer having the freedom to determine how many
 #  times he or she will repeat each pattern before moving on to the next.  There is no fixed rule
 #  as to the number of repetitions a pattern may have, however, since performances normally average
-#  between 45 minutes and an hour and a half, it can be assumed that one wuld repeat each pattern
+#  between 45 minutes and an hour and a half, it can be assumed that one would repeat each pattern
 #  from somewhere between 45 seconds and a minute and a half or longer."
 def instruction_3_player_set_next_phrase(player: InCPlayer) -> None:
     if not player.has_advanced:
-        player.play_next_phrase()
+        player.should_play_next_phrase()
 
 
 #  "... As the performance progresses, performers should stay within 2 or 3 patterns of each other. ..."
@@ -95,7 +93,7 @@ def instruction_6_player_set_next_phrase(player: InCPlayer) -> None:
 # they should try shifting their alignment by an eighth note or quarter note with what’s going on in the rest of the ensemble."
 def instruction_10_player_set_next_phrase(player: InCPlayer) -> None:
     if not player.has_advanced:
-        player.play_next_phrase_seeking_unison()
+        player.should_play_next_phrase_seeking_unison()
 
 # Player Set Output
 
@@ -137,7 +135,7 @@ def instruction_11_player_set_output(player: InCPlayer) -> None:
 # mallet instrument. It is also possible to use improvised percussion in strict rhythm (drum set, cymbals, bells, etc.),
 # if it is carefully done and doesn’t overpower the ensemble."
 # NOTE: This must be run as the last preplay step as it relies on all players having selected their current phrase
-def instruction_7_special_preplay(ensemble: InCEnsemble):
+def instruction_7_special_postplay(ensemble: InCEnsemble):
     ensemble.output_pulse_phrase()
 
 # Ensemble Post-play
@@ -174,11 +172,11 @@ class InCPerformance:
         instruction_4_player_set_output,
         instruction_5_player_set_output,
         instruction_11_player_set_output,
-        instruction_7_special_preplay,
+        instruction_7_special_postplay,
     ]
 
-    SPECIAL_PREPLAY_INSTRUCTIONS = {
-        instruction_7_special_preplay,
+    SPECIAL_POSTPLAY_INSTRUCTIONS = {
+        instruction_7_special_postplay,
     }
 
     ENSEMBLE_POSTPLAY_INSTRUCTIONS = {
@@ -215,7 +213,7 @@ class InCPerformance:
             # We only need to call this for the flush, but the other side effects are no-op in this case
             self.ensemble.pulse_player.flush_output_and_reset_state()
 
-            for instruction in InCPerformance.SPECIAL_PREPLAY_INSTRUCTIONS:
+            for instruction in InCPerformance.SPECIAL_POSTPLAY_INSTRUCTIONS:
                 instruction(self.ensemble)
             for instruction in InCPerformance.ENSEMBLE_POSTPLAY_INSTRUCTIONS:
                 instruction(self.ensemble)

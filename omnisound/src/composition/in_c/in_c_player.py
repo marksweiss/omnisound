@@ -1,7 +1,7 @@
 # Copyright 2021 Mark S. Weiss
 
 from statistics import mean
-from typing import Any, Callable, Generator, List, Optional, Union
+from typing import Any, Callable, Generator, List, Optional, Tuple, Union
 
 from omnisound.src.composition.in_c.player_settings import PlayerSettings as ps
 from omnisound.src.composition.in_c.in_c_ensemble import InCEnsemble
@@ -19,15 +19,15 @@ from omnisound.src.player.play_hook import PlayHook
 METER = Meter(beats_per_measure=4, beat_note_dur=NoteDur.QRTR, tempo=120)
 
 def make_measure(instrument: MidiInstrument, octave: int,
-                 note_attr_vals_lst: List[List[Union[float, int]]]) -> Measure:
+                 note_attr_vals_lst: List[Tuple[float, int, M]]) -> Measure:
     # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
-    measure = Measure(meter=METER, tnum_notes=0, mn=DEFAULT_MAKE_NOTE_CONFIG)
+    measure = Measure(meter=METER, num_notes=0, mn=DEFAULT_MAKE_NOTE_CONFIG)
     for note_attr_vals in note_attr_vals_lst:
         note = NoteSequence.new_note(DEFAULT_MAKE_NOTE_CONFIG)
         # Pass in instrument and don't require notes passed in to include start ('time' in MIDI)
         # because it is set automatically by #add_note_on_start(). Just cuts down on boilerplate defining notes.
         # set pitch_for_key() here for same reason.
-        note_attr_vals = [instrument, 0.0] + note_attr_vals
+        note_attr_vals = [instrument, 0.0] + list(note_attr_vals)
         note_attr_vals[2] = METER.get_secs_for_note_time(note_attr_vals[2])
         note_attr_vals[4] = pitch_for_key(note_attr_vals[4], octave)
         set_attr_vals_from_dict(note, dict(zip(ATTR_NAMES, note_attr_vals)))
@@ -58,33 +58,32 @@ class InCPlayer(PlayHook):
         self.output: List[Measure] = []
         self.output.append(self.source_phrases[0])
 
-    def _load_phrases(self) -> List[Measure]:  # sourcery skip: merge-list-append
-        sections = []
-
-        eighth_rest = [NoteDur.EITH, 0, M.C]
-        qrtr_rest = [NoteDur.QRTR, 0, M.C]
+    def _load_phrases(self) -> List[Measure]:
+        eighth_rest = (NoteDur.EITH, 0, M.C)
+        qrtr_rest = (NoteDur.QRTR, 0, M.C)
+        # sourcery skip: merge-list-append, merge-list-appends-into-extend, merge-list-extend, unwrap-iterable-construction
         measures = []
         # args: instrument, octave, [duration, velocity, pitch]
         # ATTR_NAMES = ('instrument', 'time', 'duration', 'velocity', 'pitch')
         measures.append(make_measure(self.instrument, 4, [
-            [NoteDur.EITH, 70, M.C],
-            [NoteDur.QRTR, 100, M.E],
-            [NoteDur.EITH, 70, M.C],
-            [NoteDur.QRTR, 100, M.E],
-            [NoteDur.EITH, 70, M.C],
-            [NoteDur.QRTR, 100, M.E],
+            (NoteDur.EITH, 70, M.C),
+            (NoteDur.QRTR, 100, M.E),
+            (NoteDur.EITH, 70, M.C),
+            (NoteDur.QRTR, 100, M.E),
+            (NoteDur.EITH, 70, M.C),
+            (NoteDur.QRTR, 100, M.E),
         ]))
         measures.append(make_measure(self.instrument, 4, [
-            [NoteDur.EITH, 70, M.C],
-            [NoteDur.EITH, 100, M.E],
-            [NoteDur.EITH, 100, M.F],
-            [NoteDur.QRTR, 100, M.E],
+            (NoteDur.EITH, 70, M.C),
+            (NoteDur.EITH, 100, M.E),
+            (NoteDur.EITH, 100, M.F),
+            (NoteDur.QRTR, 100, M.E),
         ]))
         measures.append(make_measure(self.instrument, 4, [
             eighth_rest,
-            [NoteDur.EITH, 100, M.E],
-            [NoteDur.EITH, 100, M.F],
-            [NoteDur.EITH, 100, M.E],
+            (NoteDur.EITH, 100, M.E),
+            (NoteDur.EITH, 100, M.F),
+            (NoteDur.EITH, 100, M.E),
         ]))
         return measures
 
@@ -113,7 +112,7 @@ class InCPlayer(PlayHook):
         # write measures to track
         pass
 
-    def play_next_phrase(self) -> bool:
+    def should_play_next_phrase(self) -> bool:
         has_advanced = self.has_reached_last_phrase() or InCPlayer._should_advance_phrase_idx()
         self._check_has_advanced(has_advanced)
         return self.has_advanced
@@ -123,7 +122,7 @@ class InCPlayer(PlayHook):
             self._check_has_advanced(self._is_too_far_behind())
         return self.has_advanced
 
-    def play_next_phrase_seeking_unison(self) -> bool:
+    def should_play_next_phrase_seeking_unison(self) -> bool:
         if not self.has_advanced and not self.has_reached_last_phrase():
             self._check_has_advanced(self.is_seeking_unison())
         return self.has_advanced
@@ -171,13 +170,12 @@ class InCPlayer(PlayHook):
 
     # TODO return type is not correct
     # TODO WHAT IS THIS?
-    def num_plays_last_phrase(self) -> float:
+    def num_plays_last_phrase(self) -> int:
         max_start = self.phrase_aggregate_attr_val(BaseAttrNames.START, max)
-        return (max_start - self.cur_start) / sum(len(self.output[:-1]))
+        return int((max_start - self.cur_start) / sum(len(self.output[:-1])))
 
     def apply_swing(self) -> None:
-        for measure in self.output:
-            measure.apply_swing()
+        [measure.apply_swing() for measure in self.output]
 
     def phrase_aggregate_attr_val(self, attr_name: str, agg_func: Callable,
                                   phrase_idx: Optional[int] = None) -> float:
@@ -196,18 +194,15 @@ class InCPlayer(PlayHook):
     def _get_notes_for_phrase(self, phrase_idx: Optional[int] = None) -> Generator:
         # Gets source notes, not modified notes from self.output
         phrase_idx = self.phrase_idx if phrase_idx is None else phrase_idx
-        phrase = self.source_phrases[phrase_idx]
-        yield from phrase
+        yield from self.source_phrases[phrase_idx]
 
     def _check_has_advanced(self, has_advanced: Union[bool, Callable]) -> None:
         if isinstance(has_advanced, bool) and has_advanced:
             self.has_advanced = has_advanced
             self.phrase_idx += 1
-        else:
-            has_advanced_ret = has_advanced()
-            if has_advanced_ret:
-                self.has_advanced = has_advanced_ret
-                self.phrase_idx += 1
+        elif has_advanced_ret := has_advanced():
+            self.has_advanced = has_advanced_ret
+            self.phrase_idx += 1
 
     def __str__(self) -> str:
         return (f'{self.track = } '
