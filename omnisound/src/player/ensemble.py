@@ -1,14 +1,14 @@
 # Copyright 2021 Mark S. Weiss
 
-from typing import Generic, Iterator, Optional, Sequence, TypeVar, Union
+from typing import Iterator, Optional, Sequence, TypeVar, Union
 
 from omnisound.src.player.play_hook import PlayHook
 
-# Each composition defines its own Player class
 T = TypeVar('T')
 
 class Ensemble(PlayHook):
-    def __init__(self, to_add: Optional[Sequence[Generic[T]]]):
+    # Each composition defines its own Player class
+    def __init__(self, to_add: Optional[Sequence[T]]):
         super().__init__()
         self.players = list(to_add)
         self.index = 0
