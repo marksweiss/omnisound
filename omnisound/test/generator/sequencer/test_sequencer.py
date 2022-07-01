@@ -148,10 +148,10 @@ def test_fill_pattern_to_track_length(sequencer):
     sequencer.add_pattern_as_new_track(track_name=TRACK_NAME, pattern=short_pattern, instrument=INSTRUMENT)
     assert NUM_MEASURES == len(sequencer.track(TRACK_NAME))
     first_measure = sequencer.track(TRACK_NAME).measure_list[0]
-    assert pytest.approx(first_measure[0].pitch, 4.01)
-    assert pytest.approx(first_measure[1].pitch, 4.03)
-    assert pytest.approx(first_measure[2].pitch, 4.05)
-    assert pytest.approx(first_measure[3].pitch, 4.06)
+    assert first_measure[0].pitch == pytest.approx(4.01)
+    assert first_measure[1].pitch == pytest.approx(4.03)
+    assert first_measure[2].pitch == pytest.approx(4.05)
+    assert first_measure[3].pitch == pytest.approx(4.06)
 
     # Test the case where the pattern does not divide the track length evenly
     # Three-measure pattern into 4-measure track, so the first measure should repeat in the fourth measure
