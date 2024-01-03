@@ -28,6 +28,7 @@ def make_measure(instrument: MidiInstrument, octave: int,
         # because it is set automatically by #add_note_on_start(). Just cuts down on boilerplate defining notes.
         # set pitch_for_key() here for same reason.
         note_attr_vals = [instrument, 0.0] + list(note_attr_vals)
+        # TODO PRETTY UGLY TO HAVE TO USE SUBSCRIPTS INSTEAD OF NAMED PROPERTIES
         note_attr_vals[2] = METER.get_secs_for_note_time(note_attr_vals[2])
         note_attr_vals[4] = pitch_for_key(note_attr_vals[4], octave)
         set_attr_vals_from_dict(note, dict(zip(ATTR_NAMES, note_attr_vals)))
