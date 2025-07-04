@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "omnisound"
+version = "0.1.0"
+description = "A comprehensive sound synthesis and music composition library"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Mark Weiss", email = "mark@example.com"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "ctcsound",
+    "FoxDot",
+    "mido",
+    "numpy",
+    "PySimpleGUI",
+]
+
+[project.optional-dependencies]
+rtmidi = ["python-rtmidi"]
+
+[dependency-groups]
+test = [
+    "pytest",
+]
+
+[project.urls]
+Homepage = "https://github.com/marksweiss/omnisound"
+Repository = "https://github.com/marksweiss/omnisound"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["omnisound/test"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "-W", "ignore::UserWarning",
+    "-W", "ignore::DeprecationWarning",
+    "--code-highlight=yes",
+    "--no-header"
+]
